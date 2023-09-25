@@ -1,9 +1,7 @@
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
 
 
-[project]
+
+[tool.poetry]
 name='larvaworld'
 version = "0.0.31"
 description='Drosophila larva behavioral analysis and simulation platform'
@@ -12,41 +10,47 @@ authors=[
 ]
 license = {file = "LICENSE.txt"}
 readme = "README.md"
-requires-python = ">=3.8"
-dependencies = [
-    'pandas',
-    'numpy',
-    'typing-extensions',
-    'PySimpleGUI',
-    'shapely',
-    'imageio',
-    'agentpy',
-    'pygame',
-    'argparse',
-    'pint',
-    'pint_pandas',
-    'tables',
-    'matplotlib',
-    'seaborn',
-    'scikit-learn',
-    'scipy',
-    'PyPDF2',
-    'powerlaw',
-    'progressbar',
-    'param',
-    #'libgeos-dev',
-    'movingpandas',
-    'geopandas',
-    'panel',
-    'holoviews'
-]
 
-[project.urls]
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pandas = "*"
+numpy = "*"
+typing-extensions = "*"
+PySimpleGUI = "*"
+shapely = "*"
+imageio = "*"
+agentpy = "*"
+pygame = "*"
+argparse = "*"
+pint = "*"
+pint_pandas = "*"
+tables = "*"
+matplotlib = "*"
+seaborn = "*"
+scikit-learn = "*"
+scipy = "*"
+PyPDF2 = "*"
+powerlaw = "*"
+progressbar = "*"
+param = "*"
+#'libgeos-dev',
+movingpandas = "*"
+geopandas = "*"
+panel = "*"
+holoviews = "*"
+
+
+[tool.poetry.urls]
 # homepage = "https://example.com"
 documentation = "https://larvaworld.readthedocs.io/en/dev/"
 repository = "https://github.com/nawrotlab/larvaworld"
 
-[project.scripts]
+[tool.poetry.scripts]
 larvaworld-cli = "larvaworld.cli.main:main"
 larvaworld-gui = "larvaworld.gui.main:main"
 larvaworld-examples = "larvaworld.examples.main:main"
