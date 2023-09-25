@@ -1,0 +1,16 @@
+# For building the documentation:
+gendocs
+# mock
+Sphinx
+sphinx-autobuild
+sphinx-rtd-theme
+autodocsumm
+#panel
+#holoviews
+larvaworld
+#libgeos-dev
+# sphinxcontrib-napoleon
+# sphinxcontrib-#websupport
+# sphinx-copybutton
+# sphinx-gallery
+# sphinx-notfound-page>=0.3.0

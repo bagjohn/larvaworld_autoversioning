@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name='larvaworld'
+version = "0.0.31"
+description='Drosophila larva behavioral analysis and simulation platform'
+authors=[
+    {name='Panagiotis Sakagiannis', email='bagjohn0@gmail.com'}
+]
+license = {file = "LICENSE.txt"}
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    'pandas',
+    'numpy',
+    'typing-extensions',
+    'PySimpleGUI',
+    'shapely',
+    'imageio',
+    'agentpy',
+    'pygame',
+    'argparse',
+    'pint',
+    'pint_pandas',
+    'tables',
+    'matplotlib',
+    'seaborn',
+    'scikit-learn',
+    'scipy',
+    'PyPDF2',
+    'powerlaw',
+    'progressbar',
+    'param',
+    #'libgeos-dev',
+    'movingpandas',
+    'geopandas',
+    'panel',
+    'holoviews'
+]
+
+[project.urls]
+# homepage = "https://example.com"
+documentation = "https://larvaworld.readthedocs.io/en/dev/"
+repository = "https://github.com/nawrotlab/larvaworld"
+
+[project.scripts]
+larvaworld-cli = "larvaworld.cli.main:main"
+larvaworld-gui = "larvaworld.gui.main:main"
+larvaworld-examples = "larvaworld.examples.main:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest"
+]
+box2d = [
+    "box2d-py"
+]
+nengo = [
+    "nengo"
+]
+
+
+[tool.setuptools.package-data]
+"*" = ["*.sh", "*.png", "*.pdf", "*.txt", "*.csv"]
+
+#[tool.poetry.scripts]
+#download_sample_data = 'my_package.console:run'
+
+## Commands to upload new package version to Pypi
+# Remember to also  :
+#    - update the version number in pyproject.toml
+#    - clear the data folder keeping only minimal samples
+#    - delete the lib.reg.confDicts contents
+#    - delete old versions from dist
+
+# python -m build
+# python -m twine upload dist/* --verbose
