@@ -17,15 +17,15 @@ jobs:
     - name: Check-out repository
       uses: actions/checkout@v3
 
-    - name: Install poetry
-      uses: snok/install-poetry@v1
+    #- name: Install poetry
+    #  uses: snok/install-poetry@v1
 
     - name: Install package
      # run: poetry install
       run: pip install larvaworld
 
-    - name: Test with pytest
-      run: poetry run pytest tests/ --cov=pycounts --cov-report=xml
+    #- name: Test with pytest
+    #  run: poetry run pytest tests/ --cov=pycounts --cov-report=xml
 
     - name: Use Codecov to track coverage
       uses: codecov/codecov-action@v2
@@ -33,7 +33,8 @@ jobs:
         files: ./coverage.xml   # coverage report
 
     - name: Build documentation
-      run: poetry run make html --directory docs/
+     # run: poetry run make html --directory docs/
+      run: make html --directory docs/
 
   cd:
     # Only run this job if the "ci" job passes
@@ -57,11 +58,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install poetry
-        uses: snok/install-poetry@v1
+      #- name: Install poetry
+      #  uses: snok/install-poetry@v1
 
       - name: Install package
-        run: poetry install
+        run: pip install larvaworld
 
       - name: Use Python Semantic Release to prepare release
         env:
