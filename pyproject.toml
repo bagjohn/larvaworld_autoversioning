@@ -5,10 +5,8 @@
 name='larvaworld'
 version = "0.0.31"
 description='Drosophila larva behavioral analysis and simulation platform'
-authors=[
-    {name='Panagiotis Sakagiannis', email='bagjohn0@gmail.com'}
-]
-license = {file = "LICENSE.txt"}
+authors=['Panagiotis Sakagiannis']
+license = "GNU GPL"
 readme = "README.md"
 
 [build-system]
