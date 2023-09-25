@@ -21,7 +21,8 @@ jobs:
       uses: snok/install-poetry@v1
 
     - name: Install package
-      run: poetry install
+     # run: poetry install
+      run: pip install larvaworld
 
     - name: Test with pytest
       run: poetry run pytest tests/ --cov=pycounts --cov-report=xml
