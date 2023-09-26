@@ -42,6 +42,19 @@ geopandas = "*"
 panel = "*"
 holoviews = "*"
 
+[tool.poetry.dev-dependencies]
+pytest = "*"
+
+[tool.poetry.optional-dependencies]
+dev = [
+    "pytest"
+]
+box2d = [
+    "box2d-py"
+]
+nengo = [
+    "nengo"
+]
 
 [tool.poetry.urls]
 # homepage = "https://example.com"
@@ -53,16 +66,7 @@ larvaworld-cli = "larvaworld.cli.main:main"
 larvaworld-gui = "larvaworld.gui.main:main"
 larvaworld-examples = "larvaworld.examples.main:main"
 
-[project.optional-dependencies]
-dev = [
-    "pytest"
-]
-box2d = [
-    "box2d-py"
-]
-nengo = [
-    "nengo"
-]
+
 
 
 [tool.setuptools.package-data]
