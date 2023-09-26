@@ -70,11 +70,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install poetry
-        uses: snok/install-poetry@v1
-
-      - name: Install package
-        run: poetry install
+#      - name: Install poetry
+#        uses: snok/install-poetry@v1
+#
+#      - name: Install package
+#        run: poetry install
 
 #      - name: Use Python Semantic Release to prepare release
 #        env:
