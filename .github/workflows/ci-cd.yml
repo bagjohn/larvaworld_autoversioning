@@ -20,7 +20,7 @@ jobs:
     - name: Build documentation
       run: |
           cd docs
-          pip install -r ./requirements.txt
+          pip install -r ./source/requirements.txt
           make html
   #        poetry run make html --directory docs/
   # run: make html --directory docs/
