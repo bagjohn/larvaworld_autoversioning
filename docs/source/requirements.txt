@@ -8,6 +8,8 @@ sphinx-rtd-theme
 #panel
 #holoviews
 #numpy
+panel
+holoviews
 larvaworld
 #libgeos-dev
 # sphinxcontrib-napoleon
