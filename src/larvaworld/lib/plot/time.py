@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib import collections as mc
 
-from larvaworld.lib import reg, aux, plot
+from .. import reg, aux, plot
 
 __all__ = [
     'plot_ethogram',

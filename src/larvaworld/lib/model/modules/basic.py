@@ -1,9 +1,9 @@
 import numpy as np
 import param
 
-from larvaworld.lib import aux
-from larvaworld.lib.model.modules.oscillator import Timer, Oscillator
-from larvaworld.lib.param import PositiveNumber
+from ... import aux
+from ..modules.oscillator import Timer, Oscillator
+from ...param import PositiveNumber
 
 __all__ = [
     'Effector',

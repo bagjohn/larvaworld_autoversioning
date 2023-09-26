@@ -2,8 +2,8 @@ import os
 import webbrowser
 import PySimpleGUI as sg
 
-from larvaworld.lib import reg
-from larvaworld.gui import gui_aux
+from ...lib import reg
+from ...gui import gui_aux
 
 __all__ = [
     'TutorialTab',

@@ -3,8 +3,7 @@ import os
 import numpy as np
 import param
 
-import larvaworld
-from larvaworld.lib import reg, aux, util
+from .. import reg, aux, util
 
 __all__ = [
     'Path',

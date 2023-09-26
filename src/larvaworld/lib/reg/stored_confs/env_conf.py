@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib import colors
 
-from larvaworld.lib import reg, aux
+from ... import reg, aux
 
 __all__ = [
     'Env_dict',
@@ -9,7 +9,7 @@ __all__ = [
 
 @reg.funcs.stored_conf("Env")
 def Env_dict() :
-    from larvaworld.lib.reg import gen
+    from ...reg import gen
 
     def oG(c=1, id='Odor'):
         return gen.Odor(id=id, intensity=2.0 * c, spread=0.0002 * np.sqrt(c)).nestedConf
@@ -123,7 +123,7 @@ def Env_dict() :
 
     def maze_conf(n, h):
         def maze(nx=15, ny=15, ix=0, iy=0, h=0.1, return_points=False):
-            from larvaworld.lib.model.envs.maze import Maze
+            from ...model.envs.maze import Maze
             m = Maze(nx, ny, ix, iy, height=h)
             m.make_maze()
             lines = m.maze_lines()

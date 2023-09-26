@@ -2,7 +2,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import seaborn as sns
 
-from larvaworld.lib import reg, aux, plot
+from .. import reg, aux, plot
 
 
 __all__ = [
@@ -21,7 +21,7 @@ def plot_segmentation_definition(subfolder='metric_definition', **kwargs):
             df_reg = d.read('bend2or_regression', file='vel_definition')
             df_corr = d.read('bend2or_correlation', file='vel_definition')
         except :
-            from larvaworld.lib.process.calibration import vel_definition
+            from ..process.calibration import vel_definition
             dic = vel_definition(d)
             df_reg = dic['/bend2or_regression']
             df_corr = dic['/bend2or_correlation']
@@ -58,7 +58,7 @@ def plot_stride_variability(component_vels=True, subfolder='metric_definition', 
             stvar = d.read('stride_variability', file='vel_definition')
 
         except :
-            from larvaworld.lib.process.calibration import vel_definition
+            from ..process.calibration import vel_definition
             dic = vel_definition(d)
             stvar = dic['/stride_variability']
         stvar.sort_values(by='idx', inplace=True)

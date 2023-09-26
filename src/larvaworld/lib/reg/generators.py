@@ -2,8 +2,8 @@ import os
 
 import param
 
-from larvaworld.lib import reg, aux, util
-from larvaworld.lib.param import Area, NestedConf, Larva_Distro, ClassAttr, SimTimeOps, \
+from .. import reg, aux, util
+from ..param import Area, NestedConf, Larva_Distro, ClassAttr, SimTimeOps, \
     SimMetricOps, ClassDict, EnrichConf, OptionalPositiveRange, OptionalSelector, OptionalPositiveInteger, \
     generate_xyNor_distro, Odor, Life, class_generator, SimOps, RuntimeOps, Epoch, RuntimeDataOps, RandomizedColor, \
     OptionalPositiveNumber, Filesystem, TrackerOps, PreprocessConf, Substrate
@@ -228,7 +228,7 @@ class RefType(ConfType):
 
 
     def loadRef(self, id=None, dir=None, load=False, **kwargs):
-        from larvaworld.lib import LarvaDataset
+        from ..process.dataset import LarvaDataset
         c=self.getRef(id=id, dir=dir)
         assert c is not None
         d = LarvaDataset(config=c, load_data=False)
@@ -286,7 +286,7 @@ class RefType(ConfType):
         elif to_return=='list':
             return [self.loadRef(dir=dir, **kwargs) for id, dir in d.items()]
         elif to_return=='collection':
-            from larvaworld.lib.process.dataset import LarvaDatasetCollection
+            from ..process.dataset import LarvaDatasetCollection
             return LarvaDatasetCollection(datasets=[self.loadRef(dir=dir, **kwargs) for id, dir in d.items()])
 
 
@@ -304,7 +304,7 @@ def resetConfs(conftypes=None, **kwargs):
         conf[conftype].reset(**kwargs)
 
 
-from larvaworld.lib.model import Food, Border, WindScape, ThermoScape, FoodGrid, OdorScape, DiffusionValueLayer, GaussianValueLayer
+from ..model import Food, Border, WindScape, ThermoScape, FoodGrid, OdorScape, DiffusionValueLayer, GaussianValueLayer
 
 gen=aux.AttrDict({
     'FoodGroup':class_generator(Food, mode='Group'),
@@ -612,7 +612,7 @@ class DatasetConfig(RuntimeDataOps,SimMetricOps, SimTimeOps):
 
     @property
     def h5_kdic(self):
-        from larvaworld.lib.process.dataset import h5_kdic
+        from ..process.dataset import h5_kdic
         return h5_kdic(self.point, self.Npoints, self.Ncontour)
 
     @param.depends('agent_ids', watch=True)

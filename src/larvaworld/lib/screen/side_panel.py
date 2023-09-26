@@ -4,7 +4,7 @@ import numpy as np
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
-from larvaworld.lib import aux
+from .. import aux
 
 __all__ = [
     'SidePanel',

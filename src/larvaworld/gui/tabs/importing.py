@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 
-from larvaworld.lib import reg, sim
-from larvaworld.gui import gui_aux
+from ...lib import reg, sim
+from ...gui import gui_aux
 
 __all__ = [
     'ImportTab',
@@ -69,6 +69,6 @@ class ImportTab(gui_aux.GuiTab):
 
 
 if __name__ == "__main__":
-    from larvaworld.gui.tabs.larvaworld_gui import LarvaworldGui
+    from .larvaworld_gui import LarvaworldGui
     larvaworld_gui = LarvaworldGui(tabs=['import'])
     larvaworld_gui.run()

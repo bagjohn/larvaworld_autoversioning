@@ -6,8 +6,8 @@ import pandas as pd
 import seaborn as sns
 
 
-from larvaworld.lib.aux import nam
-from larvaworld.lib import reg, aux, plot
+from ..aux import nam
+from .. import reg, aux, plot
 
 __all__ = [
     'module_endpoint_hists',

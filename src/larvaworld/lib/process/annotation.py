@@ -2,12 +2,13 @@ import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
 
-from larvaworld.lib.aux import nam
-from larvaworld.lib import reg, aux, util
+from ..aux import nam
+from .. import reg, aux, util
 
 
 __all__ = [
     'register_bout_distros',
+    'stride_interp',
     'detect_pauses',
     'detect_epochs',
     'detect_runs',
@@ -24,7 +25,7 @@ __all__ = [
 ]
 
 def register_bout_distros(c,e):
-    from larvaworld.lib.model.modules.intermitter import get_EEB_poly1d
+    from ..model.modules.intermitter import get_EEB_poly1d
     try:
         c.intermitter = {
             nam.freq('crawl'): e[nam.freq(nam.scal(nam.vel('')))].mean(),

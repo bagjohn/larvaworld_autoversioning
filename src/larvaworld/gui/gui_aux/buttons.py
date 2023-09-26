@@ -3,8 +3,8 @@ import webbrowser
 
 import PySimpleGUI as sg
 
-from larvaworld.lib import reg
-from larvaworld.gui import gui_aux
+from ...lib import reg
+from ...gui import gui_aux
 
 __all__ = [
     'b_kws',
@@ -92,7 +92,7 @@ def named_bool_button(name, state, toggle_name=None, text_kws={}, **kwargs):
 class GraphButton(sg.Button):
     def __init__(self, name, key,from_bs64=True, **kwargs):
         if from_bs64 :
-            from larvaworld.gui.gui_aux import graphics
+            from ...gui.gui_aux import graphics
             bs64 = getattr(graphics, name)
             super().__init__(image_data=bs64, k=key, **b_kws, **kwargs)
         else :
@@ -128,7 +128,7 @@ class BoolButton(sg.Button):
         self.update(image_data=self.get_image(self.state, self.disabled))
 
     def get_image(self, state, disabled):
-        from larvaworld.gui.gui_aux import graphics
+        from ...gui.gui_aux import graphics
         if not disabled:
             image = graphics.on_image if state else graphics.off_image
         else:

@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import ticker, cm
 from scipy.fft import fft, fftfreq
 
-from larvaworld.lib import reg, aux, plot
+from .. import reg, aux, plot
 
 __all__ = [
     'plot_fft_multi',

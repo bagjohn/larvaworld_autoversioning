@@ -1,8 +1,8 @@
 import agentpy
 
-from larvaworld.lib import reg, aux
-from larvaworld.lib.model import envs, agents
-from larvaworld.lib.sim import ABModel
+from .. import reg, aux
+from ..model import envs, agents
+from ..sim import ABModel
 
 __all__ = [
     'BaseRun',

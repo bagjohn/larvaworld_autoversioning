@@ -4,9 +4,8 @@ import itertools
 import numpy as np
 import pandas as pd
 
-from larvaworld.lib import reg, aux
-from larvaworld.lib.aux import nam
-from larvaworld.lib.param import XYops
+from .. import reg, aux
+from ..aux import nam
 
 __all__ = [
     'comp_spatial',

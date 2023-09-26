@@ -41,6 +41,7 @@ movingpandas = "*"
 geopandas = "*"
 panel = "*"
 holoviews = "*"
+hvplot = "*"
 
 [tool.poetry.dev-dependencies]
 pytest = "*"

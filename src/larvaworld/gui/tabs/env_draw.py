@@ -4,10 +4,9 @@ import random
 import numpy as np
 import PySimpleGUI as sg
 
-import larvaworld.lib.aux.xy
-from larvaworld.lib import reg, aux
-from larvaworld.gui import gui_aux
-from larvaworld.lib.param import generate_xy_distro
+from ...lib import reg, aux
+from ...gui import gui_aux
+from ...lib.param import generate_xy_distro
 
 __all__ = [
     'DrawEnvTab',
@@ -527,7 +526,7 @@ class DrawEnvTab(gui_aux.DrawTab):
         return temp
 
     def draw_larva(self, P0, color, orientation_range, **kwargs):
-        xy0 = larvaworld.aux.xy.body_contour() - np.array([0.5, 0.0])
+        xy0 = aux.xy.body_contour() - np.array([0.5, 0.0])
         xy0 = aux.rotate_points_around_point(xy0, random.uniform(*np.deg2rad(orientation_range)), origin=[0, 0])
         xy0 = xy0 * self.s / 250 + np.array(P0)
         temp = self.graph.draw_polygon(xy0, line_width=3, line_color=color, fill_color=color)

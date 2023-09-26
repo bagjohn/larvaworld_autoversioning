@@ -2,8 +2,8 @@ import pandas as pd
 import param
 from scipy.stats import multivariate_normal
 
-from larvaworld.lib import aux
-from larvaworld.lib.param import PositiveNumber, PositiveInteger, NestedConf, StringRobust, OptionalPositiveNumber, \
+from .. import aux
+from ..param import PositiveNumber, PositiveInteger, NestedConf, StringRobust, OptionalPositiveNumber, \
     OptionalPositiveRange, ClassAttr, ClassDict
 
 

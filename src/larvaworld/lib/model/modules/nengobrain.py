@@ -3,12 +3,12 @@ import numpy as np
 from nengo.networks import EnsembleArray
 
 
-from larvaworld.lib import aux
-from larvaworld.lib.model import StepOscillator
-from larvaworld.lib.model.modules.brain import Brain
-from larvaworld.lib.model.modules.crawl_bend_interference import SquareCoupling
-from larvaworld.lib.model.modules.intermitter import NengoIntermitter
-from larvaworld.lib.model.modules.locomotor import Locomotor
+from ... import aux
+from .basic import StepOscillator
+from .brain import Brain
+from .crawl_bend_interference import SquareCoupling
+from .intermitter import NengoIntermitter
+from .locomotor import Locomotor
 
 
 __all__ = [

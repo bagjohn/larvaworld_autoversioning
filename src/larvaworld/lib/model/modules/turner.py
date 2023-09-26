@@ -3,9 +3,8 @@ import random
 import numpy as np
 import param
 
-from larvaworld.lib import aux
-from larvaworld.lib.model.modules.basic import Effector
-from larvaworld.lib.param import PositiveNumber, PositiveInteger
+from .basic import Effector
+from ...param import PositiveNumber, PositiveInteger
 
 __all__ = [
     'NeuralOscillator',

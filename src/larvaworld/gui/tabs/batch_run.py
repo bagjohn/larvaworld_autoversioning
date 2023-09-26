@@ -4,10 +4,9 @@ import copy
 import PySimpleGUI as sg
 import pandas as pd
 
-from larvaworld.lib import reg, aux,sim
-import larvaworld.lib.util.data_aux
-from larvaworld.gui import gui_aux
-from larvaworld.lib.plot.table import mpl_table
+from ...lib import reg, aux,sim
+from ...gui import gui_aux
+from ...lib.plot.table import mpl_table
 
 __all__ = [
     'BatchTab',
@@ -132,6 +131,6 @@ def stored_trajs(experiment):
 
 
 if __name__ == "__main__":
-    from larvaworld.gui.tabs.larvaworld_gui import LarvaworldGui
+    from .larvaworld_gui import LarvaworldGui
     larvaworld_gui = LarvaworldGui(tabs=['batch-exec'])
     larvaworld_gui.run()

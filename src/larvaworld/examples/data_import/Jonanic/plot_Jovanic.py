@@ -1,4 +1,4 @@
-from larvaworld.lib import reg
+from ....lib import reg
 
 
 parent_dir='AttP240'

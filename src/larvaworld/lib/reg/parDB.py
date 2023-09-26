@@ -15,9 +15,9 @@ else:
 import param
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-from larvaworld.lib.aux import nam
-from larvaworld.lib.aux.par_aux import tilde, circle, bar, wave, subsup, sub, sup, th, Delta, dot, circledast, omega, ddot, mathring, delta
-from larvaworld.lib import reg, aux, util
+from ..aux import nam
+from ..aux.par_aux import tilde, circle, bar, wave, subsup, sub, sup, th, Delta, dot, circledast, omega, ddot, mathring, delta
+from .. import reg, aux, util
 
 
 __all__ = [

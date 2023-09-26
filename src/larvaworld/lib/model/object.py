@@ -1,6 +1,5 @@
 import param
-from larvaworld.lib import aux
-from larvaworld.lib.param import Named
+from ..param import Named
 
 __all__ = [
     'Object',

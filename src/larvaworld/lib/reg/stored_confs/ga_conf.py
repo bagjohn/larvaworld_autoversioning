@@ -3,7 +3,7 @@ import numpy as np
 
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
-from larvaworld.lib import reg, aux
+from ... import reg, aux
 
 
 __all__ = [
@@ -14,7 +14,7 @@ __all__ = [
 def ga_conf(name, env,mkeys, scene='no_boxes', refID=None, fit_kws={},
             cycle_curve_metrics=[],eval_metrics=aux.AttrDict(), dt=0.1, dur=3, N=30, Nel=3, m0='phasic_explorer',
             m1=None, fitID=None, init='random', excludeID=None):
-    from larvaworld.lib.reg import gen
+    from ...reg import gen
 
 
     conf = gen.Ga(ga_select_kws = gen.GAselector(Nagents=N, Nelits=Nel, base_model=m0, bestConfID=m1,

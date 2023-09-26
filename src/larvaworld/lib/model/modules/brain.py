@@ -1,7 +1,7 @@
 import numpy as np
 
-from larvaworld.lib import reg, aux
-from larvaworld.lib.model import modules
+from ... import reg, aux
+from .. import modules
 
 __all__ = [
     'Brain',

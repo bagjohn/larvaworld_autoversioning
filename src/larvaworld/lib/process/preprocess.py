@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from larvaworld.lib.aux import nam
-from larvaworld.lib import reg, aux
+from ..aux import nam
+from .. import reg, aux
 
 
 __all__ = [

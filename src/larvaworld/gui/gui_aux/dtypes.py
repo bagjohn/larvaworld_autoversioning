@@ -1,7 +1,7 @@
 import numpy as np
 import typing
 
-from larvaworld.lib import reg, aux
+from ...lib import reg, aux
 
 __all__ = [
     'par',

@@ -8,8 +8,8 @@ from matplotlib import pyplot as plt, ticker, patches
 from matplotlib.gridspec import GridSpec
 from scipy.stats import ttest_ind
 
-from larvaworld.lib import reg, aux, plot
-from larvaworld.lib.process.dataset import LarvaDatasetCollection
+from .. import reg, aux, plot
+from ..process.dataset import LarvaDatasetCollection
 
 
 __all__ = [

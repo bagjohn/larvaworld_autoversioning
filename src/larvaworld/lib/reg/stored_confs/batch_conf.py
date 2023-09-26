@@ -1,4 +1,4 @@
-from larvaworld.lib import reg
+from .. import reg
 
 __all__ = [
     'Batch_dict',

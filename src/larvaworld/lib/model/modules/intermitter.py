@@ -3,10 +3,10 @@ import numpy as np
 import pandas as pd
 import param
 
-from larvaworld.lib.model.modules.oscillator import Timer
-from larvaworld.lib import reg, aux, util
-from larvaworld.lib.aux import nam
-from larvaworld.lib.param import PositiveNumber, OptionalPositiveNumber
+from .oscillator import Timer
+from ... import reg, aux, util
+from ...aux import nam
+from ...param import PositiveNumber, OptionalPositiveNumber
 
 __all__ = [
     'Intermitter',

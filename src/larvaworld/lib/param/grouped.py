@@ -4,9 +4,9 @@ import numpy as np
 import param
 from param import Selector,String, ListSelector, Magnitude, Boolean, List
 
-from larvaworld.lib import aux
+from .. import aux
 
-from larvaworld.lib.param import OptionalPositiveNumber, OptionalSelector, PositiveInteger, \
+from ..param import OptionalPositiveNumber, OptionalSelector, PositiveInteger, \
     OptionalPositiveInteger, ClassAttr, NestedConf, PositiveNumber, IntegerRangeOrdered, PositiveIntegerRangeOrdered
 
 

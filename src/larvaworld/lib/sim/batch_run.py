@@ -9,9 +9,9 @@ import numpy as np
 import agentpy as ap
 import pandas as pd
 
-from larvaworld.lib import reg, aux
-from larvaworld.lib.plot.scape import plot_heatmap_PI, plot_3d, plot_3pars, plot_2d
-from larvaworld.lib.sim import ExpRun
+from .. import reg, aux
+from ..plot.scape import plot_heatmap_PI, plot_3pars, plot_2d
+from ..sim import ExpRun
 
 
 __all__ = [

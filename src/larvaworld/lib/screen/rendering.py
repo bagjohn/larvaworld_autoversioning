@@ -5,15 +5,15 @@ import imageio
 import param
 from shapely import geometry
 
-from larvaworld.lib.model import GroupedObject
-from larvaworld.lib.param import Viewable, PositiveRange, PositiveNumber, \
+from ..model import GroupedObject
+from ..param import Viewable, PositiveRange, PositiveNumber, \
     ViewableToggleable, NestedConf, PositiveInteger, Area2DPixel, PosPixelRel2Area, \
     NumericTuple2DRobust, Pos2D, ScreenWindowArea
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
-from larvaworld.lib import aux
+from .. import aux
 
 __all__ = [
     'Viewer',
@@ -22,6 +22,7 @@ __all__ = [
     'LabelledGroupedObject',
     'ScreenTextBoxRect',
     'ScreenMsgText',
+    'ScreenTextBox',
     'SimulationClock',
     'SimulationScale',
     'SimulationState',

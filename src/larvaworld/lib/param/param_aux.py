@@ -11,7 +11,7 @@ else:
 import numpy as np
 from param import Parameterized, Number,NumericTuple,Integer,Selector,String, ListSelector, Range, Magnitude, Boolean,ClassSelector,Parameter, List, Dict
 
-from larvaworld.lib import aux
+from .. import aux
 
 __all__ = [
     'get_vfunc',

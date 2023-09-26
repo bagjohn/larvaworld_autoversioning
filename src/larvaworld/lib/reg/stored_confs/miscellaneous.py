@@ -1,5 +1,5 @@
 import numpy as np
-from larvaworld.lib import reg, aux
+from ... import reg, aux
 
 __all__ = [
     'Trial_dict',

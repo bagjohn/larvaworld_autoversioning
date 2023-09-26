@@ -1,7 +1,7 @@
 from typing import List
 from argparse import ArgumentParser
 import param
-from larvaworld.lib import reg, aux, sim
+from ..lib import reg, aux, sim
 
 __all__ = [
     'SingleParserArgument',
@@ -11,6 +11,7 @@ __all__ = [
 ]
 
 __displayname__ = 'CLI argument parsing classes'
+
 
 class SingleParserArgument:
     """
@@ -566,7 +567,6 @@ class SimModeParser:
             r.run()
 
 
-
 def update_larva_groups(lgs, N=None, mIDs=None, dIDs=None, sample=None):
     """
     Modifies the experiment's configuration larvagroups.
@@ -604,8 +604,6 @@ def update_larva_groups(lgs, N=None, mIDs=None, dIDs=None, sample=None):
             gConf.sample = sample
 
     return lgs
-
-
 
 #
 #

@@ -2,9 +2,9 @@ import numpy as np
 import param
 from scipy import signal
 
-from larvaworld.lib import aux
-from larvaworld.lib.model.modules.basic import StepOscillator
-from larvaworld.lib.param import PositiveNumber, Phase
+from ... import aux
+from .basic import StepOscillator
+from ...param import PositiveNumber, Phase
 
 
 __all__ = [

@@ -3,9 +3,9 @@ import copy
 import os
 
 
-from larvaworld.lib import reg
-from larvaworld.gui import gui_aux
-from larvaworld.gui.tabs import DrawBodyTab
+from ...lib import reg
+from ...gui import gui_aux
+from ...gui.tabs import DrawBodyTab
 
 __all__ = [
     'ModelTab',
@@ -166,7 +166,7 @@ class ModelTab(gui_aux.GuiTab):
 
 
 if __name__ == "__main__":
-    from larvaworld.gui.tabs.larvaworld_gui import LarvaworldGui
+    from .larvaworld_gui import LarvaworldGui
 
     larvaworld_gui = LarvaworldGui(tabs=['larva-model'])
     larvaworld_gui.run()

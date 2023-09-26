@@ -1,7 +1,7 @@
 import numpy as np
 
 
-from larvaworld.lib import reg, aux
+from ... import reg, aux
 
 __all__ = [
     'Exp_dict',
@@ -9,9 +9,9 @@ __all__ = [
 ]
 
 def grouped_exp_dic():
-    from larvaworld.lib.reg import gen
-    from larvaworld.lib.reg.generators import GTRvsS
-    from larvaworld.lib.reg.config import lg,lgs
+    from ...reg import gen
+    from ...reg.generators import GTRvsS
+    from ...reg.config import lg,lgs
 
     def oG(c=1, id='Odor'):
         return gen.Odor(id=id, intensity=2.0 * c, spread=0.0002 * np.sqrt(c)).nestedConf

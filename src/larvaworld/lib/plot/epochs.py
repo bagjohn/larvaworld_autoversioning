@@ -3,9 +3,9 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from larvaworld.lib.aux import nam
+from ..aux import nam
 
-from larvaworld.lib import reg, aux, plot,util
+from .. import reg, aux, plot,util
 
 __all__ = [
     'plot_single_bout',

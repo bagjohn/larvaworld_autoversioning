@@ -3,9 +3,9 @@ import param
 
 from shapely import geometry, Polygon
 
-from larvaworld.lib import aux
+from .. import aux
 
-from larvaworld.lib.param import NestedConf, PositiveNumber, RandomizedPhase, XYLine, \
+from ..param import NestedConf, PositiveNumber, RandomizedPhase, XYLine, \
     PositiveIntegerRange, PositiveRange, NumericTuple2DRobust, IntegerTuple2DRobust, RangeRobust
 
 __all__ = [

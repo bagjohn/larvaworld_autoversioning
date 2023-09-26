@@ -20,14 +20,14 @@ from pint_pandas import PintType
 import copy
 import warnings
 
-from larvaworld.lib.process.dataset import BaseLarvaDataset
+from ..process.dataset import BaseLarvaDataset
 
 warnings.filterwarnings('ignore')
 
 
 #mpd.show_versions()
 # Initialize the larvaworld registry and load the sample dataset
-from larvaworld.lib import reg, aux
+from .. import reg, aux
 
 __all__ = [
     'GeoLarvaDataset',

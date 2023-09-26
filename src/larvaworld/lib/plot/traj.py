@@ -3,8 +3,8 @@ import copy
 import numpy as np
 from matplotlib import pyplot as plt, patches
 
-from larvaworld.lib.aux import nam
-from larvaworld.lib import reg, aux, plot
+from ..aux import nam
+from .. import reg, aux, plot
 
 __all__ = [
     'traj_1group',

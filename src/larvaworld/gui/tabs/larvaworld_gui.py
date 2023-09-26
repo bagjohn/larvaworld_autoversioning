@@ -5,8 +5,8 @@ import time
 
 import pandas as pd
 
-from larvaworld.lib import reg
-from larvaworld.gui import gui_aux, tabs
+from ...lib import reg
+from ...gui import gui_aux, tabs
 
 __all__ = [
     'LarvaworldGui',

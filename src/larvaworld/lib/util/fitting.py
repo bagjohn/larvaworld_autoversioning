@@ -3,7 +3,7 @@ import numpy as np
 from scipy.stats import levy, norm, rv_discrete, ks_2samp
 
 
-from larvaworld.lib import reg, aux
+from .. import reg, aux
 
 __all__ = [
     'fit_epochs',

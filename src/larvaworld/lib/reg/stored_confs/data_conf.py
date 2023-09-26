@@ -1,9 +1,9 @@
 import json
 import os
 
-from larvaworld.lib.aux import nam
-from larvaworld.lib import reg, aux
-from larvaworld.lib.param import Resolution, Filesystem, TrackerOps, PreprocessConf
+from ...aux import nam
+from ... import reg, aux
+from ...param import Resolution, Filesystem, TrackerOps, PreprocessConf
 
 
 __all__ = [

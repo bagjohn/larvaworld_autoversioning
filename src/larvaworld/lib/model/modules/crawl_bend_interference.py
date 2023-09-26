@@ -1,7 +1,7 @@
 import numpy as np
 import param
-from larvaworld.lib import aux
-from larvaworld.lib.param import PhaseRange, Phase
+from ... import aux
+from ...param import PhaseRange, Phase
 
 
 __all__ = [

@@ -6,8 +6,8 @@ from panel.template import DarkTheme
 
 pn.extension()
 
-from larvaworld.lib import reg, aux, model, sim, screen
-from larvaworld.lib.param import SimOps
+from ...lib import reg, aux, model, sim, screen
+from ...lib.param import SimOps
 
 __all__ = [
     'ArenaViewer',

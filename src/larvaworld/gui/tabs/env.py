@@ -1,4 +1,4 @@
-from larvaworld.gui import gui_aux
+from ...gui import gui_aux
 
 __all__ = [
     'EnvTab',
@@ -52,7 +52,7 @@ class EnvTab(gui_aux.GuiTab):
         return l, c, {}, {}
 
 if __name__ == "__main__":
-    from larvaworld.gui.tabs.larvaworld_gui import LarvaworldGui
+    from .larvaworld_gui import LarvaworldGui
     # larvaworld_gui = LarvaworldGui()
     larvaworld_gui = LarvaworldGui(tabs=['env'])
     larvaworld_gui.run()

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import scipy
 
-from larvaworld.lib import reg, aux
+from .. import reg, aux
 
 
 __all__ = [

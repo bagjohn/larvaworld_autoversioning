@@ -4,8 +4,8 @@ import pygame
 from math import atan2, sin, cos
 from shapely import geometry
 
-from larvaworld.lib import aux
-from larvaworld.lib.model.modules.rot_surface import LightSource
+from ... import aux
+from .rot_surface import LightSource
 
 
 

@@ -1,6 +1,6 @@
 
-from larvaworld.lib import reg
-from larvaworld.gui.gui_aux.elements import GuiElement
+from ...lib import reg
+from .elements import GuiElement
 
 __all__ = [
     'GuiTab',

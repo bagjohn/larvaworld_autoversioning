@@ -4,13 +4,13 @@ import numpy as np
 import param
 from param import Boolean, String
 
-from larvaworld.lib.param import NestedConf, PositiveNumber, OptionalSelector, PositiveInteger, Area2DPixel
+from ..param import NestedConf, PositiveNumber, OptionalSelector, PositiveInteger, Area2DPixel
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
-from larvaworld.lib import reg, aux, screen
-from larvaworld.lib.screen import Viewer, SidePanel, ScreenMsgText, SimulationClock, SimulationScale, \
+from .. import reg, aux, screen
+from ..screen import Viewer, SidePanel, ScreenMsgText, SimulationClock, SimulationScale, \
     SimulationState, ScreenTextBoxRect
 
 __all__ = [

@@ -1,10 +1,9 @@
-from larvaworld.lib import reg, aux
-from larvaworld.cli.argparser import SimModeParser
+from ..lib import reg, aux
+from .argparser import SimModeParser
 
 
 def main():
-
-    P=SimModeParser()
+    P = SimModeParser()
     P.parse_args()
     P.configure(show_args=False)
     P.launch()

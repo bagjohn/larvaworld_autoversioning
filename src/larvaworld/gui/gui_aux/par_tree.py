@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from larvaworld.lib import reg
+from ...lib import reg
 
 
 __all__ = [

@@ -1,7 +1,7 @@
 import numpy as np
 import PySimpleGUI as sg
 
-from larvaworld.gui import gui_aux
+from ...gui import gui_aux
 
 __all__ = [
     'DrawBodyTab',
@@ -66,7 +66,7 @@ class DrawBodyTab(gui_aux.DrawTab):
         return l, c, {g1.name: g1}, {self.name: dic}
 
     def update(self, w, c, conf, id):
-        from larvaworld.lib.aux.sim_aux import rearrange_contour
+        from ...lib.aux.sim_aux import rearrange_contour
 
         if conf[self.P] is not None:
             conf[self.P] = rearrange_contour(conf[self.P])
@@ -145,7 +145,7 @@ class DrawBodyTab(gui_aux.DrawTab):
                 dic[self.O][i] = {'fig': f, 'pos': p}
 
     def draw_segs(self, conf, **kwargs):
-        from larvaworld.lib.aux.sim_aux import generate_seg_shapes
+        from ...lib.aux.sim_aux import generate_seg_shapes
 
         dic = self.base_dict
         gg = self.graph

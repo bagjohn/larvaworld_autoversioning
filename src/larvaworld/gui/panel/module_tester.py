@@ -8,8 +8,8 @@ from panel.widgets import EditableRangeSlider
 # from panel.template import DarkTheme
 # from my_template import DarkTheme
 
-from larvaworld.lib import reg, aux, model
-from larvaworld.lib.model.modules import NeuralOscillator
+from ...lib import reg, aux, model
+from ...lib.model.modules import NeuralOscillator
 
 module_class=NeuralOscillator
 module_attrs=['input', 'activation', 'output']

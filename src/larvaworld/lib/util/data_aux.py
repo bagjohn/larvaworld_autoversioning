@@ -4,8 +4,8 @@ import numpy as np
 import param
 
 
-from larvaworld.lib import reg, aux
-from larvaworld.lib.param.param_aux import vpar, get_vfunc
+from .. import reg, aux
+from ..param.param_aux import vpar, get_vfunc
 
 
 __all__ = [

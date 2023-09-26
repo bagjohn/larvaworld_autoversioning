@@ -1,5 +1,5 @@
-from larvaworld.lib import reg, aux, plot
-from larvaworld.lib.process.building import import_datasets
+from ....lib import reg, aux, plot
+from ....lib.process.building import import_datasets
 
 
 kws0 = {

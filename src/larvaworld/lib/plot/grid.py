@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 
-from larvaworld.lib import reg, aux, plot,util
+from .. import reg, aux, plot,util
 
 __all__ = [
     'calibration_plot',

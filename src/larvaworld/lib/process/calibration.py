@@ -9,9 +9,9 @@ from scipy import stats
 from sklearn.linear_model import LinearRegression
 
 
-from larvaworld.lib import reg, aux
-from larvaworld.lib.process.spatial import comp_centroid
-from larvaworld.lib.process.annotation import detect_strides, process_epochs
+from .. import reg, aux
+from ..process.spatial import comp_centroid
+from ..process.annotation import detect_strides, process_epochs
 
 
 __all__ = [
@@ -68,18 +68,18 @@ def comp_stride_variation(s, e, c):
 
 
     if not aux.cols_exist(vels + [cvel],s):
-        from larvaworld.lib.process.spatial import comp_spatial
+        from ..process.spatial import comp_spatial
         comp_centroid(s, c, recompute=False)
         comp_spatial(s, e, c, mode='full')
 
     if not aux.cols_exist(lvels,s):
-        from larvaworld.lib.process.spatial import comp_linear
-        from larvaworld.lib.process.angular import comp_orientations
+        from ..process.spatial import comp_linear
+        from ..process.angular import comp_orientations
         comp_orientations(s, e, c, mode='full')
         comp_linear(s, e, c, mode='full')
 
     if not aux.cols_exist(all_vels,s):
-        from larvaworld.lib.process.spatial import scale_to_length
+        from ..process.spatial import scale_to_length
         scale_to_length(s, e, c, pars=all_vels0)
 
     svels = aux.existing_cols(all_vels,s)

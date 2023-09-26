@@ -1,5 +1,5 @@
 import os
-from larvaworld.lib import reg, aux, plot
+from .. import reg, aux, plot
 
 
 

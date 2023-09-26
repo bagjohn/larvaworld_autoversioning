@@ -1,4 +1,4 @@
-from larvaworld.lib import aux
+from .. import aux
 
 
 

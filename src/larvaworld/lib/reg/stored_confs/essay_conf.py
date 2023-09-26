@@ -1,6 +1,6 @@
 import shutil
 
-from larvaworld.lib import reg, aux
+from ... import reg, aux
 
 __all__ = [
     'Essay_dict',

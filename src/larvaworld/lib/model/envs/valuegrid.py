@@ -6,10 +6,10 @@ import param
 from scipy.ndimage.filters import gaussian_filter
 from shapely import geometry
 
-from larvaworld.lib import aux
-from larvaworld.lib.model import NamedObject
-from larvaworld.lib.param import Substrate, ClassAttr, PositiveNumber, Phase, Viewable, Grid, ViewableNamedGrid
-from larvaworld.lib.screen.rendering import ScreenTextBox
+from ... import aux
+from ...model import NamedObject
+from ...param import Substrate, ClassAttr, PositiveNumber, Phase, Viewable, Grid, ViewableNamedGrid
+from ...screen.rendering import ScreenTextBox
 
 
 __all__ = [

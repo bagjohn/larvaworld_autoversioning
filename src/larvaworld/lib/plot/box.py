@@ -6,7 +6,7 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 from scipy.stats import ttest_ind
 
-from larvaworld.lib import reg, aux, plot
+from .. import reg, aux, plot
 
 __all__ = [
     'boxplot',

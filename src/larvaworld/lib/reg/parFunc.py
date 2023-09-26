@@ -3,9 +3,9 @@ import copy
 import numpy as np
 
 
-from larvaworld.lib.aux import nam
-from larvaworld.lib.reg import funcs
-from larvaworld.lib import aux
+from ..aux import nam
+from ..reg import funcs
+from .. import aux
 
 
 __all__ = [
@@ -31,7 +31,7 @@ __all__ = [
 @funcs.param("track_par")
 def track_par_func(chunk, par):
     def func(d):
-        from larvaworld.lib.process.annotation import track_par_in_chunk
+        from ..process.annotation import track_par_in_chunk
         track_par_in_chunk(d, chunk, par)
 
     return func
@@ -40,14 +40,14 @@ def track_par_func(chunk, par):
 def chunk_func(kc):
     if kc in ['str', 'pau', 'exec', 'str_c', 'run']:
         def func(d):
-            from larvaworld.lib.process.annotation import crawl_annotation
+            from ..process.annotation import crawl_annotation
             s, e, c = d.data
             crawl_annotation(s, e, c, strides_enabled=True)
 
         required_ks = ['a', 'sa', 'ba', 'foa', 'fv']
     elif kc in ['tur', 'Ltur', 'Rtur']:
         def func(d):
-            from larvaworld.lib.process.annotation import turn_annotation
+            from ..process.annotation import turn_annotation
             s, e, c = d.data
             turn_annotation(s, e, c)
 
@@ -62,7 +62,7 @@ def dsp_func(range):
     r0, r1 = range
 
     def func(d):
-        from larvaworld.lib.process.spatial import comp_dispersion
+        from ..process.spatial import comp_dispersion
         s, e, c = d.data
         comp_dispersion(s, e, c,d=d, recompute=True, dsp_starts=[r0], dsp_stops=[r1])
 
@@ -71,7 +71,7 @@ def dsp_func(range):
 @funcs.param("tor")
 def tor_func(dur):
     def func(d):
-        from larvaworld.lib.process.spatial import comp_straightness_index
+        from ..process.spatial import comp_straightness_index
         s, e, c = d.data
         comp_straightness_index(s, e=e, c=c,d=d, dt=c.dt, tor_durs=[dur])
 

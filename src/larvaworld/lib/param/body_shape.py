@@ -7,8 +7,8 @@ import numpy as np
 import param
 from shapely import geometry, ops, affinity
 
-from larvaworld.lib import aux
-from larvaworld.lib.param import LineClosed, XYLine, PositiveInteger, PositiveNumber, MobilePoint, Viewable, \
+from .. import aux
+from ..param import LineClosed, XYLine, PositiveInteger, PositiveNumber, MobilePoint, Viewable, \
     MobileVector
 
 __all__ = [

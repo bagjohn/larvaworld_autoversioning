@@ -4,16 +4,18 @@ import numpy as np
 import param
 from scipy import signal
 
-from larvaworld.lib import aux
-from larvaworld.lib.param import PositiveNumber, RandomizedPhase
+from ...param import PositiveNumber, RandomizedPhase
 
 __all__ = [
     'Timer',
     'Oscillator',
 ]
 
-class Timer(param.Parameterized) :
-    dt = PositiveNumber(0.1, precedence=2,softmax=1.0, step=0.01, label='simulation timestep', doc='The timestep of the simulation in seconds.')
+
+class Timer(param.Parameterized):
+    dt = PositiveNumber(0.1, precedence=2, softmax=1.0, step=0.01, label='simulation timestep',
+                        doc='The timestep of the simulation in seconds.')
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.ticks = 0
@@ -26,7 +28,7 @@ class Timer(param.Parameterized) :
         self.ticks += 1
         self.total_ticks += 1
 
-    @ property
+    @property
     def t(self):
         return self.ticks * self.dt
 
@@ -50,7 +52,7 @@ class Oscillator(Timer):
     freq = PositiveNumber(label='oscillation frequency', doc='The initial frequency of the oscillator.')
     phi = RandomizedPhase(label='orientation', doc='The absolute orientation in space.')
 
-    def __init__(self, random_phi=True, freq_range=None,**kwargs):
+    def __init__(self, random_phi=True, freq_range=None, **kwargs):
         if 'phi' not in kwargs.keys() and not random_phi:
             kwargs['phi'] = 0.0
         self.param.freq.bounds = freq_range
@@ -58,7 +60,7 @@ class Oscillator(Timer):
         self.initial_freq = self.freq
 
         self.iteration_counter = 0
-        #self.complete_iteration = False
+        # self.complete_iteration = False
 
     def set_freq(self, v):
         self.freq = v
@@ -76,10 +78,8 @@ class Oscillator(Timer):
             self.iteration_counter += 1
         self.phi = phi
 
-
     def act_on_complete_iteration(self):
         pass
-
 
     def reset(self):
         # self.ticks = 0
@@ -97,7 +97,3 @@ class Oscillator(Timer):
     @property
     def Act_Phi(self):
         return self.phi
-
-
-
-

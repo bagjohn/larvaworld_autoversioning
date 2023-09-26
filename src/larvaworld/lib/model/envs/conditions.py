@@ -2,7 +2,7 @@ import random
 import numpy as np
 from shapely import geometry
 
-from larvaworld.lib.process.spatial import comp_PI
+from ...process.spatial import comp_PI
 
 
 __all__ = [

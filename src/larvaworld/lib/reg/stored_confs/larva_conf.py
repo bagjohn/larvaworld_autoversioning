@@ -5,7 +5,7 @@ import copy
 
 import numpy as np
 
-from larvaworld.lib import reg, aux
+from ... import reg, aux
 
 __all__ = [
     'Model_dict',

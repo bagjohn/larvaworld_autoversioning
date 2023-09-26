@@ -3,14 +3,9 @@ import random
 
 import numpy as np
 
-from larvaworld.lib.ipc import LarvaMessage
-from larvaworld.lib.ipc.ipc import Client
-
-
-
-
-from larvaworld.lib.model.modules.oscillator import Timer
-
+from ...ipc import LarvaMessage
+from ...ipc.ipc import Client
+from .oscillator import Timer
 
 __all__ = [
     'Memory',
@@ -19,6 +14,7 @@ __all__ = [
     'RLTouchMemory',
     'RemoteBrianModelMemory',
 ]
+
 
 class Memory(Timer):
     def __init__(self, brain, gain, update_dt=2, train_dur=30, **kwargs):
@@ -38,7 +34,7 @@ class Memory(Timer):
     def step(self, dx=None, reward=False, **kwargs):
         if dx is None:
             dx = {}
-        if self.active :
+        if self.active:
             self.count_time()
         return self.gain
 
@@ -178,15 +174,14 @@ class RLTouchMemory(RLmemory):
 
 class RemoteBrianModelMemory(Memory):
 
-    def __init__(self, brain, gain,G=0.001, server_host='localhost', server_port=5795, **kwargs):
+    def __init__(self, brain, gain, G=0.001, server_host='localhost', server_port=5795, **kwargs):
         super().__init__(brain, gain, **kwargs)
         self.server_host = server_host
         self.server_port = server_port
-        self.sim_id =self.brain.agent.model.id
+        self.sim_id = self.brain.agent.model.id
         self.G = G
         self.t_sim = int(self.dt * 1000)
         self.step_id = 0
-
 
     def runRemoteModel(self, model_instance_id, odor_id, t_sim=100, t_warmup=0, concentration=1, **kwargs):
         # T: duration of remote model simulation in ms
@@ -207,24 +202,24 @@ class RemoteBrianModelMemory(Memory):
         # Default message arguments
         if dx is None:
             dx = {}
-        msg_kws0={
-            'model_instance_id' : self.brain.agent.unique_id,
-            't_sim' : self.t_sim,
-            't_warmup' : t_warmup,
+        msg_kws0 = {
+            'model_instance_id': self.brain.agent.unique_id,
+            't_sim': self.t_sim,
+            't_warmup': t_warmup,
         }
 
         # Let's focus on the CS odor only :
-        msg_kws={
+        msg_kws = {
             # Default :
-            'odor_id' : 0,
+            'odor_id': 0,
             # The concentration change :
-            'concentration' : dx['Odor'],
+            'concentration': dx['Odor'],
             # reward as 0 or 1
-            'reward' : int(reward)
+            'reward': int(reward)
 
         }
 
         mbon_dif = self.runRemoteModel(**msg_kws0, **msg_kws)
-        self.gain['Odor']=self.G * mbon_dif
+        self.gain['Odor'] = self.G * mbon_dif
         self.step_id += 1
         return self.gain

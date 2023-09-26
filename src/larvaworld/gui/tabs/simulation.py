@@ -2,10 +2,10 @@ import copy
 import PySimpleGUI as sg
 
 
-from larvaworld.lib import reg, aux, sim
+from ...lib import reg, aux, sim
 
-from larvaworld.gui import gui_aux
-from larvaworld.gui.tabs import DrawEnvTab, EnvTab
+from ...gui import gui_aux
+from ...gui.tabs import DrawEnvTab, EnvTab
 
 __all__ = [
     'SimTab',
@@ -156,7 +156,7 @@ class SimTab(gui_aux.GuiTab):
 
 
 if __name__ == "__main__":
-    from larvaworld.gui.tabs.larvaworld_gui import LarvaworldGui
+    from .larvaworld_gui import LarvaworldGui
     # larvaworld_gui = LarvaworldGui()
     larvaworld_gui = LarvaworldGui(tabs=['sim'])
     larvaworld_gui.run()

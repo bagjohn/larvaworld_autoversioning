@@ -5,7 +5,7 @@ import param
 from param import Parameterized, Number, NumericTuple, Integer, Selector, Range, Magnitude, Boolean, ClassSelector, \
     Parameter, List, Dict, String, DataFrame
 
-from larvaworld.lib import aux
+from .. import aux
 
 __all__ = [
     'StringRobust',

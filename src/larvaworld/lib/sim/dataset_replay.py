@@ -2,14 +2,12 @@ import copy
 import numpy as np
 
 
-from larvaworld.lib import reg, aux, util
-from larvaworld.lib.aux import nam
+from ..import reg, aux, util
+from ..aux import nam
 
-from larvaworld.lib.model import agents, envs
-from larvaworld.lib.param import XYops
-# from larvaworld.lib.process.dataset import RefDataset
-from larvaworld.lib.screen import ScreenManager
-from larvaworld.lib.sim.base_run import BaseRun
+
+from ..screen import ScreenManager
+from ..sim.base_run import BaseRun
 
 
 __all__ = [

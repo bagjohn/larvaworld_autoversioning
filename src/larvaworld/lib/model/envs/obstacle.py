@@ -4,9 +4,9 @@ import param
 from shapely.affinity import affine_transform
 from shapely import geometry
 
-from larvaworld.lib import aux
-from larvaworld.lib.model import NamedObject
-from larvaworld.lib.param import Contour
+from ... import aux
+from ...model import NamedObject
+from ...param import Contour
 
 
 __all__ = [

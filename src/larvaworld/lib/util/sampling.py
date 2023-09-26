@@ -2,9 +2,9 @@ import random
 import numpy as np
 import pandas as pd
 
-import larvaworld
-from larvaworld.lib import reg, aux
-from larvaworld.lib.aux import nam
+
+from .. import reg, aux
+from ..aux import nam
 
 __all__ = [
     'generate_larvae',
@@ -172,7 +172,7 @@ def imitateRef(mID=None, m=None, refID=None, refDataset=None,sample_ks=None, Nid
 
 
 def generate_agentGroup(gID, Nids,imitation=False, distribution=None, **kwargs):
-    from larvaworld.lib.param import generate_xyNor_distro
+    from ..param import generate_xyNor_distro
 
     if not imitation:
 
@@ -306,9 +306,9 @@ lg=None,env_params={}, dir=None, duration=3, dt=1 / 16, color='blue', dataset_id
         'fr': 1 / dt,
         # 'mID': mID,
     }
+    from ..process.dataset import LarvaDataset
 
-
-    d = larvaworld.lib.LarvaDataset(**c_kws, load_data=False)
+    d = LarvaDataset(**c_kws, load_data=False)
 
 
     d.set_data(step=s, end=e)
@@ -322,8 +322,8 @@ lg=None,env_params={}, dir=None, duration=3, dt=1 / 16, color='blue', dataset_id
 
 
 def sim_single_agent(m, Nticks=1000, dt=0.1, df_columns=None, p0=None, fo0=None):
-    from larvaworld.lib.model.modules.locomotor import DefaultLocomotor
-    from larvaworld.lib.model.agents._larva_sim import BaseController
+    from ..model.modules.locomotor import DefaultLocomotor
+    from ..model.agents._larva_sim import BaseController
     if fo0 is None :
         fo0=0.0
     if p0 is None :
@@ -387,6 +387,6 @@ def sim_multi_agents(Nticks, Nids, ms, group_id, dt=0.1, ids=None, p0s=None, fo0
     e['num_ticks'] = Nticks
     e['length'] = [m.body.initial_length for m in ms]
 
-    from larvaworld.lib.process.spatial import scale_to_length
+    from ..process.spatial import scale_to_length
     scale_to_length(s, e, keys=['v'])
     return s, e

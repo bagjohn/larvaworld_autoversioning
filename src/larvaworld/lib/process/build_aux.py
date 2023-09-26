@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from larvaworld.lib import aux
+from .. import aux
 
 __all__ = [
     'df_from_csvs',

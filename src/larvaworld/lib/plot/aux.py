@@ -10,7 +10,7 @@ import seaborn as sns
 from matplotlib import pyplot as plt, patches, transforms
 from scipy.stats import mannwhitneyu
 
-from larvaworld.lib import reg
+from .. import reg
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 

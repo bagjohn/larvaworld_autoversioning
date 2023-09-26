@@ -1,7 +1,7 @@
 import param
 
-from larvaworld.lib import aux
-from larvaworld.lib.param import NestedConf, Named, RadiallyExtended, BoundedArea, LineExtended, LineClosed, \
+from .. import aux
+from ..param import NestedConf, Named, RadiallyExtended, BoundedArea, LineExtended, LineClosed, \
     RandomizedColor, Grid
 
 __all__ = [

@@ -4,8 +4,8 @@ import param
 from scipy.stats import ks_2samp
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
-from larvaworld.lib import reg, aux
-from larvaworld.lib.param import NestedConf
+from .. import reg, aux
+from ..param import NestedConf
 
 
 __all__ = [
@@ -236,7 +236,7 @@ class Evaluation(NestedConf) :
             self.s_shorts = []
         if len(self.cycle_curve_metrics)>0:
             if not hasattr(self.target.config,'pooled_cycle_curves') :
-                from larvaworld.lib.process.annotation import compute_interference
+                from ..process.annotation import compute_interference
                 s, e, c = self.target.data
                 self.target.config.pooled_cycle_curves = compute_interference(s, e, c=c, d=self.target, chunk_dicts=self.target.read('chunk_dicts'))
 
@@ -300,7 +300,7 @@ class Evaluation(NestedConf) :
     @property
     def func_cycle_curve_solo(self):
         def func(ss):
-            from larvaworld.lib.process.annotation import cycle_curve_dict
+            from ..process.annotation import cycle_curve_dict
             c0 = cycle_curve_dict(s=ss, dt=self.target.config.dt, shs=self.cycle_curve_metrics)
             eval_curves = aux.AttrDict(({sh: c0[sh][mode] for sh, mode in self.cycle_modes.items()}))
             return aux.AttrDict(
@@ -311,7 +311,7 @@ class Evaluation(NestedConf) :
     @property
     def func_cycle_curve_multi(self):
         def gfunc(s):
-            from larvaworld.lib.process.annotation import cycle_curve_dict_multi
+            from ..process.annotation import cycle_curve_dict_multi
 
             rss0 = cycle_curve_dict_multi(s=s, dt=self.target.config.dt, shs=self.cycle_curve_metrics)
             rss = aux.AttrDict(

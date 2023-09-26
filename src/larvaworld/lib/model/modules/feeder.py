@@ -1,7 +1,7 @@
 import param
 
-from larvaworld.lib.model.modules.oscillator import Oscillator
-from larvaworld.lib.param import PositiveNumber
+from .oscillator import Oscillator
+from ...param import PositiveNumber
 
 __all__ = [
     'Feeder',

@@ -3,8 +3,8 @@ import powerlaw
 import typing
 import scipy
 
-from larvaworld.lib.aux.par_aux import sub, subsup
-from larvaworld.lib import reg, aux
+from ..aux.par_aux import sub, subsup
+from .. import reg, aux
 
 __all__ = [
     'generate_distro_database',

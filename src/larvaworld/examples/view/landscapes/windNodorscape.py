@@ -1,7 +1,7 @@
 import numpy as np
 
-from larvaworld.lib import reg, aux
-from larvaworld.lib.sim.single_run import ExpRun
+from ....lib import reg, aux
+from ....lib.sim.single_run import ExpRun
 
 exp='Wind&Odorscape visualization'
 

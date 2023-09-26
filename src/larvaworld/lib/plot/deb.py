@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt, ticker
 from scipy import signal
 
 
-from larvaworld.lib import reg, aux, plot
+from .. import reg, aux, plot
 
 __all__ = [
     'plot_gut',

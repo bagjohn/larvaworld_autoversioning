@@ -1,9 +1,9 @@
 import numpy as np
 import param
 
-from larvaworld.lib import aux
-from larvaworld.lib.model.modules.basic import Effector
-from larvaworld.lib.param import PositiveNumber, RangeRobust
+from ... import aux
+from .basic import Effector
+from ...param import PositiveNumber, RangeRobust
 
 
 __all__ = [

@@ -12,8 +12,8 @@ from agentpy.sample import Range, Values
 
 from agentpy.tools import make_list, InfoStr
 
-from larvaworld.lib.model import Object
-from larvaworld.lib import reg, aux
+from ..model import Object
+from .. import reg, aux
 
 __all__ = [
     'BasicABModel',

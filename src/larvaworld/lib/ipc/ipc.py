@@ -29,11 +29,14 @@ __displayname__ = 'Client-Server remote messaging'
 class IPCError(Exception):
     pass
 
+
 class UnknownMessageClass(IPCError):
     pass
 
+
 class InvalidSerialization(IPCError):
     pass
+
 
 class ConnectionClosed(IPCError):
     pass
@@ -54,6 +57,7 @@ def _write_objects(sock, objects):
     data = json.dumps([o.serialize() for o in objects])
     sock.sendall(struct.pack('!i', len(data) + 4))
     sock.sendall(str.encode(data))
+
 
 def _recursive_subclasses(cls):
     classmap = {}
@@ -101,7 +105,7 @@ class Client(object):
         self.addr = server_address
         # print(self.addr)
         # raise
-        if isinstance(self.addr, (str,bytes)):
+        if isinstance(self.addr, (str, bytes)):
             address_family = socket.AF_UNIX
         else:
             address_family = socket.AF_INET
@@ -139,7 +143,7 @@ class Server(socketserver.ThreadingUnixStreamServer):
                         return
                     _write_objects(self.request, callback(results))
 
-        if isinstance(server_address, (str,bytes)):
+        if isinstance(server_address, (str, bytes)):
             self.address_family = socket.AF_UNIX
         else:
             self.address_family = socket.AF_INET

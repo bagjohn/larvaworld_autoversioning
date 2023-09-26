@@ -8,11 +8,10 @@ import warnings
 
 from scipy import interpolate
 
-import larvaworld
-from larvaworld.lib import reg, aux
+from .. import reg, aux
 
-from larvaworld.lib.aux import nam
-from larvaworld.lib.process.build_aux import df_from_csvs, match_larva_ids
+from ..aux import nam
+from ..process.build_aux import df_from_csvs, match_larva_ids
 
 
 __all__ = [
@@ -411,7 +410,8 @@ def build_dataset(labID, id, target_dir, group_id, N=None, sample=None,
         'env_params': g.env_params,
         **g.tracker
     }
-    d = larvaworld.lib.LarvaDataset(**conf)
+    from ..process.dataset import LarvaDataset
+    d = LarvaDataset(**conf)
     kws0 = {
         'dataset': d,
         # **g.filesystem

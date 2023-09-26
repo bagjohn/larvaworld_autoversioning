@@ -2,8 +2,8 @@ import os
 import PySimpleGUI as sg
 
 
-from larvaworld.gui import gui_aux
-from larvaworld.lib import reg, aux
+from ...gui import gui_aux
+from ...lib import reg, aux
 
 __all__ = [
     'table_window',
@@ -161,8 +161,8 @@ def object_menu(selected, **kwargs):
 
 
 def set_kwargs(dic, title='Arguments', type_dict=None, **kwargs):
-    from larvaworld.gui.tabs.larvaworld_gui import check_toggles
-    from larvaworld.gui.gui_aux.elements import SectionDict
+    from ...gui.tabs.larvaworld_gui import check_toggles
+    from .elements import SectionDict
     sec_dict = SectionDict(name=title, dict=dic, type_dict=type_dict)
     l = sec_dict.layout
     l.append([sg.Ok(), sg.Cancel()])
@@ -208,7 +208,7 @@ def set_agent_kwargs(agent, **kwargs):
 
 
 def save_conf_window(conf, conftype, disp=None):
-    from larvaworld.gui.gui_aux.elements import NamedList
+    from .elements import NamedList
     if disp is None:
         disp = conftype
     temp = NamedList('save_conf', key=f'{disp}_ID',
@@ -242,7 +242,7 @@ def delete_conf_window(id, conftype, disp=None) :
 
 
 def add_ref_window():
-    from larvaworld.gui.gui_aux.elements import NamedList
+    from .elements import NamedList
     k = 'ID'
     temp = NamedList('Reference ID : ', key=k, choices=reg.conf.Ref.confIDs, size=(30, 10),
                      select_mode=sg.LISTBOX_SELECT_MODE_EXTENDED, drop_down=False,
@@ -267,8 +267,8 @@ def save_ref_window(d):
 
 
 def import_window(labID, raw_dic):
-    from larvaworld.gui.tabs.larvaworld_gui import check_togglesNcollapsibles
-    from larvaworld.gui.gui_aux.elements import PadDict
+    from ...gui.tabs.larvaworld_gui import check_togglesNcollapsibles
+    from .elements import PadDict
     g = reg.conf.LabFormat.get(labID)
     group_dir = g.path
     raw_folder = f'{group_dir}/raw'
@@ -336,7 +336,7 @@ def import_window(labID, raw_dic):
                     # 'larva_groups': {gID: preg.get_null('LarvaGroup', sample=None)},
                     **conf}
                 w.close()
-                from larvaworld.lib.process.building import build_dataset
+                from ...lib.process.building import build_dataset
                 targets = [f.replace(raw_folder, proc_folder) for f in raw_dirs]
                 if not merge:
                     print(f'------ Building {N} discrete datasets ------')
@@ -425,7 +425,7 @@ def change_dataset_id(dic, old_ids):
 
 
 def entry_window(index, dict_name, base_dict={}, id=None, **kwargs):
-    from larvaworld.gui.gui_aux.elements import PadDict
+    from .elements import PadDict
     c0 = PadDict(dict_name)
     l0 = c0.get_layout(pad=(20, 20))
     lID = [sg.T(f'{index}:', **gui_aux.t_kws(10), tooltip='The ID of the new entry'),

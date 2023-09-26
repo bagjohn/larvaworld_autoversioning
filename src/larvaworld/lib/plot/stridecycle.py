@@ -3,8 +3,8 @@ import os
 import numpy as np
 from matplotlib import pyplot as plt, ticker, cm
 
-from larvaworld.lib.aux import nam
-from larvaworld.lib import reg, aux, plot
+from ..aux import nam
+from .. import reg, aux, plot
 
 
 
@@ -96,7 +96,7 @@ def plot_vel_during_strides(dataset, use_component=False, save_to=None, return_f
 @reg.funcs.graph('stride cycle', required={'ks':['sv', 'fov', 'rov', 'foa', 'b']})
 def stride_cycle(name=None, shorts=['sv', 'fov', 'rov', 'foa', 'b'], modes=None, subfolder='stride',
                  Nbins=64, individuals=False, pooled=True,title='Stride cycle analysis', **kwargs):
-    from larvaworld.lib.process.annotation import compute_interference
+    from ..process.annotation import compute_interference
     if name is None:
         if individuals:
             name = f'stride_cycle_curves_all_larvae'
@@ -164,8 +164,7 @@ def stride_cycle_all_points(name='stride cycle multi',  idx=0, Nbins=64, short='
     pi2 = 2 * np.pi
     x = np.linspace(0, pi2, Nbins)
 
-    from larvaworld.lib.process.annotation import stride_interp
-    from larvaworld.lib.process.annotation import detect_strides
+    from ..process.annotation import stride_interp,detect_strides
     l, sv, fv, fov = reg.getPar(['l', 'sv', 'fv', 'fov'])
 
 

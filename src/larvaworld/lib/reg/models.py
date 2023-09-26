@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 import param
 
-from larvaworld.lib.aux.par_aux import sub, subsup, circle, bar, tilde, sup
-from larvaworld.lib import reg, aux, util
+from ..aux.par_aux import sub, subsup, circle, bar, tilde, sup
+from .. import reg, aux, util
 
 
 __all__ = [
@@ -32,7 +32,7 @@ def arrange_index_labels(index):
 
 
 def init_brain_modules():
-    from larvaworld.lib.model import modules
+    from ..model import modules
     def Tur0():
 
 
@@ -1085,7 +1085,7 @@ class ModelRegistry:
         m0.body.length = epar(e, 'l', average=True, Nround=5)
 
         reg.conf.Model.setID(mID, m0)
-        from larvaworld.lib.sim.genetic_algorithm import optimize_mID
+        from ..sim.genetic_algorithm import optimize_mID
         entry = optimize_mID(mID0=mID, space_mkeys=space_mkeys, dt=c.dt, refID=refID,
                              id=mID, dir=dir, **kwargs)
         return entry

@@ -302,7 +302,7 @@ def get_larva_dicts(ls, validIDs=None):
         if hasattr(l, 'deb') and l.deb is not None:
             deb_dicts[id] = l.deb.finalize_dict()
         try:
-            from larvaworld.lib.model.modules.nengobrain import NengoBrain
+            from ..model.modules.nengobrain import NengoBrain
             if isinstance(l.brain, NengoBrain):
                 if l.brain.dict is not None:
                     nengo_dicts[id] = l.brain.dict

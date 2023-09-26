@@ -4,10 +4,12 @@ import seaborn as sns
 from matplotlib import cm, pyplot as plt
 from scipy.stats import multivariate_normal
 
-from larvaworld.lib import reg, aux, plot
+from .. import reg, aux, plot
 
 __all__ = [
     'plot_odorscape',
+    'plot_2d',
+    'plot_3pars',
     'odorscape_isocontours',
     'odorscape_with_sample_tracks',
     'plot_heatmap_PI',

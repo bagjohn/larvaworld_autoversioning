@@ -15,9 +15,8 @@ import numpy as np
 import PySimpleGUI as sg
 import matplotlib.pyplot as plt
 
-import larvaworld
-from larvaworld.lib import reg, aux
-from larvaworld.gui import gui_aux
+from ...lib import reg, aux
+from ...gui import gui_aux
 
 __all__ = [
     'SYMBOL_UP',
@@ -988,7 +987,7 @@ class CollapsibleDict(Collapsible):
     def __init__(self, name, dict_name=None, type_dict=None, value_kws={}, text_kws={}, as_entry=None,
                  subdict_state=False, **kwargs):
         if type_dict is None:
-            from larvaworld.gui.gui_aux.dtypes import par,par_dict
+            from dtypes import par,par_dict
             entry = par(name=as_entry, dtype=str, v='Unnamed') if as_entry is not None else {}
             if dict_name is None:
                 dict_name = name
@@ -1119,7 +1118,7 @@ class PadDict(PadElement):
         if col_idx is not None:
             Ncols = len(col_idx)
         if type_dict is None :
-            from larvaworld.gui.gui_aux.dtypes import par_dict
+            from dtypes import par_dict
             D = reg.par.PI
             if self.dict_name in D.keys() :
                 type_dict = par_dict(d0=D[self.dict_name])
@@ -1773,6 +1772,7 @@ class GuiTreeData(sg.TreeData):
 
 
 def detect_dataset(labID=None, path=None, raw=True, **kwargs):
+    from ...lib import LarvaDataset
     dic = {}
     if path in ['', None]:
         return dic
@@ -1811,12 +1811,12 @@ def detect_dataset(labID=None, path=None, raw=True, **kwargs):
         return dic
     else:
         if os.path.exists(f'{path}/data'):
-            dd = larvaworld.lib.LarvaDataset(dir=path)
+            dd = LarvaDataset(dir=path)
             dic[dd.id] = dd
         else:
             for ddr in [x[0] for x in os.walk(path)]:
                 if os.path.exists(f'{ddr}/data'):
-                    dd = larvaworld.lib.LarvaDataset(dir=ddr)
+                    dd = LarvaDataset(dir=ddr)
                     dic[dd.id] = dd
         return dic
 

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from larvaworld.lib import reg, aux, plot, util
+from .. import reg, aux, plot, util
 
 
 __all__ = [

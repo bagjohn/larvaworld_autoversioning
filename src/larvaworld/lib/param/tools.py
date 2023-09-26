@@ -1,6 +1,6 @@
 
-from larvaworld.lib import aux
-from larvaworld.lib.param import Larva_Distro, Spatial_Distro, ClassAttr, NestedConf
+from .. import aux
+from ..param import Larva_Distro, Spatial_Distro, ClassAttr, NestedConf
 
 __all__ = [
     'class_generator',

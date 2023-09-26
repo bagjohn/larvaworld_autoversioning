@@ -4,8 +4,8 @@ import param
 from shapely import geometry
 from shapely.geometry import Point,Polygon
 
-from larvaworld.lib import aux
-from larvaworld.lib.param.drawable import ViewableNamedBoundedArea
+from ... import aux
+from ...param.drawable import ViewableNamedBoundedArea
 
 __all__ = [
     'Arena',

@@ -1,6 +1,6 @@
 import param
 
-from larvaworld.lib.param import NestedConf
+from ..param import NestedConf
 
 
 

@@ -1,7 +1,7 @@
 import numpy as np
 import param
 
-from larvaworld.lib.param import NestedConf, PositiveInteger
+from ..param import NestedConf, PositiveInteger
 
 
 

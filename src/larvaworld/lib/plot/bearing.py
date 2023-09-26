@@ -1,7 +1,7 @@
 import numpy as np
 
-from larvaworld.lib import reg, plot
-from larvaworld.lib.aux import nam
+from .. import reg, plot
+from ..aux import nam
 
 __all__ = [
     'plot_turn_Dbearing',

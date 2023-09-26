@@ -8,8 +8,8 @@ import warnings
 
 import param
 
-from larvaworld.lib import reg, aux
-from larvaworld.lib.param import ClassAttr, StepDataFrame, EndpointDataFrame, ClassDict
+from .. import reg, aux
+from ..param import ClassAttr, StepDataFrame, EndpointDataFrame, ClassDict
 
 __all__ = [
     'ParamLarvaDataset',
@@ -17,6 +17,7 @@ __all__ = [
     'LarvaDataset',
     'LarvaDatasetCollection',
     'convert_group_output_to_dataset',
+    'h5_kdic',
 ]
 
 class ParamLarvaDataset(param.Parameterized):
@@ -303,7 +304,7 @@ class BaseLarvaDataset(ParamLarvaDataset):
     def initGeo(to_Geo=False,**kwargs):
         if to_Geo:
             try:
-                from larvaworld.lib.process.dataset_geo import GeoLarvaDataset
+                from ..process.dataset_geo import GeoLarvaDataset
                 return GeoLarvaDataset(**kwargs)
             except :
                 pass
@@ -611,7 +612,7 @@ class LarvaDataset(BaseLarvaDataset):
     #     return ds
 
     def visualize(self,parameters={}, **kwargs):
-        from larvaworld.lib.sim.dataset_replay import ReplayRun
+        from ..sim.dataset_replay import ReplayRun
         kwargs['dataset'] = self
         rep = ReplayRun(parameters=parameters, **kwargs)
         rep.run()
