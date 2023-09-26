@@ -3,8 +3,7 @@ import numpy as np
 import pandas as pd
 import scipy as sp
 
-from larvaworld.lib.aux import nam
-
+from . import nam
 
 __all__ = [
     'comp_bearing',
@@ -35,6 +34,7 @@ __all__ = [
 
 ]
 
+
 def comp_bearing(xs, ys, ors, loc=(0.0, 0.0), in_deg=True):
     x0, y0 = loc
     dxs = x0 - np.array(xs)
@@ -44,18 +44,19 @@ def comp_bearing(xs, ys, ors, loc=(0.0, 0.0), in_deg=True):
     drads[drads > 180] -= 360
     return drads if in_deg else np.deg2rad(rads)
 
+
 def compute_dispersal_solo(xy):
     if isinstance(xy, pd.DataFrame):
         xy = xy.values
     N = xy.shape[0]
-    valid_idx=np.where(~np.isnan(xy))[0]
-    if valid_idx.shape[0]<N*0.2 or valid_idx[0]>N*0.1 or valid_idx[-1]<N*0.9 :
+    valid_idx = np.where(~np.isnan(xy))[0]
+    if valid_idx.shape[0] < N * 0.2 or valid_idx[0] > N * 0.1 or valid_idx[-1] < N * 0.9:
         return np.zeros(N) * np.nan
     else:
         return eudi5x(xy, xy[valid_idx[0]])
 
 
-def compute_dispersal_multi(xy0, t0,t1,dt):
+def compute_dispersal_multi(xy0, t0, t1, dt):
     s0 = int(t0 / dt)
     s1 = int(t1 / dt)
     xy = xy0.loc[(slice(s0, s1), slice(None)), ['x', 'y']]
@@ -65,11 +66,11 @@ def compute_dispersal_multi(xy0, t0,t1,dt):
     N = xy0.index.unique('AgentID').values.shape[0]
     Nticks = xy0.index.unique('Step').size
 
-
     AA0 = np.zeros([Nticks, N]) * np.nan
     AA0[s0:s0 + Nt, :] = AA
 
     return AA0.flatten(), Nt
+
 
 def raw_or_filtered_xy(s, points):
     r = nam.xy(points, flat=True)
@@ -127,9 +128,6 @@ def compute_velocity_threshold(v, Nbins=500, max_v=None, kernel_width=0.02):
     return minimum
 
 
-
-
-
 def get_display_dims():
     import pygame
     pygame.init()
@@ -178,7 +176,6 @@ def circle_to_polygon(N, r):
          np.cos(one_segment * i) * r)
         for i in range(N)]
 
-
     return points
 
 
@@ -203,7 +200,7 @@ def concat_datasets(ddic, key='end', unit='sec'):
                 df = d.step_data
             except:
                 df = d.read('step')
-        else :
+        else:
             raise
         df['DatasetID'] = l
         df['GroupID'] = d.group_id
@@ -223,7 +220,6 @@ def moving_average(a, n=3):
     return np.convolve(a, np.ones((n,)) / n, mode='same')
 
 
-
 def body_contour(points=[(0.9, 0.1), (0.05, 0.1)], start=(1, 0), stop=(0, 0)):
     xy = np.zeros([len(points) * 2 + 2, 2]) * np.nan
     xy[0, :] = start
@@ -233,8 +229,6 @@ def body_contour(points=[(0.9, 0.1), (0.05, 0.1)], start=(1, 0), stop=(0, 0)):
         xy[1 + i, :] = x, y
         xy[-1 - i, :] = x, -y
     return xy
-
-
 
 
 def apply_per_level(s, func, level='AgentID', **kwargs):
@@ -250,8 +244,6 @@ def apply_per_level(s, func, level='AgentID', **kwargs):
         A : Array of dimensions [Nticks, Nids]
     '''
 
-
-
     def init_A(Ndims):
         ids = s.index.unique('AgentID').values
         Nids = len(ids)
@@ -265,67 +257,70 @@ def apply_per_level(s, func, level='AgentID', **kwargs):
             raise ValueError('Not implemented')
         return A
 
-
-    A=None
+    A = None
 
     for i, (v, ss) in enumerate(s.groupby(level=level)):
 
         ss = ss.droplevel(level)
-        Ai=func(ss, **kwargs)
-        if A is None :
-            A=init_A(len(Ai.shape))
+        Ai = func(ss, **kwargs)
+        if A is None:
+            A = init_A(len(Ai.shape))
             # print(i,'ff')
-        if level=='AgentID' :
+        if level == 'AgentID':
             A[:, i] = Ai
-        elif level=='Step' :
+        elif level == 'Step':
             A[i, :] = Ai
     # print(s)
     return A
 
-def unwrap_deg(a) :
 
-    if isinstance(a, pd.Series) :
-        a=a.values
+def unwrap_deg(a):
+    if isinstance(a, pd.Series):
+        a = a.values
     b = np.copy(a)
     b[~np.isnan(b)] = np.unwrap(b[~np.isnan(b)] * np.pi / 180) * 180 / np.pi
     return b
 
-def unwrap_rad(a) :
 
-    if isinstance(a, pd.Series) :
-        a=a.values
+def unwrap_rad(a):
+    if isinstance(a, pd.Series):
+        a = a.values
     b = np.copy(a)
     b[~np.isnan(b)] = np.unwrap(b[~np.isnan(b)])
     return b
 
-def rate(a, dt) :
-    if isinstance(a, pd.Series) :
-        a=a.values
+
+def rate(a, dt):
+    if isinstance(a, pd.Series):
+        a = a.values
     v = np.diff(a) / dt
     return np.insert(v, 0, np.nan)
 
-def eudist(xy) :
+
+def eudist(xy):
     if isinstance(xy, pd.DataFrame):
         xy = xy.values
-    A= np.sqrt(np.nansum(np.diff(xy, axis=0)**2, axis=1))
+    A = np.sqrt(np.nansum(np.diff(xy, axis=0) ** 2, axis=1))
     A = np.insert(A, 0, 0)
     return A
+
 
 def eudi5x(a, b):
     return np.sqrt(np.sum((a - np.array(b)) ** 2, axis=1))
 
-def eudiNxN(a,b) :
-    b=np.array(b)
-    return np.sqrt(np.sum(np.array([a-b[i] for i in range(b.shape[0])]) ** 2, axis=2))
 
-def compute_dst(s,point='') :
+def eudiNxN(a, b):
+    b = np.array(b)
+    return np.sqrt(np.sum(np.array([a - b[i] for i in range(b.shape[0])]) ** 2, axis=2))
+
+
+def compute_dst(s, point=''):
     s[nam.dst(point)] = apply_per_level(s[nam.xy(point)], eudist).flatten()
 
 
-
-def comp_extrema(a, order=3, threshold=None, return_2D=True) :
-    A=a.values
-    N=A.shape[0]
+def comp_extrema(a, order=3, threshold=None, return_2D=True):
+    A = a.values
+    N = A.shape[0]
     i_min = sp.signal.argrelextrema(A, np.less_equal, order=order)[0]
     i_max = sp.signal.argrelextrema(A, np.greater_equal, order=order)[0]
 
@@ -340,13 +335,12 @@ def comp_extrema(a, order=3, threshold=None, return_2D=True) :
         i_min = i_min[a.loc[i_min + t0] < thr_min]
         i_max = i_max[a.loc[i_max + t0] > thr_max]
 
-    if return_2D :
+    if return_2D:
         aa = np.zeros([N, 2]) * np.nan
         aa[i_min, 0] = True
         aa[i_max, 1] = True
-    else :
+    else:
         aa = np.zeros(N) * np.nan
         aa[i_min] = -1
         aa[i_max] = 1
     return aa
-

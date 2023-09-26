@@ -1,13 +1,10 @@
-
-import math
 import random
 import numpy as np
-import pandas as pd
 from numpy import ndarray
 from shapely import geometry, ops
-from typing import Optional, List
+from typing import Optional
 
-from larvaworld.lib import aux
+from .. import aux
 
 __all__ = [
     'LvsRtoggle',
@@ -35,8 +32,6 @@ def LvsRtoggle(side):
 #     return all([tank_polygon.contains(geometry.Point(x, y)) for x, y in points])
 
 
-
-
 def rearrange_contour(ps0):
     ps_plus = [p for p in ps0 if p[1] >= 0]
     ps_plus.sort(key=lambda x: x[0], reverse=True)
@@ -44,12 +39,13 @@ def rearrange_contour(ps0):
     ps_minus.sort(key=lambda x: x[0], reverse=False)
     return ps_plus + ps_minus
 
+
 def get_tank_polygon(c, k=0.97, return_polygon=True):
     p = c.env_params.arena
     X, Y = p.dims
     try:
         shape = p.geometry
-    except :
+    except:
         shape = p.shape
     if shape == 'circular':
         # This is a circle_to_polygon shape from the function
@@ -182,11 +178,8 @@ class Collision(Exception):
         self.object2 = object2
 
 
-
-
-
-def generate_seg_shapes(Nsegs: int, points:ndarray, seg_ratio: Optional[ndarray] = None,
-                 centered: bool = True, closed: bool = False) -> ndarray:
+def generate_seg_shapes(Nsegs: int, points: ndarray, seg_ratio: Optional[ndarray] = None,
+                        centered: bool = True, closed: bool = False) -> ndarray:
     """
     Segments a body into equal-length or given-length segments via vertical lines.
 
@@ -247,8 +240,6 @@ def generate_seg_shapes(Nsegs: int, points:ndarray, seg_ratio: Optional[ndarray]
     return np.array(ps)
 
 
-
-
 # def generate_seg_positions(N, pos, orientation, l,ratio=None) :
 #     x,y=pos
 #     if ratio is None:
@@ -274,10 +265,6 @@ def generate_seg_shapes(Nsegs: int, points:ndarray, seg_ratio: Optional[ndarray]
 #                            base_seg_ratio=ratio[i], body_length=l, **kws) for i in range(N)]
 
 
-
-
-
-
 # def set_contour(segs, Ncontour=22):
 #     vertices = [np.array(seg.vertices) for seg in segs]
 #     l_side = aux.flatten_list([v[:int(len(v) / 2)] for v in vertices])
@@ -292,7 +279,6 @@ def generate_seg_shapes(Nsegs: int, points:ndarray, seg_ratio: Optional[ndarray]
 #     return contour
 
 def sense_food(pos, sources=None, grid=None, radius=None):
-
     if grid:
         cell = grid.get_grid_cell(pos)
         if grid.grid[cell] > 0:
@@ -311,16 +297,16 @@ def get_larva_dicts(ls, validIDs=None):
     nengo_dicts = {}
     bout_dicts = {}
     for id, l in ls.items():
-        if validIDs and id not in validIDs :
+        if validIDs and id not in validIDs:
             continue
         if hasattr(l, 'deb') and l.deb is not None:
             deb_dicts[id] = l.deb.finalize_dict()
-        try :
+        try:
             from larvaworld.lib.model.modules.nengobrain import NengoBrain
             if isinstance(l.brain, NengoBrain):
                 if l.brain.dict is not None:
                     nengo_dicts[id] = l.brain.dict
-        except :
+        except:
             pass
         if l.brain.locomotor.intermitter is not None:
             bout_dicts[id] = l.brain.locomotor.intermitter.build_dict()
@@ -331,22 +317,23 @@ def get_larva_dicts(ls, validIDs=None):
 
     return aux.AttrDict({k: v for k, v in dic0.items() if len(v) > 0})
 
-def get_step_slice(s,e,dt, pars=None, t0=0, t1=40, track_t0_min=0, track_t1_min=0, ids=None):
+
+def get_step_slice(s, e, dt, pars=None, t0=0, t1=40, track_t0_min=0, track_t1_min=0, ids=None):
     s0, s1 = int(t0 / dt), int(t1 / dt)
     trange = np.arange(s0, s1, 1)
 
-    if aux.cols_exist(['t0','t1'], e):
+    if aux.cols_exist(['t0', 't1'], e):
         tmin = track_t0_min + t0
         tmax = t1 - track_t1_min
         valid_ids = e[(e['t0'] <= tmin) & (e['t1'] >= tmax)].index
-        if ids :
-            valid_ids=aux.existing_cols(valid_ids, ids)
-        if pars :
+        if ids:
+            valid_ids = aux.existing_cols(valid_ids, ids)
+        if pars:
             return s.loc[(trange, valid_ids), pars]
         else:
             return s.loc[(trange, valid_ids), :]
     else:
-        if pars :
+        if pars:
             if ids:
                 return s.loc[(trange, ids), pars]
             else:
@@ -356,6 +343,7 @@ def get_step_slice(s,e,dt, pars=None, t0=0, t1=40, track_t0_min=0, track_t1_min=
                 return s.loc[(trange, ids), :]
             else:
                 return s.loc[(trange, slice(None)), :]
+
 
 def index_unique(df, level='Step', ascending=True, as_array=False):
     """
@@ -373,6 +361,3 @@ def index_unique(df, level='Step', ascending=True, as_array=False):
         return a.values
     else:
         return a
-
-
-
