@@ -2,7 +2,6 @@
 The available tabs in larvaworld GUI
 """
 
-
 from .analysis import AnalysisTab
 from .batch_run import BatchTab
 from .body_draw import DrawBodyTab

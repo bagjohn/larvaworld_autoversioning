@@ -67,6 +67,8 @@ pygments_style = 'friendly'
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
+autoapi_generate_api_docs = True
+autoapi_keep_files = False
 autoapi_dirs = ["../../src/larvaworld"]  # location to parse for API reference
 html_theme = "sphinx_rtd_theme"
 html_static_path = ['_static']
