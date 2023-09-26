@@ -1,5 +1,11 @@
+"""
+Interface between a larvaworld simulation and a remote model
+"""
 
 from .ipc import Server, Client
+
+__displayname__ = 'Client-Server'
+
 
 class LarvaMessage(ipc.Message):
     def __init__(self, sim_id, model_id, **params):
