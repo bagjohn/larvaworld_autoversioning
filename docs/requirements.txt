@@ -1,6 +1,5 @@
 # For building the documentation:
 gendocs
-# mock
 sphinx
 myst-nb
 sphinx-autobuild
@@ -12,7 +11,7 @@ sphinx-autoapi
 #numpy
 #panel
 #holoviews
-larvaworld
+#larvaworld
 #libgeos-dev
 # sphinxcontrib-napoleon
 # sphinxcontrib-#websupport

@@ -42,6 +42,19 @@ extensions = [
     # "autodocsumm",  # to generate tables of functions, attributes, methods, etc.
 ]
 
+# Napoleon settings
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
+napoleon_include_init_with_doc = True
+napoleon_include_private_with_doc = True
+napoleon_include_special_with_doc = True
+napoleon_use_admonition_for_examples = False
+napoleon_use_admonition_for_notes = False
+napoleon_use_admonition_for_references = False
+napoleon_use_ivar = False
+napoleon_use_param = True
+napoleon_use_rtype = True
+
 source_suffix = {
     '.rst': 'restructuredtext',
     '.txt': 'restructuredtext',
@@ -64,19 +77,20 @@ language = 'en'
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'friendly'
 
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
 autoapi_generate_api_docs = True
-autoapi_keep_files = False
+autoapi_keep_files = True
 autoapi_dirs = ["../../src/larvaworld"]  # location to parse for API reference
-html_theme = "sphinx_rtd_theme"
-html_static_path = ['_static']
+autoapi_root = 'api'
 
 # don't include docstrings from the parent class
 autodoc_inherit_docstrings = False
 # Show types only in descriptions, not in signatures
 autodoc_typehints = "description"
+
+# -- Options for HTML output -------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
+html_theme = "sphinx_rtd_theme"
+html_static_path = ['_static']
 
 append_material = """
 
@@ -87,6 +101,19 @@ append_material = """
 
    about-examples.rst
    examples/index
+   
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorials
+   :hidden:
+
+   tutorials/theoretical_background.ipynb
+   tutorials/tutorial.ipynb
+   tutorials/walkthrough.ipynb
+   
+   tutorials/registry.ipynb
+   tutorials/model_calibration.ipynb
+   tutorials/drosophila_larva_foraging.ipynb
 
 """
 
