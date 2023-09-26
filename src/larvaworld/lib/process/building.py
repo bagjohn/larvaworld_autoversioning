@@ -13,7 +13,6 @@ from .. import reg, aux
 from ..aux import nam
 from ..process.build_aux import df_from_csvs, match_larva_ids
 
-
 __all__ = [
     'build_Jovanic',
     'build_Schleyer',
@@ -24,15 +23,14 @@ __all__ = [
     'build_dataset',
 ]
 
+
 def interpolate_step_data(df, dt):
     t = 't'
-    step='Step'
+    step = 'Step'
     aID = 'AgentID'
 
-
-
     s = copy.deepcopy(df)
-    s[step] = s[t]/dt
+    s[step] = s[t] / dt
     Nticks = int(np.ceil(s[step].max()))
     s.reset_index(drop=False, inplace=True)
     s.set_index(keys=[step, aID], inplace=True, drop=True, verify_integrity=False)
@@ -50,7 +48,8 @@ def interpolate_step_data(df, dt):
         float_ticks_j = dff.index
         ticks_j = np.arange(int(np.floor(float_ticks_j.min())), int(np.ceil(float_ticks_j.max())), 1)
         for i, p in enumerate(ps):
-            f = interpolate.interp1d(x=float_ticks_j.values, y=dff[p].loc[float_ticks_j].values, fill_value='extrapolate',
+            f = interpolate.interp1d(x=float_ticks_j.values, y=dff[p].loc[float_ticks_j].values,
+                                     fill_value='extrapolate',
                                      assume_sorted=True)
             A[ticks_j, j, i] = f(ticks_j)
     A = A.reshape([-1, len(ps)])
@@ -58,13 +57,14 @@ def interpolate_step_data(df, dt):
     df_new.sort_index(level=[step, aID], inplace=True)
     return df_new
 
-def build_Jovanic(dataset,  source_id,source_dir,
-                  max_Nagents=None, min_duration_in_sec=0.0,time_slice=None, match_ids=True,**kwargs):
+
+def build_Jovanic(dataset, source_id, source_dir,
+                  max_Nagents=None, min_duration_in_sec=0.0, time_slice=None, match_ids=True, **kwargs):
     d = dataset
 
     def init_endpoint_data(df, dt):
         g = df['t'].groupby(level='AgentID')
-        t0, t1,Nts, cum_t = reg.getPar(['t0', 't_fin','N_ts', 'cum_t'])
+        t0, t1, Nts, cum_t = reg.getPar(['t0', 't_fin', 'N_ts', 'cum_t'])
         tick0, tick1, Nticks = reg.getPar(['tick0', 'tick_fin', 'N_ticks'])
         e = pd.concat(dict(zip([t0, t1, Nts], [g.first(), g.last(), g.count()])), axis=1)
         e[cum_t] = e[t1] - e[t0]
@@ -85,12 +85,12 @@ def build_Jovanic(dataset,  source_id,source_dir,
 
     print(f'*---- Buiding dataset {d.id} of group {d.group_id}!-----')
 
-    df = df_from_csvs(pref=f'{source_dir}/{source_id}',Npoints =d.config.Npoints, Ncontour =d.config.Ncontour,
-                      max_Nagents=max_Nagents, min_duration_in_sec=min_duration_in_sec,time_slice=time_slice)
+    df = df_from_csvs(pref=f'{source_dir}/{source_id}', Npoints=d.config.Npoints, Ncontour=d.config.Ncontour,
+                      max_Nagents=max_Nagents, min_duration_in_sec=min_duration_in_sec, time_slice=time_slice)
 
     e = init_endpoint_data(df=df, dt=d.dt)
 
-    if match_ids :
+    if match_ids:
         comp_length(df, e)
         df = match_larva_ids(s=df, e=e, pars=['head_x', 'head_y'])
         e = init_endpoint_data(df=df, dt=d.dt)
@@ -101,9 +101,8 @@ def build_Jovanic(dataset,  source_id,source_dir,
     return s, e
 
 
-def build_Schleyer(dataset, source_dir,save_mode='semifull',
+def build_Schleyer(dataset, source_dir, save_mode='semifull',
                    max_Nagents=None, min_end_time_in_sec=0, min_duration_in_sec=0, start_time_in_sec=0, **kwargs):
-
     def read_Schleyer_metadata(dir):
         meta_filename = os.path.join(dir, 'vidAndLogs/metadata.txt')
         dictionary = {}
@@ -151,21 +150,21 @@ def build_Schleyer(dataset, source_dir,save_mode='semifull',
     build_conf = g.filesystem
 
     d = dataset
-    dt=d.dt
+    dt = d.dt
     cols0 = build_conf.read_sequence
     raw_fs = []
     inv_xs = []
-    if type(source_dir)==str :
-        source_dir=[source_dir]
+    if type(source_dir) == str:
+        source_dir = [source_dir]
     for i, f in enumerate(source_dir):
 
         fs = [os.path.join(f, n) for n in os.listdir(f) if n.endswith('.csv')]
         raw_fs += fs
 
-        if build_conf.read_metadata :
-            try :
+        if build_conf.read_metadata:
+            try:
                 inv_xs += get_invert_x_array(read_Schleyer_metadata(f), len(fs))
-            except :
+            except:
                 pass
     if len(inv_xs) == 0:
         inv_xs = [False] * len(raw_fs)
@@ -175,8 +174,8 @@ def build_Schleyer(dataset, source_dir,save_mode='semifull',
     elif save_mode == 'minimal':
         cols1 = nam.xy(d.point)
     elif save_mode == 'semifull':
-        N,Nc=d.Npoints, d.Ncontour
-        cols1 = nam.midline_xy(N, flat=True) + nam.contour_xy(Nc, flat=True)+ ['collision_flag']
+        N, Nc = d.Npoints, d.Ncontour
+        cols1 = nam.midline_xy(N, flat=True) + nam.contour_xy(Nc, flat=True) + ['collision_flag']
 
     elif save_mode == 'points':
         cols1 = nam.xy(d.points, flat=True) + ['collision_flag']
@@ -189,8 +188,8 @@ def build_Schleyer(dataset, source_dir,save_mode='semifull',
         df = pd.read_csv(f, header=None, index_col=0, names=cols0)
 
         # If indexing is in strings replace with ascending floats
-        if all([type(ii)==str for ii in df.index.values]) :
-            df.reset_index(inplace=True,drop=True)
+        if all([type(ii) == str for ii in df.index.values]):
+            df.reset_index(inplace=True, drop=True)
         if len(df) >= int(min_duration_in_sec / dt) and df.index.max() >= int(min_end_time_in_sec / dt):
             df = df[df.index >= int(start_time_in_sec / dt)]
             df = df[cols1]
@@ -211,12 +210,16 @@ def build_Schleyer(dataset, source_dir,save_mode='semifull',
 
     for i, (df, id) in enumerate(zip(dfs, ids)):
         ddf = df0.copy(deep=True)
-        end = end.append({'AgentID': id,
-                          'num_ticks': len(df),
-                          'cum_dur': len(df) * dt}, ignore_index=True)
+
+        end.loc[i] = {'AgentID': id,
+                                        'num_ticks': len(df),
+                                        'cum_dur': len(df) * dt}
         ddf.update(df)
         ddf = ddf.assign(AgentID=id).set_index('AgentID', append=True)
-        step = ddf if i == 0 else step.append(ddf)
+        if i == 0:
+            step = ddf
+        else:
+            step=pd.concat([step,ddf])
 
     end.set_index('AgentID', inplace=True)
 
@@ -225,8 +228,7 @@ def build_Schleyer(dataset, source_dir,save_mode='semifull',
     return step, end
 
 
-
-def build_Berni(dataset, source_files,  max_Nagents=None, min_duration_in_sec=0.0,min_end_time_in_sec=0, **kwargs):
+def build_Berni(dataset, source_files, max_Nagents=None, min_duration_in_sec=0.0, min_end_time_in_sec=0, **kwargs):
     g = reg.conf.LabFormat.getID('Berni')
     cols0 = g.filesystem.read_sequence
     cols1 = cols0[1:]
@@ -241,7 +243,7 @@ def build_Berni(dataset, source_files,  max_Nagents=None, min_duration_in_sec=0.
     # fs = [os.path.join(source_dir, n) for n in os.listdir(source_dir) if n.startswith(dataset.id)]
     for f in fs:
         df = pd.read_csv(f, header=0, index_col=0, names=cols0)
-        df.reset_index(drop=True,inplace=True)
+        df.reset_index(drop=True, inplace=True)
         if len(df) >= int(min_duration_in_sec / dt) and len(df) >= int(min_end_time_in_sec / dt):
             # df = df[df.index >= int(start_time_in_sec / dt)]
             df = df[cols1]
@@ -253,7 +255,7 @@ def build_Berni(dataset, source_files,  max_Nagents=None, min_duration_in_sec=0.
                 break
         if len(dfs) == 0:
             return None, None
-    Nticks=np.max([len(df) for df in dfs])
+    Nticks = np.max([len(df) for df in dfs])
     df0 = pd.DataFrame(np.nan, index=np.arange(Nticks).tolist(), columns=cols1)
     df0.index.name = 'Step'
 
@@ -270,7 +272,7 @@ def build_Berni(dataset, source_files,  max_Nagents=None, min_duration_in_sec=0.
 
 
 def build_Arguello(dataset, source_files, max_Nagents=None, min_duration_in_sec=0.0,
-                  min_end_time_in_sec=0, **kwargs):
+                   min_end_time_in_sec=0, **kwargs):
     g = reg.conf.LabFormat.getID('Arguello')
     cols0 = g.filesystem.read_sequence
     cols1 = cols0[1:]
@@ -285,7 +287,7 @@ def build_Arguello(dataset, source_files, max_Nagents=None, min_duration_in_sec=
     # fs = [os.path.join(source_dir, n) for n in os.listdir(source_dir) if n.startswith(dataset.id)]
     for f in fs:
         df = pd.read_csv(f, header=0, index_col=0, names=cols0)
-        df.reset_index(drop=True,inplace=True)
+        df.reset_index(drop=True, inplace=True)
         if len(df) >= int(min_duration_in_sec / dt) and len(df) >= int(min_end_time_in_sec / dt):
             # df = df[df.index >= int(start_time_in_sec / dt)]
             df = df[cols1]
@@ -297,7 +299,7 @@ def build_Arguello(dataset, source_files, max_Nagents=None, min_duration_in_sec=
                 break
         if len(dfs) == 0:
             return None, None
-    Nticks=np.max([len(df) for df in dfs])
+    Nticks = np.max([len(df) for df in dfs])
     df0 = pd.DataFrame(np.nan, index=np.arange(Nticks).tolist(), columns=cols1)
     df0.index.name = 'Step'
 
@@ -312,13 +314,6 @@ def build_Arguello(dataset, source_files, max_Nagents=None, min_duration_in_sec=
         step = ddf if i == 0 else step.append(ddf)
     end.set_index('AgentID', inplace=True)
     return step, end
-
-
-
-
-
-
-
 
 
 def import_datasets(source_ids, ids=None, colors=None, refIDs=None, **kwargs):
@@ -336,8 +331,9 @@ def import_datasets(source_ids, ids=None, colors=None, refIDs=None, **kwargs):
     return ds
 
 
-def import_dataset(labID, parent_dir=None, group_id=None,raw_folder=None,proc_folder=None, N=None, id=None, merged=False,
-                   refID=None, enrich_conf=None,save_dataset=True, **kwargs):
+def import_dataset(labID, parent_dir=None, group_id=None, raw_folder=None, proc_folder=None, N=None, id=None,
+                   merged=False,
+                   refID=None, enrich_conf=None, save_dataset=True, **kwargs):
     print()
     print(f'----- Initializing {labID} format-specific dataset import. -----')
 
@@ -372,12 +368,12 @@ def import_dataset(labID, parent_dir=None, group_id=None,raw_folder=None,proc_fo
         print(f'***-- Dataset {d.id} created with {len(d.config.agent_ids)} larvae! -----')
         print(f'****- Processing dataset {d.id} to derive secondary metrics -----')
         if enrich_conf is None:
-            enrich_conf=reg.gen.EnrichConf(proc_keys =[], anot_keys =[]).nestedConf
+            enrich_conf = reg.gen.EnrichConf(proc_keys=[], anot_keys=[]).nestedConf
         enrich_conf['pre_kws'] = g.preprocess.nestedConf
         d = d.enrich(**enrich_conf, is_last=False)
         if save_dataset:
             d.save(refID=refID)
-            if refID is not None :
+            if refID is not None:
                 print(f'***** Dataset stored under the reference ID : {refID} -----')
             else:
                 print(f'***** Dataset stored -----')
@@ -387,7 +383,7 @@ def import_dataset(labID, parent_dir=None, group_id=None,raw_folder=None,proc_fo
 
 
 def build_dataset(labID, id, target_dir, group_id, N=None, sample=None,
-                  color='black', epochs={},age=0.0, **kwargs):
+                  color='black', epochs={}, age=0.0, **kwargs):
     print(f'*---- Building dataset {id} under the {labID} format. -----')
 
     func_dict = {
@@ -406,7 +402,7 @@ def build_dataset(labID, id, target_dir, group_id, N=None, sample=None,
         'load_data': False,
         'dir': target_dir,
         'id': id,
-        'larva_groups': reg.config.lg(id=group_id, c=color, sample=sample, mID= None, N=N,epochs=epochs,age=age),
+        'larva_groups': reg.config.lg(id=group_id, c=color, sample=sample, mID=None, N=N, epochs=epochs, age=age),
         'env_params': g.env_params,
         **g.tracker
     }
@@ -421,6 +417,3 @@ def build_dataset(labID, id, target_dir, group_id, N=None, sample=None,
     step, end = func_dict[labID](**kws0)
     d.set_data(step=step, end=end)
     return d
-
-
-
