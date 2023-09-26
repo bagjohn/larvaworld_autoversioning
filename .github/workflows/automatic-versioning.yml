@@ -1,4 +1,4 @@
-name: ci-cd
+name: automatic-versioning
 
 on: [push]
 
@@ -9,7 +9,7 @@ permissions:
 
 
 jobs:
-  ci:
+  code-integration:
     # Set up operating system
     runs-on: ubuntu-latest
 
@@ -31,15 +31,15 @@ jobs:
 #  #        poetry run make html --directory docs/
 #  # run: make html --directory docs/
 #
-#    - name: Install poetry
-#      uses: snok/install-poetry@v1
-#
-#    - name: Install package
-#      run: poetry install
-#
-#    - name: Test with pytest
+    - name: Install poetry
+      uses: snok/install-poetry@v1
+
+    - name: Install package
+      run: poetry install
+
+    - name: Test with pytest
 #      run: poetry run pytest tests/
-##      run: poetry run pytest tests/ --cov=larvaworld --cov-report=xml
+      run: poetry run pytest tests/ --cov=larvaworld --cov-report=xml
 
     - name: Use Codecov to track coverage
       uses: codecov/codecov-action@v2
@@ -48,9 +48,9 @@ jobs:
 
 
 
-  cd:
+  version-deployment :
     # Only run this job if the "ci" job passes
-    needs: ci
+    needs: code-integration
 
     # Only run this job if new work is pushed to "main"
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -76,13 +76,13 @@ jobs:
 #      - name: Install package
 #        run: poetry install
 
-#      - name: Use Python Semantic Release to prepare release
-#        env:
-#          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        run: |
-#          git config user.name github-actions
-#          git config user.email github-actions@github.com
-#          poetry run semantic-release publish
+      - name: Use Python Semantic Release to prepare release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          poetry run semantic-release publish
 
       - name: Build package distribution
         run: |
