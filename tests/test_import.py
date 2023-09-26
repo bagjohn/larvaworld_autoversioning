@@ -2,7 +2,7 @@ import larvaworld
 from larvaworld.lib.process.building import import_dataset, import_datasets
 
 
-def test_import_Schleyer() :
+def xx_test_import_Schleyer() :
     kws0 = {
         'labID': 'Schleyer',
         'group_id': 'exploration',

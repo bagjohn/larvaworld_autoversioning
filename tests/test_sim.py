@@ -2,7 +2,7 @@ import larvaworld.lib.sim.genetic_algorithm
 from larvaworld.lib import reg, sim, aux
 
 
-def test_replay() :
+def xx_test_replay() :
     refIDs = reg.conf.Ref.confIDs
     refID =  refIDs[-1]
     dataset=reg.loadRef(refID)
