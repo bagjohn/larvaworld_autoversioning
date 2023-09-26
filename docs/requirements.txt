@@ -4,7 +4,7 @@ gendocs
 Sphinx
 sphinx-autobuild
 sphinx-rtd-theme
-autodocsumm
+# autodocsumm
 #panel
 #holoviews
 larvaworld

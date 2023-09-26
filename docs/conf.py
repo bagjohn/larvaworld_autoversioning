@@ -19,7 +19,7 @@ print(inspect.getmembers(larvaworld.lib.param, inspect.ismodule))
 
 import sys, os
 sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('../../src')) # or "../../src
+sys.path.insert(0, os.path.abspath('../src')) # or "../../src
 sys.path.append(os.path.abspath('sphinxext'))
 
 # Configuration file for the Sphinx documentation builder.
@@ -55,7 +55,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx.ext.extlinks',
     'sphinx.ext.graphviz',
-    "autodocsumm",  # to generate tables of functions, attributes, methods, etc.
+    #"autodocsumm",  # to generate tables of functions, attributes, methods, etc.
 ]
 
 source_suffix = {
@@ -83,7 +83,7 @@ pygments_style = 'friendly'
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_rtd_theme'
+#html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 # don't include docstrings from the parent class
@@ -126,7 +126,7 @@ extra = """
 from gendocs import Generator
 gen = Generator()
 gen.DocumentPackages(larvaworld,
-                     index_base='../index_base.rst',
+                     index_base='index_base.rst',
                      showprivate=True,
                      notify=False,
                      intro_pages=[
