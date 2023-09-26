@@ -1,7 +1,7 @@
 import numpy as np
-import os
 
 from larvaworld.lib import aux
+
 
 def test_angular_funcs() :
     p1 = (-1, -1)

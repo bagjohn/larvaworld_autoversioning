@@ -23,6 +23,7 @@ __all__ = [
     'cols_exist',
     'flatten_list',
     'unique_list',
+    'checkEqual',
     'np2Dtotuples',
 ]
 
@@ -336,6 +337,15 @@ def cols_exist(cols,df) :
 
 def flatten_list(l):
     return [item for sublist in l for item in sublist]
+
+def checkEqual(l1,l2):
+    for a in l1:
+        if a not in l2:
+            return False
+    for a in l2:
+        if a not in l1:
+            return False
+    return True
 
 
 def unique_list(l):
