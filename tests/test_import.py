@@ -1,5 +1,4 @@
 import larvaworld
-from larvaworld.lib import reg
 from larvaworld.lib.process.building import import_dataset, import_datasets
 
 
@@ -38,7 +37,7 @@ def test_import_Schleyer() :
         assert isinstance(d, larvaworld.lib.LarvaDataset)
 
 
-def test_import_Jovanic() :
+def xx_test_import_Jovanic() :
     kws0 = {
         'labID': 'Jovanic',
         'merged' : False

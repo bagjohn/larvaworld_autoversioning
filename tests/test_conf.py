@@ -1,7 +1,3 @@
-import os
-
-import numpy as np
-# SCRIPTS_DIR =os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from larvaworld.lib import reg,aux
 
 def test_conf() :

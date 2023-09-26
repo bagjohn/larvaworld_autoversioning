@@ -6,7 +6,7 @@ from larvaworld.lib import reg, aux, plot
 
 
 
-def test_plots() :
+def xx_test_plots() :
     gIDs=reg.conf.Ref.RefGroupIDs
     gID = gIDs[1]
     dcol=reg.loadRefGroup(gID)

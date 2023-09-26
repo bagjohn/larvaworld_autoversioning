@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-from larvaworld.lib import aux
 from larvaworld.lib.param import OrientedPoint
 
 
