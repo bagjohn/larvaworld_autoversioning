@@ -23,6 +23,13 @@ jobs:
     - name: Install package
       run: poetry install
 
+    - name: Build documentation
+      run: |
+          cd docs
+          make html
+  #        poetry run make html --directory docs/
+  # run: make html --directory docs/
+
     - name: Test with pytest
       run: poetry run pytest tests/
 #      run: poetry run pytest tests/ --cov=larvaworld --cov-report=xml
@@ -32,11 +39,7 @@ jobs:
       with:
         files: ./coverage.xml   # coverage report
 
-    - name: Build documentation
-      run: |
-        pip install sphinx
-        poetry run make html --directory docs/
-     # run: make html --directory docs/
+
 
   cd:
     # Only run this job if the "ci" job passes

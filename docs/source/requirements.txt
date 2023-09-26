@@ -7,7 +7,7 @@ sphinx-rtd-theme
 # autodocsumm
 #panel
 #holoviews
-numpy
+#numpy
 larvaworld
 #libgeos-dev
 # sphinxcontrib-napoleon

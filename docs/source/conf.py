@@ -19,7 +19,7 @@ print(inspect.getmembers(larvaworld.lib.param, inspect.ismodule))
 
 import sys, os
 sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('../src')) # or "../../src
+sys.path.insert(0, os.path.abspath('../../src')) # or "../../src
 sys.path.append(os.path.abspath('sphinxext'))
 
 # Configuration file for the Sphinx documentation builder.
