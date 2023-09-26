@@ -1,3 +1,8 @@
+"""
+The available tabs in larvaworld GUI
+"""
+
+
 from .analysis import AnalysisTab
 from .batch_run import BatchTab
 from .body_draw import DrawBodyTab
@@ -12,3 +17,5 @@ from .settings import SettingsTab
 from .simulation import SimTab
 from .tutorial import TutorialTab
 from .videos import VideoTab
+
+__displayname__ = 'GUI tabs'
