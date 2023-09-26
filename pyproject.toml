@@ -45,6 +45,7 @@ holoviews = "*"
 [tool.poetry.dev-dependencies]
 pytest = "*"
 python-semantic-release = "*"
+build = "*"
 
 [project.optional-dependencies]
 dev = [
