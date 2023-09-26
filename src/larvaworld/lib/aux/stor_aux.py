@@ -8,8 +8,7 @@ __all__ = [
 
 
 def storeH5(df, path=None, key=None, mode=None, **kwargs):
-
-    if path is not None :
+    if path is not None:
         if mode is None:
             if os.path.isfile(path):
                 mode = 'a'
@@ -34,22 +33,20 @@ def storeH5(df, path=None, key=None, mode=None, **kwargs):
             raise ValueError('H5key not provided.')
 
 
-
 def retrieve_results(experiment, id):
-    from larvaworld.lib import reg
-    f=f'{reg.SIM_DIR}/batch_runs/{experiment}/{id}/results.h5'
+    from .. import reg
+    f = f'{reg.SIM_DIR}/batch_runs/{experiment}/{id}/results.h5'
     try:
-        df =  pd.read_hdf(f, key='results')
+        df = pd.read_hdf(f, key='results')
     except:
-        df =  None
-    figs={}
-    return df,figs
+        df = None
+    figs = {}
+    return df, figs
 
 
 def delete_traj(experiment, key):
-    from larvaworld.lib import reg
+    from .. import reg
     path = f'{reg.SIM_DIR}/batch_runs/{experiment}/{experiment}.hdf5'
     store = pd.HDFStore(path, mode='a')
     del store[key]
     store.close()
-

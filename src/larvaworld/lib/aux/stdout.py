@@ -13,7 +13,6 @@ __all__ = [
 ]
 
 
-
 @contextmanager
 def suppress_stdout_stderr():
     """A context manager that redirects stdout and stderr to devnull"""
@@ -36,7 +35,6 @@ def suppress_stdout(show_output):
             sys.stderr = old_stderr
 
 
-
 def remove_prefix(text, prefix):
     if text.startswith(prefix):
         return text[len(prefix):]
@@ -47,7 +45,6 @@ def remove_suffix(text, suffix):
     if text.endswith(suffix):
         return text[:-len(suffix)]
     return text  # or whatever
-
 
 
 # using wonder's beautiful simplification: https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-objects/31174427?noredirect=1#comment86638618_31174427

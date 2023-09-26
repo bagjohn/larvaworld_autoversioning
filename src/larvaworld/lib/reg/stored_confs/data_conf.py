@@ -3,7 +3,7 @@ import os
 
 from ...aux import nam
 from ... import reg, aux
-from ...param import Resolution, Filesystem, TrackerOps, PreprocessConf
+from ...param import Filesystem, TrackerOps, PreprocessConf
 
 
 __all__ = [

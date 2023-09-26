@@ -1,9 +1,6 @@
 import numpy as np
-import pandas as pd
-import scipy
 
 from .. import reg, aux
-
 
 __all__ = [
     'comp_angular',
@@ -11,6 +8,7 @@ __all__ = [
     'comp_extrema_multi',
     'comp_extrema_solo',
 ]
+
 
 def comp_orientations(s, e, c, mode='minimal'):
     Np = c.Npoints
@@ -21,26 +19,25 @@ def comp_orientations(s, e, c, mode='minimal'):
     f1, f2 = c.front_vector
     r1, r2 = c.rear_vector
 
-
     xy_pars = c.midline_xy
-    Axy=s[xy_pars].values
+    Axy = s[xy_pars].values
 
     reg.vprint(f'Computing front/rear body-vector and head/tail orientation angles')
-    vector_idx={
-        'front' : (f2 - 1, f1 - 1),
-        'rear' : (r2 - 1, r1 - 1),
-        'head' : (1,0),
-        'tail' : (-1,-2),
+    vector_idx = {
+        'front': (f2 - 1, f1 - 1),
+        'rear': (r2 - 1, r1 - 1),
+        'head': (1, 0),
+        'tail': (-1, -2),
     }
 
     if mode == 'full':
         reg.vprint(f'Computing additional orients for {c.Nsegs} spinesegments')
         for i, vec in enumerate(c.midline_segs):
-             vector_idx[vec] = (i+1,i)
+            vector_idx[vec] = (i + 1, i)
 
-    for vec, (idx1, idx2) in vector_idx.items() :
+    for vec, (idx1, idx2) in vector_idx.items():
         par = aux.nam.orient(vec)
-        x, y = Axy[:,2*idx2]-Axy[:,2*idx1], Axy[:,2*idx2+1]-Axy[:,2*idx1+1]
+        x, y = Axy[:, 2 * idx2] - Axy[:, 2 * idx1], Axy[:, 2 * idx2 + 1] - Axy[:, 2 * idx1 + 1]
         aa = np.arctan2(y, x)
         aa[aa < 0] += 2 * np.pi
         s[par] = aa
@@ -48,11 +45,10 @@ def comp_orientations(s, e, c, mode='minimal'):
     reg.vprint('All orientations computed')
 
 
-
 def comp_orientation_1point(s, e):
-    def func(ss) :
-        x,y=ss[:, 0].values, ss[:, 1].values
-        dx,dy=np.diff(x, prepend=np.nan), np.diff(y, prepend=np.nan)
+    def func(ss):
+        x, y = ss[:, 0].values, ss[:, 1].values
+        dx, dy = np.diff(x, prepend=np.nan), np.diff(y, prepend=np.nan)
         aa = np.arctan2(dy, dx)
         aa[aa < 0] += 2 * np.pi
         return aa
@@ -60,48 +56,42 @@ def comp_orientation_1point(s, e):
     return aux.apply_per_level(s[['x', 'y']], func).flatten()
 
 
-
-
 @reg.funcs.proc("ang_moments")
-def comp_angular(s,e, c, pars=None, **kwargs):
+def comp_angular(s, e, c, pars=None, **kwargs):
     vecs = ['head', 'tail', 'front', 'rear']
-    ho,to,fo,ro=aux.nam.orient(vecs)
-    if pars is None :
-        if c.Npoints > 3 :
+    ho, to, fo, ro = aux.nam.orient(vecs)
+    if pars is None:
+        if c.Npoints > 3:
             base_pars = ['bend', ho, to, fo, ro]
             segs = c.midline_segs
             ang_pars = [f'angle{i}' for i in range(c.Nangles)]
-            pars = base_pars + ang_pars+aux.nam.orient(segs)
-        else :
+            pars = base_pars + ang_pars + aux.nam.orient(segs)
+        else:
             pars = [ho]
 
-    pars = aux.existing_cols(aux.unique_list(pars),s)
+    pars = aux.existing_cols(aux.unique_list(pars), s)
 
     for p in pars:
         pvel = aux.nam.vel(p)
         avel = aux.nam.acc(p)
-        ss=s[p]
+        ss = s[p]
         if p.endswith('orientation'):
-
-            p_unw=aux.nam.unwrap(p)
+            p_unw = aux.nam.unwrap(p)
             s[p_unw] = aux.apply_per_level(s[p], aux.unwrap_deg).flatten()
-            ss=s[p_unw]
+            ss = s[p_unw]
 
         s[pvel] = aux.apply_per_level(ss, aux.rate, dt=c.dt).flatten()
         s[avel] = aux.apply_per_level(s[pvel], aux.rate, dt=c.dt).flatten()
 
         if p in ['bend', ho, to, fo, ro]:
-            for pp in [p,pvel,avel] :
-                temp=s[pp].dropna().groupby('AgentID')
+            for pp in [p, pvel, avel]:
+                temp = s[pp].dropna().groupby('AgentID')
                 e[aux.nam.mean(pp)] = temp.mean()
                 e[aux.nam.std(pp)] = temp.std()
                 e[aux.nam.initial(pp)] = temp.first()
                 # s[[aux.nam.min(pp), aux.nam.max(pp)]] = comp_extrema_solo(sss, dt=dt, **kwargs).reshape(-1, 2)
 
     reg.vprint('All angular parameters computed')
-
-
-
 
 
 @reg.funcs.proc("angular")
@@ -111,15 +101,15 @@ def angular_processing(s, e, c, d=None, recompute=False, mode='minimal', **kwarg
     fo, ro = aux.nam.orient(['front', 'rear'])
 
     if c.Nangles == 0:
-        or_pars =[fo]
-        bend_pars=[]
+        or_pars = [fo]
+        bend_pars = []
 
-    else :
+    else:
         or_pars = [fo, ro]
-        bend_pars=['bend']
+        bend_pars = ['bend']
 
-    if not aux.cols_exist(or_pars+bend_pars,s) or recompute:
-    # if not set(or_pars+bend_pars).issubset(s.columns.values) or recompute:
+    if not aux.cols_exist(or_pars + bend_pars, s) or recompute:
+        # if not set(or_pars+bend_pars).issubset(s.columns.values) or recompute:
         if c.Npoints == 1:
             def func(ss):
                 x, y = ss[:, 0].values, ss[:, 1].values
@@ -128,54 +118,55 @@ def angular_processing(s, e, c, d=None, recompute=False, mode='minimal', **kwarg
                 aa[aa < 0] += 2 * np.pi
                 return aa
 
-            s[fo]=  aux.apply_per_level(s[['x', 'y']], func).flatten()
-        else :
+            s[fo] = aux.apply_per_level(s[['x', 'y']], func).flatten()
+        else:
             Axy = s[c.midline_xy].values
             Ax, Ay = Axy[:, ::2], Axy[:, 1::2]
             Adx = np.diff(Ax)
             Ady = np.diff(Ay)
             Aa = np.arctan2(Ady, Adx) % (2 * np.pi)
-            if c.Npoints == 2 :
+            if c.Npoints == 2:
                 s[fo] = Aa[:, 0]
-            else :
-                f1,f2=c.front_vector
-                r1,r2=c.rear_vector
+            else:
+                f1, f2 = c.front_vector
+                r1, r2 = c.rear_vector
 
-                fx, fy = Ax[:, f1-1] - Ax[:, f2-1], Ay[:, f1-1] - Ay[:, f2-1]
-                rx, ry = Ax[:, r1-1] - Ax[:, r2-1], Ay[:, r1-1] - Ay[:, r2-1]
-                s[fo] =Afo = np.arctan2(fy, fx)% (2 * np.pi)
-                s[ro] =Aro = np.arctan2(ry, rx)% (2 * np.pi)
+                fx, fy = Ax[:, f1 - 1] - Ax[:, f2 - 1], Ay[:, f1 - 1] - Ay[:, f2 - 1]
+                rx, ry = Ax[:, r1 - 1] - Ax[:, r2 - 1], Ay[:, r1 - 1] - Ay[:, r2 - 1]
+                s[fo] = Afo = np.arctan2(fy, fx) % (2 * np.pi)
+                s[ro] = Aro = np.arctan2(ry, rx) % (2 * np.pi)
 
                 Ada = np.diff(Aa) % (2 * np.pi)
                 Ada[Ada > np.pi] -= 2 * np.pi
 
                 if c.bend == 'from_vectors':
                     reg.vprint(f'Computing bending angle as the difference between front and rear orients')
-                    a = np.remainder(Afo-Aro, 2 * np.pi)
+                    a = np.remainder(Afo - Aro, 2 * np.pi)
                     a[a > np.pi] -= 2 * np.pi
                 elif c.bend == 'from_angles':
                     reg.vprint(f'Computing bending angle as the sum of the first {c.Nbend_angles} front angles')
                     a = np.sum(Ada[:, :c.Nbend_angles], axis=1)
-                else :
+                else:
                     raise
 
                 s['bend'] = np.degrees(a)
 
-                if mode=='full' :
+                if mode == 'full':
                     s[c.angles] = Ada
                     bend_pars += c.angles
 
                     s[c.seg_orientations] = Aa
-                    or_pars =aux.unique_list(or_pars + c.seg_orientations)
+                    or_pars = aux.unique_list(or_pars + c.seg_orientations)
 
-    else :
+    else:
         reg.vprint(
             'Orientation and bend are already computed. If you want to recompute them, set recompute to True', 1)
     ps = or_pars + bend_pars
     comp_angular(s, e, c, pars=ps)
 
-
     reg.vprint(f'Completed {mode} angular processing.')
+
+
 #
 #
 # def ang_from_xy(xy):
@@ -231,19 +222,16 @@ def angular_processing(s, e, c, d=None, recompute=False, mode='minimal', **kwarg
 
 @reg.funcs.proc("extrema")
 def comp_extrema_multi(s, pars=None, **kwargs):
-
     if pars is None:
         ps1 = ['bend', aux.nam.orient('front')]
         pars = ps1 + aux.nam.vel(ps1)
 
-
-    for p in aux.existing_cols(pars,s):
-        s[[aux.nam.min(p), aux.nam.max(p)]]=comp_extrema_solo(s[p],**kwargs).reshape(-1,2)
-
+    for p in aux.existing_cols(pars, s):
+        s[[aux.nam.min(p), aux.nam.max(p)]] = comp_extrema_solo(s[p], **kwargs).reshape(-1, 2)
 
 
 @reg.funcs.proc("extrema_solo")
-def comp_extrema_solo(ss,dt=0.1, interval_in_sec=0.3,  threshold_in_std=None, abs_threshold=None):
+def comp_extrema_solo(ss, dt=0.1, interval_in_sec=0.3, threshold_in_std=None, abs_threshold=None):
     kws = {
         'order': np.round(interval_in_sec / dt).astype(int),
         'threshold': abs_threshold,

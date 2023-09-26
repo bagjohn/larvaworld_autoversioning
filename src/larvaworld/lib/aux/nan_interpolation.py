@@ -2,7 +2,6 @@ import numpy as np
 import scipy as sp
 from scipy.signal import sosfiltfilt, butter
 
-
 __all__ = [
     'interpolate_nans',
     'parse_array_at_nans',
@@ -10,6 +9,7 @@ __all__ = [
     'apply_filter_to_array_with_nans_multidim',
     'convex_hull',
 ]
+
 
 def nan_helper(y):
     """Helper to handle indices and logical indices of NaNs.
@@ -45,7 +45,6 @@ def parse_array_at_nans(a):
 
 
 def apply_sos_filter_to_array_with_nans(sos, x, padlen=6):
-
     try:
         A = np.full_like(x, np.nan)
         ds, de = parse_array_at_nans(x)
@@ -82,7 +81,6 @@ def apply_filter_to_array_with_nans_multidim(a, freq, fr, N=1):
 
     """
 
-
     # 2-dimensional array must have each timeseries in different column
     if a.ndim == 1:
         sos = butter(N=N, Wn=freq, btype='lowpass', analog=False, fs=fr, output='sos')
@@ -96,7 +94,6 @@ def apply_filter_to_array_with_nans_multidim(a, freq, fr, N=1):
                              range(a.shape[2])], (1, 2, 0))
     else:
         raise ValueError('Method implement for up to 3-dimensional array')
-
 
 
 def convex_hull(xs=None, ys=None, N=None, interp_nans=True):

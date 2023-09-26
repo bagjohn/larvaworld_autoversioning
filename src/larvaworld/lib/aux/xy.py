@@ -1,4 +1,3 @@
-import math
 import numpy as np
 import pandas as pd
 import scipy as sp
@@ -9,7 +8,6 @@ __all__ = [
     'comp_bearing',
     'compute_dispersal_solo',
     'compute_dispersal_multi',
-    'raw_or_filtered_xy',
     'compute_component_velocity',
     'compute_velocity_threshold',
     'get_display_dims',
@@ -70,18 +68,6 @@ def compute_dispersal_multi(xy0, t0, t1, dt):
     AA0[s0:s0 + Nt, :] = AA
 
     return AA0.flatten(), Nt
-
-
-def raw_or_filtered_xy(s, points):
-    r = nam.xy(points, flat=True)
-    f = nam.filt(r)
-    if all(i in s.columns for i in f):
-        return f
-    elif all(i in s.columns for i in r):
-        return r
-    else:
-        print('No xy coordinates exist. Not computing spatial metrics')
-        return
 
 
 def compute_component_velocity(xy, angles, dt, return_dst=False):

@@ -4,7 +4,7 @@ from numpy import ndarray
 from shapely import geometry, ops
 from typing import Optional
 
-from .. import aux
+# from .. import aux
 
 __all__ = [
     'LvsRtoggle',
@@ -17,6 +17,9 @@ __all__ = [
     'get_step_slice',
     'index_unique',
 ]
+
+from .dictsNlists import existing_cols, cols_exist, AttrDict
+from .xy import circle_to_polygon, eudi5x
 
 
 def LvsRtoggle(side):
@@ -49,7 +52,7 @@ def get_tank_polygon(c, k=0.97, return_polygon=True):
         shape = p.shape
     if shape == 'circular':
         # This is a circle_to_polygon shape from the function
-        tank_shape = aux.circle_to_polygon(60, X / 2)
+        tank_shape = circle_to_polygon(60, X / 2)
     elif shape == 'rectangular':
         # This is a rectangular shape
         tank_shape = np.array([(-X / 2, -Y / 2),
@@ -284,7 +287,7 @@ def sense_food(pos, sources=None, grid=None, radius=None):
         if grid.grid[cell] > 0:
             return cell
     elif sources and radius is not None:
-        valid = sources.select(aux.eudi5x(np.array(sources.pos), pos) <= radius)
+        valid = sources.select(eudi5x(np.array(sources.pos), pos) <= radius)
         valid.select(valid.amount > 0)
 
         if len(valid) > 0:
@@ -311,23 +314,23 @@ def get_larva_dicts(ls, validIDs=None):
         if l.brain.locomotor.intermitter is not None:
             bout_dicts[id] = l.brain.locomotor.intermitter.build_dict()
 
-    dic0 = aux.AttrDict({'deb': deb_dicts,
+    dic0 = AttrDict({'deb': deb_dicts,
                          'nengo': nengo_dicts, 'bouts': bout_dicts,
                          })
 
-    return aux.AttrDict({k: v for k, v in dic0.items() if len(v) > 0})
+    return AttrDict({k: v for k, v in dic0.items() if len(v) > 0})
 
 
 def get_step_slice(s, e, dt, pars=None, t0=0, t1=40, track_t0_min=0, track_t1_min=0, ids=None):
     s0, s1 = int(t0 / dt), int(t1 / dt)
     trange = np.arange(s0, s1, 1)
 
-    if aux.cols_exist(['t0', 't1'], e):
+    if cols_exist(['t0', 't1'], e):
         tmin = track_t0_min + t0
         tmax = t1 - track_t1_min
         valid_ids = e[(e['t0'] <= tmin) & (e['t1'] >= tmax)].index
         if ids:
-            valid_ids = aux.existing_cols(valid_ids, ids)
+            valid_ids = existing_cols(valid_ids, ids)
         if pars:
             return s.loc[(trange, valid_ids), pars]
         else:

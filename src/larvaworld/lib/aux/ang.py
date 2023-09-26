@@ -1,7 +1,6 @@
 import math
 import numpy as np
 
-
 __all__ = [
     'wrap_angle_to_0',
     'angles_between_vectors',
@@ -9,6 +8,7 @@ __all__ = [
     'rotationMatrix',
     'rotate_points_around_point',
 ]
+
 
 def wrap_angle_to_0(angle: float, in_deg: bool = False) -> float:
     """
@@ -32,7 +32,6 @@ def wrap_angle_to_0(angle: float, in_deg: bool = False) -> float:
             angle -= 2 * math.pi
 
     return angle
-
 
 
 def angles_between_vectors(xy_front: np.ndarray, xy_mid: np.ndarray = None, xy_rear: np.ndarray = None,
@@ -105,8 +104,9 @@ def angle_dif(angle_1, angle_2, in_deg=True):
     a = angle_1 - angle_2
     if in_deg:
         return (a + 180) % 360 - 180
-    else :
+    else:
         return (a + np.pi) % (np.pi * 2) - np.pi
+
 
 def rotationMatrix(a):
     return np.array([[np.cos(a), -np.sin(a)], [np.sin(a), np.cos(a)]])
@@ -132,6 +132,5 @@ def rotate_points_around_point(points, radians, origin=None):
 
     if origin is None:
         origin = (0, 0)
-    origin=np.array(origin)
+    origin = np.array(origin)
     return (points - origin) @ rotationMatrix(radians) + origin
-

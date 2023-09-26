@@ -4,7 +4,6 @@ import os
 import pickle
 import numpy as np
 import typing
-
 import pandas as pd
 
 __all__ = [
@@ -27,15 +26,15 @@ __all__ = [
     'np2Dtotuples',
 ]
 
+
 class AttrDict(dict):
-    '''
+    """
     Dictionary subclass whose entries can be accessed as attributes (as well as normally).
-    '''
+    """
 
     def __init__(self, *args, **kwargs):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self.autonest(d=self)
-
 
     def autonest(self, d):
         for k, data in d.items():
@@ -98,9 +97,9 @@ class AttrDict(dict):
 
     def update_existingdict_by_suffix(self, dic):
         for k, v in dic.items():
-            k1s=[k0 for k0 in self.keylist if k0.endswith(k)]
-            if len(k1s)==1:
-                k1=k1s[0]
+            k1s = [k0 for k0 in self.keylist if k0.endswith(k)]
+            if len(k1s) == 1:
+                k1 = k1s[0]
                 self[k1] = v
             elif len(k1s) > 1:
                 print(f'Non unique suffix : {k}')
@@ -121,18 +120,19 @@ class AttrDict(dict):
         return dic0_f.unflatten()
 
     def save(self, file):
-        save_dict(self,file)
+        save_dict(self, file)
 
     @classmethod
     def load(cls, file):
         return load_dict(file)
 
     def print(self, flat=False):
-        if flat :
+        if flat:
             for k, v in self.flatten().items():
                 print(f'      {k} : {v}')
         else:
-            pref0='     '
+            pref0 = '     '
+
             def print_nested_level(d, pref=pref0):
                 for k, v in d.items():
                     if not isinstance(v, dict):
@@ -146,6 +146,7 @@ class AttrDict(dict):
     @property
     def keylist(self):
         return SuperList(self.keys())
+
 
 # class StoreDict(AttrDict):
 #
@@ -172,8 +173,6 @@ class AttrDict(dict):
 #         return super().__new__(cls,**d)
 
 
-
-
 def load_dict(file):
     try:
         with open(file, 'rb') as tfp:
@@ -186,12 +185,12 @@ def load_dict(file):
                 # print('json load')
         except:
 
-            d= {}
+            d = {}
     return AttrDict(d)
 
 
 def save_dict(d, file):
-    if file is not None :
+    if file is not None:
         try:
             with open(file, 'wb') as fp:
                 pickle.dump(d, fp, protocol=pickle.HIGHEST_PROTOCOL)
@@ -205,7 +204,7 @@ def save_dict(d, file):
 
                 raise
         return True
-    else :
+    else:
         return False
 
 
@@ -231,42 +230,46 @@ def load_dicts(files=None, pref=None, suf=None, folder=None, extension='txt'):
         ds.append(d)
     return ds
 
+
 def loadSoloDics(agent_ids, path=None):
-    if os.path.isdir(path) :
+    if os.path.isdir(path):
         files = [f'{id}.txt' for id in agent_ids]
         return load_dicts(files=files, folder=path)
 
 
 def storeSoloDics(agent_dics, path=None):
-    if path is not None :
+    if path is not None:
         os.makedirs(path, exist_ok=True)
         for id, dic in agent_dics.items():
             save_dict(dic, f'{path}/{id}.txt')
 
+
 def group_epoch_dicts(individual_epochs):
     keys = ['turn_dur', 'turn_amp', 'turn_vel_max', 'run_dur', 'run_dst', 'pause_dur', 'run_count']
-    return {k: np.array(flatten_list([dic[k] for id,dic in individual_epochs.items()])) for k in keys}
+    return {k: np.array(flatten_list([dic[k] for id, dic in individual_epochs.items()])) for k in keys}
+
 
 class bidict(dict):
     def __init__(self, *args, **kwargs):
         super(bidict, self).__init__(*args, **kwargs)
         self.inverse = {}
         for key, value in self.items():
-            self.inverse.setdefault(value,[]).append(key)
+            self.inverse.setdefault(value, []).append(key)
 
     def __setitem__(self, key, value):
         if key in self:
             self.inverse[self[key]].remove(key)
         super(bidict, self).__setitem__(key, value)
-        self.inverse.setdefault(value,[]).append(key)
+        self.inverse.setdefault(value, []).append(key)
 
     def __delitem__(self, key):
-        self.inverse.setdefault(self[key],[]).remove(key)
+        self.inverse.setdefault(self[key], []).remove(key)
         if self[key] in self.inverse and not self.inverse[self[key]]:
             del self.inverse[self[key]]
         super(bidict, self).__delitem__(key)
 
-class SuperList(list) :
+
+class SuperList(list):
 
     @property
     def N(self):
@@ -303,42 +306,43 @@ class SuperList(list) :
     def in_pairs(self):
         return self.group_by_n(n=2)
 
-
     def existing(self, df):
-        return SuperList(existing_cols(self,df))
+        return SuperList(existing_cols(self, df))
 
     def nonexisting(self, df):
-        return SuperList(nonexisting_cols(self,df))
+        return SuperList(nonexisting_cols(self, df))
 
     def exist_in(self, df):
-        return cols_exist(self,df)
+        return cols_exist(self, df)
 
-    def __add__(self, *args, **kwargs): # real signature unknown
+    def __add__(self, *args, **kwargs):  # real signature unknown
         """ Return self+value. """
         return SuperList(super().__add__(*args, **kwargs))
 
 
-
-def existing_cols(cols,df) :
+def existing_cols(cols, df):
     if isinstance(df, pd.DataFrame):
-        df=df.columns.values
+        df = df.columns.values
     return [col for col in cols if col in df]
 
-def nonexisting_cols(cols,df) :
+
+def nonexisting_cols(cols, df):
     if isinstance(df, pd.DataFrame):
-        df=df.columns.values
+        df = df.columns.values
     return [col for col in cols if col not in df]
 
-def cols_exist(cols,df) :
+
+def cols_exist(cols, df):
     if isinstance(df, pd.DataFrame):
-        df=df.columns.values
+        df = df.columns.values
     return set(cols).issubset(df)
 
 
 def flatten_list(l):
     return [item for sublist in l for item in sublist]
 
-def checkEqual(l1,l2):
+
+def checkEqual(l1, l2):
     for a in l1:
         if a not in l2:
             return False
@@ -359,10 +363,8 @@ def unique_list(l):
         return SuperList([x for x in l if not (x in seen or seen_add(x))])
 
 
-
 def np2Dtotuples(a):
     if isinstance(a, list) and all([isinstance(aa, tuple) for aa in a]):
         return a
     else:
-        return list(zip(a[:,0], a[:,1]))
-
+        return list(zip(a[:, 0], a[:, 1]))

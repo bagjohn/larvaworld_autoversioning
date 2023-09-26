@@ -1,5 +1,4 @@
 from shapely import geometry
-import math
 
 __all__ = [
     'segments_intersection',
@@ -28,7 +27,7 @@ def segments_intersection_p(p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y):
         divisore_2 = EPSILON
 
     s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / divisore_1
-    t = ( s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / divisore_2
+    t = (s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / divisore_2
 
     if s >= 0 and s <= 1 and t >= 0 and t <= 1:
         intersection_x = p0_x + (t * s1_x)
@@ -38,9 +37,7 @@ def segments_intersection_p(p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y):
         return None
 
 
-
-def detect_nearest_obstacle(obstacles, sensor_ray, p0) :
-
+def detect_nearest_obstacle(obstacles, sensor_ray, p0):
     Dmin = None
     Onearest = None
 
@@ -55,7 +52,3 @@ def detect_nearest_obstacle(obstacles, sensor_ray, p0) :
                     Onearest = obj
 
     return Dmin, Onearest
-
-
-
-

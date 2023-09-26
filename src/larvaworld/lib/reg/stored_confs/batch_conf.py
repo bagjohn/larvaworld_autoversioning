@@ -1,4 +1,4 @@
-from .. import reg
+from ... import reg
 
 __all__ = [
     'Batch_dict',

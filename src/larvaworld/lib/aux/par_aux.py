@@ -21,9 +21,9 @@ __all__ = [
 ]
 
 
-
 def bar(p):
     return rf'$\bar{{{p.replace("$", "")}}}$'
+
 
 def tilde(p):
     return rf'$\tilde{{{p.replace("$", "")}}}$'
@@ -44,6 +44,7 @@ def sup(p, q):
 def subsup(p, q, z):
     return rf'${{{p.replace("$", "")}}}_{{{q}}}^{{{z}}}$'
 
+
 #
 # def hat(p):
 #     return f'$\hat{{{p.replace("$", "")}}}$'
@@ -55,6 +56,7 @@ def subsup(p, q, z):
 
 def th(p):
     return fr'$\theta_{{{p.replace("$", "")}}}$'
+
 
 def omega(p):
     return fr'$\omega_{{{p.replace("$", "")}}}$'
@@ -78,6 +80,7 @@ def delta(p):
 
 def dot(p):
     return fr'$\dot{{{p.replace("$", "")}}}$'
+
 
 def circle(p):
     return fr'$\mathring{{{p.replace("$", "")}}}$'
@@ -130,7 +133,6 @@ def ddot(p):
 #     return fr'${{{p.replace("$", "")}}}_{{l}}$'
 
 
-
 def base_dtype(t):
     if t in [float, Tuple[float], List[float], List[Tuple[float]]]:
         base_t = float
@@ -139,13 +141,3 @@ def base_dtype(t):
     else:
         base_t = t
     return base_t
-
-
-
-
-
-
-
-
-
-

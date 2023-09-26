@@ -1,7 +1,6 @@
 import os
-from PyPDF2 import PdfFileMerger, PdfFileReader
 import numpy as np
-from PIL import Image
+
 
 __all__ = [
     'combine_images',
@@ -11,8 +10,11 @@ __all__ = [
     'concat_files',
 ]
 
+
 def combine_images(filenames=None, file_dir='.', save_as='combined_image.pdf', save_to='.', size=(1000, 1000),
                    figsize=None):
+    from PIL import Image
+
     if filenames is None:
         filenames = [f for f in os.listdir(f'{file_dir}/') if os.path.isfile(os.path.join(f'{file_dir}/', f))]
     filenames = np.sort(filenames)
@@ -72,22 +74,23 @@ def append_pdf(input, output):
 
 
 def combine_pdfs(file_dir='.', save_as="final.pdf", pref='', files=None, deep=True):
-    if files is None :
+    import pypdf
+    if files is None:
         files = []
-        if deep :
+        if deep:
             for dirpath, dirnames, filenames in os.walk(file_dir):
                 for filename in [f for f in filenames if (f.endswith(".pdf") and f.startswith(pref))]:
                     files.append(os.path.join(dirpath, filename))
-        else :
+        else:
             for dirpath, dirnames, filenames in os.walk(file_dir):
                 for filename in [f for f in filenames if (f.endswith(".pdf") and f.startswith(pref))]:
                     files.append(os.path.join(dirpath, filename))
                 break
 
         files.sort()
-    merger = PdfFileMerger()
+    merger = pypdf.PdfMerger()
     for f in files:
-        merger.append(PdfFileReader(open(f, 'rb')))
+        merger.append(pypdf.PdfReader(open(f, 'rb')))
     filepath = os.path.join(file_dir, save_as)
     merger.write(filepath)
     print(f'Concatenated pdfs saved as {filepath}')
@@ -100,4 +103,3 @@ def concat_files(filenames, save_as):
             with open(fname) as infile:
                 for line in infile:
                     outfile.write(line)
-

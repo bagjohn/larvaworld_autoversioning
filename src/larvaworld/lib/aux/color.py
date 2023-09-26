@@ -16,6 +16,7 @@ __all__ = [
     'angular_velocity_to_col',
 ]
 
+
 def invert_color(col):
     if type(col) in [list, tuple] and len(col) == 3:
         if not all([0 <= i <= 1 for i in col]):
@@ -26,7 +27,6 @@ def invert_color(col):
     table = str.maketrans('0123456789abcdef', 'fedcba9876543210')
     col2 = '#' + col[1:].lower().translate(table).upper()
     return col, col2
-
 
 
 def random_colors(n):
@@ -47,9 +47,9 @@ def random_colors(n):
 
 
 def N_colors(N, as_rgb=False):
-    cols=['green', 'red', 'blue', 'purple', 'orange', 'magenta', 'cyan', 'darkred', 'lightblue']
-    if N<=len(cols):
-        cs=cols[:N]
+    cols = ['green', 'red', 'blue', 'purple', 'orange', 'magenta', 'cyan', 'darkred', 'lightblue']
+    if N <= len(cols):
+        cs = cols[:N]
     elif N == 10:
         cs = ['lightgreen', 'green', 'red', 'darkred', 'lightblue', 'blue', 'darkblue', 'magenta', 'cyan', 'orange',
               'purple']
@@ -66,17 +66,18 @@ def colorname2tuple(name):
     c1 = tuple([i * 255 for i in c0])
     return c1
 
+
 def colortuple2str(t):
-    if any([tt>1 for tt in t]):
-        t=tuple([tt/255 for tt in t])
+    if any([tt > 1 for tt in t]):
+        t = tuple([tt / 255 for tt in t])
     return matplotlib.colors.rgb2hex(t)
 
 
 def col_range(q, low=(255, 0, 0), high=(255, 255, 255), mul255=False):
-    if isinstance(low,str) :
-        low=colorname2tuple(low)
-    if isinstance(high,str) :
-        high=colorname2tuple(high)
+    if isinstance(low, str):
+        low = colorname2tuple(low)
+    if isinstance(high, str):
+        high = colorname2tuple(high)
     rr0, gg0, bb0 = q_col1 = np.array(low) / 255
     rr1, gg1, bb1 = q_col2 = np.array(high) / 255
     qrange = np.array([rr1 - rr0, gg1 - gg0, bb1 - bb0])
@@ -87,12 +88,7 @@ def col_range(q, low=(255, 0, 0), high=(255, 255, 255), mul255=False):
     return res
 
 
-
-
-
-
 class Color:
-
     BLACK = (0, 0, 0)
     WHITE = (255, 255, 255)
     RED = (255, 0, 0)
@@ -127,13 +123,15 @@ class Color:
             return [(r1 + r * tt, b1 + b * tt, g1 + g * tt) for tt in t]
 
     # @staticmethod
+
+
 def combine_hex_values(d):
-    dd={}
+    dd = {}
     for k, v in d.items():
-        if type(k)==str:
-            k=matplotlib.colors.to_hex(k)
-        k=k.lstrip('#')
-        dd[k]=v
+        if type(k) == str:
+            k = matplotlib.colors.to_hex(k)
+        k = k.lstrip('#')
+        dd[k] = v
     d_items = sorted(dd.items())
     tot_weight = sum(dd.values())
     red = int(sum([int(k[:2], 16) * v for k, v in d_items]) / tot_weight)
@@ -143,16 +141,16 @@ def combine_hex_values(d):
     return '#' + zpad(hex(red)[2:]) + zpad(hex(green)[2:]) + zpad(hex(blue)[2:])
 
     # @staticmethod
-def mix2colors(c0,c1):
-    cc= combine_hex_values(d={c0:0.7,c1:0.3})
+
+
+def mix2colors(c0, c1):
+    cc = combine_hex_values(d={c0: 0.7, c1: 0.3})
     return cc
 
 
-
-def scaled_velocity_to_col(a) :
+def scaled_velocity_to_col(a):
     return Color.timeseries_to_col(a, lim=0.8)
 
-def angular_velocity_to_col(a) :
+
+def angular_velocity_to_col(a):
     return Color.timeseries_to_col(a, lim=np.deg2rad(100))
-
-
