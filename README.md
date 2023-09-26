@@ -66,7 +66,7 @@ Multiple aspects of real larvae are captured in various models. These can be con
   
 
 Behavioral simulations
-=====================
+=======================
 The simulation platform supports simulations of experiments that implement established behavioral paradigms reported in literature. These can be run as single simulations, grouped in essays for globally testing models over multiple conditions and arenas or as batch-runs that allow parameter search and optimization of defined utility metrics. Specifically the behaviors covered are :
 
    1. Free exploration
@@ -95,7 +95,7 @@ bringing up dynamic graphs of selected parameters, coloring of the midline, cont
 
 
 Command Line Interface
-===================
+=======================
 
 The platform is mainly accessed through the command line interface via the *larvaworld-cli* command.
 Five different modes are available. The mode has to declared after the command as a first positional argument. Mode-specific argumants can be declared afterwards :
@@ -169,7 +169,7 @@ Supporting resources
 
 
 Scientific publication
-===================
+=======================
 
 A realistic locomotory model of Drosophila larva for behavioral simulations
 

@@ -2,14 +2,16 @@
 gendocs
 # mock
 sphinx
+myst-nb
 sphinx-autobuild
 sphinx-rtd-theme
+sphinx-autoapi
 # autodocsumm
 #panel
 #holoviews
 #numpy
-panel
-holoviews
+#panel
+#holoviews
 larvaworld
 #libgeos-dev
 # sphinxcontrib-napoleon

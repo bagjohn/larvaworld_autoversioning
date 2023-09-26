@@ -1,27 +1,3 @@
-
-
-
-'''
-import inspect
-print('larvaworld')
-print(inspect.getmembers(larvaworld, inspect.ismodule))
-print('larvaworld.cli')
-print(inspect.getmembers(larvaworld.cli, inspect.ismodule))
-print('larvaworld.lib')
-print(inspect.getmembers(larvaworld.lib, inspect.ismodule))
-print('larvaworld.lib.aux')
-print(inspect.getmembers(larvaworld.lib.aux, inspect.ismodule))
-print('larvaworld.lib.param')
-print(inspect.getmembers(larvaworld.lib.param, inspect.ismodule))
-'''
-
-
-
-import sys, os
-sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('../../src')) # or "../../src
-sys.path.append(os.path.abspath('sphinxext'))
-
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
@@ -31,6 +7,12 @@ sys.path.append(os.path.abspath('sphinxext'))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+
+import sys, os
+
+sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../../src'))  # or "../../src
+sys.path.append(os.path.abspath('sphinxext'))
 
 project = 'larvaworld'
 # copyright = '2023, Panagiotis Sakagiannis'
@@ -55,7 +37,9 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx.ext.extlinks',
     'sphinx.ext.graphviz',
-    #"autodocsumm",  # to generate tables of functions, attributes, methods, etc.
+    "myst_nb",
+    "autoapi.extension",
+    # "autodocsumm",  # to generate tables of functions, attributes, methods, etc.
 ]
 
 source_suffix = {
@@ -83,7 +67,7 @@ pygments_style = 'friendly'
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-autoapi_dirs = ["../src"]  # location to parse for API reference
+autoapi_dirs = ["../../src/larvaworld"]  # location to parse for API reference
 html_theme = "sphinx_rtd_theme"
 html_static_path = ['_static']
 
@@ -91,11 +75,6 @@ html_static_path = ['_static']
 autodoc_inherit_docstrings = False
 # Show types only in descriptions, not in signatures
 autodoc_typehints = "description"
-
-
-# Import the package to document:
-import larvaworld
-#print(larvaworld.__path__)
 
 append_material = """
 
@@ -124,6 +103,13 @@ extra = """
 
 """
 
+'''
+
+
+# Import the package to document:
+import larvaworld
+#print(larvaworld.__path__)
+
 from gendocs import Generator
 gen = Generator()
 gen.DocumentPackages(larvaworld,
@@ -139,3 +125,4 @@ gen.DocumentPackages(larvaworld,
                      # append_material=append_material,
                      # extra=extra,
                     )
+'''

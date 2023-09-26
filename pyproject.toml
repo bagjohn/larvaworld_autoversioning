@@ -3,7 +3,7 @@
 
 [tool.poetry]
 name='larvaworld'
-version = "0.0.35"
+version = "0.0.36"
 description='Drosophila larva behavioral analysis and simulation platform'
 authors=['Panagiotis Sakagiannis']
 license = "GPL-3"
@@ -62,7 +62,7 @@ nengo = [
 
 [tool.poetry.urls]
 # homepage = "https://example.com"
-documentation = "https://larvaworld.readthedocs.io/en/dev/"
+documentation = "larvaworld.readthedocs.io"
 repository = "https://github.com/nawrotlab/larvaworld"
 
 [tool.poetry.scripts]

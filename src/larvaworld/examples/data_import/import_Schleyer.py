@@ -1,7 +1,7 @@
-from ....lib import reg
+from ...lib import reg
 
 
-from ....lib.process.building import import_dataset
+from ...lib.process.building import import_dataset
 
 kws0 = {
         'labID': 'Schleyer',

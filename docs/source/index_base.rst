@@ -45,7 +45,7 @@ developers of ``larvaworld``.
 
 .. _Contributors Page: https://github.com/nawrotlab/larvaworld/graphs/contributors
 
-.. include:: ../CITATION.rst
+.. include:: CITATION.rst
 
 
 

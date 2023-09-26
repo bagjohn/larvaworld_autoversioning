@@ -1,7 +1,7 @@
 .. _citation_ref:
 
 Citing larvaworld
-------------
+------------------
 
 There is a `paper about larvaworld <https://doi.org/10.1101/2021.07.07.451470>`_!
 

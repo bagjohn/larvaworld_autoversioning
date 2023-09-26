@@ -26,7 +26,7 @@ jobs:
     - name: Build documentation
       run: |
           cd docs
-          pip install -r ./source/requirements.txt
+          pip install -r ./requirements.txt
           make html
   #        poetry run make html --directory docs/
 

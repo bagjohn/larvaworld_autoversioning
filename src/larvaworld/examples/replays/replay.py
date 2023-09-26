@@ -1,6 +1,6 @@
-from ....lib import reg, aux
+from ...lib import reg, aux
 
-from ....lib.sim.dataset_replay import ReplayRun
+from ...lib.sim.dataset_replay import ReplayRun
 
 # mode = '2segs'
 # mode = 'fixed_overlap'
