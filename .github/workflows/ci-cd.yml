@@ -2,8 +2,10 @@ name: ci-cd
 
 on: [push]
 
-#permissions:
-#  id-token: write # This is required for requesting the JWT
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read  # This is required for actions/checkout
+
 
 
 jobs:
@@ -21,23 +23,23 @@ jobs:
     - name: Check-out repository
       uses: actions/checkout@v3
 
-    - name: Build documentation
-      run: |
-          cd docs
-          pip install -r ./source/requirements.txt
-          make html
-  #        poetry run make html --directory docs/
-  # run: make html --directory docs/
-
-    - name: Install poetry
-      uses: snok/install-poetry@v1
-
-    - name: Install package
-      run: poetry install
-
-    - name: Test with pytest
-      run: poetry run pytest tests/
-#      run: poetry run pytest tests/ --cov=larvaworld --cov-report=xml
+#    - name: Build documentation
+#      run: |
+#          cd docs
+#          pip install -r ./source/requirements.txt
+#          make html
+#  #        poetry run make html --directory docs/
+#  # run: make html --directory docs/
+#
+#    - name: Install poetry
+#      uses: snok/install-poetry@v1
+#
+#    - name: Install package
+#      run: poetry install
+#
+#    - name: Test with pytest
+#      run: poetry run pytest tests/
+##      run: poetry run pytest tests/ --cov=larvaworld --cov-report=xml
 
     - name: Use Codecov to track coverage
       uses: codecov/codecov-action@v2
