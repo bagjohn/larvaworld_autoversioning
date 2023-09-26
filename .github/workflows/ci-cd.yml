@@ -34,7 +34,7 @@ jobs:
 
     - name: Build documentation
       run: |
-        pip install -u sphinx
+        pip install sphinx
         poetry run make html --directory docs/
      # run: make html --directory docs/
 
