@@ -73,6 +73,7 @@ jobs:
       - name: Install poetry
         uses: snok/install-poetry@v1
 
+
       - name: Install package
         run: poetry install
 
