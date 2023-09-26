@@ -2,14 +2,14 @@ import larvaworld
 from larvaworld.lib.process.building import import_dataset, import_datasets
 
 
-def test_import_Schleyer() :
+def test_import_Schleyer():
     kws0 = {
         'labID': 'Schleyer',
         'group_id': 'exploration',
     }
 
     # Merged case
-    N=60
+    N = 60
     kws1 = {
         'parent_dir': 'exploration',
         'merged': True,
@@ -20,7 +20,7 @@ def test_import_Schleyer() :
     }
 
     # Single dish case
-    folder='dish01'
+    folder = 'dish01'
     kws2 = {
         'parent_dir': f'exploration/{folder}',
         'merged': False,
@@ -31,30 +31,25 @@ def test_import_Schleyer() :
         **kws0
     }
 
-
-    for kws in [kws1, kws2] :
+    for kws in [kws1, kws2]:
         d = import_dataset(**kws)
         assert isinstance(d, larvaworld.lib.LarvaDataset)
 
 
-def xx_test_import_Jovanic() :
+def xx_test_import_Jovanic():
     kws0 = {
         'labID': 'Jovanic',
-        'merged' : False
+        'merged': False
     }
-
-
 
     kws1 = {
         'parent_dir': 'ProteinDeprivation',
         'source_ids': ['Fed', 'Pd'],
-        'colors':['green', 'red'],
+        'colors': ['green', 'red'],
         **kws0
     }
 
-
-
-    for kws in [kws1] :
+    for kws in [kws1]:
         ds = import_datasets(**kws)
-        for d in ds :
+        for d in ds:
             assert isinstance(d, larvaworld.lib.LarvaDataset)
