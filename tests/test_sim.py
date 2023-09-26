@@ -1,4 +1,3 @@
-import larvaworld.lib.sim.genetic_algorithm
 from larvaworld.lib import reg, sim, aux
 
 

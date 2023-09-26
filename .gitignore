@@ -1,3 +1,6 @@
 /src/larvaworld/data/JovanicGroup/
 /docs/source/content/
 /docs/build/
+/.coverage
+/coverage.xml
+/poetry.lock

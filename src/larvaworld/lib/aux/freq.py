@@ -8,6 +8,7 @@ __all__ = [
     'get_freq',
 ]
 
+
 def fft_max(a, dt, fr_range=(0.0, +np.inf), return_amps=False):
     """
     Power-spectrum of signal.
@@ -41,7 +42,7 @@ def fft_max(a, dt, fr_range=(0.0, +np.inf), return_amps=False):
     yf = 2.0 / N * np.abs(yf[:N // 2])
     yf = 1000 * yf / np.sum(yf)
 
-    fr_min,fr_max=fr_range
+    fr_min, fr_max = fr_range
     xf_trunc = xf[(xf >= fr_min) & (xf <= fr_max)]
     yf_trunc = yf[(xf >= fr_min) & (xf <= fr_max)]
     fr = xf_trunc[np.argmax(yf_trunc)]
@@ -66,8 +67,7 @@ def fft_freqs(s, e, c):
     except:
         pass
 
+
 def get_freq(d, par, fr_range=(0.0, +np.inf)):
     s, e, c = d.step_data, d.endpoint_data, d.config
     e[nam.freq(par)] = s[par].groupby("AgentID").apply(fft_max, dt=c.dt, fr_range=fr_range)
-
-
