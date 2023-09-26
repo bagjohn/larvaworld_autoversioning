@@ -67,7 +67,8 @@ larvaworld-cli = "larvaworld.cli.main:main"
 larvaworld-gui = "larvaworld.gui.main:main"
 larvaworld-examples = "larvaworld.examples.main:main"
 
-
+[tool.semantic_release]
+version_variable = "pyproject.toml:version"
 
 
 [tool.setuptools.package-data]
