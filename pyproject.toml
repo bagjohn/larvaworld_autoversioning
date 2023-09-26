@@ -62,7 +62,7 @@ nengo = [
 
 [tool.poetry.urls]
 # homepage = "https://example.com"
-documentation = "larvaworld.readthedocs.io"
+documentation = "https://larvaworld.readthedocs.io/en/latest/"
 repository = "https://github.com/nawrotlab/larvaworld"
 
 [tool.poetry.scripts]
