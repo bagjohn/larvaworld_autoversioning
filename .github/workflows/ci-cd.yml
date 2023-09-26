@@ -85,7 +85,9 @@ jobs:
 #          poetry run semantic-release publish
 
       - name: Build package distribution
-        run: python -m build
+        run: |
+          pip install build
+          python -m build
 
       - name: Publish to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
