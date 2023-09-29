@@ -221,7 +221,7 @@ def read_Schleyer_timeseries_from_raw_files_per_larva(dir, save_mode='semifull')
                                                     store_sequence=store_sequence, inv_x=inv_x)
 
 
-def constrain_selected_tracks(df, max_Nagents=None, time_slice=None, min_duration_in_sec=0.0):
+def constrain_selected_tracks(df, max_Nagents=None, time_slice=None, min_duration_in_sec=0.0, **kwargs):
     """
     Applies constraints to the tracks included in timeseries data.
 
@@ -575,8 +575,9 @@ def build_Schleyer(dataset, source_dir, save_mode='semifull', **kwargs):
 
     for i, df in enumerate(dfs):
         df[t] = df.index * d.dt
+        df[step] = df.index
         df[aID] = f'Larva_{i}'
-        df.set_index(keys=[aID], inplace=True, drop=False)
+        df.set_index(keys=[aID], inplace=True)
     s0 = pd.concat(dfs, axis=0, sort=False)
 
     s0 = constrain_selected_tracks(s0, **kwargs)
