@@ -30,14 +30,14 @@ jobs:
 #          make html
 #  #        poetry run make html --directory docs/
 #
-#    - name: Install poetry
-#      uses: snok/install-poetry@v1
-#
-#    - name: Install package
-#      run: poetry install
-#
-#    - name: Test with pytest
-#      run: poetry run pytest tests/ --cov=larvaworld --cov-report=xml
+    - name: Install poetry
+      uses: snok/install-poetry@v1
+
+    - name: Install package
+      run: poetry install
+
+    - name: Test with pytest
+      run: poetry run pytest tests/ --cov=larvaworld --cov-report=xml
 
     - name: Use Codecov to track coverage
       uses: codecov/codecov-action@v2
