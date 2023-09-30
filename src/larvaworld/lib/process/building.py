@@ -207,6 +207,6 @@ def build_dataset(labID, id, group_id, target_dir, N=None, sample=None,
     }
     from ..process.dataset import LarvaDataset
     d = LarvaDataset(**conf)
-    step, end = lab_specific_build_functions[labID](dataset=d, **kwargs)
+    step, end = lab_specific_build_functions[labID](**kwargs)
     d.set_data(step=step, end=end)
     return d

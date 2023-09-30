@@ -117,7 +117,8 @@ def read_timeseries_from_raw_files_per_parameter(pref, Npoints=None, Ncontour=No
     return df
 
 
-def read_timeseries_from_raw_files_per_larva(files, read_sequence, store_sequence, inv_x=False):
+def read_timeseries_from_raw_files_per_larva(files, labID=None, save_mode='full', read_sequence=None,
+                                             store_sequence=None, inv_x=False):
     """
     Reads timeseries data stored in txt files of the lab-specific Jovanic format and returns them as a pd.Dataframe.
 
@@ -125,10 +126,17 @@ def read_timeseries_from_raw_files_per_larva(files, read_sequence, store_sequenc
     ----------
     files : list
         List of the absolute filepaths of the data files.
-    read_sequence : list of strings
+    labID : string, optional
+        The ID of the lab-specific format to use
+    save_mode : string
+        The mode defining the columns to store
+        Used if store_sequence is not provided
+    read_sequence : list of strings, optional
         The sequence of parameters found in each file
-    store_sequence : list of strings
+        If not provided it is set to the lab-format's default value
+    store_sequence : list of strings, optional
         The sequence of parameters to store
+        If not provided it is set to the lab-format's default value
     inv_x : boolean
         Whether to invert x axis.
         Defaults to False
@@ -137,7 +145,8 @@ def read_timeseries_from_raw_files_per_larva(files, read_sequence, store_sequenc
     -------
     list of pandas.DataFrame
     """
-
+    if (read_sequence is None or store_sequence is None) and labID is not None:
+        read_sequence, store_sequence = get_column_sequences(labID, save_mode)
 
     dfs = []
     for f in files:
@@ -481,14 +490,12 @@ def interpolate_timeseries_dataframe(df, dt):
     return df_new
 
 
-def build_Jovanic(dataset, source_id, source_dir, match_ids=True, matchID_kws={}, **kwargs):
+def build_Jovanic(source_id, source_dir, match_ids=True, matchID_kws={}, **kwargs):
     """
     Builds a larvaworld dataset from Jovanic-lab-specific raw data
 
     Parameters
     ----------
-    dataset : lib.process.dataset.LarvaDataset
-        The initialized larvaworld dataset
     source_id : string
         The ID of the imported dataset
     source_dir : string
@@ -509,33 +516,45 @@ def build_Jovanic(dataset, source_id, source_dir, match_ids=True, matchID_kws={}
         The endpoint dataframe
     """
 
-
-
-    d = dataset
-    Npoints = d.config.Npoints
-    Ncontour = d.config.Ncontour
-    print(f'*---- Buiding dataset {d.id} of group {d.group_id}!-----')
+    g = reg.conf.LabFormat.get('Jovanic')
+    dt = g.tracker.dt
+    Npoints = g.tracker.Npoints
+    Ncontour = g.tracker.Ncontour
+    # d = dataset
+    # print(f'*---- Buiding dataset {d.id} of group {d.group_id}!-----')
 
     df = read_timeseries_from_raw_files_per_parameter(pref=f'{source_dir}/{source_id}', Npoints=Npoints,
                                                       Ncontour=Ncontour)
 
     if match_ids:
-        df = match_larva_ids(df, Npoints=Npoints, dt=d.dt, **matchID_kws)
+        df = match_larva_ids(df, Npoints=Npoints, dt=dt, **matchID_kws)
     df = constrain_selected_tracks(df, **kwargs)
-    e = init_endpoint_dataframe_from_timeseries(df=df, dt=d.dt)
-    s = interpolate_timeseries_dataframe(df=df, dt=d.dt)
-    print(f'----- Timeseries data for group "{d.id}" of experiment "{d.group_id}" generated.')
+    e = init_endpoint_dataframe_from_timeseries(df=df, dt=dt)
+    s = interpolate_timeseries_dataframe(df=df, dt=dt)
+    # print(f'----- Timeseries data for group "{d.id}" of experiment "{d.group_id}" generated.')
     return s, e
 
 
-def build_Schleyer(dataset, source_dir, save_mode='semifull', **kwargs):
+def concatenate_larva_tracks(dfs, dt):
+    t = 't'
+    step = 'Step'
+    aID = 'AgentID'
+    index_names = [step, aID]
+
+    for i, df in enumerate(dfs):
+        df[t] = df.index * dt
+        df[step] = df.index
+        df[aID] = f'Larva_{i}'
+        df.set_index(keys=[aID], inplace=True)
+    return pd.concat(dfs, axis=0, sort=False)
+
+
+def build_Schleyer(source_dir, save_mode='semifull', **kwargs):
     """
     Builds a larvaworld dataset from Schleyer-lab-specific raw data
 
     Parameters
     ----------
-    dataset : lib.process.dataset.LarvaDataset
-        The initialized larvaworld dataset
     source_dir : string
         The folder containing the imported dataset
     save_mode : string
@@ -553,8 +572,8 @@ def build_Schleyer(dataset, source_dir, save_mode='semifull', **kwargs):
         The endpoint dataframe
     """
 
-
-    d = dataset
+    g = reg.conf.LabFormat.get('Schleyer')
+    dt = g.tracker.dt
 
     if type(source_dir) == str:
         source_dir = [source_dir]
@@ -573,16 +592,10 @@ def build_Schleyer(dataset, source_dir, save_mode='semifull', **kwargs):
     aID = 'AgentID'
     index_names = [step, aID]
 
-    for i, df in enumerate(dfs):
-        df[t] = df.index * d.dt
-        df[step] = df.index
-        df[aID] = f'Larva_{i}'
-        df.set_index(keys=[aID], inplace=True)
-    s0 = pd.concat(dfs, axis=0, sort=False)
-
+    s0 = concatenate_larva_tracks(dfs, dt)
     s0 = constrain_selected_tracks(s0, **kwargs)
 
-    e = init_endpoint_dataframe_from_timeseries(df=s0, dt=d.dt)
+    e = init_endpoint_dataframe_from_timeseries(df=s0, dt=dt)
     my_index = pd.MultiIndex.from_product([np.arange(t0, t1 + 1).astype(int), e.index.values.tolist()],
                                           names=index_names)
 
@@ -675,14 +688,12 @@ def build_Schleyer(dataset, source_dir, save_mode='semifull', **kwargs):
     return s, e
 
 
-def build_Berni(dataset, source_files, **kwargs):
+def build_Berni(source_files, **kwargs):
     """
     Builds a larvaworld dataset from Berni-lab-specific raw data
 
     Parameters
     ----------
-    dataset : lib.process.dataset.LarvaDataset
-        The initialized larvaworld dataset
     source_files : list
         List of the absolute filepaths of the data files.
    **kwargs: keyword arguments
@@ -696,12 +707,11 @@ def build_Berni(dataset, source_files, **kwargs):
     e : pandas.DataFrame
         The endpoint dataframe
     """
+    labID = 'Berni'
 
-
-
-    read_sequence, store_sequence = get_column_sequences(labID='Berni', save_mode='full')
-    dfs=read_timeseries_from_raw_files_per_larva(files=source_files, read_sequence=read_sequence,
-                                             store_sequence=store_sequence)
+    g = reg.conf.LabFormat.get(labID)
+    dt = g.tracker.dt
+    dfs = read_timeseries_from_raw_files_per_larva(files=source_files, labID=labID)
     if len(dfs) == 0:
         return None, None
     t0, t1 = np.min([df.index.min() for df in dfs]), np.max([df.index.max() for df in dfs])
@@ -711,17 +721,15 @@ def build_Berni(dataset, source_files, **kwargs):
     aID = 'AgentID'
     index_names = [step, aID]
 
-    d = dataset
-
     for i, df in enumerate(dfs):
-        df[t] = df.index * d.dt
+        df[t] = df.index * dt
         df[aID] = f'Larva_{i}'
         df.set_index(keys=[aID], inplace=True, drop=False)
     s0 = pd.concat(dfs, axis=0, sort=False)
 
     s0 = constrain_selected_tracks(s0, **kwargs)
 
-    e = init_endpoint_dataframe_from_timeseries(df=s0, dt=d.dt)
+    e = init_endpoint_dataframe_from_timeseries(df=s0, dt=dt)
     my_index = pd.MultiIndex.from_product([np.arange(t0, t1 + 1).astype(int), e.index.values.tolist()],
                                           names=index_names)
 
@@ -733,57 +741,15 @@ def build_Berni(dataset, source_files, **kwargs):
     s = pd.DataFrame(index=my_index, columns=ps)
     s.update(s0[ps])
     s.sort_index(level=index_names, inplace=True)
-
-    # g = reg.conf.LabFormat.getID('Berni')
-    # cols0 = g.filesystem.read_sequence
-    # cols1 = cols0[1:]
-    #
-    # d = dataset
-    # dt = d.dt
-    # end = pd.DataFrame(columns=['AgentID', 'num_ticks', 'cum_dur'])
-    # Nvalid = 0
-    # dfs = []
-    # ids = []
-    # fs = source_files
-    # # fs = [os.path.join(source_dir, n) for n in os.listdir(source_dir) if n.startswith(dataset.id)]
-    # for f in fs:
-    #     df = pd.read_csv(f, header=0, index_col=0, names=cols0)
-    #     df.reset_index(drop=True, inplace=True)
-    #     if len(df) >= int(min_duration_in_sec / dt) and len(df) >= int(min_end_time_in_sec / dt):
-    #         # df = df[df.index >= int(start_time_in_sec / dt)]
-    #         df = df[cols1]
-    #         df = df.apply(pd.to_numeric, errors='coerce')
-    #         Nvalid += 1
-    #         dfs.append(df)
-    #         ids.append(f'Larva_{Nvalid}')
-    #         if max_Nagents is not None and Nvalid >= max_Nagents:
-    #             break
-    #     if len(dfs) == 0:
-    #         return None, None
-    # Nticks = np.max([len(df) for df in dfs])
-    # df0 = pd.DataFrame(np.nan, index=np.arange(Nticks).tolist(), columns=cols1)
-    # df0.index.name = 'Step'
-    #
-    # for i, (df, id) in enumerate(zip(dfs, ids)):
-    #     ddf = df0.copy(deep=True)
-    #     end = end.append({'AgentID': id,
-    #                       'num_ticks': len(df),
-    #                       'cum_dur': len(df) * dt}, ignore_index=True)
-    #     ddf.update(df)
-    #     ddf = ddf.assign(AgentID=id).set_index('AgentID', append=True)
-    #     step = ddf if i == 0 else step.append(ddf)
-    # end.set_index('AgentID', inplace=True)
     return s, e
 
 
-def build_Arguello(dataset, source_files, **kwargs):
+def build_Arguello(source_files, **kwargs):
     """
     Builds a larvaworld dataset from Arguello-lab-specific raw data
 
     Parameters
     ----------
-    dataset : lib.process.dataset.LarvaDataset
-        The initialized larvaworld dataset
     source_files : list
         List of the absolute filepaths of the data files.
    **kwargs: keyword arguments
@@ -798,9 +764,12 @@ def build_Arguello(dataset, source_files, **kwargs):
         The endpoint dataframe
     """
 
-    read_sequence, store_sequence = get_column_sequences(labID='Berni', save_mode='full')
-    dfs = read_timeseries_from_raw_files_per_larva(files=source_files, read_sequence=read_sequence,
-                                                   store_sequence=store_sequence)
+    labID = 'Arguello'
+
+    g = reg.conf.LabFormat.get(labID)
+    dt = g.tracker.dt
+    dfs = read_timeseries_from_raw_files_per_larva(files=source_files, labID=labID)
+
     if len(dfs) == 0:
         return None, None
     t0, t1 = np.min([df.index.min() for df in dfs]), np.max([df.index.max() for df in dfs])
@@ -810,17 +779,15 @@ def build_Arguello(dataset, source_files, **kwargs):
     aID = 'AgentID'
     index_names = [step, aID]
 
-    d = dataset
-
     for i, df in enumerate(dfs):
-        df[t] = df.index * d.dt
+        df[t] = df.index * dt
         df[aID] = f'Larva_{i}'
         df.set_index(keys=[aID], inplace=True, drop=False)
     s0 = pd.concat(dfs, axis=0, sort=False)
 
     s0 = constrain_selected_tracks(s0, **kwargs)
 
-    e = init_endpoint_dataframe_from_timeseries(df=s0, dt=d.dt)
+    e = init_endpoint_dataframe_from_timeseries(df=s0, dt=dt)
     my_index = pd.MultiIndex.from_product([np.arange(t0, t1 + 1).astype(int), e.index.values.tolist()],
                                           names=index_names)
 
@@ -832,47 +799,6 @@ def build_Arguello(dataset, source_files, **kwargs):
     s = pd.DataFrame(index=my_index, columns=ps)
     s.update(s0[ps])
     s.sort_index(level=index_names, inplace=True)
-
-    # g = reg.conf.LabFormat.getID('Arguello')
-    # cols0 = g.filesystem.read_sequence
-    # cols1 = cols0[1:]
-    # d = dataset
-    # dt = d.dt
-    # end = pd.DataFrame(columns=['AgentID', 'num_ticks', 'cum_dur'])
-    # Nvalid = 0
-    # dfs = []
-    # ids = []
-    #
-    # fs = source_files
-    # # fs = [os.path.join(source_dir, n) for n in os.listdir(source_dir) if n.startswith(dataset.id)]
-    # for f in fs:
-    #     df = pd.read_csv(f, header=0, index_col=0, names=cols0)
-    #     df.reset_index(drop=True, inplace=True)
-    #     if len(df) >= int(min_duration_in_sec / dt) and len(df) >= int(min_end_time_in_sec / dt):
-    #         # df = df[df.index >= int(start_time_in_sec / dt)]
-    #         df = df[cols1]
-    #         df = df.apply(pd.to_numeric, errors='coerce')
-    #         Nvalid += 1
-    #         dfs.append(df)
-    #         ids.append(f'Larva_{Nvalid}')
-    #         if max_Nagents is not None and Nvalid >= max_Nagents:
-    #             break
-    #     if len(dfs) == 0:
-    #         return None, None
-    # Nticks = np.max([len(df) for df in dfs])
-    # df0 = pd.DataFrame(np.nan, index=np.arange(Nticks).tolist(), columns=cols1)
-    # df0.index.name = 'Step'
-    #
-    # for i, (df, id) in enumerate(zip(dfs, ids)):
-    #     ddf = df0.copy(deep=True)
-    #     # ddf = ddf.interpolate() # DEALING WITH MISSING DATA? DROP OR INTERPOLATE? DEFAULT IS LINEAR.
-    #     end = end.append({'AgentID': id,
-    #                       'num_ticks': len(df),
-    #                       'cum_dur': len(df) * dt}, ignore_index=True)
-    #     ddf.update(df)
-    #     ddf = ddf.assign(AgentID=id).set_index('AgentID', append=True)
-    #     step = ddf if i == 0 else step.append(ddf)
-    # end.set_index('AgentID', inplace=True)
     return s, e
 
 
@@ -882,7 +808,3 @@ lab_specific_build_functions = {
     'Schleyer': build_Schleyer,
     'Arguello': build_Arguello,
 }
-
-
-# if __name__ == "__main__":
-#     print('ss')
