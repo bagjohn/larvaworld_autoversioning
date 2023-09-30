@@ -16,7 +16,13 @@ __all__ = [
     'constrain_selected_tracks',
     'match_larva_ids',
     'match_larva_ids_including_by_length',
+    'get_column_sequences',
+    'concatenate_larva_tracks',
+    'complete_timeseries_with_nans',
+    'empty_2index_timeseries_df',
     'interpolate_timeseries_dataframe',
+    'finalize_timeseries_dataframe',
+    'generate_dataframes',
     'build_Jovanic',
     'build_Schleyer',
     'build_Berni',
@@ -55,7 +61,7 @@ def init_endpoint_dataframe_from_timeseries(df, dt):
     return e
 
 
-def read_timeseries_from_raw_files_per_parameter(pref, Npoints=None, Ncontour=None):
+def read_timeseries_from_raw_files_per_parameter(pref, labID='Jovanic', Npoints=None, Ncontour=None):
     """
     Reads timeseries data stored in txt files of the lab-specific Jovanic format and returns them as a pd.Dataframe.
 
@@ -77,11 +83,11 @@ def read_timeseries_from_raw_files_per_parameter(pref, Npoints=None, Ncontour=No
     """
 
     # Retrieve lab-specific default number of midline and contour points if not provided
-    if Npoints is None:
-        g = reg.conf.LabFormat.getID('Jovanic')
+    if Npoints is None and labID is not None:
+        g = reg.conf.LabFormat.getID(labID)
         Npoints = g.tracker.Npoints
-    if Ncontour is None:
-        g = reg.conf.LabFormat.getID('Jovanic')
+    if Ncontour is None and labID is not None:
+        g = reg.conf.LabFormat.getID(labID)
         Ncontour = g.tracker.Ncontour
 
     t = 't'
@@ -424,6 +430,23 @@ def match_larva_ids(df, Npoints, dt, e=None, **kwargs):
 
 
 def get_column_sequences(labID, save_mode='semifull'):
+    """
+    Define the column sequence in the raw data to be imported and the imported data to be stored
+
+    Parameters
+    ----------
+    labID : string
+        The ID of the lab-specific format to use
+    save_mode : string
+        The mode defining the columns to store
+
+    Returns
+    -------
+    c1 : list of strings
+        The sequence of parameters found in each file
+    c2 : list of strings
+        The sequence of parameters to store
+    """
     g = reg.conf.LabFormat.getID(labID)
     c1 = g.filesystem.read_sequence
     if save_mode == 'full':
@@ -440,57 +463,187 @@ def get_column_sequences(labID, save_mode='semifull'):
     return c1, c2
 
 
-def interpolate_timeseries_dataframe(df, dt):
+def concatenate_larva_tracks(dfs, dt):
     """
-    Interplolates timeseries data with irregular timestep
+    Concatenate multiple single tracks to a single dataframe
 
     Parameters
     ----------
-    df : pandas.DataFrame
-        The timeseries dataframe
+    dfs : list of pd.DataFrame
+        The single tracks
     dt : float
-        The timeseries timestep in seconds
-
+        The tracking timestep
 
     Returns
     -------
-    pandas.DataFrame
-    """
+    pd.DataFrame
 
+    """
     t = 't'
     step = 'Step'
     aID = 'AgentID'
 
-    s = copy.deepcopy(df)
-    s[step] = s[t] / dt
-    Nticks = int(np.ceil(s[step].max()))
+    for i, df in enumerate(dfs):
+        df[t] = df.index * dt
+        df[step] = df.index
+        df[aID] = f'Larva_{i}'
+        df.set_index(keys=[aID], inplace=True)
+    s = pd.concat(dfs, axis=0, sort=False)
+    # I add this because some 'na' values were found
+    s = s.mask(s == 'na', np.nan)
+    return s
+
+
+def complete_timeseries_with_nans(s0):
+    """
+    Fill the non-existing ticks with nans
+
+    Parameters
+    ----------
+    s0 : pd.DataFrame
+        The timeseries dataframe
+
+    Returns
+    -------
+    pd.DataFrame
+
+    """
+
+
+    s = empty_2index_timeseries_df(s0)
+    s.update(s0)
+    return s
+
+
+def empty_2index_timeseries_df(s0):
+    """
+    Generate an empty dataframe with complete ticks based on an existing
+
+    Parameters
+    ----------
+    s0 : pd.DataFrame
+        The timeseries dataframe
+
+    Returns
+    -------
+    pd.DataFrame
+
+    """
+
+    step = 'Step'
+    aID = 'AgentID'
+    index_names = [step, aID]
+    idx = s0.index
+
+    ticks = idx.unique(step).values
+    trange = np.arange(int(np.floor(np.min(ticks))), int(np.ceil(np.max(ticks))), 1).astype(int)
+    my_index = pd.MultiIndex.from_product([trange, idx.unique(aID).values], names=index_names)
+
+    s = pd.DataFrame(index=my_index, columns=s0.columns)
+    return s
+
+
+def finalize_timeseries_dataframe(s, complete_ticks=True, interpolate_ticks=False):
+    """
+    Finalize the timeseries dataframe setting the double-index
+
+    Parameters
+    ----------
+    s : pd.DataFrame
+        The timeseries dataframe
+    complete_ticks : boolean
+        Whether to complete timeseries missing ticks with nans
+        Defaults to False
+    interpolate_ticks : boolean
+        Whether to interpolate timeseries into a fixed timestep timeseries
+        Defaults to False
+
+    Returns
+    -------
+    pd.DataFrame
+
+    """
+
+    step = 'Step'
+    aID = 'AgentID'
+    index_names = [step, aID]
+
     s.reset_index(drop=False, inplace=True)
-    s.set_index(keys=[step, aID], inplace=True, drop=True, verify_integrity=False)
-    s.sort_index(level=[step, aID], inplace=True)
-    ids = aux.index_unique(s, level=aID)
+    s.set_index(keys=index_names, inplace=True, drop=True, verify_integrity=False)
 
-    ticks = np.arange(0, Nticks, 1).astype(int)
+    if complete_ticks:
+        s = complete_timeseries_with_nans(s)
+    if interpolate_ticks:
+        s = interpolate_timeseries_dataframe(s)
 
-    my_index = pd.MultiIndex.from_product([ticks, ids], names=[step, aID])
-    ps = s.columns
-    A = np.zeros([Nticks, ids.shape[0], len(ps)]) * np.nan
+    s.sort_index(level=index_names, inplace=True)
+    return s
 
-    for j, id in enumerate(ids):
-        dff = s.xs(id, level=aID, drop_level=True)
-        float_ticks_j = dff.index
-        ticks_j = np.arange(int(np.floor(float_ticks_j.min())), int(np.ceil(float_ticks_j.max())), 1)
-        for i, p in enumerate(ps):
-            f = interpolate.interp1d(x=float_ticks_j.values, y=dff[p].loc[float_ticks_j].values,
+
+def generate_dataframes(dfs, dt, complete_ticks=True, **kwargs):
+    # """
+    # Helper function that connects other
+    #
+    # Parameters
+    # ----------
+    # s : pd.DataFrame
+    #     The timeseries dataframe
+    # complete_ticks : boolean
+    #     Whether to complete timeseries missing ticks with nans
+    #     Defaults to False
+    # interpolate_ticks : boolean
+    #     Whether to interpolate timeseries into a fixed timestep timeseries
+    #     Defaults to False
+    #
+    # Returns
+    # -------
+    # pd.DataFrame
+    #
+    # """
+
+    if len(dfs) == 0:
+        return None, None
+    s0 = concatenate_larva_tracks(dfs, dt)
+    s0 = constrain_selected_tracks(s0, **kwargs)
+
+    e = init_endpoint_dataframe_from_timeseries(df=s0, dt=dt)
+
+    # s0 = s0[[col for col in s0.columns if col != 't']]
+    s = finalize_timeseries_dataframe(s0, complete_ticks=complete_ticks)
+    return s, e
+
+
+def interpolate_timeseries_dataframe(s0):
+    """
+    Interplolate irregular-timestep timeseries to regular-timestep
+
+    Parameters
+    ----------
+    s0 : pd.DataFrame
+        The timeseries dataframe
+
+    Returns
+    -------
+    pd.DataFrame
+
+    """
+
+
+    s = empty_2index_timeseries_df(s0)
+    aID = 'AgentID'
+    for id in s.index.unique(aID).values:
+        dff = s0.xs(id, level=aID, drop_level=True)
+        idx = dff.index.values
+        ts = np.arange(int(np.floor(np.min(idx))), int(np.ceil(np.max(idx))), 1)
+        for p in s.columns:
+            f = interpolate.interp1d(x=idx, y=dff[p].values,
                                      fill_value='extrapolate',
                                      assume_sorted=True)
-            A[ticks_j, j, i] = f(ticks_j)
-    A = A.reshape([-1, len(ps)])
-    df_new = pd.DataFrame(A, index=my_index, columns=ps)
-    df_new.sort_index(level=[step, aID], inplace=True)
-    return df_new
+            s[p].loc[(ts, id)] = f(ts)
+    return s
 
 
-def build_Jovanic(source_id, source_dir, match_ids=True, matchID_kws={}, **kwargs):
+def build_Jovanic(source_id, source_dir, match_ids=True, matchID_kws={},interpolate_ticks=True, **kwargs):
     """
     Builds a larvaworld dataset from Jovanic-lab-specific raw data
 
@@ -502,8 +655,12 @@ def build_Jovanic(source_id, source_dir, match_ids=True, matchID_kws={}, **kwarg
         The folder containing the imported dataset
     match_ids : boolean
         Whether to use the match-ID algorithm
+        Defaults to True
     matchID_kws : dict
         Additional keyword arguments to be passed to the match-ID algorithm.
+    interpolate_ticks : boolean
+        Whether to interpolate timeseries into a fixed timestep timeseries
+        Defaults to True
    **kwargs: keyword arguments
         Additional keyword arguments to be passed to the constrain_selected_tracks function.
 
@@ -519,79 +676,18 @@ def build_Jovanic(source_id, source_dir, match_ids=True, matchID_kws={}, **kwarg
     g = reg.conf.LabFormat.get('Jovanic')
     dt = g.tracker.dt
     Npoints = g.tracker.Npoints
-    Ncontour = g.tracker.Ncontour
-    # d = dataset
-    # print(f'*---- Buiding dataset {d.id} of group {d.group_id}!-----')
 
-    df = read_timeseries_from_raw_files_per_parameter(pref=f'{source_dir}/{source_id}', Npoints=Npoints,
-                                                      Ncontour=Ncontour)
+    df = read_timeseries_from_raw_files_per_parameter(pref=f'{source_dir}/{source_id}')
 
     if match_ids:
         df = match_larva_ids(df, Npoints=Npoints, dt=dt, **matchID_kws)
     df = constrain_selected_tracks(df, **kwargs)
+    df['Step'] = df['t'] / dt
     e = init_endpoint_dataframe_from_timeseries(df=df, dt=dt)
-    s = interpolate_timeseries_dataframe(df=df, dt=dt)
+
+    s = finalize_timeseries_dataframe(df, complete_ticks=False, interpolate_ticks=interpolate_ticks)
+    # s = interpolate_timeseries_dataframe(df=df, dt=dt)
     # print(f'----- Timeseries data for group "{d.id}" of experiment "{d.group_id}" generated.')
-    return s, e
-
-
-def concatenate_larva_tracks(dfs, dt):
-    t = 't'
-    step = 'Step'
-    aID = 'AgentID'
-    index_names = [step, aID]
-
-    for i, df in enumerate(dfs):
-        df[t] = df.index * dt
-        df[step] = df.index
-        df[aID] = f'Larva_{i}'
-        df.set_index(keys=[aID], inplace=True)
-    s = pd.concat(dfs, axis=0, sort=False)
-    # I add this because some 'na' values were found
-    s = s.mask(s == 'na', np.nan)
-    return s
-
-
-def complete_timeseries_with_nans(s0):
-    step = 'Step'
-    aID = 'AgentID'
-    index_names = [step, aID]
-
-    ticks = s0.index.unique(step).values
-    trange = np.arange(np.min(ticks), np.max(ticks) + 1).astype(int)
-    ids = s0.index.unique(aID).values
-    my_index = pd.MultiIndex.from_product([trange, ids], names=index_names)
-
-    s = pd.DataFrame(index=my_index, columns=s0.columns)
-    s.update(s0)
-    return s
-
-
-def finalize_timeseries_dataframe(s, complete_ticks=True):
-    step = 'Step'
-    aID = 'AgentID'
-    index_names = [step, aID]
-
-    s.reset_index(drop=False, inplace=True)
-    s.set_index(keys=index_names, inplace=True, drop=True, verify_integrity=False)
-
-    if complete_ticks:
-        s = complete_timeseries_with_nans(s)
-
-    s.sort_index(level=index_names, inplace=True)
-    return s
-
-
-def generate_dataframes(dfs, dt, complete_ticks=True, **kwargs):
-    if len(dfs) == 0:
-        return None, None
-    s0 = concatenate_larva_tracks(dfs, dt)
-    s0 = constrain_selected_tracks(s0, **kwargs)
-
-    e = init_endpoint_dataframe_from_timeseries(df=s0, dt=dt)
-
-    s0 = s0[[col for col in s0.columns if col != 't']]
-    s = finalize_timeseries_dataframe(s0, complete_ticks=complete_ticks)
     return s, e
 
 
@@ -607,7 +703,7 @@ def build_Schleyer(source_dir, save_mode='semifull', **kwargs):
         Mode to define the sequence of columns/parameters to store.
         Defaults to 'semi-full'
    **kwargs: keyword arguments
-        Additional keyword arguments to be passed to the constrain_selected_tracks function.
+        Additional keyword arguments to be passed to the generate_dataframes function.
 
 
     Returns
@@ -640,7 +736,7 @@ def build_Berni(source_files, **kwargs):
     source_files : list
         List of the absolute filepaths of the data files.
    **kwargs: keyword arguments
-        Additional keyword arguments to be passed to the constrain_selected_tracks function.
+        Additional keyword arguments to be passed to the generate_dataframes function.
 
 
     Returns
@@ -667,7 +763,7 @@ def build_Arguello(source_files, **kwargs):
     source_files : list
         List of the absolute filepaths of the data files.
    **kwargs: keyword arguments
-        Additional keyword arguments to be passed to the constrain_selected_tracks function.
+        Additional keyword arguments to be passed to the generate_dataframes function.
 
 
     Returns
