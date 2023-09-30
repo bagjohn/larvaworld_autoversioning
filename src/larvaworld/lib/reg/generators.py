@@ -487,6 +487,14 @@ class LabFormat(NestedConf) :
     def path(self):
         return f'{reg.DATA_DIR}/{self.labID}Group'
 
+    @property
+    def raw_folder(self):
+        return f'{self.path}/raw'
+
+    @property
+    def processed_folder(self):
+        return f'{self.path}/processed'
+
 class ExpConf(SimOps):
     env_params = ClassAttr(gen.Env, doc='The environment configuration')
     # env_params = conf.Env.confIDorNew()

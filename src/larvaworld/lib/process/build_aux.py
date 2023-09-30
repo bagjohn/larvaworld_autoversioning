@@ -546,7 +546,53 @@ def concatenate_larva_tracks(dfs, dt):
         df[step] = df.index
         df[aID] = f'Larva_{i}'
         df.set_index(keys=[aID], inplace=True)
-    return pd.concat(dfs, axis=0, sort=False)
+    s = pd.concat(dfs, axis=0, sort=False)
+    # I add this because some 'na' values were found
+    s = s.mask(s == 'na', np.nan)
+    return s
+
+
+def complete_timeseries_with_nans(s0):
+    step = 'Step'
+    aID = 'AgentID'
+    index_names = [step, aID]
+
+    ticks = s0.index.unique(step).values
+    trange = np.arange(np.min(ticks), np.max(ticks) + 1).astype(int)
+    ids = s0.index.unique(aID).values
+    my_index = pd.MultiIndex.from_product([trange, ids], names=index_names)
+
+    s = pd.DataFrame(index=my_index, columns=s0.columns)
+    s.update(s0)
+    return s
+
+
+def finalize_timeseries_dataframe(s, complete_ticks=True):
+    step = 'Step'
+    aID = 'AgentID'
+    index_names = [step, aID]
+
+    s.reset_index(drop=False, inplace=True)
+    s.set_index(keys=index_names, inplace=True, drop=True, verify_integrity=False)
+
+    if complete_ticks:
+        s = complete_timeseries_with_nans(s)
+
+    s.sort_index(level=index_names, inplace=True)
+    return s
+
+
+def generate_dataframes(dfs, dt, complete_ticks=True, **kwargs):
+    if len(dfs) == 0:
+        return None, None
+    s0 = concatenate_larva_tracks(dfs, dt)
+    s0 = constrain_selected_tracks(s0, **kwargs)
+
+    e = init_endpoint_dataframe_from_timeseries(df=s0, dt=dt)
+
+    s0 = s0[[col for col in s0.columns if col != 't']]
+    s = finalize_timeseries_dataframe(s0, complete_ticks=complete_ticks)
+    return s, e
 
 
 def build_Schleyer(source_dir, save_mode='semifull', **kwargs):
@@ -582,110 +628,7 @@ def build_Schleyer(source_dir, save_mode='semifull', **kwargs):
     for f in source_dir:
         dfs += read_Schleyer_timeseries_from_raw_files_per_larva(dir=f, save_mode=save_mode)
 
-    if len(dfs) == 0:
-        return None, None
-
-    t0, t1 = np.min([df.index.min() for df in dfs]), np.max([df.index.max() for df in dfs])
-
-    t = 't'
-    step = 'Step'
-    aID = 'AgentID'
-    index_names = [step, aID]
-
-    s0 = concatenate_larva_tracks(dfs, dt)
-    s0 = constrain_selected_tracks(s0, **kwargs)
-
-    e = init_endpoint_dataframe_from_timeseries(df=s0, dt=dt)
-    my_index = pd.MultiIndex.from_product([np.arange(t0, t1 + 1).astype(int), e.index.values.tolist()],
-                                          names=index_names)
-
-    s0.reset_index(drop=False, inplace=True)
-    s0.set_index(keys=index_names, inplace=True, drop=True, verify_integrity=False)
-
-    ps = [col for col in s0.columns if col != t]
-
-    s = pd.DataFrame(index=my_index, columns=ps)
-    s.update(s0[ps])
-    s.sort_index(level=index_names, inplace=True)
-    # I add this because some 'na' values were found
-    s = s.mask(s == 'na', np.nan)
-
-    # t0, t1 = np.min([df.index.min() for df in dfs]), np.max([df.index.max() for df in dfs])
-    # df0 = pd.DataFrame(np.nan, index=np.arange(t0, t1 + 1).tolist(), columns=store_sequence)
-    # df0.index.name = step
-    #
-    # for i, df in enumerate(dfs):
-    #     ddf = df0.copy(deep=True)
-    #     ddf.update(df)
-    #     ddf = ddf.assign(AgentID=f'Larva_{i}').set_index(aID, append=True)
-    #     if i == 0:
-    #         s = ddf
-    #     else:
-    #         s = pd.concat([s, ddf])
-
-    # s.reset_index(drop=False, inplace=True)
-    # s[t] = s[step] * d.dt
-    # s.set_index(keys=[t], inplace=True, drop=True, verify_integrity=False)
-
-    # s.reset_index(drop=False, inplace=True)
-    # s.set_index(keys=[step, aID], inplace=True, drop=True, verify_integrity=False)
-    # s.sort_index(level=[step, aID], inplace=True)
-    # for i, f in enumerate(source_dir):
-    #     fs = [os.path.join(f, n) for n in os.listdir(f) if n.endswith('.csv')]
-    #     raw_fs += fs
-    #
-    #     if g.filesystem.read_metadata:
-    #         try:
-    #             inv_xs += get_invert_x_array(read_Schleyer_metadata(f), len(fs))
-    #         except:
-    #             pass
-    # if len(inv_xs) == 0:
-    #     inv_xs = [False] * len(raw_fs)
-
-    # Nvalid = 0
-    # dfs = []
-    # ids = []
-    # for f, inv_x in zip(raw_fs, inv_xs):
-    #     df = pd.read_csv(f, header=None, index_col=0, names=cols0)
-    #
-    #     # If indexing is in strings replace with ascending floats
-    #     if all([type(ii) == str for ii in df.index.values]):
-    #         df.reset_index(inplace=True, drop=True)
-    #     if len(df) >= int(min_duration_in_sec / dt) and df.index.max() >= int(min_end_time_in_sec / dt):
-    #         df = df[df.index >= int(start_time_in_sec / dt)]
-    #         df = df[cols1]
-    #         df = df.apply(pd.to_numeric, errors='coerce')
-    #         if inv_x:
-    #             for x_par in [p for p in cols1 if p.endswith('x')]:
-    #                 df[x_par] *= -1
-    #         Nvalid += 1
-    #         dfs.append(df)
-    #         ids.append(f'Larva_{Nvalid}')
-    #         if max_Nagents is not None and Nvalid >= max_Nagents:
-    #             break
-    # if len(dfs) == 0:
-    #     return None, None
-    # t0, t1 = np.min([df.index.min() for df in dfs]), np.max([df.index.max() for df in dfs])
-    # df0 = pd.DataFrame(np.nan, index=np.arange(t0, t1 + 1).tolist(), columns=cols1)
-    # df0.index.name = 'Step'
-    #
-    # end = pd.DataFrame(columns=['AgentID', 'num_ticks', 'cum_dur'])
-    # for i, (df, id) in enumerate(zip(dfs, ids)):
-    #     ddf = df0.copy(deep=True)
-    #
-    #     end.loc[i] = {'AgentID': id,
-    #                   'num_ticks': len(df),
-    #                   'cum_dur': len(df) * dt}
-    #     ddf.update(df)
-    #     ddf = ddf.assign(AgentID=id).set_index('AgentID', append=True)
-    #     if i == 0:
-    #         step = ddf
-    #     else:
-    #         step = pd.concat([step, ddf])
-    #
-    # end.set_index('AgentID', inplace=True)
-
-    return s, e
+    return generate_dataframes(dfs, dt, **kwargs)
 
 
 def build_Berni(source_files, **kwargs):
@@ -712,36 +655,7 @@ def build_Berni(source_files, **kwargs):
     g = reg.conf.LabFormat.get(labID)
     dt = g.tracker.dt
     dfs = read_timeseries_from_raw_files_per_larva(files=source_files, labID=labID)
-    if len(dfs) == 0:
-        return None, None
-    t0, t1 = np.min([df.index.min() for df in dfs]), np.max([df.index.max() for df in dfs])
-
-    t = 't'
-    step = 'Step'
-    aID = 'AgentID'
-    index_names = [step, aID]
-
-    for i, df in enumerate(dfs):
-        df[t] = df.index * dt
-        df[aID] = f'Larva_{i}'
-        df.set_index(keys=[aID], inplace=True, drop=False)
-    s0 = pd.concat(dfs, axis=0, sort=False)
-
-    s0 = constrain_selected_tracks(s0, **kwargs)
-
-    e = init_endpoint_dataframe_from_timeseries(df=s0, dt=dt)
-    my_index = pd.MultiIndex.from_product([np.arange(t0, t1 + 1).astype(int), e.index.values.tolist()],
-                                          names=index_names)
-
-    s0.reset_index(drop=False, inplace=True)
-    s0.set_index(keys=index_names, inplace=True, drop=True, verify_integrity=False)
-
-    ps = [col for col in s0.columns if col != t]
-
-    s = pd.DataFrame(index=my_index, columns=ps)
-    s.update(s0[ps])
-    s.sort_index(level=index_names, inplace=True)
-    return s, e
+    return generate_dataframes(dfs, dt, **kwargs)
 
 
 def build_Arguello(source_files, **kwargs):
@@ -769,37 +683,7 @@ def build_Arguello(source_files, **kwargs):
     g = reg.conf.LabFormat.get(labID)
     dt = g.tracker.dt
     dfs = read_timeseries_from_raw_files_per_larva(files=source_files, labID=labID)
-
-    if len(dfs) == 0:
-        return None, None
-    t0, t1 = np.min([df.index.min() for df in dfs]), np.max([df.index.max() for df in dfs])
-
-    t = 't'
-    step = 'Step'
-    aID = 'AgentID'
-    index_names = [step, aID]
-
-    for i, df in enumerate(dfs):
-        df[t] = df.index * dt
-        df[aID] = f'Larva_{i}'
-        df.set_index(keys=[aID], inplace=True, drop=False)
-    s0 = pd.concat(dfs, axis=0, sort=False)
-
-    s0 = constrain_selected_tracks(s0, **kwargs)
-
-    e = init_endpoint_dataframe_from_timeseries(df=s0, dt=dt)
-    my_index = pd.MultiIndex.from_product([np.arange(t0, t1 + 1).astype(int), e.index.values.tolist()],
-                                          names=index_names)
-
-    s0.reset_index(drop=False, inplace=True)
-    s0.set_index(keys=index_names, inplace=True, drop=True, verify_integrity=False)
-
-    ps = [col for col in s0.columns if col != t]
-
-    s = pd.DataFrame(index=my_index, columns=ps)
-    s.update(s0[ps])
-    s.sort_index(level=index_names, inplace=True)
-    return s, e
+    return generate_dataframes(dfs, dt, **kwargs)
 
 
 lab_specific_build_functions = {

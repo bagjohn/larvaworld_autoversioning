@@ -1,4 +1,5 @@
 import larvaworld
+import pandas as pd
 from larvaworld.lib.process.building import import_dataset, import_datasets
 
 
@@ -34,6 +35,8 @@ def test_import_Schleyer():
     for kws in [kws1, kws2]:
         d = import_dataset(**kws)
         assert isinstance(d, larvaworld.lib.LarvaDataset)
+        s = d.step_data
+        assert isinstance(s, pd.DataFrame)
 
 
 def xx_test_import_Jovanic():
