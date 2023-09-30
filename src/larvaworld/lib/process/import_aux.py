@@ -655,9 +655,11 @@ def interpolate_timeseries_dataframe(s0):
             t1 = tick1
         ts = np.arange(t0, t1, 1)
         for j, p in enumerate(ps):
-            f = interpolate.interp1d(x=idx, y=dff[p].values,fill_value='extrapolate',assume_sorted=True)
-            A[ts - tick0, i, j] = f(ts)
-            # s[p].loc[(ts, id)] = f(ts)
+            y = dff[p].values
+            if y.shape[0] >= 2 and idx.shape[0] >= 2:
+                f = interpolate.interp1d(x=idx, y=y, fill_value='extrapolate', assume_sorted=True)
+                A[ts - tick0, i, j] = f(ts)
+                # s[p].loc[(ts, id)] = f(ts)
     A = A.reshape(-1, Nps)
     s = pd.DataFrame(A, index=s.index, columns=s.columns)
     reg.vprint(f'**--- Timeseries dataframe interpolated -----', 1)

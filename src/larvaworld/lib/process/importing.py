@@ -4,7 +4,7 @@ import shutil
 import warnings
 
 from .. import reg, aux
-from ..process.build_aux import constrain_selected_tracks, finalize_timeseries_dataframe, \
+from ..process.import_aux import constrain_selected_tracks, finalize_timeseries_dataframe, \
     read_timeseries_from_raw_files_per_parameter, match_larva_ids, init_endpoint_dataframe_from_timeseries, \
     read_timeseries_from_raw_files_per_larva, read_Schleyer_timeseries_from_raw_files_per_larva, generate_dataframes
 
@@ -16,7 +16,7 @@ __all__ = [
     'import_Schleyer',
     'import_Berni',
     'import_Arguello',
-    # 'lab_specific_build_functions'
+    'lab_specific_import_functions'
 ]
 
 
@@ -62,7 +62,13 @@ def import_datasets(source_ids, ids=None, colors=None, refIDs=None, **kwargs):
             range(Nds)]
 
 
-def import_dataset(labID, parent_dir, raw_folder=None, merged=False,
+
+
+def import_dataset(labID, **kwargs) :
+    g = reg.conf.LabFormat.get(labID)
+    return g.import_dataset(**kwargs)
+
+def import_dataset2(labID, parent_dir, raw_folder=None, merged=False,
                    proc_folder=None, group_id=None, N=None, id=None, sample=None, color='black', epochs={}, age=0.0,
                    refID=None, enrich_conf=None, save_dataset=True, **kwargs):
     """
@@ -127,20 +133,18 @@ def import_dataset(labID, parent_dir, raw_folder=None, merged=False,
     reg.vprint(f'----- Importing experimental dataset by the {labID} lab-specific format. -----', 1)
 
     g = reg.conf.LabFormat.get(labID)
-    if raw_folder is None:
-        raw_folder = f'{g.path}/raw'
-    source_dir = f'{raw_folder}/{parent_dir}'
-    if merged:
-        source_dir = [f'{source_dir}/{f}' for f in os.listdir(source_dir)]
 
-    lab_specific_import_functions = {
-        'Jovanic': import_Jovanic,
-        'Berni': import_Berni,
-        'Schleyer': import_Schleyer,
-        'Arguello': import_Arguello,
-    }
+    source_dir =g.get_source_dir(parent_dir, raw_folder, merged)
+    step, end = g.import_func(source_dir=source_dir, **kwargs)
+    # if raw_folder is None:
+    #     raw_folder = f'{g.path}/raw'
+    # source_dir = f'{raw_folder}/{parent_dir}'
+    # if merged:
+    #     source_dir = [f'{source_dir}/{f}' for f in os.listdir(source_dir)]
 
-    step, end = lab_specific_import_functions[labID](source_dir=source_dir, **kwargs)
+
+
+    # step, end = lab_specific_import_functions[labID](source_dir=source_dir, **kwargs)
 
     if step is None and end is None:
         reg.vprint(f'xxxxx Failed to create dataset! -----', 1)
@@ -230,6 +234,8 @@ def import_dataset(labID, parent_dir, raw_folder=None, merged=False,
 #
 #     # d.set_data(step=step, end=end)
 #     return d
+
+
 
 
 def import_Jovanic(source_id, source_dir, match_ids=True, matchID_kws={}, interpolate_ticks=True, **kwargs):
@@ -369,3 +375,9 @@ def import_Arguello(source_files, **kwargs):
 
 
 
+lab_specific_import_functions = {
+        'Jovanic': import_Jovanic,
+        'Berni': import_Berni,
+        'Schleyer': import_Schleyer,
+        'Arguello': import_Arguello,
+    }

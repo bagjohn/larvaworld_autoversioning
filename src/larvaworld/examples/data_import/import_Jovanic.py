@@ -1,5 +1,5 @@
 from ...lib import reg, aux, plot
-from ...lib.process.building import import_datasets
+from ...lib.process.importing import import_datasets
 
 
 kws0 = {

@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import param
 
@@ -494,6 +495,136 @@ class LabFormat(NestedConf) :
     @property
     def processed_folder(self):
         return f'{self.path}/processed'
+
+    def get_source_dir(self, parent_dir, raw_folder=None, merged=False):
+        if raw_folder is None:
+            raw_folder = self.raw_folder
+        source_dir = f'{raw_folder}/{parent_dir}'
+        if merged:
+            source_dir = [f'{source_dir}/{f}' for f in os.listdir(source_dir)]
+        return source_dir
+
+    @property
+    def import_func(self):
+        from ..process.importing import lab_specific_import_functions as d
+        return d[self.labID]
+
+    def import_data_to_dfs(self, parent_dir, raw_folder=None, merged=False,**kwargs):
+        source_dir = self.get_source_dir(parent_dir, raw_folder, merged)
+        s,e = self.import_func(source_dir=source_dir, **kwargs)
+        return s,e
+
+    def build_dataset(self, step,end,parent_dir, proc_folder=None, group_id=None, N=None, id=None, sample=None, color='black', epochs={}, age=0.0,):
+        if group_id is None:
+            group_id = parent_dir
+        if id is None:
+            id = f'{self.labID}_{group_id}_dataset'
+        if proc_folder is None:
+            proc_folder = self.processed_folder
+        dir = f'{proc_folder}/{group_id}/{id}'
+
+        conf = {
+            'load_data': False,
+            'dir': dir,
+            'id': id,
+            'larva_groups': reg.config.lg(id=group_id, c=color, sample=sample, mID=None, N=N, epochs=epochs, age=age),
+            'env_params': self.env_params.nestedConf,
+            **self.tracker.nestedConf,
+            'step': step,
+            'end': end,
+        }
+        from ..process.dataset import LarvaDataset
+        d = LarvaDataset(**conf)
+        reg.vprint(f'***-- Dataset {d.id} created with {len(d.config.agent_ids)} larvae! -----', 1)
+        return d
+
+    def enrich_dataset(self, d,enrich_conf=None,refID=None, save_dataset=True):
+        if enrich_conf is None:
+            enrich_conf = reg.gen.EnrichConf(proc_keys=[], anot_keys=[]).nestedConf
+        enrich_conf['pre_kws'] = self.preprocess.nestedConf
+        d = d.enrich(**enrich_conf, is_last=False)
+        reg.vprint(f'****- Processed dataset {d.id} to derive secondary metrics -----', 1)
+
+        if save_dataset:
+            shutil.rmtree(d.config.dir, ignore_errors=True)
+            d.save(refID=refID)
+            reg.vprint(f'***** Dataset {d.id} stored -----', 1)
+        return d
+
+
+    def import_dataset(self, parent_dir, raw_folder=None, merged=False,
+                       proc_folder=None, group_id=None, N=None, id=None, sample=None, color='black', epochs={}, age=0.0,
+                       refID=None, enrich_conf=None, save_dataset=True, **kwargs):
+
+        """
+        Imports a single experimental dataset defined by their ID from a source folder.
+
+        Parameters
+        ----------
+        parent_dir: string
+            The parent directory where the raw files are located.
+
+        raw_folder: string, optional
+            The directory where the raw files are located.
+            If not provided it is set as the subfolder 'raw' under the lab-specific group directory.
+         merged: boolean
+            Whether to merge all raw datasets in the source folder in a single imported dataset.
+            Defaults to False.
+
+        proc_folder: string, optional
+            The directory where the imported dataset will be placed.
+            If not provided it is set as the subfolder 'processed' under the lab-specific group directory.
+        group_id: string, optional
+            The group ID of the dataset to be imported.
+            If not provided it is set as the parent_dir argument.
+        id: string, optional
+            The ID under which to store the imported dataset.
+            If not provided it is set by default.
+
+        N: integer, optional
+            The number of larvae in the dataset.
+        sample: string, optional
+            The reference ID of the reference dataset from which the current is sampled.
+        color: string
+            The default color of the new dataset.
+            Defaults to 'black'.
+        epochs: dict
+            Any discrete rearing epochs during the larvagroup's life history.
+            Defaults to '{}'.
+        age: float
+            The post-hatch age of the larvae in hours.
+            Defaults to '0.0'.
+
+       refID: string, optional
+            The reference IDs under which to store the imported dataset as reference dataset.
+            If not provided the dataset is not stored in the reference database.
+        save_dataset: boolean
+            Whether to store the imported dataset to disc.
+            Defaults to True.
+        enrich_conf: dict, optional
+            The configuration for enriching the imported dataset with secondary parameters.
+        **kwargs: keyword arguments
+            Additional keyword arguments to be passed to the lab_specific build-function.
+
+        Returns
+        -------
+        lib.process.dataset.LarvaDataset
+            The imported dataset in the common larvaworld format.
+        """
+
+        reg.vprint('', 1)
+        reg.vprint(f'----- Importing experimental dataset by the {self.labID} lab-specific format. -----', 1)
+        step, end=self.import_data_to_dfs(parent_dir, raw_folder=raw_folder, merged=merged,**kwargs)
+        if step is None and end is None:
+            reg.vprint(f'xxxxx Failed to create dataset! -----', 1)
+            return None
+        else:
+            d=self.build_dataset(step, end, parent_dir, proc_folder=proc_folder, group_id=group_id, N=N,
+                                   id=id, sample=sample, color=color, epochs=epochs, age=age)
+            d = self.enrich_dataset(d, refID=refID, enrich_conf=enrich_conf, save_dataset=save_dataset)
+            return d
+
+
 
 class ExpConf(SimOps):
     env_params = ClassAttr(gen.Env, doc='The environment configuration')
