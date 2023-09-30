@@ -68,120 +68,120 @@ def import_dataset(labID, **kwargs) :
     g = reg.conf.LabFormat.get(labID)
     return g.import_dataset(**kwargs)
 
-def import_dataset2(labID, parent_dir, raw_folder=None, merged=False,
-                   proc_folder=None, group_id=None, N=None, id=None, sample=None, color='black', epochs={}, age=0.0,
-                   refID=None, enrich_conf=None, save_dataset=True, **kwargs):
-    """
-    Imports a single experimental dataset defined by their ID from a source folder.
-
-    Parameters
-    ----------
-    labID: string
-        The ID of the lab-specific format of the raw files.
-    parent_dir: string
-        The parent directory where the raw files are located.
-
-    raw_folder: string, optional
-        The directory where the raw files are located.
-        If not provided it is set as the subfolder 'raw' under the lab-specific group directory.
-     merged: boolean
-        Whether to merge all raw datasets in the source folder in a single imported dataset.
-        Defaults to False.
-
-    proc_folder: string, optional
-        The directory where the imported dataset will be placed.
-        If not provided it is set as the subfolder 'processed' under the lab-specific group directory.
-    group_id: string, optional
-        The group ID of the dataset to be imported.
-        If not provided it is set as the parent_dir argument.
-    id: string, optional
-        The ID under which to store the imported dataset.
-        If not provided it is set by default.
-
-    N: integer, optional
-        The number of larvae in the dataset.
-    sample: string, optional
-        The reference ID of the reference dataset from which the current is sampled.
-    color: string
-        The default color of the new dataset.
-        Defaults to 'black'.
-    epochs: dict
-        Any discrete rearing epochs during the larvagroup's life history.
-        Defaults to '{}'.
-    age: float
-        The post-hatch age of the larvae in hours.
-        Defaults to '0.0'.
-
-   refID: string, optional
-        The reference IDs under which to store the imported dataset as reference dataset.
-        If not provided the dataset is not stored in the reference database.
-    save_dataset: boolean
-        Whether to store the imported dataset to disc.
-        Defaults to True.
-    enrich_conf: dict, optional
-        The configuration for enriching the imported dataset with secondary parameters.
-    **kwargs: keyword arguments
-        Additional keyword arguments to be passed to the lab_specific build-function.
-
-    Returns
-    -------
-    lib.process.dataset.LarvaDataset
-        The imported dataset in the common larvaworld format.
-    """
-
-    reg.vprint('', 1)
-    reg.vprint(f'----- Importing experimental dataset by the {labID} lab-specific format. -----', 1)
-
-    g = reg.conf.LabFormat.get(labID)
-
-    source_dir =g.get_source_dir(parent_dir, raw_folder, merged)
-    step, end = g.import_func(source_dir=source_dir, **kwargs)
-    # if raw_folder is None:
-    #     raw_folder = f'{g.path}/raw'
-    # source_dir = f'{raw_folder}/{parent_dir}'
-    # if merged:
-    #     source_dir = [f'{source_dir}/{f}' for f in os.listdir(source_dir)]
-
-
-
-    # step, end = lab_specific_import_functions[labID](source_dir=source_dir, **kwargs)
-
-    if step is None and end is None:
-        reg.vprint(f'xxxxx Failed to create dataset! -----', 1)
-        return None
-    else:
-        from ..process.dataset import LarvaDataset
-
-        if group_id is None:
-            group_id = parent_dir
-        if id is None:
-            id = f'{labID}_{group_id}_dataset'
-        if proc_folder is None:
-            proc_folder = f'{g.path}/processed'
-        # target_dir = f'{proc_folder}/{group_id}/{id}'
-
-        conf = {
-            'load_data': False,
-            'dir': f'{proc_folder}/{group_id}/{id}',
-            'id': id,
-            'larva_groups': reg.config.lg(id=group_id, c=color, sample=sample, mID=None, N=N, epochs=epochs, age=age),
-            'env_params': g.env_params.nestedConf,
-            **g.tracker.nestedConf,
-            'step': step,
-            'end': end,
-        }
-        d = LarvaDataset(**conf)
-        reg.vprint(f'***-- Dataset {d.id} created with {len(d.config.agent_ids)} larvae! -----', 1)
-        if enrich_conf is None:
-            enrich_conf = reg.gen.EnrichConf(proc_keys=[], anot_keys=[]).nestedConf
-        enrich_conf['pre_kws'] = g.preprocess.nestedConf
-        d = d.enrich(**enrich_conf, is_last=False)
-        reg.vprint(f'****- Processed dataset {d.id} to derive secondary metrics -----', 1)
-        if save_dataset:
-            shutil.rmtree(d.config.dir, ignore_errors=True)
-            d.save(refID=refID)
-            reg.vprint(f'***** Dataset {d.id} stored -----', 1)
-        return d
+# def import_dataset2(labID, parent_dir, raw_folder=None, merged=False,
+#                    proc_folder=None, group_id=None, N=None, id=None, sample=None, color='black', epochs={}, age=0.0,
+#                    refID=None, enrich_conf=None, save_dataset=True, **kwargs):
+#     """
+#     Imports a single experimental dataset defined by their ID from a source folder.
+#
+#     Parameters
+#     ----------
+#     labID: string
+#         The ID of the lab-specific format of the raw files.
+#     parent_dir: string
+#         The parent directory where the raw files are located.
+#
+#     raw_folder: string, optional
+#         The directory where the raw files are located.
+#         If not provided it is set as the subfolder 'raw' under the lab-specific group directory.
+#      merged: boolean
+#         Whether to merge all raw datasets in the source folder in a single imported dataset.
+#         Defaults to False.
+#
+#     proc_folder: string, optional
+#         The directory where the imported dataset will be placed.
+#         If not provided it is set as the subfolder 'processed' under the lab-specific group directory.
+#     group_id: string, optional
+#         The group ID of the dataset to be imported.
+#         If not provided it is set as the parent_dir argument.
+#     id: string, optional
+#         The ID under which to store the imported dataset.
+#         If not provided it is set by default.
+#
+#     N: integer, optional
+#         The number of larvae in the dataset.
+#     sample: string, optional
+#         The reference ID of the reference dataset from which the current is sampled.
+#     color: string
+#         The default color of the new dataset.
+#         Defaults to 'black'.
+#     epochs: dict
+#         Any discrete rearing epochs during the larvagroup's life history.
+#         Defaults to '{}'.
+#     age: float
+#         The post-hatch age of the larvae in hours.
+#         Defaults to '0.0'.
+#
+#    refID: string, optional
+#         The reference IDs under which to store the imported dataset as reference dataset.
+#         If not provided the dataset is not stored in the reference database.
+#     save_dataset: boolean
+#         Whether to store the imported dataset to disc.
+#         Defaults to True.
+#     enrich_conf: dict, optional
+#         The configuration for enriching the imported dataset with secondary parameters.
+#     **kwargs: keyword arguments
+#         Additional keyword arguments to be passed to the lab_specific build-function.
+#
+#     Returns
+#     -------
+#     lib.process.dataset.LarvaDataset
+#         The imported dataset in the common larvaworld format.
+#     """
+#
+#     reg.vprint('', 1)
+#     reg.vprint(f'----- Importing experimental dataset by the {labID} lab-specific format. -----', 1)
+#
+#     g = reg.conf.LabFormat.get(labID)
+#
+#     source_dir =g.get_source_dir(parent_dir, raw_folder, merged)
+#     step, end = g.import_func(source_dir=source_dir, **kwargs)
+#     # if raw_folder is None:
+#     #     raw_folder = f'{g.path}/raw'
+#     # source_dir = f'{raw_folder}/{parent_dir}'
+#     # if merged:
+#     #     source_dir = [f'{source_dir}/{f}' for f in os.listdir(source_dir)]
+#
+#
+#
+#     # step, end = lab_specific_import_functions[labID](source_dir=source_dir, **kwargs)
+#
+#     if step is None and end is None:
+#         reg.vprint(f'xxxxx Failed to create dataset! -----', 1)
+#         return None
+#     else:
+#         from ..process.dataset import LarvaDataset
+#
+#         if group_id is None:
+#             group_id = parent_dir
+#         if id is None:
+#             id = f'{labID}_{group_id}_dataset'
+#         if proc_folder is None:
+#             proc_folder = f'{g.path}/processed'
+#         # target_dir = f'{proc_folder}/{group_id}/{id}'
+#
+#         conf = {
+#             'load_data': False,
+#             'dir': f'{proc_folder}/{group_id}/{id}',
+#             'id': id,
+#             'larva_groups': reg.config.lg(id=group_id, c=color, sample=sample, mID=None, N=N, epochs=epochs, age=age),
+#             'env_params': g.env_params.nestedConf,
+#             **g.tracker.nestedConf,
+#             'step': step,
+#             'end': end,
+#         }
+#         d = LarvaDataset(**conf)
+#         reg.vprint(f'***-- Dataset {d.id} created with {len(d.config.agent_ids)} larvae! -----', 1)
+#         if enrich_conf is None:
+#             enrich_conf = reg.gen.EnrichConf(proc_keys=[], anot_keys=[]).nestedConf
+#         enrich_conf['pre_kws'] = g.preprocess.nestedConf
+#         d = d.enrich(**enrich_conf, is_last=False)
+#         reg.vprint(f'****- Processed dataset {d.id} to derive secondary metrics -----', 1)
+#         if save_dataset:
+#             shutil.rmtree(d.config.dir, ignore_errors=True)
+#             d.save(refID=refID)
+#             reg.vprint(f'***** Dataset {d.id} stored -----', 1)
+#         return d
 
 
 # def build_dataset(labID, id, group_id, target_dir, N=None, **kwargs):

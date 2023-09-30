@@ -74,16 +74,20 @@ def append_pdf(input, output):
 
 
 def combine_pdfs(file_dir='.', save_as="final.pdf", pref='', files=None, deep=True):
+
+    def valid(filenames):
+        return [f for f in filenames if (f.endswith(".pdf") and f.startswith(pref))]
+
     import pypdf
     if files is None:
         files = []
         if deep:
             for dirpath, dirnames, filenames in os.walk(file_dir):
-                for filename in [f for f in filenames if (f.endswith(".pdf") and f.startswith(pref))]:
+                for filename in valid(filenames):
                     files.append(os.path.join(dirpath, filename))
         else:
             for dirpath, dirnames, filenames in os.walk(file_dir):
-                for filename in [f for f in filenames if (f.endswith(".pdf") and f.startswith(pref))]:
+                for filename in valid(filenames):
                     files.append(os.path.join(dirpath, filename))
                 break
 

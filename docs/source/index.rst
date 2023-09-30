@@ -19,6 +19,8 @@
    :hidden:
 
    tutorials/theoretical_background.ipynb
+   tutorials/CONFTYPES.ipynb
+   tutorials/LabFormat.ipynb
 
 
 

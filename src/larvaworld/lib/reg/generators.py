@@ -623,6 +623,48 @@ class LabFormat(NestedConf) :
             return d
 
 
+    def import_datasets(self, source_ids, ids=None, colors=None, refIDs=None, **kwargs):
+        """
+        Imports multiple experimental datasets defined by their IDs.
+
+        Parameters
+        ----------
+        source_ids: list of strings
+            The IDs of the datasets to be imported as appearing in the source files.
+        ids: list of strings, optional
+            The IDs under which to store the datasets to be imported.
+            The source_ids are used if not provided.
+        refIDs: list of strings, optional
+            The reference IDs under which to store the imported datasets as reference datasets.
+             If not provided the datasets are not stored in the reference database.
+        colors: list of strings, optional
+            The colors of the datasets to be imported.
+            Randomly selected if not provided.
+        **kwargs: keyword arguments
+            Additional keyword arguments to be passed to the import_dataset function.
+
+        Returns
+        -------
+        list of lib.process.dataset.LarvaDataset
+            The imported datasets in the common larvaworld format.
+        """
+
+        Nds = len(source_ids)
+        if colors is None:
+            colors = aux.N_colors(Nds)
+        if ids is None:
+            ids = source_ids
+        if refIDs is None:
+            refIDs = [None] * Nds
+
+        assert len(ids) == Nds
+        assert len(colors) == Nds
+        assert len(refIDs) == Nds
+
+        return [self.import_dataset(id=ids[i], color=colors[i], source_id=source_ids[i], refID=refIDs[i], **kwargs) for i in
+                range(Nds)]
+
+
 
 class ExpConf(SimOps):
     env_params = ClassAttr(gen.Env, doc='The environment configuration')
