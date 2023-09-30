@@ -1,6 +1,6 @@
 import larvaworld
 import pandas as pd
-from larvaworld.lib.process.building import import_dataset, import_datasets
+from larvaworld.lib.process.importing import import_dataset, import_datasets
 
 
 def test_import_Schleyer():

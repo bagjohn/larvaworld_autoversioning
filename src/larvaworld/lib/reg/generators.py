@@ -511,8 +511,7 @@ class LabFormat(NestedConf) :
 
     def import_data_to_dfs(self, parent_dir, raw_folder=None, merged=False,**kwargs):
         source_dir = self.get_source_dir(parent_dir, raw_folder, merged)
-        s,e = self.import_func(source_dir=source_dir, **kwargs)
-        return s,e
+        return self.import_func(source_dir=source_dir, **kwargs)
 
     def build_dataset(self, step,end,parent_dir, proc_folder=None, group_id=None, N=None, id=None, sample=None, color='black', epochs={}, age=0.0,):
         if group_id is None:
@@ -538,17 +537,12 @@ class LabFormat(NestedConf) :
         reg.vprint(f'***-- Dataset {d.id} created with {len(d.config.agent_ids)} larvae! -----', 1)
         return d
 
-    def enrich_dataset(self, d,enrich_conf=None,refID=None, save_dataset=True):
-        if enrich_conf is None:
-            enrich_conf = reg.gen.EnrichConf(proc_keys=[], anot_keys=[]).nestedConf
-        enrich_conf['pre_kws'] = self.preprocess.nestedConf
-        d = d.enrich(**enrich_conf, is_last=False)
+    def enrich_dataset(self, d, conf=None):
+        if conf is None:
+            conf = reg.gen.EnrichConf(proc_keys=[], anot_keys=[]).nestedConf
+        conf.pre_kws = self.preprocess.nestedConf
+        d = d.enrich(**conf, is_last=False)
         reg.vprint(f'****- Processed dataset {d.id} to derive secondary metrics -----', 1)
-
-        if save_dataset:
-            shutil.rmtree(d.config.dir, ignore_errors=True)
-            d.save(refID=refID)
-            reg.vprint(f'***** Dataset {d.id} stored -----', 1)
         return d
 
 
@@ -621,7 +615,11 @@ class LabFormat(NestedConf) :
         else:
             d=self.build_dataset(step, end, parent_dir, proc_folder=proc_folder, group_id=group_id, N=N,
                                    id=id, sample=sample, color=color, epochs=epochs, age=age)
-            d = self.enrich_dataset(d, refID=refID, enrich_conf=enrich_conf, save_dataset=save_dataset)
+            d = self.enrich_dataset(d, conf=enrich_conf)
+            if save_dataset:
+                shutil.rmtree(d.config.dir, ignore_errors=True)
+                d.save(refID=refID)
+                # reg.vprint(f'***** Dataset {d.id} stored -----', 1)
             return d
 
 
