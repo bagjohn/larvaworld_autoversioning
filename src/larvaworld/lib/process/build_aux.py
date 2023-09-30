@@ -639,6 +639,7 @@ def interpolate_timeseries_dataframe(s0):
     ids=s.index.unique(aID).values
     Nids=ids.shape[0]
     ticks = s.index.unique('Step').values
+    tick0=np.min(ticks)
     Nticks = ticks.shape[0]
     ps=s.columns
     Nps=len(ps)
@@ -653,7 +654,7 @@ def interpolate_timeseries_dataframe(s0):
             f = interpolate.interp1d(x=idx, y=dff[p].values,
                                      fill_value='extrapolate',
                                      assume_sorted=True)
-            A[ts,i,j] = f(ts)
+            A[ts-tick0,i,j] = f(ts)
             # s[p].loc[(ts, id)] = f(ts)
     A=A.reshape(-1, Nps)
     s=pd.DataFrame(A, index=s.index, columns=s.columns)
