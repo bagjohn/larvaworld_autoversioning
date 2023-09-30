@@ -10,7 +10,7 @@ import seaborn as sns
 from matplotlib import pyplot as plt, patches, transforms
 from scipy.stats import mannwhitneyu
 
-from .. import reg
+from .. import aux, reg
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -657,7 +657,14 @@ def configure_subplot_grid(N=None, wh=None, w=8, h=8, sharex=False, sharey=False
     """
     def calculate_grid_dimensions(N, Ncols, Nrows):
         if N:
-            Nrows, Ncols = Nrows or -(-N // Ncols), Ncols or -(-N // Nrows) if Nrows else (int(N**0.5), -(-N // int(N**0.5)))
+            if Nrows:
+                if Ncols is None:
+                    Ncols =-(-N // Nrows)
+            elif Ncols :
+                if Nrows is None:
+                    Nrows =-(-N // Ncols)
+            else :
+                Nrows, Ncols = (int(N**0.5), -(-N // int(N**0.5)))
         return Nrows or 1, Ncols or 1
 
     if Nrows is not None:
