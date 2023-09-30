@@ -14,7 +14,7 @@ def test_import_Schleyer():
         'parent_dir': 'exploration',
         'merged': True,
         'N': N,
-        'min_duration_in_sec': 120,
+        'min_duration_in_sec': 60,
         'refID': f'exploration.{N}controls',
         **kws0
     }

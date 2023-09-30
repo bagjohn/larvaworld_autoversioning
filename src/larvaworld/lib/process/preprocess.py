@@ -32,7 +32,7 @@ def filter(s, c, filter_f=2.0, recompute=False, **kwargs):
     c.filtered_at = filter_f
 
     pars = c.all_xy.existing(s)
-    data = np.dstack(list(s[pars].groupby('AgentID').apply(pd.DataFrame.to_numpy)))
+    data = np.dstack(list(s[pars].groupby('AgentID').apply(pd.DataFrame.to_numpy))).astype(None)
     f_array = aux.apply_filter_to_array_with_nans_multidim(data, freq=filter_f, fr=1 / c.dt)
     for j, p in enumerate(pars):
         s[p] = f_array[:, j, :].flatten()
