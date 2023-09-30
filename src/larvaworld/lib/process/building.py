@@ -132,6 +132,14 @@ def import_dataset(labID, parent_dir, raw_folder=None, merged=False,
     source_dir = f'{raw_folder}/{parent_dir}'
     if merged:
         source_dir = [f'{source_dir}/{f}' for f in os.listdir(source_dir)]
+
+    lab_specific_import_functions = {
+        'Jovanic': import_Jovanic,
+        'Berni': import_Berni,
+        'Schleyer': import_Schleyer,
+        'Arguello': import_Arguello,
+    }
+
     step, end = lab_specific_import_functions[labID](source_dir=source_dir, **kwargs)
 
     if step is None and end is None:
@@ -160,20 +168,6 @@ def import_dataset(labID, parent_dir, raw_folder=None, merged=False,
         }
         d = LarvaDataset(**conf)
         reg.vprint(f'***-- Dataset {d.id} created with {len(d.config.agent_ids)} larvae! -----', 1)
-        # kws = {
-        #     'labID': labID,
-        #     'group_id': group_id,
-        #     'Ν': N,
-        #     'target_dir': target_dir,
-        #     # 'source_dir': source_dir,
-        #     # 'max_Nagents': N,
-        #     **kwargs
-        # }
-
-        # d = build_dataset(id=id, **kws)
-
-        # if d is not None:
-
         if enrich_conf is None:
             enrich_conf = reg.gen.EnrichConf(proc_keys=[], anot_keys=[]).nestedConf
         enrich_conf['pre_kws'] = g.preprocess.nestedConf
@@ -374,9 +368,4 @@ def import_Arguello(source_files, **kwargs):
     return generate_dataframes(dfs, dt, **kwargs)
 
 
-lab_specific_import_functions = {
-    'Jovanic': import_Jovanic,
-    'Berni': import_Berni,
-    'Schleyer': import_Schleyer,
-    'Arguello':import_Arguello,
-}
+
