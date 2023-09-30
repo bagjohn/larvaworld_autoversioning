@@ -58,6 +58,7 @@ def init_endpoint_dataframe_from_timeseries(df, dt):
     e[tick0] = np.floor(e[t0] / dt).astype(int)
     e[Nticks] = e[tick1] - e[tick0]
     e.sort_index(inplace=True)
+    reg.vprint(f'**--- Endpoint dataframe initialized -----', 1)
     return e
 
 
@@ -265,9 +266,13 @@ def constrain_selected_tracks(df, max_Nagents=None, time_slice=None, min_duratio
         tmin, tmax = time_slice
         df = df[df[t] < tmax]
         df = df[df[t] >= tmin]
-    df = df.loc[df[t].groupby(aID).last() - df[t].groupby(aID).first() > min_duration_in_sec]
+        reg.vprint(f'**--- Tracks constrained within {time_slice} seconds -----', 1)
+    if min_duration_in_sec!=0 :
+        df = df.loc[df[t].groupby(aID).last() - df[t].groupby(aID).first() > min_duration_in_sec]
+        reg.vprint(f'**--- Tracks required to last at least {min_duration_in_sec} seconds -----', 1)
     if max_Nagents is not None:
         df = df.loc[df['head_x'].dropna().groupby(aID).count().nlargest(max_Nagents).index]
+        reg.vprint(f'**--- Number of tracks limited to {max_Nagents} larvae -----', 1)
     df.sort_index(inplace=True)
     return df
 
@@ -640,6 +645,7 @@ def interpolate_timeseries_dataframe(s0):
                                      fill_value='extrapolate',
                                      assume_sorted=True)
             s[p].loc[(ts, id)] = f(ts)
+    reg.vprint(f'**--- Timeseries dataframe interpolated -----', 1)
     return s
 
 

@@ -43,44 +43,50 @@ __all__ = [
 
 __displayname__ = 'Custom parameters'
 
+
 class StringRobust(String):
     """Any input turned to string"""
 
     def __init__(self, default='', **kwargs):
-        if default is not None and not isinstance(default,str) :
-            default=str(default)
+        if default is not None and not isinstance(default, str):
+            default = str(default)
         super().__init__(default=default, **kwargs)
 
 
 class PositiveNumber(Number):
     """Number that must be positive"""
-    def __init__(self,default=0.0, softmin=0.0, softmax=None, hardmin=0.0, hardmax=None,bounds=None, **kwargs):
+
+    def __init__(self, default=0.0, softmin=0.0, softmax=None, hardmin=0.0, hardmax=None, bounds=None, **kwargs):
         if bounds is None:
             bounds = (hardmin, hardmax)
-        super().__init__(default=default,softbounds=(softmin, softmax),bounds=bounds,**kwargs)
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=bounds, **kwargs)
+
 
 class PositiveInteger(Integer):
     """Integer that must be positive"""
-    def __init__(self,default=0, softmin=0, softmax=None, hardmin=0, hardmax=None, **kwargs):
-        super().__init__(default=default,softbounds=(softmin, softmax),bounds=(hardmin, hardmax),**kwargs)
+
+    def __init__(self, default=0, softmin=0, softmax=None, hardmin=0, hardmax=None, **kwargs):
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), **kwargs)
+
 
 class Phase(Number):
     """Phase number within (0,2pi)"""
-    def __init__(self,default=0.0, softmin=0.0, softmax=2 * np.pi, hardmin=0.0, hardmax=2 * np.pi, **kwargs):
 
-        super().__init__(default=default,softbounds=(softmin, softmax),bounds=(hardmin, hardmax),**kwargs)
+    def __init__(self, default=0.0, softmin=0.0, softmax=2 * np.pi, hardmin=0.0, hardmax=2 * np.pi, **kwargs):
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), **kwargs)
+
 
 class RangeRobust(Range):
     """Range can be passed as list"""
 
     def __init__(self, default=(0.0, 0.0), **kwargs):
-        if default is not None and not isinstance(default,tuple) :
-            default=tuple(default)
+        if default is not None and not isinstance(default, tuple):
+            default = tuple(default)
         super().__init__(default=default, **kwargs)
 
     def _validate_value(self, val, allow_None):
-        if val is not None and not isinstance(val,tuple) :
-            val=tuple(val)
+        if val is not None and not isinstance(val, tuple):
+            val = tuple(val)
         super(RangeRobust, self)._validate_value(val, allow_None)
 
 
@@ -103,7 +109,7 @@ class RangeInf(RangeRobust):
         vmin, vmax = bounds
         incmin, incmax = inclusive_bounds
         for bound, v in zip(['lower', 'upper'], val):
-            if v is None and self.allow_None :
+            if v is None and self.allow_None:
                 continue
             too_low = (vmin is not None) and (v < vmin if incmin else v <= vmin)
             too_high = (vmax is not None) and (v > vmax if incmax else v >= vmax)
@@ -114,24 +120,33 @@ class RangeInf(RangeRobust):
 
 class PositiveRange(RangeRobust):
     """Tuple range of positive numbers"""
-    def __init__(self,default=(0.0, 0.0), softmin=0.0, softmax=None, hardmin=0.0, hardmax=None, **kwargs):
-        super().__init__(default=default,softbounds=(softmin, softmax),bounds=(hardmin, hardmax),**kwargs)
+
+    def __init__(self, default=(0.0, 0.0), softmin=0.0, softmax=None, hardmin=0.0, hardmax=None, **kwargs):
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), **kwargs)
+
 
 class PhaseRange(RangeRobust):
     """Phase range within (0,2pi)"""
-    def __init__(self,default=(0.0, 0.0), softmin=0.0, softmax=2 * np.pi, hardmin=0.0, hardmax=2 * np.pi, **kwargs):
-        super().__init__(default=default,softbounds=(softmin, softmax),bounds=(hardmin, hardmax),**kwargs)
+
+    def __init__(self, default=(0.0, 0.0), softmin=0.0, softmax=2 * np.pi, hardmin=0.0, hardmax=2 * np.pi, **kwargs):
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), **kwargs)
 
 
 class OptionalPositiveNumber(Number):
     """Number that must be positive"""
-    def __init__(self,default=None, softmin=0.0, softmax=None, hardmin=0.0, hardmax=None, **kwargs):
-        super().__init__(default=default,softbounds=(softmin, softmax),bounds=(hardmin, hardmax),allow_None=True,**kwargs)
+
+    def __init__(self, default=None, softmin=0.0, softmax=None, hardmin=0.0, hardmax=None, **kwargs):
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), allow_None=True,
+                         **kwargs)
+
 
 class OptionalPositiveInteger(Integer):
     """Integer that must be positive"""
-    def __init__(self,default=None, softmin=0, softmax=None, hardmin=0, hardmax=None, **kwargs):
-        super().__init__(default=default,softbounds=(softmin, softmax),bounds=(hardmin, hardmax),allow_None=True,**kwargs)
+
+    def __init__(self, default=None, softmin=0, softmax=None, hardmin=0, hardmax=None, **kwargs):
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), allow_None=True,
+                         **kwargs)
+
 
 class RandomizedPhase(Phase):
     """Phase number within (0,2pi)"""
@@ -139,13 +154,13 @@ class RandomizedPhase(Phase):
     def __init__(self, default=None, **kwargs):
         if default in [None, np.nan]:
             default = np.random.uniform(0, 2 * np.pi)
-        super().__init__(default=default, allow_None=True,**kwargs)
-
+        super().__init__(default=default, allow_None=True, **kwargs)
 
     def _validate_value(self, val, allow_None):
         if val in [None, np.nan]:
             val = np.random.uniform(0, 2 * np.pi)
         super(RandomizedPhase, self)._validate_value(val, allow_None)
+
 
 class RandomizedColor(param.Color):
     """Phase number within (0,2pi)"""
@@ -153,41 +168,48 @@ class RandomizedColor(param.Color):
     def __init__(self, default=None, **kwargs):
         if default in [None, np.nan, '']:
             default = random.choice(super()._named_colors)
-        if isinstance(default,tuple):
-            default=aux.colortuple2str(default)
+        if isinstance(default, tuple):
+            default = aux.colortuple2str(default)
         super().__init__(default=default, **kwargs)
-
 
     def _validate_value(self, val, allow_None):
         if val in [None, np.nan, '']:
             val = random.choice(super()._named_colors)
-        if isinstance(val,tuple):
-            val=aux.colortuple2str(val)
+        if isinstance(val, tuple):
+            val = aux.colortuple2str(val)
         super(RandomizedColor, self)._validate_value(val, allow_None)
+
 
 class OptionalPositiveRange(RangeInf):
     """Tuple range of positive numbers"""
-    def __init__(self,default=None, softmin=0.0, softmax=None, hardmin=0.0, hardmax=None, **kwargs):
-        super().__init__(default=default,softbounds=(softmin, softmax),bounds=(hardmin, hardmax),allow_None=True,**kwargs)
+
+    def __init__(self, default=None, softmin=0.0, softmax=None, hardmin=0.0, hardmax=None, **kwargs):
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), allow_None=True,
+                         **kwargs)
+
 
 class OptionalPhaseRange(RangeRobust):
     """Phase range within (0,2pi)"""
-    def __init__(self,default=None, softmin=0.0, softmax=2 * np.pi, hardmin=0.0, hardmax=2 * np.pi, **kwargs):
-        super().__init__(default=default,softbounds=(softmin, softmax),bounds=(hardmin, hardmax),**kwargs)
+
+    def __init__(self, default=None, softmin=0.0, softmax=2 * np.pi, hardmin=0.0, hardmax=2 * np.pi, **kwargs):
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), **kwargs)
+
 
 class OptionalSelector(Selector):
     """Select among objects. Default is None even if None not in objects"""
-    def __init__(self, objects,default=None,  **kwargs):
+
+    def __init__(self, objects, default=None, **kwargs):
         kws = {
-            'default' : default,
+            'default': default,
             'objects': objects,
             # 'doc': f'The {conftype0.default} configuration ID',
             **kwargs
         }
-        if default is None :
-            kws['empty_default']=True
-            kws['allow_None']=True
+        if default is None:
+            kws['empty_default'] = True
+            kws['allow_None'] = True
         super().__init__(**kws)
+
 
 class IntegerTuple(NumericTuple):
     """Tuple of integers"""
@@ -200,8 +222,10 @@ class IntegerTuple(NumericTuple):
             raise ValueError("IntegerTuple parameter %r only takes integer "
                              "values, not type %r." % (self.name, type(n)))
 
+
 class IntegerRange(RangeRobust):
     """Tuple range of integers"""
+
     def __init__(self, default=(0, 0), **kwargs):
         super().__init__(default=default, **kwargs)
 
@@ -213,64 +237,69 @@ class IntegerRange(RangeRobust):
             raise ValueError("IntegerRange parameter %r only takes integer "
                              "values, not type %r." % (self.name, type(n)))
 
+
 class IntegerRangeOrdered(IntegerRange):
     """Ordered range of integers"""
 
     def _validate_value(self, val, allow_None):
         super(IntegerRange, self)._validate_value(val, allow_None)
-        v1,v2=val
-        assert (v1<=v2)
+        v1, v2 = val
+        assert (v1 <= v2)
         # raise ValueError("IntegerRange parameter %r only takes integer "
         #                      "values, not type %r." % (self.name, type(n)))
 
 
-
 class PositiveIntegerRange(IntegerRange):
     """Tuple range of positive integers"""
-    def __init__(self,default=(0, 0), softmin=0, softmax=None, hardmin=0, hardmax=None, **kwargs):
-        super().__init__(default=default,softbounds=(softmin, softmax),bounds=(hardmin, hardmax),**kwargs)
 
+    def __init__(self, default=(0, 0), softmin=0, softmax=None, hardmin=0, hardmax=None, **kwargs):
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), **kwargs)
 
 
 class PositiveIntegerRangeOrdered(IntegerRangeOrdered):
     """Tuple range of positive integers"""
-    def __init__(self,default=(0, 1), softmin=0, softmax=None, hardmin=0, hardmax=None, **kwargs):
-        super().__init__(default=default,softbounds=(softmin, softmax),bounds=(hardmin, hardmax),**kwargs)
+
+    def __init__(self, default=(0, 1), softmin=0, softmax=None, hardmin=0, hardmax=None, **kwargs):
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), **kwargs)
+
 
 class NegativeIntegerRangeOrdered(IntegerRangeOrdered):
     """Tuple range of positive integers"""
-    def __init__(self,default=(-1, 0), softmin=None, softmax=0, hardmin=None, hardmax=0, **kwargs):
-        super().__init__(default=default,softbounds=(softmin, softmax),bounds=(hardmin, hardmax),**kwargs)
 
+    def __init__(self, default=(-1, 0), softmin=None, softmax=0, hardmin=None, hardmax=0, **kwargs):
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), **kwargs)
 
 
 class NumericTuple2DRobust(NumericTuple):
     """XY point coordinates can be passed as list"""
 
     def __init__(self, default=(0.0, 0.0), **kwargs):
-        if not isinstance(default,tuple) :
-            default=tuple(default)
+        if not isinstance(default, tuple):
+            default = tuple(default)
         super().__init__(default=default, length=2, **kwargs)
+
 
 class IntegerTuple2DRobust(IntegerTuple):
     """XY point coordinates can be passed as list"""
 
     def __init__(self, default=(0, 0), **kwargs):
-        if not isinstance(default,tuple) :
-            default=tuple(default)
+        if not isinstance(default, tuple):
+            default = tuple(default)
         super().__init__(default=default, length=2, **kwargs)
-
 
 
 class ListXYcoordinates(List):
     """List of XY point coordinates"""
-    def __init__(self, default=[],minlen=0, maxlen=None, **kwargs):
-        super().__init__(default=default, item_type=tuple,bounds=(minlen,maxlen), **kwargs)
+
+    def __init__(self, default=[], minlen=0, maxlen=None, **kwargs):
+        super().__init__(default=default, item_type=tuple, bounds=(minlen, maxlen), **kwargs)
+
 
 class XYLine(ListXYcoordinates):
     """List of XY point coordinates"""
+
     def __init__(self, minlen=0, **kwargs):
-        super().__init__(minlen=minlen,**kwargs)
+        super().__init__(minlen=minlen, **kwargs)
 
 
 class ClassDict(ClassSelector):
@@ -278,10 +307,9 @@ class ClassDict(ClassSelector):
 
     __slots__ = ['class_', 'is_instance', 'item_type']
 
-    def __init__(self, default=aux.AttrDict(),item_type=None,  **params):
+    def __init__(self, default=aux.AttrDict(), item_type=None, **params):
         self.item_type = item_type
-        ClassSelector.__init__(self,aux.AttrDict, default=default, **params)
-
+        ClassSelector.__init__(self, aux.AttrDict, default=default, **params)
 
     def _validate(self, val):
         super(ClassSelector, self)._validate(val)
@@ -296,28 +324,32 @@ class ClassDict(ClassSelector):
             raise TypeError("ClassDict parameter %r items must be instances "
                             "of type %r, not %r." % (self.name, item_type, val))
 
+
 class ClassAttr(ClassSelector):
     """An attribute og a given class"""
-    def __init__(self, class_,**kwargs):
+
+    def __init__(self, class_, **kwargs):
         if not isinstance(class_, tuple):
-            cc=class_
+            cc = class_
         else:
             cc = class_[0]
-        if 'default' not in kwargs.keys() :
+        if 'default' not in kwargs.keys():
             kwargs['default'] = cc()
-        elif kwargs['default'] is None :
+        elif kwargs['default'] is None:
             kwargs['default'] = None
         elif not isinstance(kwargs['default'], class_):
             kwargs['default'] = cc(**kwargs['default'])
         super().__init__(class_=class_, **kwargs)
 
+
 class DataFrameIndexed(DataFrame):
     __slots__ = ['rows', 'columns', 'ordered', 'levels']
 
     """A dataframe of specified index levels"""
-    def __init__(self, levels=None,  **params):
+
+    def __init__(self, levels=None, **params):
         self.levels = levels
-        DataFrame.__init__(self,**params)
+        DataFrame.__init__(self, **params)
 
     def _validate(self, val):
         super(DataFrame, self)._validate(val)
@@ -326,22 +358,24 @@ class DataFrameIndexed(DataFrame):
     def _validate_levels(self, val, levels):
         if levels is None or (self.allow_None and val is None):
             return
-        val_levels=list(val.index.names)
+        val_levels = list(val.index.names)
         if val_levels != levels:
             raise TypeError("DataFrameIndexed parameter %r levels must be "
                             " %r, not %r." % (self.name, levels, val_levels))
+
 
 class StepDataFrame(DataFrameIndexed):
     """A dataframe of specified index levels"""
 
     def __init__(self, **params):
-        DataFrameIndexed.__init__(self, levels = ['Step', 'AgentID'], **params)
+        DataFrameIndexed.__init__(self, levels=['Step', 'AgentID'], **params)
+
 
 class EndpointDataFrame(DataFrameIndexed):
     """A dataframe of specified index levels"""
 
     def __init__(self, **params):
-        DataFrameIndexed.__init__(self, levels = ['AgentID'], **params)
+        DataFrameIndexed.__init__(self, levels=['AgentID'], **params)
 
 
 #
