@@ -555,7 +555,7 @@ def full_lg(id=None, expand=False,as_entry=True,**conf):
     except :
         raise
 
-def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, sample='exploration.40controls', substrate_type='standard', pref='',
+def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, sample=reg.default_refID, substrate_type='standard', pref='',
            navigator=False, expand=False, **kwargs):
     if age == 0.0:
         epochs = {}

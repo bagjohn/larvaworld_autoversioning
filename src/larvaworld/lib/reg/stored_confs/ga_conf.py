@@ -36,12 +36,12 @@ def ga_conf(name, env, mkeys, scene='no_boxes', refID=None, fit_kws={},
 @reg.funcs.stored_conf("Ga")
 def Ga_dict():
     d = aux.AttrDict({
-        **ga_conf('interference', dt=1 / 16, dur=3, refID='exploration.40controls', m0='loco_default',
+        **ga_conf('interference', dt=1 / 16, dur=3, refID=reg.default_refID, m0='loco_default',
                   m1='NEU_PHI',
                   cycle_curve_metrics=['fov', 'foa', 'rov'],
                   mkeys=['interference', 'turner'],
                   Nel=2, N=6, env='arena_200mm'),
-        **ga_conf('exploration', dur=0.5, dt=1 / 16, refID='exploration.40controls', m0='loco_default',
+        **ga_conf('exploration', dur=0.5, dt=1 / 16, refID=reg.default_refID, m0='loco_default',
                   m1='NEU_PHI',
                   eval_metrics=aux.AttrDict({'angular kinematics': ['run_fov_mu', 'pau_fov_mu', 'b', 'fov', 'foa'],
                                              'spatial displacement': ['v_mu', 'pau_v_mu', 'run_v_mu', 'v', 'a'],
@@ -49,7 +49,7 @@ def Ga_dict():
                   mkeys=['interference', 'turner'],
                   # excludeID='bend_errors',
                   Nel=2, N=10, env='arena_200mm'),
-        **ga_conf('realism', dur=1, dt=1 / 16, refID='exploration.40controls', m0='loco_default', m1='PHIonSIN',
+        **ga_conf('realism', dur=1, dt=1 / 16, refID=reg.default_refID, m0='loco_default', m1='PHIonSIN',
                   eval_metrics=aux.AttrDict({'angular kinematics': ['run_fov_mu', 'pau_fov_mu', 'b', 'fov', 'foa'],
                                              'spatial displacement': ['v', 'a'],
                                              'temporal dynamics': ['fsv', 'ffov', 'run_tr', 'pau_tr']}),

@@ -9,12 +9,12 @@ def test_import_Schleyer():
     }
 
     # Merged case
-    N = 60
+    N = 40
     kws1 = {
         'parent_dir': 'exploration',
         'merged': True,
         'N': N,
-        'min_duration_in_sec': 180,
+        'min_duration_in_sec': 120,
         'refID': f'exploration.{N}controls',
         **kws0
     }

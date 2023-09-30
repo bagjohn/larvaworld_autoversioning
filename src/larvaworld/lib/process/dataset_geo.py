@@ -599,7 +599,7 @@ class GeoLarvaDataset(BaseLarvaDataset,mpd.TrajectoryCollection):
         self.get_means(ks=['v', 'sv'])
 
 if __name__ == "__main__":
-    tpd = GeoLarvaDataset.from_ID(refID='exploration.40controls')
+    tpd = GeoLarvaDataset.from_ID(refID=reg.default_refID)
     # tpd.comp_spatial()
     # tpd.save()
     # tpd.load_midline()

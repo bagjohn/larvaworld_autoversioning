@@ -12,6 +12,7 @@ warnings.simplefilter(action='ignore')
 __all__ = [
     'VERBOSE',
     'vprint',
+    'default_refID',
     'ROOT_DIR',
     'DATA_DIR',
     'SIM_DIR',
@@ -43,7 +44,8 @@ def vprint(text='', verbose=0):
         print(text)
 vprint("Initializing larvaworld registry", 2)
 
-
+default_refID = None
+# default_refID = 'exploration.40controls'
 ROOT_DIR = dirname(dirname(dirname(abspath(__file__))))
 DATA_DIR = f'{ROOT_DIR}/data'
 SIM_DIR = f'{DATA_DIR}/SimGroup'
