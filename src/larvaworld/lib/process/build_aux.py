@@ -1,4 +1,3 @@
-import copy
 from scipy import interpolate
 import os
 import os.path
@@ -23,11 +22,7 @@ __all__ = [
     'interpolate_timeseries_dataframe',
     'finalize_timeseries_dataframe',
     'generate_dataframes',
-    'build_Jovanic',
-    'build_Schleyer',
-    'build_Berni',
-    'build_Arguello',
-    'lab_specific_build_functions'
+
 ]
 
 
@@ -62,7 +57,7 @@ def init_endpoint_dataframe_from_timeseries(df, dt):
     return e
 
 
-def read_timeseries_from_raw_files_per_parameter(pref, labID='Jovanic', Npoints=None, Ncontour=None):
+def read_timeseries_from_raw_files_per_parameter(pref, labID='Jovanic', dt=None, Npoints=None, Ncontour=None):
     """
     Reads timeseries data stored in txt files of the lab-specific Jovanic format and returns them as a pd.Dataframe.
 
@@ -77,6 +72,9 @@ def read_timeseries_from_raw_files_per_parameter(pref, labID='Jovanic', Npoints=
     Ncontour : integer, optional
         The number of contour points tracked for each larva.
         If not provided it is set to the lab-format's default value
+    dt : float, optional
+        The tracker timestep.
+        If not provided it is set to the lab-format's default value
 
     Returns
     -------
@@ -90,6 +88,9 @@ def read_timeseries_from_raw_files_per_parameter(pref, labID='Jovanic', Npoints=
     if Ncontour is None and labID is not None:
         g = reg.conf.LabFormat.getID(labID)
         Ncontour = g.tracker.Ncontour
+    if dt is None and labID is not None:
+        g = reg.conf.LabFormat.getID(labID)
+        dt = g.tracker.dt
 
     t = 't'
     aID = 'AgentID'
@@ -121,6 +122,7 @@ def read_timeseries_from_raw_files_per_parameter(pref, labID='Jovanic', Npoints=
     df = pd.concat(par_list, axis=1, sort=False)
     df.columns = columns
     df.set_index(keys=[aID], inplace=True, drop=True)
+    df['Step'] = df['t'] / dt
     return df
 
 
@@ -267,7 +269,7 @@ def constrain_selected_tracks(df, max_Nagents=None, time_slice=None, min_duratio
         df = df[df[t] < tmax]
         df = df[df[t] >= tmin]
         reg.vprint(f'**--- Tracks constrained within {time_slice} seconds -----', 1)
-    if min_duration_in_sec!=0 :
+    if min_duration_in_sec != 0:
         df = df.loc[df[t].groupby(aID).last() - df[t].groupby(aID).first() > min_duration_in_sec]
         reg.vprint(f'**--- Tracks required to last at least {min_duration_in_sec} seconds -----', 1)
     if max_Nagents is not None:
@@ -514,7 +516,6 @@ def complete_timeseries_with_nans(s0):
 
     """
 
-
     s = empty_2index_timeseries_df(s0)
     s.update(s0)
     return s
@@ -587,7 +588,7 @@ def finalize_timeseries_dataframe(s, complete_ticks=True, interpolate_ticks=Fals
 
 def generate_dataframes(dfs, dt, complete_ticks=True, **kwargs):
     # """
-    # Helper function that connects other
+    # Helper function that generates both timeseries & endpoint dataframes from single tracks
     #
     # Parameters
     # ----------
@@ -633,182 +634,31 @@ def interpolate_timeseries_dataframe(s0):
 
     """
 
-
     s = empty_2index_timeseries_df(s0)
     aID = 'AgentID'
-    ids=s.index.unique(aID).values
-    Nids=ids.shape[0]
+    ids = s.index.unique(aID).values
+    Nids = ids.shape[0]
     ticks = s.index.unique('Step').values
-    tick0, tick1=np.min(ticks), np.max(ticks)
+    tick0, tick1 = np.min(ticks), np.max(ticks)
     Nticks = ticks.shape[0]
-    ps=s.columns
-    Nps=len(ps)
-    A=np.zeros([Nticks,Nids,Nps])*np.nan
+    ps = s.columns
+    Nps = len(ps)
+    A = np.zeros([Nticks, Nids, Nps]) * np.nan
 
-
-    for i,id in enumerate(ids):
+    for i, id in enumerate(ids):
         dff = s0.xs(id, level=aID, drop_level=True)
         idx = dff.index.values
         t0, t1 = int(np.floor(np.min(idx))), int(np.ceil(np.max(idx)))
-        if t0<tick0:
-            t0=tick0
-        if t1>tick1:
-            t1=tick1
+        if t0 < tick0:
+            t0 = tick0
+        if t1 > tick1:
+            t1 = tick1
         ts = np.arange(t0, t1, 1)
         for j, p in enumerate(ps):
-            f = interpolate.interp1d(x=idx, y=dff[p].values,
-                                     fill_value='extrapolate',
-                                     assume_sorted=True)
-            A[ts-tick0,i,j] = f(ts)
+            f = interpolate.interp1d(x=idx, y=dff[p].values,fill_value='extrapolate',assume_sorted=True)
+            A[ts - tick0, i, j] = f(ts)
             # s[p].loc[(ts, id)] = f(ts)
-    A=A.reshape(-1, Nps)
-    s=pd.DataFrame(A, index=s.index, columns=s.columns)
+    A = A.reshape(-1, Nps)
+    s = pd.DataFrame(A, index=s.index, columns=s.columns)
     reg.vprint(f'**--- Timeseries dataframe interpolated -----', 1)
     return s
-
-
-def build_Jovanic(source_id, source_dir, match_ids=True, matchID_kws={},interpolate_ticks=True, **kwargs):
-    """
-    Builds a larvaworld dataset from Jovanic-lab-specific raw data
-
-    Parameters
-    ----------
-    source_id : string
-        The ID of the imported dataset
-    source_dir : string
-        The folder containing the imported dataset
-    match_ids : boolean
-        Whether to use the match-ID algorithm
-        Defaults to True
-    matchID_kws : dict
-        Additional keyword arguments to be passed to the match-ID algorithm.
-    interpolate_ticks : boolean
-        Whether to interpolate timeseries into a fixed timestep timeseries
-        Defaults to True
-   **kwargs: keyword arguments
-        Additional keyword arguments to be passed to the constrain_selected_tracks function.
-
-
-    Returns
-    -------
-    s : pandas.DataFrame
-        The timeseries dataframe
-    e : pandas.DataFrame
-        The endpoint dataframe
-    """
-
-    g = reg.conf.LabFormat.get('Jovanic')
-    dt = g.tracker.dt
-    Npoints = g.tracker.Npoints
-
-    df = read_timeseries_from_raw_files_per_parameter(pref=f'{source_dir}/{source_id}')
-
-    if match_ids:
-        df = match_larva_ids(df, Npoints=Npoints, dt=dt, **matchID_kws)
-    df = constrain_selected_tracks(df, **kwargs)
-    df['Step'] = df['t'] / dt
-    e = init_endpoint_dataframe_from_timeseries(df=df, dt=dt)
-
-    s = finalize_timeseries_dataframe(df, complete_ticks=False, interpolate_ticks=interpolate_ticks)
-    # s = interpolate_timeseries_dataframe(df=df, dt=dt)
-    # print(f'----- Timeseries data for group "{d.id}" of experiment "{d.group_id}" generated.')
-    return s, e
-
-
-def build_Schleyer(source_dir, save_mode='semifull', **kwargs):
-    """
-    Builds a larvaworld dataset from Schleyer-lab-specific raw data
-
-    Parameters
-    ----------
-    source_dir : string
-        The folder containing the imported dataset
-    save_mode : string
-        Mode to define the sequence of columns/parameters to store.
-        Defaults to 'semi-full'
-   **kwargs: keyword arguments
-        Additional keyword arguments to be passed to the generate_dataframes function.
-
-
-    Returns
-    -------
-    s : pandas.DataFrame
-        The timeseries dataframe
-    e : pandas.DataFrame
-        The endpoint dataframe
-    """
-
-    g = reg.conf.LabFormat.get('Schleyer')
-    dt = g.tracker.dt
-
-    if type(source_dir) == str:
-        source_dir = [source_dir]
-
-    dfs = []
-    for f in source_dir:
-        dfs += read_Schleyer_timeseries_from_raw_files_per_larva(dir=f, save_mode=save_mode)
-
-    return generate_dataframes(dfs, dt, **kwargs)
-
-
-def build_Berni(source_files, **kwargs):
-    """
-    Builds a larvaworld dataset from Berni-lab-specific raw data
-
-    Parameters
-    ----------
-    source_files : list
-        List of the absolute filepaths of the data files.
-   **kwargs: keyword arguments
-        Additional keyword arguments to be passed to the generate_dataframes function.
-
-
-    Returns
-    -------
-    s : pandas.DataFrame
-        The timeseries dataframe
-    e : pandas.DataFrame
-        The endpoint dataframe
-    """
-    labID = 'Berni'
-
-    g = reg.conf.LabFormat.get(labID)
-    dt = g.tracker.dt
-    dfs = read_timeseries_from_raw_files_per_larva(files=source_files, labID=labID)
-    return generate_dataframes(dfs, dt, **kwargs)
-
-
-def build_Arguello(source_files, **kwargs):
-    """
-    Builds a larvaworld dataset from Arguello-lab-specific raw data
-
-    Parameters
-    ----------
-    source_files : list
-        List of the absolute filepaths of the data files.
-   **kwargs: keyword arguments
-        Additional keyword arguments to be passed to the generate_dataframes function.
-
-
-    Returns
-    -------
-    s : pandas.DataFrame
-        The timeseries dataframe
-    e : pandas.DataFrame
-        The endpoint dataframe
-    """
-
-    labID = 'Arguello'
-
-    g = reg.conf.LabFormat.get(labID)
-    dt = g.tracker.dt
-    dfs = read_timeseries_from_raw_files_per_larva(files=source_files, labID=labID)
-    return generate_dataframes(dfs, dt, **kwargs)
-
-
-lab_specific_build_functions = {
-    'Jovanic': build_Jovanic,
-    'Berni': build_Berni,
-    'Schleyer': build_Schleyer,
-    'Arguello': build_Arguello,
-}

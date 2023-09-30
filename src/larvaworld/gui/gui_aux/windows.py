@@ -336,7 +336,7 @@ def import_window(labID, raw_dic):
                     # 'larva_groups': {gID: preg.get_null('LarvaGroup', sample=None)},
                     **conf}
                 w.close()
-                from ...lib.process.building import build_dataset
+                from ...lib.process.building import import_dataset
                 targets = [f.replace(raw_folder, proc_folder) for f in raw_dirs]
                 if not merge:
                     print(f'------ Building {N} discrete datasets ------')
@@ -373,7 +373,7 @@ def import_window(labID, raw_dic):
                                             n.startswith(source_id)],
                                 **kws
                             }
-                        dd = build_dataset(**kws0)
+                        dd = import_dataset(**kws0)
 
                         if dd is not None:
                             proc_dir[target_id] = dd
@@ -402,7 +402,7 @@ def import_window(labID, raw_dic):
                         }
                     elif labID in ['Jovanic']:
                         raise NotImplemented
-                    dd = build_dataset(**kws0)
+                    dd = import_dataset(**kws0)
                     proc_dir[dd.id] = dd
                 break
     return proc_dir
