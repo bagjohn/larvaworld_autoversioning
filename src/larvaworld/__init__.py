@@ -2,12 +2,9 @@
 Larvaworld : A Drosophila larva behavioral analysis and simulation platform
 """
 
-
 from . import lib, cli, gui, examples
 
 lib.reg.generators.resetConfs(init=True)
-
-
 
 __author__ = 'Panagiotis Sakagiannis'
 __license__ = 'GNU GENERAL PUBLIC LICENSE'

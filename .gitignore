@@ -5,3 +5,4 @@
 /coverage.xml
 /poetry.lock
 /src/larvaworld/lib/reg/confDicts/
+/dist/
