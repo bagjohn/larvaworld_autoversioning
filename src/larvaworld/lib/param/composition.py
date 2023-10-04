@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import param
 from scipy.stats import multivariate_normal
@@ -160,6 +161,14 @@ class Odor(NestedConf):
         z = rv.pdf(data) * I / p0
         plt.contourf(x, y, z, cmap='coolwarm')
         plt.show()
+
+    @ classmethod
+    def oG(cls, c=1, id='Odor'):
+        return cls(id=id, intensity=2.0 * c, spread=0.0002 * np.sqrt(c))
+
+    @classmethod
+    def oD(cls, c=1, id='Odor'):
+        return cls(id=id, intensity=300.0 * c, spread=0.1 * np.sqrt(c))
 
 
 
