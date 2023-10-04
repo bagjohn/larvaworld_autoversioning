@@ -2,13 +2,11 @@
 Basic Agent-based modeling classes
 """
 
-
 import sys
 
 import numpy as np
 import pandas as pd
 import random
-
 
 from datetime import datetime
 from agentpy.version import __version__
@@ -24,6 +22,7 @@ __all__ = [
     'BasicABModel',
     'ABModel',
 ]
+
 
 class BasicABModel(Object):
     '''
@@ -392,11 +391,10 @@ class BasicABModel(Object):
             self.output['reporters'] = df
 
 
-
-class ABModel(BasicABModel,reg.generators.SimConfigurationParams):
+class ABModel(BasicABModel, reg.generators.SimConfigurationParams):
 
     def __init__(self, **kwargs):
-        '''
+        """
         Basic simulation class that extends the agentpy.Model class and creates a larvaworld agent-based model (ABM).
         Further extended by classes supporting the various simulation modes in larvaworld.
         Specifies the simulation mode, type of experiment and simulation duration and timestep.
@@ -416,15 +414,14 @@ class ABModel(BasicABModel,reg.generators.SimConfigurationParams):
             duration: The simulation duration in seconds. Defaults to None for unlimited duration. Computed from Nsteps if specified.
             Nsteps: The number of simulation timesteps. Defaults to None for unlimited timesteps. Computed from duration if specified.
             **kwargs: Arguments passed to the setup method
-        '''
+        """
 
         reg.generators.SimConfigurationParams.__init__(self, **kwargs)
         # self.initialize_superclasses(self.parameters)
         self.parameters.steps = self.Nsteps
         self.parameters.agentpy_output_kws = {'exp_name': self.experiment, 'exp_id': self.id,
-                                     'path': f'{self.data_dir}/agentpy_output'}
+                                              'path': f'{self.data_dir}/agentpy_output'}
         BasicABModel.__init__(self, parameters=self.parameters, id=self.id)
-
 
     # def initialize_superclasses(self, parameters,**kwargs):
     #     pass
