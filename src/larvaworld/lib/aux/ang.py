@@ -1,3 +1,7 @@
+"""
+Methods for managing angular metrics
+"""
+
 import math
 import numpy as np
 

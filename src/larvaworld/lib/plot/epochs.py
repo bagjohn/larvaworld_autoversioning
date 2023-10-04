@@ -1,3 +1,7 @@
+"""
+Behaviorl-epoch-related plotting
+"""
+
 import warnings
 
 import numpy as np

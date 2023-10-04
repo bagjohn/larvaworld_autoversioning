@@ -1,3 +1,8 @@
+"""
+Methods for detecting and combining files
+"""
+
+
 import os
 import numpy as np
 

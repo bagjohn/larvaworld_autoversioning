@@ -1,3 +1,7 @@
+"""
+Helper methods use in simulation code
+"""
+
 import random
 import numpy as np
 from numpy import ndarray

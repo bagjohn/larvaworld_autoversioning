@@ -1,3 +1,7 @@
+"""
+Class for managing simulation time
+"""
+
 import time
 
 __all__ = [

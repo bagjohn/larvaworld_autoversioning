@@ -1,3 +1,7 @@
+"""
+Screen side-panel for pygame-based simulation visualization
+"""
+
 import math
 import os
 import numpy as np

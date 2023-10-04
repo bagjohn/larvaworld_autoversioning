@@ -1,3 +1,7 @@
+"""
+Methods for model calibration
+"""
+
 import heapq
 import itertools
 import os

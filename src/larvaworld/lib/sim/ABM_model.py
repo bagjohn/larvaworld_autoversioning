@@ -1,3 +1,8 @@
+"""
+Basic Agent-based modeling classes
+"""
+
+
 import sys
 
 import numpy as np

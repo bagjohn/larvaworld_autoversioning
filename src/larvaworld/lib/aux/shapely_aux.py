@@ -1,3 +1,7 @@
+"""
+Methods for managing shapely-based metrics
+"""
+
 from shapely import geometry
 
 __all__ = [

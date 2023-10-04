@@ -1,3 +1,7 @@
+"""
+Methods for processing angular metrics in timeseries
+"""
+
 import numpy as np
 
 from .. import reg, aux

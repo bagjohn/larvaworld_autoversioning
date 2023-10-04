@@ -1,3 +1,7 @@
+"""
+DEB-related plotting
+"""
+
 import os
 import warnings
 

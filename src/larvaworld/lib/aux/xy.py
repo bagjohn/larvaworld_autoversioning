@@ -1,3 +1,7 @@
+"""
+Methods for managing spatial metrics (2D x-y arrays)
+"""
+
 import numpy as np
 import pandas as pd
 import scipy as sp

@@ -1,3 +1,8 @@
+"""
+Class managing parameter naming
+"""
+
+
 import numpy as np
 
 __all__ = [

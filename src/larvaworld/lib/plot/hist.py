@@ -1,3 +1,6 @@
+"""
+Histograms
+"""
 import itertools
 import time
 

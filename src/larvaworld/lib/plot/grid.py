@@ -1,4 +1,7 @@
-# Create composite figure
+"""
+Composite grid-structured figure
+"""
+
 import os
 
 import numpy as np

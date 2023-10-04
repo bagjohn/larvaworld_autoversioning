@@ -1,3 +1,7 @@
+"""
+Methods for processing spatial metrics in timeseries
+"""
+
 import copy
 import itertools
 

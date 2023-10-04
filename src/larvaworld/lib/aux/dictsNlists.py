@@ -1,3 +1,7 @@
+"""
+Classes and methods for managing nested dictionaries and lists
+"""
+
 import copy
 import json
 import os

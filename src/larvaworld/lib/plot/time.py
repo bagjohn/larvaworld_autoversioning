@@ -1,3 +1,7 @@
+"""
+Timeseries plotting
+"""
+
 import numpy as np
 from matplotlib import collections as mc
 

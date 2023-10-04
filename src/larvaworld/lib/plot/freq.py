@@ -1,3 +1,7 @@
+"""
+Frequency-related plotting
+"""
+
 import numpy as np
 from matplotlib import ticker, cm
 from scipy.fft import fft, fftfreq

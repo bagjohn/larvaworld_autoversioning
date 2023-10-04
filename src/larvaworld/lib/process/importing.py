@@ -1,3 +1,7 @@
+"""
+Methods for importing data in lab-specific formats
+"""
+
 import os
 import os.path
 import shutil

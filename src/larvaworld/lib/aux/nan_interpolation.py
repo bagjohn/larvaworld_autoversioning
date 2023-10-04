@@ -1,3 +1,7 @@
+"""
+Methods for managing nans in timeseries data
+"""
+
 import numpy as np
 import scipy as sp
 from scipy.signal import sosfiltfilt, butter

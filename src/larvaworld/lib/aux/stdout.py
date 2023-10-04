@@ -1,3 +1,7 @@
+"""
+Methods for managing context and attributes
+"""
+
 import functools
 import os
 import sys

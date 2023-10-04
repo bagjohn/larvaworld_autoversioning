@@ -1,3 +1,7 @@
+"""
+Basic classes for larvaworld-format datasets
+"""
+
 import copy
 import itertools
 import os

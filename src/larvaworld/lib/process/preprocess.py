@@ -1,3 +1,7 @@
+"""
+Methods for preprocessing timeseries
+"""
+
 import numpy as np
 import pandas as pd
 

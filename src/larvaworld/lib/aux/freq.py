@@ -1,3 +1,7 @@
+"""
+Methods for managing frequency metrics
+"""
+
 import numpy as np
 
 __all__ = [

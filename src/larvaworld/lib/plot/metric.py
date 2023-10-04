@@ -1,3 +1,8 @@
+"""
+Calibration-related plotting
+"""
+
+
 from matplotlib import pyplot as plt
 import numpy as np
 import seaborn as sns

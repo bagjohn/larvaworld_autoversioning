@@ -1,3 +1,7 @@
+"""
+Bearing-related plotting
+"""
+
 import numpy as np
 
 from .. import reg, plot

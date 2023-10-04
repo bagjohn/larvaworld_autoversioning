@@ -1,3 +1,7 @@
+"""
+Helper methods used for importing data
+"""
+
 from scipy import interpolate
 import os
 import os.path

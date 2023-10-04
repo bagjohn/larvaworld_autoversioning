@@ -1,3 +1,7 @@
+"""
+Methods for complex parameter naming
+"""
+
 from typing import Tuple, List
 
 __all__ = [

@@ -1,3 +1,7 @@
+"""
+Methods used in plotting
+"""
+
 import itertools
 import os
 import warnings

@@ -1,3 +1,7 @@
+"""
+Stide-cycle-related plotting
+"""
+
 import os
 
 import numpy as np

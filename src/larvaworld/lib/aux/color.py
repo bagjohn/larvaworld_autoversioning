@@ -1,3 +1,8 @@
+"""
+Methods for managing colors
+"""
+
+
 import random
 import matplotlib
 import numpy as np

@@ -1,3 +1,7 @@
+"""
+Methods for storing data
+"""
+
 import os
 import pandas as pd
 

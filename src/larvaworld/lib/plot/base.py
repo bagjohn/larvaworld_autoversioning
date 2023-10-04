@@ -1,3 +1,7 @@
+"""
+Basic plotting classes
+"""
+
 
 import itertools
 import os

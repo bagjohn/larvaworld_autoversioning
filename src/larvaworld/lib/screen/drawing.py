@@ -1,3 +1,7 @@
+"""
+Screen management for pygame-based simulation visualization
+"""
+
 import os
 import sys
 import numpy as np

@@ -1,3 +1,7 @@
+"""
+Agent 2D trajectory-related plotting
+"""
+
 import copy
 
 import numpy as np
