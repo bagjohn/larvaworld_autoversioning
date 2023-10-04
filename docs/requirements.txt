@@ -5,16 +5,3 @@ myst-nb
 sphinx-autobuild
 sphinx-rtd-theme
 sphinx-autoapi
-# autodocsumm
-#panel
-#holoviews
-#numpy
-#panel
-#holoviews
-#larvaworld
-#libgeos-dev
-# sphinxcontrib-napoleon
-# sphinxcontrib-#websupport
-# sphinx-copybutton
-# sphinx-gallery
-# sphinx-notfound-page>=0.3.0
