@@ -242,7 +242,6 @@ class Object:
             self.log[var_key][-1] = v
     '''
 
-
     def setup(self, **kwargs):
         """This empty method is called automatically at the objects' creation.
         Can be overwritten in custom sub-classes

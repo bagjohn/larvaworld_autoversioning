@@ -368,7 +368,7 @@ class DiffusionValueLayer(OdorScape):
         for s in self.sources:
             self.add_value(s.get_position(), s.odor.intensity)
 
-        self.grid = gaussian_filter(self.grid, sigma=self.sigma) * self.evap_const
+        self.grid = gaussian_filter(self.grid, sigma=self.gaussian_sigma) * self.evap_const
 
 
 
