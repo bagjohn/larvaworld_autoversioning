@@ -1,6 +1,8 @@
 import param
 from ..param import Named
 
+from .. import aux
+
 __all__ = [
     'Object',
     'NamedObject',
@@ -101,6 +103,69 @@ class Object:
         return [k for k in self.__dict__.keys()
                 if k[0] != '_'
                 and k not in self._var_ignore]
+
+    def nest_record(self, reporter_dic):
+        """ Records an object's variables at the current time-step.
+        Recorded variables can be accessed via the object's `log` attribute
+        and will be saved to the model's output at the end of a simulation.
+
+        Arguments:
+            reporter_dic (dict):
+                Dict of Names of the variables to be recorded.
+
+
+        Notes:
+            Recording mutable objects like lists can lead to wrong results
+            if the object's content will be changed during the simulation.
+            Make a copy of the list or record each list entry seperately.
+
+        Examples:
+
+            Record the existing attributes `x` and `y` of an object `a`::
+
+                a.nest_record(['x', 'y'])
+
+            Record a variable `z` with the value `1` for an object `a`::
+
+                a.nest_record('z', 1)
+
+            Record all variables of an object::
+
+                a.nest_record(a.vars)
+        """
+
+        # print('n2')
+        # Connect log to the model's dict of logs
+        if self.group not in self.model._logs:
+            self.model._logs[self.group] = {}
+        self.model._logs[self.group][self.unique_id] = self.log
+        self.log['t'] = [self.model.t]  # Initiate time dimension
+
+        # Perform initial recording
+        for name, codename in reporter_dic.items():
+            v = aux.rgetattr(self, codename)
+            self.log[name] = [v]
+
+        # Set default recording function from now on
+        self.nest_record = self._nest_record  # noqa
+
+    def _nest_record(self, reporter_dic):
+
+        for name, codename in reporter_dic.items():
+
+            # Create empty lists
+            if name not in self.log:
+                self.log[name] = [None] * len(self.log['t'])
+
+            if self.model.t != self.log['t'][-1]:
+
+                # Create empty slot for new documented time step
+                for v in self.log.values():
+                    v.append(None)
+
+                # Store time step
+                self.log['t'][-1] = self.model.t
+            self.log[name][-1] = aux.rgetattr(self, codename)
 
     '''
         def record(self, var_keys, value=None):
