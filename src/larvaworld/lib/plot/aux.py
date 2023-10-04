@@ -37,6 +37,7 @@ __all__ = [
 
 suf = 'pdf'
 
+
 def plot_quantiles(df, x=None, **kwargs):
     """
     Plot quantiles or confidence intervals along with the mean.
@@ -73,7 +74,8 @@ def plot_quantiles(df, x=None, **kwargs):
     plot_mean_and_range(x=x, mean=mean, lb=lb, ub=ub, **kwargs)
 
 
-def plot_mean_and_range(x, mean, lb, ub, axis, color_shading, color_mean=None, label=None, linestyle='solid', linewidth=2):
+def plot_mean_and_range(x, mean, lb, ub, axis, color_shading, color_mean=None, label=None, linestyle='solid',
+                        linewidth=2):
     """
     Plot the mean and a shaded range (quantiles or confidence intervals).
 
@@ -115,7 +117,6 @@ def plot_mean_and_range(x, mean, lb, ub, axis, color_shading, color_mean=None, l
     axis.fill_between(xx, ub, lb, color=color_shading, alpha=0.2, zorder=0)
     # Plot the mean on top
     axis.plot(xx, mean, color_mean, label=label, linewidth=linewidth, alpha=1.0, zorder=10, linestyle=linestyle)
-
 
 
 def circular_hist(ax, x, bins=16, density=True, offset=0, gaps=True, **kwargs):
@@ -312,6 +313,7 @@ def dataset_legend(labels, colors, ax=None, anchor=None, handlelength=0.5, handl
         ax.add_artist(leg)
     return leg
 
+
 def label_diff(i, j, text, X, Y, ax):
     """
     Label the difference between two data points with an annotation and an arrow.
@@ -336,6 +338,7 @@ def label_diff(i, j, text, X, Y, ax):
     ax.annotate(text, xy=(X[i], y), zorder=10)
     ax.annotate('', xy=(X[i], y), xytext=(X[j], y), arrowprops=props)
 
+
 def pvalue_star(pv):
     """
     Convert a p-value to a star annotation for significance.
@@ -352,8 +355,6 @@ def pvalue_star(pv):
         if pv < k:
             return v
     return "ns"
-
-
 
 
 def annotate_plot(data, x, y, hue=None, show_ns=True, target_only=None, **kwargs):
@@ -508,6 +509,7 @@ def process_plot(fig, save_to, filename, return_fig=False, show=False):
             save_plot(fig, filepath, filename)
         return fig
 
+
 def prob_hist(vs, colors, labels, bins, ax, hist_type='plt.hist', kde=False, sns_kws={}, plot_fit=True, **kwargs):
     """
     Create a probability histogram or distribution plot for multiple datasets.
@@ -545,7 +547,8 @@ def prob_hist(vs, colors, labels, bins, ax, hist_type='plt.hist', kde=False, sns
     for v, c, l in zip(vs, colors, labels):
         ax_kws = {'label': l, 'color': c}
         if hist_type == 'sns.hist':
-            sns_kws0 = {'kde': kde, 'stat': 'probability', 'element': 'step', 'fill': True, 'multiple': 'layer', 'shrink': 1}
+            sns_kws0 = {'kde': kde, 'stat': 'probability', 'element': 'step', 'fill': True, 'multiple': 'layer',
+                        'shrink': 1}
             sns_kws0.update(sns_kws)
             sns.histplot(v, bins=bins, ax=ax, **ax_kws, **sns_kws0)
         elif hist_type == 'plt.hist':
@@ -555,8 +558,6 @@ def prob_hist(vs, colors, labels, bins, ax, hist_type='plt.hist', kde=False, sns
                 y_smooth = np.polyfit(x, y, 5)
                 poly_y = np.poly1d(y_smooth)(x)
                 ax.plot(x, poly_y, **ax_kws, linewidth=3)
-
-
 
 
 def single_boxplot(x, y, ax, data, hue=None, palette=None, color=None,
@@ -621,9 +622,8 @@ def single_boxplot(x, y, ax, data, hue=None, palette=None, color=None,
             g2.set(xlabel=None)
 
 
-
-
-def configure_subplot_grid(N=None, wh=None, w=8, h=8, sharex=False, sharey=False, Ncols=None, Nrows=None, Nrows_coef=1, figsize=None, **kwargs):
+def configure_subplot_grid(N=None, wh=None, w=8, h=8, sharex=False, sharey=False, Ncols=None, Nrows=None, Nrows_coef=1,
+                           figsize=None, **kwargs):
     """
     Calculate the number of rows and columns for arranging N elements in a grid and configure subplot grid parameters.
 
@@ -655,16 +655,17 @@ def configure_subplot_grid(N=None, wh=None, w=8, h=8, sharex=False, sharey=False
     - kws: dict
         A dictionary of keyword arguments for configuring subplots.
     """
+
     def calculate_grid_dimensions(N, Ncols, Nrows):
         if N:
             if Nrows:
                 if Ncols is None:
-                    Ncols =-(-N // Nrows)
-            elif Ncols :
+                    Ncols = -(-N // Nrows)
+            elif Ncols:
                 if Nrows is None:
-                    Nrows =-(-N // Ncols)
-            else :
-                Nrows, Ncols = (int(N**0.5), -(-N // int(N**0.5)))
+                    Nrows = -(-N // Ncols)
+            else:
+                Nrows, Ncols = (int(N ** 0.5), -(-N // int(N ** 0.5)))
         return Nrows or 1, Ncols or 1
 
     if Nrows is not None:
@@ -683,7 +684,6 @@ def configure_subplot_grid(N=None, wh=None, w=8, h=8, sharex=False, sharey=False
     return kws
 
 
-
 def define_end_ks(ks=None, mode='basic'):
     l_par = 'l'
     if ks is None:
@@ -695,9 +695,9 @@ def define_end_ks(ks=None, mode='basic'):
                         'cum_t', 'str_tr', 'pau_tr', 'tor5_std',
                         'tor5_mu', 'tor20_mu', 'dsp_0_40_max', 'dsp_0_40_fin',
                         'b_mu', 'bv_mu', 'Ltur_tr', 'Rtur_tr'],
-            'tiny': [l_par,'v_mu','sv_mu', 'fsv',
-                      'pau_tr','run_tr', 'cum_sd',
-                     'tor2_mu','tor5_mu', 'tor10_mu', 'tor20_mu','tor60_mu'],
+            'tiny': [l_par, 'v_mu', 'sv_mu', 'fsv',
+                     'pau_tr', 'run_tr', 'cum_sd',
+                     'tor2_mu', 'tor5_mu', 'tor10_mu', 'tor20_mu', 'tor60_mu'],
             'stride_def': [l_par, 'fsv', 'str_sd_mu', 'str_sd_std'],
             'reorientation': ['str_fo_mu', 'str_fo_std', 'tur_fou_mu', 'tur_fou_std'],
             'tortuosity': ['tor2_mu', 'tor5_mu', 'tor10_mu', 'tor20_mu'],
@@ -725,7 +725,8 @@ def define_end_ks(ks=None, mode='basic'):
             raise ValueError('Provide parameter shortcuts or define a mode')
     return ks
 
-def get_vs(datasets, par, key='step',absolute=False, rad2deg=False):
+
+def get_vs(datasets, par, key='step', absolute=False, rad2deg=False):
     vs = []
     for d in datasets:
         v = d.get_par(par, key=key)
