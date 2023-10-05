@@ -6,6 +6,7 @@ import os
 import sys
 import numpy as np
 import param
+import imageio
 from param import Boolean, String
 
 from ..param import NestedConf, PositiveNumber, OptionalSelector, PositiveInteger, Area2DPixel
@@ -36,8 +37,44 @@ class MediaDrawOps(NestedConf):
     show_display = Boolean(False, doc='Whether to launch the pygame-visualization.')
 
     @property
+    def video_filepath(self):
+        if self.media_dir is not None and self.video_file is not None :
+            return f'{self.media_dir}/{self.video_file}.mp4'
+        else:
+            return None
+
+    @property
+    def image_filepath(self):
+        if self.media_dir is not None and self.image_file is not None:
+            return f'{self.media_dir}/{self.image_file}.png'
+        else:
+            return None
+
+    @property
     def overlap_mode(self):
         return self.image_mode=='overlap'
+
+    def new_video_writer(self, fps, video_filepath=None):
+        if self.save_video:
+            if video_filepath is None:
+                video_filepath = self.video_filepath
+            os.makedirs(self.media_dir, exist_ok=True)
+            vid_writer = imageio.get_writer(video_filepath, mode='I', fps=fps)
+            reg.vprint(f'Video will be saved as {video_filepath}', 1)
+        else:
+            vid_writer = None
+        return vid_writer
+
+    def new_image_writer(self, image_filepath=None):
+        if self.image_mode:
+            if image_filepath is None:
+                image_filepath = self.image_filepath
+            os.makedirs(self.media_dir, exist_ok=True)
+            img_writer = imageio.get_writer(image_filepath, mode='i')
+            reg.vprint(f'Image will be saved as {image_filepath}', 1)
+        else:
+            img_writer = None
+        return img_writer
 
 
 class AgentDrawOps(NestedConf):

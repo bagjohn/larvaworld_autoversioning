@@ -199,19 +199,21 @@ class Viewer(ScreenWindowAreaBackground):
         self.snapshot_requested = None
         self.objects = []
 
-        if self.manager.save_video:
-            os.makedirs(self.manager.media_dir, exist_ok=True)
-            video_filepath = f'{self.manager.media_dir}/{self.manager.video_file}.mp4'
-            self.vid_writer = imageio.get_writer(video_filepath, mode='I', fps=self._fps)
-            reg.vprint(f'Video will be saved as {video_filepath}', 1)
-        else:
-            self.vid_writer = None
+        # if self.manager.save_video:
+        #     os.makedirs(self.manager.media_dir, exist_ok=True)
+        #
+        #     self.vid_writer = imageio.get_writer(self.manager.video_filepath, mode='I', fps=self._fps)
+        #     reg.vprint(f'Video will be saved as {self.manager.video_filepath}', 1)
+        # else:
+        #     self.vid_writer = None
+        self.vid_writer = self.manager.new_video_writer(fps=self._fps)
+        self.img_writer = self.manager.new_image_writer()
 
-        if self.manager.image_mode:
-            os.makedirs(self.manager.media_dir, exist_ok=True)
-            self.img_writer = imageio.get_writer(f'{self.manager.media_dir}/{self.manager.image_file}.png', mode='i')
-        else:
-            self.img_writer = None
+        # if self.manager.image_mode:
+        #     os.makedirs(self.manager.media_dir, exist_ok=True)
+        #     self.img_writer = imageio.get_writer(self.manager.image_filepath, mode='i')
+        # else:
+        #     self.img_writer = None
 
     def increase_fps(self):
         if self._fps < 60:
@@ -242,7 +244,8 @@ class Viewer(ScreenWindowAreaBackground):
         if self.vid_writer:
             self.vid_writer.append_data(np.flipud(np.rot90(image)))
         if self.snapshot_requested:
-            self.img_writer = imageio.get_writer(f'{self.caption}_at_{self.snapshot_requested}_sec.png', mode='i')
+            self.img_writer = self.manager.new_image_writer(image_filepath=f'{self.caption}_at_{self.snapshot_requested}_sec.png')
+            # self.img_writer = imageio.get_writer(f'{self.caption}_at_{self.snapshot_requested}_sec.png', mode='i')
             self.snapshot_requested = None
         if self.img_writer:
             self.img_writer.append_data(np.flipud(np.rot90(image)))
