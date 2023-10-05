@@ -7,7 +7,7 @@ from .. import reg, aux, util
 from ..param import Area, NestedConf, Larva_Distro, ClassAttr, SimTimeOps, \
     SimMetricOps, ClassDict, EnrichConf, OptionalPositiveRange, OptionalSelector, OptionalPositiveInteger, \
     generate_xyNor_distro, Odor, Life, class_generator, SimOps, RuntimeOps, Epoch, RuntimeDataOps, RandomizedColor, \
-    OptionalPositiveNumber, Filesystem, TrackerOps, PreprocessConf, Substrate
+    OptionalPositiveNumber, Filesystem, TrackerOps, PreprocessConf, Substrate, AirPuff
 
 __all__ = [
     'ConfType',
@@ -301,6 +301,7 @@ gen = aux.AttrDict({
     'OdorScape': class_generator(OdorScape),
     'DiffusionValueLayer': class_generator(DiffusionValueLayer),
     'GaussianValueLayer': class_generator(GaussianValueLayer),
+    'AirPuff': class_generator(AirPuff),
 })
 
 
