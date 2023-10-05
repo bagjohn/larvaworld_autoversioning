@@ -332,7 +332,7 @@ class ParamLarvaDataset(param.Parameterized):
         mid = self.midline_xy_data
         s[c.seg_orientations] = self.midline_seg_orients_from_mid(mid)
         # or_pars=c.seg_orientations
-        for vec, (idx1, idx2) in c.vector_idx.items():
+        for vec, (idx1, idx2) in c.vector_dict.items():
             par = aux.nam.orient(vec)
             x, y = mid[:, idx2, 0] - mid[:, idx1, 0], mid[:, idx2, 1] - mid[:, idx1, 1]
             s[par] = np.arctan2(y, x) % 2 * np.pi
