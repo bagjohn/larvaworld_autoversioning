@@ -12,6 +12,7 @@ from .. import reg, aux
 from ..aux import nam
 
 __all__ = [
+    'rolling_window',
     'comp_spatial',
     'comp_length',
     'comp_centroid',

@@ -236,6 +236,65 @@ class ParamLarvaDataset(param.Parameterized):
     def contour_xy_data(self):
         return self.step_data[self.config.contour_xy].values.reshape([-1, self.config.Ncontour, 2])
 
+    def empty_df(self, dim3=1):
+        c = self.config
+        if dim3 == 1:
+            return np.zeros([c.Nticks, c.N]) * np.nan
+        elif dim3 > 1:
+            return np.zeros([c.Nticks, c.N, dim3]) * np.nan
+
+    def apply_per_level(self, pars, func, level='AgentID', time_range=None, **kwargs):
+        """
+        Apply a function to each subdataframe of a MultiIndex DataFrame after grouping by a specified level.
+
+        Parameters:
+        ----------
+        s : pandas.DataFrame
+            A MultiIndex DataFrame with levels ['Step', 'AgentID'].
+        func : function
+            The function to apply to each subdataframe.
+        level : str, optional
+            The level by which to group the DataFrame. Default is 'AgentID'.
+        **kwargs : dict
+            Additional keyword arguments to pass to the 'func' function.
+
+        Returns:
+        -------
+        numpy.ndarray
+            An array of dimensions [N_ticks, N_ids], where N_ticks is the number of unique 'Step' values,
+            and N_ids is the number of unique 'AgentID' values.
+
+        Notes:
+        -----
+        This function groups the DataFrame 's' by the specified 'level', applies 'func' to each subdataframe, and
+        returns the results as a numpy array.
+        """
+        c = self.config
+        if time_range is not None:
+            assert level == 'AgentID'
+            s0 = int(time_range[0] / c.dt)
+            s1 = int(time_range[1] / c.dt)
+            Nt = s1 - s0
+            s = self.step_data.loc[(slice(s0, s1), slice(None)), pars]
+        else:
+            s0 = 0
+            Nt = c.Nticks
+            s = self.step_data[pars]
+
+        A = None
+
+        for i, (v, ss) in enumerate(s.groupby(level=level)):
+
+            ss = ss.droplevel(level)
+            Ai = func(ss, **kwargs)
+            if A is None:
+                A = self.empty_df(dim3=len(Ai.shape))
+            if level == 'AgentID':
+                A[s0:s0 + Nt, i] = Ai
+            elif level == 'Step':
+                A[i, :] = Ai
+        return A
+
     # def centroid_xy_data(self):
     #     xy=self.contour_xy_data
     #     return np.sum(xy, axis=1) / self.config.Ncontour
@@ -274,9 +333,9 @@ class ParamLarvaDataset(param.Parameterized):
         svel = nam.scal(vel)
         csdst = nam.cum(sdst)
 
-        s[dst] = aux.apply_per_level(s[xy], aux.eudist).flatten()
+        s[dst] = self.apply_per_level(pars=xy, func=aux.eudist).flatten()
         s[vel] = s[dst] / c.dt
-        s[acc] = aux.apply_per_level(s[vel], aux.rate, dt=c.dt).flatten()
+        s[acc] = self.apply_per_level(pars=[vel], func=aux.rate, dt=c.dt).flatten()
 
         self.scale_to_length(pars=[dst, vel, acc])
 
@@ -289,21 +348,35 @@ class ParamLarvaDataset(param.Parameterized):
         e[csdst] = s[sdst].dropna().groupby('AgentID').sum()
         e[nam.mean(svel)] = s[svel].dropna().groupby('AgentID').mean()
 
-    def comp_dispersal(self, t0=0, t1=60):
+    def comp_tortuosity(self, dur=20, **kwargs):
+        from ..process.spatial import rolling_window,straightness_index
+        s, e, c = self.data
+        p = reg.getPar(f'tor{dur}')
+        w = int(dur / c.dt / 2)
+        ticks = np.arange(c.Nticks)
+        rolling_ticks = rolling_window(ticks, w)
+        s[p] = self.apply_per_level(pars=['x', 'y', 'dst'], func=straightness_index,
+                                    rolling_ticks=rolling_ticks, **kwargs).flatten()
+        e[nam.mean(p)] = s[p].groupby('AgentID').mean()
+        e[nam.std(p)] = s[p].groupby('AgentID').std()
+
+    def comp_dispersal(self, t0=0, t1=60, **kwargs):
         s, e, c = self.data
         p = reg.getPar(f'dsp_{int(t0)}_{int(t1)}')
-        xy0 = s[c.traj_xy]
-        s[p], Nt = aux.compute_dispersal_multi(xy0, t0, t1, c.dt)
+        s[p] = self.apply_per_level(pars=c.traj_xy, func=aux.compute_dispersal_solo, time_range=(t0, t1),
+                                    **kwargs).flatten()
         self.scale_to_length(pars=[p])
         sp = nam.scal(p)
-        g = s[p].dropna().groupby('AgentID')
-        sg = s[sp].dropna().groupby('AgentID')
-        e[nam.max(p)] = g.max()
-        e[nam.mean(p)] = g.mean()
-        e[nam.final(p)] = g.last()
-        e[nam.max(sp)] = sg.max()
-        e[nam.mean(sp)] = sg.mean()
-        e[nam.final(sp)] = sg.last()
+        self.comp_operators(pars=[p, sp])
+
+    def comp_operators(self, pars):
+        s, e, c = self.data
+        for p in pars:
+            g = s[p].dropna().groupby('AgentID')
+            e[nam.max(p)] = g.max()
+            e[nam.mean(p)] = g.mean()
+            e[nam.final(p)] = g.last()
+            e[nam.cum(p)] = g.sum()
 
     def comp_centroid(self):
         c = self.config
@@ -313,7 +386,7 @@ class ParamLarvaDataset(param.Parameterized):
         self.step_data['length'] = np.sum(np.sum(np.diff(self.midline_xy_data, axis=1) ** 2, axis=2) ** (1 / 2), axis=1)
         self.endpoint_data['length'] = self.step_data['length'].groupby('AgentID').quantile(q=0.5)
 
-    def comp_spatial(self, dsp_starts=[0], dsp_stops=[40, 60], is_last=True):
+    def comp_spatial(self, dsp_starts=[0], dsp_stops=[40, 60],tor_durs=[5,10,20], is_last=True):
         self.comp_centroid()
         self.comp_length()
         self.step_data[self.config.traj_xy] = self.step_data[self.config.point_xy]
@@ -321,6 +394,8 @@ class ParamLarvaDataset(param.Parameterized):
             self.comp_xy_moments(point)
         for t0, t1 in itertools.product(dsp_starts, dsp_stops):
             self.comp_dispersal(t0, t1)
+        for dur in tor_durs :
+            self.comp_tortuosity(dur)
         if is_last:
             self.save()
 
