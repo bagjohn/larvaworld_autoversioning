@@ -4,6 +4,8 @@ Screen renderable items for pygame-based simulation visualization
 
 import math
 import os
+
+import agentpy
 import numpy as np
 import imageio
 import param
@@ -193,60 +195,19 @@ class Viewer(ScreenWindowAreaBackground):
         self.manager = manager
         m = manager.model
         super().__init__(scaling_factor=m.scaling_factor, space=m.space, **kwargs)
-
         self._t = pygame.time.Clock()
-        self._fps = self.manager._fps
-        self.snapshot_requested = None
-        self.objects = []
-
-        # if self.manager.save_video:
-        #     os.makedirs(self.manager.media_dir, exist_ok=True)
-        #
-        #     self.vid_writer = imageio.get_writer(self.manager.video_filepath, mode='I', fps=self._fps)
-        #     reg.vprint(f'Video will be saved as {self.manager.video_filepath}', 1)
-        # else:
-        #     self.vid_writer = None
-        self.vid_writer = self.manager.new_video_writer(fps=self._fps)
-        self.img_writer = self.manager.new_image_writer()
-
-        # if self.manager.image_mode:
-        #     os.makedirs(self.manager.media_dir, exist_ok=True)
-        #     self.img_writer = imageio.get_writer(self.manager.image_filepath, mode='i')
-        # else:
-        #     self.img_writer = None
-
-    def increase_fps(self):
-        if self._fps < 60:
-            self._fps += 1
-        print('viewer.fps:', self._fps)
-
-    def decrease_fps(self):
-        if self._fps > 1:
-            self._fps -= 1
-        print('viewer.fps:', self._fps)
-
-    def put(self, obj):
-        if isinstance(obj, list):
-            self.objects.extend(obj)
-        else:
-            self.objects.append(obj)
-
-    def remove(self, obj):
-        self.objects.remove(obj)
+        self.vid_writer = manager.new_video_writer(fps=manager._fps)
+        self.img_writer = manager.new_image_writer()
 
     def render(self):
         if self.manager.show_display:
             pygame.display.flip()
             image = pygame.surfarray.pixels3d(self._window)
-            self._t.tick(self._fps)
+            self._t.tick(self.manager._fps)
         else:
             image = pygame.surfarray.array3d(self._window)
         if self.vid_writer:
             self.vid_writer.append_data(np.flipud(np.rot90(image)))
-        if self.snapshot_requested:
-            self.img_writer = self.manager.new_image_writer(image_filepath=f'{self.caption}_at_{self.snapshot_requested}_sec.png')
-            # self.img_writer = imageio.get_writer(f'{self.caption}_at_{self.snapshot_requested}_sec.png', mode='i')
-            self.snapshot_requested = None
         if self.img_writer:
             self.img_writer.append_data(np.flipud(np.rot90(image)))
             self.img_writer = None
@@ -272,6 +233,7 @@ class Viewer(ScreenWindowAreaBackground):
     @staticmethod
     def load_from_file(file_path, **kwargs):
         from larvaworld.lib.model.envs.obstacle import Wall, Box
+        objects = []
         with open(file_path) as f:
             line_number = 1
             viewer = Viewer(**kwargs)
@@ -306,7 +268,8 @@ class Viewer(ScreenWindowAreaBackground):
                     size = int(words[3])
                     box = Box(x, y, size, model=m, default_color='lightgreen')
                     box.label = line_number
-                    viewer.put(box)
+                    # viewer.put(box)
+                    objects.append(box)
                 elif words[0] == 'Wall':
                     x1 = int(words[1])
                     y1 = int(words[2])
@@ -317,7 +280,8 @@ class Viewer(ScreenWindowAreaBackground):
                     point2 = geometry.Point(x2, y2)
                     wall = Wall(point1, point2, model=m, default_color='lightgreen')
                     wall.label = line_number
-                    viewer.put(wall)
+                    # viewer.put(wall)
+                    objects.append(wall)
                 elif words[0] == 'Light':
                     from larvaworld.lib.model.modules.rot_surface import LightSource
                     x = int(words[1])
@@ -325,11 +289,12 @@ class Viewer(ScreenWindowAreaBackground):
                     emitting_power = int(words[3])
                     light = LightSource(x, y, emitting_power, aux.Color.YELLOW, aux.Color.BLACK, model=m)
                     light.label = line_number
-                    viewer.put(light)
+                    # viewer.put(light)
+                    objects.append(light)
 
                 line_number += 1
 
-        return viewer
+        return viewer, objects
 
 
 class ScreenTextFont(NestedConf):

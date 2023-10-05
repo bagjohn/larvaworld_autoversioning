@@ -4,6 +4,8 @@ Screen management for pygame-based simulation visualization
 
 import os
 import sys
+
+import agentpy
 import numpy as np
 import param
 import imageio
@@ -19,6 +21,10 @@ from ..screen import Viewer, SidePanel, ScreenMsgText, SimulationClock, Simulati
     SimulationState, ScreenTextBoxRect
 
 __all__ = [
+    'MediaDrawOps',
+    'AgentDrawOps',
+    'ColorDrawOps',
+    'BaseScreenManager',
     'BaseScreenManager',
     'GA_ScreenManager',
     'ScreenManager',
@@ -157,6 +163,16 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
 
         })
 
+    def increase_fps(self):
+        if self._fps < 60:
+            self._fps += 1
+        reg.vprint(f'viewer.fps: {self._fps}', 1)
+
+    def decrease_fps(self):
+        if self._fps > 1:
+            self._fps -= 1
+        reg.vprint(f'viewer.fps: {self._fps}', 1)
+
     def draw_agents(self, v):
 
         for o in self.model.sources:
@@ -196,7 +212,14 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
         return None
 
     def evaluate_input(self):
-        pass
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT or (e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE):
+                self.close()
+                sys.exit()
+            elif e.type == pygame.KEYDOWN and (e.key == pygame.K_PLUS or e.key == 93 or e.key == 270):
+                self.increase_fps()
+            elif e.type == pygame.KEYDOWN and (e.key == pygame.K_MINUS or e.key == 47 or e.key == 269):
+                self.decrease_fps()
 
     def evaluate_graphs(self):
         for g in self.dynamic_graphs:
@@ -224,14 +247,14 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
         return (self.model.Nticks - 1) % self.snapshot_interval == 0
 
     @property
-    def snapshot_requested(self):
+    def snapshot_valid(self):
         return self.mode == 'image' and self.image_mode == 'snapshots' and self.snapshot_tick
 
     @property
-    def render_requested(self):
+    def render_valid(self):
         m = self.mode
         return (m == 'image' and self.overlap_mode) or (
-                    m == 'video' and (self.image_mode != 'snapshots' or self.snapshot_tick))
+                m == 'video' and (self.image_mode != 'snapshots' or self.snapshot_tick))
 
 
 class GA_ScreenManager(BaseScreenManager):
@@ -240,18 +263,9 @@ class GA_ScreenManager(BaseScreenManager):
         self.screen_kws.caption = f'GA {self.model.experiment} : {self.model.id}'
         self.screen_kws.file_path = f'{reg.ROOT_DIR}/lib/sim/ga_scenes/{scene}.txt'
 
-    def evaluate_input(self):
-        for e in pygame.event.get():
-            if e.type == pygame.QUIT or (e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE):
-                self.close()
-                sys.exit()
-            elif e.type == pygame.KEYDOWN and (e.key == pygame.K_PLUS or e.key == 93 or e.key == 270):
-                self.v.increase_fps()
-            elif e.type == pygame.KEYDOWN and (e.key == pygame.K_MINUS or e.key == 47 or e.key == 269):
-                self.v.decrease_fps()
-
     def initialize(self):
-        v = Viewer.load_from_file(**self.screen_kws)
+        v, objects = Viewer.load_from_file(**self.screen_kws)
+        self.model.objects = agentpy.AgentList(model=self.model, objs=objects)
         self.side_panel = SidePanel(v)
         reg.vprint('Screen opened', 1)
         return v
@@ -307,11 +321,6 @@ class ScreenManager(BaseScreenManager):
         self.screen_scale = SimulationScale(**kws)
         self.screen_state = SimulationState(model=m, **kws)
 
-        # self.screen_items = aux.AttrDict({
-        #     'clock': SimulationClock(sim_step_in_sec=m.dt, **kws),
-        #     'scale': SimulationScale(**kws),
-        #     'state': SimulationState(model=m, **kws),
-        # })
         self.screen_texts = aux.AttrDict({name: ScreenMsgText(text=name, **kws) for name in [
             'trail_dt',
             'trail_color',
@@ -345,9 +354,9 @@ class ScreenManager(BaseScreenManager):
         self.check()
         if self.active:
             self.screen_clock.tick_clock()
-            if self.render_requested:
+            if self.render_valid:
                 self.render()
-            if self.snapshot_requested:
+            if self.snapshot_valid:
                 self.capture_snapshot()
 
     def finalize(self):
@@ -404,9 +413,9 @@ class ScreenManager(BaseScreenManager):
         m = self.model
         if disp is None:
             disp = name
-
         if name == 'snapshot #':
-            self.v.snapshot_requested = int(m.Nticks * m.dt)
+            self.v.img_writer = self.new_image_writer(
+                image_filepath=f'{self.v.caption}_at_{int(m.Nticks * m.dt)}_sec.png')
             value = self.snapshot_counter
             self.snapshot_counter += 1
         elif name == 'odorscape #':
@@ -567,8 +576,6 @@ class ScreenManager(BaseScreenManager):
         else:
             self.toggle(k)
 
-
-
     def eval_selection(self, p, ctrl):
         res = False if len(self.selected_agents) == 0 else True
         for f in self.model.get_all_objects():
@@ -584,15 +591,3 @@ class ScreenManager(BaseScreenManager):
                 f.selected = False
                 self.selected_agents.remove(f)
         return res
-
-    # @ property
-    # def screen_clock(self):
-    #     return self.screen_items.clock
-    #
-    # @property
-    # def screen_scale(self):
-    #     return self.screen_items.scale
-    #
-    # @property
-    # def screen_state(self):
-    #     return self.screen_items.state
