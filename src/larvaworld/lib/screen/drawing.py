@@ -32,6 +32,10 @@ __all__ = [
 
 
 class MediaDrawOps(NestedConf):
+    """
+    Options regarding the media (videos,images) to be stored during simulation.
+    """
+
     image_mode = OptionalSelector(objects=['final', 'snapshots', 'overlap'], doc='When to save images.')
     image_file = String(None, doc='Filename for the saved image. File extension png sutomatically added.')
     snapshot_interval_in_sec = PositiveInteger(60, softmax=100, doc='Sec between snapshots')
@@ -88,6 +92,10 @@ class MediaDrawOps(NestedConf):
 
 
 class AgentDrawOps(NestedConf):
+    """
+    Options for drawing the agents on the screen.
+    """
+
     visible_trails = Boolean(True, doc='Draw the larva trajectories')
     trail_dt = PositiveNumber(20, step=0.2, doc='Duration of the drawn trajectories')
     trail_color = param.Selector(objects=['normal', 'linear', 'angular'],
@@ -102,6 +110,10 @@ class AgentDrawOps(NestedConf):
 
 
 class ColorDrawOps(NestedConf):
+    """
+    Options regarding coloring.
+    """
+
     intro_text = Boolean(True, doc='Show the introductory configuration screen')
     odor_aura = Boolean(False, doc='Draw the aura around odor sources')
     allow_clicks = Boolean(True, doc='Whether to allow input from display')
@@ -121,6 +133,9 @@ class ScreenOps(ColorDrawOps, AgentDrawOps, MediaDrawOps): pass
 
 
 class BaseScreenManager(Area2DPixel, ScreenOps):
+    """
+    Base class managing the pygame screen.
+    """
 
     def __init__(self, model, background_motion=None, vis_kwargs=None, video=None, **kwargs):
         m = self.model = model
@@ -174,6 +189,9 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
         reg.vprint(f'viewer.fps: {self._fps}', 1)
 
     def draw_agents(self, v):
+        """
+        Draw the agents on the screen
+        """
 
         for o in self.model.sources:
             o._draw(v=v)
@@ -181,12 +199,20 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
             g._draw(v=v)
 
     def check(self, **kwargs):
+        """
+        Check whether to initialize or close the display
+        """
+
         if self.v is None:
             self.v = self.initialize(**kwargs)
         elif self.v.close_requested():
             self.close()
 
     def close(self):
+        """
+        Close the pygame display
+        """
+
         self.v.close()
         self.v = None
         self.model.running = False
@@ -194,6 +220,10 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
         return
 
     def render(self, **kwargs):
+        """
+        Draw the display and evaluate user-input
+        """
+
 
         if self.active:
             self.check(**kwargs)
@@ -209,9 +239,17 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
                 self.v.render()
 
     def initialize(self, **kwargs):
+        """
+        Initialize the pygame display
+        """
+
         return None
 
     def evaluate_input(self):
+        """
+        Evaluation of user input through keyboard and mouse.
+        """
+
         for e in pygame.event.get():
             if e.type == pygame.QUIT or (e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE):
                 self.close()
@@ -222,6 +260,10 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
                 self.decrease_fps()
 
     def evaluate_graphs(self):
+        """
+        Evaluation of dynamic graphs on the screen.
+        """
+
         for g in self.dynamic_graphs:
             running = g.evaluate()
             if not running:
@@ -258,12 +300,19 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
 
 
 class GA_ScreenManager(BaseScreenManager):
+    """
+    Screen manager for the Genetic Algorithm simulations.
+    """
     def __init__(self, panel_width=600, scene='no_boxes', **kwargs):
         super().__init__(black_background=True, panel_width=panel_width, **kwargs)
         self.screen_kws.caption = f'GA {self.model.experiment} : {self.model.id}'
         self.screen_kws.file_path = f'{reg.ROOT_DIR}/lib/sim/ga_scenes/{scene}.txt'
 
     def initialize(self):
+        """
+        Initialize the pygame display
+        """
+
         v, objects = Viewer.load_from_file(**self.screen_kws)
         self.model.objects = agentpy.AgentList(model=self.model, objs=objects)
         self.side_panel = SidePanel(v)
@@ -282,11 +331,19 @@ class GA_ScreenManager(BaseScreenManager):
 
 
 class ScreenManager(BaseScreenManager):
+    """
+    Screen manager for the default single experiment simulations.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.screen_kws.caption = str(self.model.id)
 
     def initialize(self):
+        """
+        Initialize the pygame display
+        """
+
         v = Viewer(**self.screen_kws)
         reg.vprint('Screen opened', 1)
         self.build_aux(v)
@@ -294,6 +351,10 @@ class ScreenManager(BaseScreenManager):
         return v
 
     def build_aux(self, v):
+        """
+        Generate additional items on screen
+        """
+
         m = self.model
         self.input_box = ScreenTextBoxRect(text_color='lightgreen', default_color='white',
                                            frame_rect=v.get_rect_at_pos(),
@@ -360,6 +421,10 @@ class ScreenManager(BaseScreenManager):
                 self.capture_snapshot()
 
     def finalize(self):
+        """
+        Apply final actions before closing the screen manager
+        """
+
         if self.active:
             if self.overlap_mode:
                 self.v.render()
@@ -371,11 +436,19 @@ class ScreenManager(BaseScreenManager):
                 self.v.close()
 
     def capture_snapshot(self):
+        """
+        Capture an image snapshot of the current display
+        """
+
         self.render()
         self.toggle('snapshot #')
         self.v.render()
 
     def draw_aux(self, v, **kwargs):
+        """
+        Draw additional items on screen
+        """
+
         v.draw_arena(self.tank_color, self.screen_color)
         for t in [self.screen_clock, self.screen_scale, self.screen_state]:
             t._draw(v)
@@ -384,10 +457,18 @@ class ScreenManager(BaseScreenManager):
             t._draw(v)
 
     def draw_arena_tank(self, v):
+        """
+        Draw the tank of the arena with optional background
+        """
+
         v.draw_polygon(self.model.space.vertices, color=self.tank_color)
-        v.draw_background()
+        v.draw_background(self.bg[:, self.model.t - 1] if self.bg is not None else [0, 0, 0])
 
     def draw_arena(self, v):
+        """
+        Draw the arena and sensory landscapes
+        """
+
         m = self.model
         arena_drawn = False
         for id, layer in m.odor_layers.items():
@@ -410,6 +491,9 @@ class ScreenManager(BaseScreenManager):
             b._draw(v=v)
 
     def toggle(self, name, value=None, show=False, minus=False, plus=False, disp=None):
+        """
+        Presentation of user-input-induced changes on screen
+        """
         m = self.model
         if disp is None:
             disp = name
@@ -454,6 +538,9 @@ class ScreenManager(BaseScreenManager):
             m.eliminate_overlap()
 
     def evaluate_input(self):
+        """
+        Evaluation of user input through keyboard and mouse.
+        """
 
         if self.pygame_keys is None:
             self.pygame_keys = reg.controls.load()['pygame_keys']
@@ -500,6 +587,10 @@ class ScreenManager(BaseScreenManager):
         # print(self.selected_agents)
 
     def eval_keypress(self, k):
+        """
+        Evaluation of keyboard input.
+        """
+
         m = self.model
         if k == 'visible_ids':
             for a in m.agents + m.sources:
@@ -577,6 +668,10 @@ class ScreenManager(BaseScreenManager):
             self.toggle(k)
 
     def eval_selection(self, p, ctrl):
+        """
+        Selection of items on the screen by mouse-clicks.
+        """
+
         res = False if len(self.selected_agents) == 0 else True
         for f in self.model.get_all_objects():
             if f.contained(p):

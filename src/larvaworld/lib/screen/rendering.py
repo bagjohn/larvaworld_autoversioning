@@ -169,12 +169,12 @@ class ScreenWindowAreaBackground(ScreenWindowAreaPygame):
         self.th_max = int(self._window.get_height() / self.th) + 2
         self.tw_max = int(self._window.get_width() / self.tw) + 2
 
-    def draw_background(self):
+    def draw_background(self, bg = [0, 0, 0]):
         if self.bgimage is not None and self.bgimagerect is not None:
-            if self.manager.bg is not None:
-                bg = self.manager.bg[:, self.manager.model.t - 1]
-            else:
-                bg = [0, 0, 0]
+            # if self.manager.bg is not None:
+            #     bg = self.manager.bg[:, tick - 1]
+            # else:
+            #     bg = [0, 0, 0]
             x, y, a = bg
             try:
                 min_x = int(np.floor(x))
