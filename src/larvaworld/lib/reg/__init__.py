@@ -38,10 +38,14 @@ __all__ = [
 
 __displayname__ = 'Registry'
 
-VERBOSE =2
+VERBOSE = 2
+
+
 def vprint(text='', verbose=0):
     if verbose >= VERBOSE:
         print(text)
+
+
 vprint("Initializing larvaworld registry", 2)
 
 default_refID = None
@@ -52,65 +56,62 @@ SIM_DIR = f'{DATA_DIR}/SimGroup'
 BATCH_DIR = f'{SIM_DIR}/batch_runs'
 CONF_DIR = f'{ROOT_DIR}/lib/reg/confDicts'
 
-
 os.makedirs(CONF_DIR, exist_ok=True)
 
-SIMTYPES=['Exp', 'Batch', 'Ga', 'Eval','Replay']
-CONFTYPES = ['Ref', 'Model', 'ModelGroup', 'Env', 'Exp', 'ExpGroup', 'Batch', 'Ga', 'LabFormat', 'Trial', 'Life', 'Tree', 'Food']
+SIMTYPES = ['Exp', 'Batch', 'Ga', 'Eval', 'Replay']
+CONFTYPES = ['Ref', 'Model', 'ModelGroup', 'Env', 'Exp', 'ExpGroup', 'Batch', 'Ga', 'LabFormat', 'Trial', 'Life',
+             'Tree', 'Food']
 GROUPTYPES = ['LarvaGroup', 'FoodGroup', 'epoch']
 
-
-
-
-
-
 vprint("Initializing function registry")
+
 from pint import UnitRegistry
+
 units = UnitRegistry()
 units.default_format = "~P"
 units.setup_matplotlib(True)
 
 from . import facade, keymap, distro
-funcs=facade.FunctionDict()
-controls=keymap.ControlRegistry()
-distro_database = distro.generate_distro_database()
 
+funcs = facade.FunctionDict()
+controls = keymap.ControlRegistry()
+distro_database = distro.generate_distro_database()
 
 vprint("Initializing parameter registry")
 from . import parDB, parFunc, stored_confs
+
 par = parDB.ParamRegistry()
 
 vprint("Initializing configuration registry")
 from .config import Path, StoredConfRegistry
-stored=StoredConfRegistry()
+
+stored = StoredConfRegistry()
 from .generators import gen, conf
 
-from . import config,generators,models, graph
+from . import config, generators, models, graph
+
 model = models.ModelRegistry()
 graphs = graph.GraphRegistry()
-
-
-
-
 
 
 def getPar(k=None, p=None, d=None, to_return='d'):
     return par.getPar(k=k, d=d, p=p, to_return=to_return)
 
+
 def get_null(name, **kwargs):
     return par.get_null(name=name, **kwargs)
 
-def loadRef(id, **kwargs) :
+
+def loadRef(id, **kwargs):
     return conf.Ref.loadRef(id=id, **kwargs)
 
-def getRef(id, **kwargs) :
+
+def getRef(id, **kwargs):
     return conf.Ref.getRef(id=id, **kwargs)
 
-def loadRefGroup(group_id, **kwargs) :
+
+def loadRefGroup(group_id, **kwargs):
     return conf.Ref.loadRefGroup(group_id=group_id, **kwargs)
 
-# resetConfs(init=True)
-
-# stored.resetConfs(init=True)
 
 vprint(f"Registry configured!", 2)

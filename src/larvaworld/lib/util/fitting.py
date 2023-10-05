@@ -2,7 +2,6 @@ import warnings
 import numpy as np
 from scipy.stats import levy, norm, rv_discrete, ks_2samp
 
-
 from .. import reg, aux
 
 __all__ = [
@@ -11,6 +10,7 @@ __all__ = [
     'fit_bout_distros',
     'BoutGenerator',
 ]
+
 
 def get_logNpow(x, xmax, xmid, overlap=0, discrete=False):
     r = len(x[x < xmid]) / len(x)
@@ -21,10 +21,10 @@ def get_logNpow(x, xmax, xmid, overlap=0, discrete=False):
 
 def get_powerlaw_alpha(dur, dur0=None, dur1=None, discrete=False):
     from powerlaw import Fit
-    if dur0 is None :
-        dur0=np.min(dur)
-    if dur1 is None :
-        dur1=np.max(dur)
+    if dur0 is None:
+        dur0 = np.min(dur)
+    if dur1 is None:
+        dur1 = np.max(dur)
     with aux.stdout.suppress_stdout_stderr():
 
         return Fit(dur, xmin=dur0, xmax=dur1, discrete=discrete).power_law.alpha
@@ -34,10 +34,12 @@ def get_lognormal(dur):
     d = np.log(dur)
     return np.mean(d), np.std(d)
 
-def get_exp_beta(x, xmin=None) :
-    if xmin is None :
-        xmin=np.min(x)
+
+def get_exp_beta(x, xmin=None):
+    if xmin is None:
+        xmin = np.min(x)
     return len(x) / np.sum(x - xmin)
+
 
 def compute_density(x, xmin, xmax, Nbins=64):
     log_range = np.linspace(np.log2(xmin), np.log2(xmax), Nbins)
@@ -66,15 +68,16 @@ def MSE(a1, a2, scaled=False):
         s1, s2 = 1, 1
     return np.sum((a1 / s1 - a2 / s2) ** 2) / a1.shape[0]
 
+
 def KS2(a1, a2):
-    if len(a1)==0 or len(a2)==0 :
+    if len(a1) == 0 or len(a2) == 0:
         return np.nan
-    else :
+    else:
         return ks_2samp(a1, a2)[0]
 
 
 def logNpow_switch(x, xmax, u2, du2, c2cum, c2, discrete=False, fit_by='cdf'):
-    D=reg.distro_database['logNpow']
+    D = reg.distro_database['logNpow']
     xmids = u2[1:-int(len(u2) / 3)][::2]
     overlaps = np.linspace(0, 1, 6)
     temp = np.ones([len(xmids), len(overlaps)])
@@ -95,9 +98,6 @@ def logNpow_switch(x, xmax, u2, du2, c2cum, c2, discrete=False, fit_by='cdf'):
         return xmids[ii], overlaps[jj]
 
 
-
-
-
 def fit_epochs(grouped_epochs):
     fitted = {}
     for k, v in grouped_epochs.items():
@@ -114,34 +114,32 @@ def fit_epochs(grouped_epochs):
     return aux.AttrDict(fitted)
 
 
-def get_bout_distros(fitted_epochs) :
-    d={}
+def get_bout_distros(fitted_epochs):
+    d = {}
     for k, dic in fitted_epochs.items():
-        if isinstance(dic,dict) and 'best' in dic.keys():
-            d[k]=dic['best']
-        else :
-            d[k]=None
+        if isinstance(dic, dict) and 'best' in dic.keys():
+            d[k] = dic['best']
+        else:
+            d[k] = None
     return aux.AttrDict(d)
-
-
 
 
 def fit_bout_distros(x0, xmin=None, xmax=None, discrete=False, xmid=np.nan, overlap=0.0, Nbins=64, print_fits=False,
                      dataset_id='dataset', bout='pause', combine=True, fit_by='pdf', eval_func_id='KS2'):
-    eval_func_dic={
-        'MSE':MSE,
-        'KS':KS,
-        'KS2':KS2,
+    eval_func_dic = {
+        'MSE': MSE,
+        'KS': KS,
+        'KS2': KS2,
     }
-    eval_func=eval_func_dic[eval_func_id]
+    eval_func = eval_func_dic[eval_func_id]
 
-    if xmin is None :
-        xmin=np.nanmin(x0)
-    if xmax is None :
-        xmax=np.nanmax(x0)
+    if xmin is None:
+        xmin = np.nanmin(x0)
+    if xmax is None:
+        xmax = np.nanmax(x0)
     with aux.suppress_stdout(False):
         warnings.filterwarnings('ignore')
-        distros=reg.distro_database
+        distros = reg.distro_database
         x = x0[x0 >= xmin]
         x = x[x <= xmax]
 
@@ -237,9 +235,6 @@ def fit_bout_distros(x0, xmin=None, xmax=None, discrete=False, xmid=np.nan, over
         'best': get_best_distro(p, res_dict, idx_Kmax=idx_Kmax), 'fits': dict(zip(names2, res))
     })
 
-
-
-
     if print_fits:
         print()
         print(f'-----{dataset_id}-{bout}----------')
@@ -264,7 +259,6 @@ def fit_bout_distros(x0, xmin=None, xmax=None, discrete=False, xmid=np.nan, over
         print(f'---{dataset_id}-{bout}-distro')
         print(dic.best)
         print()
-
 
     return dic
 
@@ -316,8 +310,7 @@ def get_best_distro(bout, f, idx_Kmax=None):
     return distro
 
 
-
-def critical_bout(c=0.9, sigma=1, N=1000, tmax=1100, tmin=1) :
+def critical_bout(c=0.9, sigma=1, N=1000, tmax=1100, tmin=1):
     t = 0
     S = 1
     S_prev = 0
@@ -331,13 +324,14 @@ def critical_bout(c=0.9, sigma=1, N=1000, tmax=1100, tmin=1) :
             t = 0
             S = 1
             S_prev = 0
-        if S<=0 and t<tmin :
+        if S <= 0 and t < tmin:
             t = 0
             S = 1
             S_prev = 0
     return t
 
-def exp_bout(beta=0.01, tmax=1100, tmin=1) :
+
+def exp_bout(beta=0.01, tmax=1100, tmin=1):
     t = 0
     S = 0
     while S <= 0:
@@ -346,12 +340,17 @@ def exp_bout(beta=0.01, tmax=1100, tmin=1) :
         if t > tmax:
             t = 0
             S = 0
-        if S>0 and t<tmin :
+        if S > 0 and t < tmin:
             t = 0
             S = 0
     return t
 
+
 class BoutGenerator:
+    """
+    Class for generating behavioral epochs of given temporal-duration distribution
+    """
+
     def __init__(self, name, range, dt, **kwargs):
         self.name = name
         self.dt = dt
@@ -382,18 +381,18 @@ class BoutGenerator:
         return func(x=x, **self.args)
 
 
-def test_boutGens(mID,refID=None,refDataset=None, **kwargs):
-    if refDataset is None :
-        refDataset=reg.loadRef(refID, load=True)
-    c=refDataset.config
+def test_boutGens(mID, refID=None, refDataset=None, **kwargs):
+    if refDataset is None:
+        refDataset = reg.loadRef(refID, load=True)
+    c = refDataset.config
 
     chunk_dicts = refDataset.chunk_dicts
     if chunk_dicts in [None, {}]:
         try:
-            s, e,c = refDataset.step_data, refDataset.endpoint_data, refDataset.config
+            s, e, c = refDataset.data
         except:
             refDataset.load()
-            s, e,c = refDataset.step_data, refDataset.endpoint_data, refDataset.config
+            s, e, c = refDataset.data
         from larvaworld.lib.process.annotation import comp_chunk_dicts
         chunk_dicts = comp_chunk_dicts(s, e, c=c)
     if chunk_dicts in [None, {}]:
@@ -404,23 +403,21 @@ def test_boutGens(mID,refID=None,refDataset=None, **kwargs):
     Nrun = aux_dic['run_dur'].shape[0]
 
     from larvaworld.lib.util.sampling import get_sample_bout_distros
-    m=reg.conf.Model.getID(mID)
-    m=get_sample_bout_distros(m, c)
-    dicM=m.brain.intermitter_params
+    m = reg.conf.Model.getID(mID)
+    m = get_sample_bout_distros(m, c)
+    dicM = m.brain.intermitter_params
     dic = {}
-    for n,n0 in zip(['pause', 'run', 'stridechain'], ['pause_dur', 'run_dur', 'run_count']) :
-        N=Npau if n == 'pause' else Nrun
+    for n, n0 in zip(['pause', 'run', 'stridechain'], ['pause_dur', 'run_dur', 'run_count']):
+        N = Npau if n == 'pause' else Nrun
         discr = True if n == 'stridechain' else False
         dt = 1 if n == 'stridechain' else c.dt
 
-        k=f'{n}_dist'
-        kk=dicM[k]
-        if kk is not None :
+        k = f'{n}_dist'
+        kk = dicM[k]
+        if kk is not None:
             B = BoutGenerator(**kk, dt=dt)
             vs = B.sample(N)
             dic[n0] = fit_bout_distros(vs, dataset_id=mID, bout=n, combine=False, discrete=discr)
-    datasets=[{'id' : 'model', 'pooled_epochs': dic, 'color': 'blue'},
-              {'id' : 'experiment', 'pooled_epochs': dict(refDataset.read_HDF('pooled_epochs')), 'color': 'red'}]
-    datasets = [aux.AttrDict(dd) for dd in datasets]
-    return datasets
-
+    datasets = [{'id': 'model', 'pooled_epochs': dic, 'color': 'blue'},
+                {'id': 'experiment', 'pooled_epochs': dict(refDataset.read_HDF('pooled_epochs')), 'color': 'red'}]
+    return [aux.AttrDict(dd) for dd in datasets]

@@ -119,22 +119,23 @@ def rotationMatrix(a):
 def rotate_points_around_point(points, radians, origin=None):
     """Rotate multiple points around a given point clockwise
 
-        Parameters
-        ----------
-        points : List[Tuple[float]]
-            The XY coordinates of the points to be rotated
-        radians : float
-            The rotation angle
-        origin : Tuple[float], optional
-            The XY coordinates of the rotation point (default is [0, 0])
+    Parameters
+    ----------
+    points : List[Tuple[float]]
+        The XY coordinates of the points to be rotated
+    radians : float
+        The rotation angle
+    origin : Tuple[float], optional
+        The XY coordinates of the rotation point (default is [0, 0])
 
-        Returns
-        -------
-        ps : List[Tuple[float]]
-            The XY coordinates of the rotated points
-        """
+    Returns
+    -------
+    ps : List[Tuple[float]]
+        The XY coordinates of the rotated points
+    """
 
     if origin is None:
         origin = (0, 0)
     origin = np.array(origin)
     return (points - origin) @ rotationMatrix(radians) + origin
+

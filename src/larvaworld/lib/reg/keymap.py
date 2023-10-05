@@ -7,8 +7,9 @@ __all__ = [
     'ControlRegistry',
 ]
 
+
 def get_pygame_key(key):
-    pygame_keys = {
+    pygame_keys = aux.AttrDict({
         'BackSpace': 'BACKSPACE',
         'tab': 'TAB',
         'del': 'DELETE',
@@ -33,8 +34,9 @@ def get_pygame_key(key):
         'parenleft': 'LEFTPAREN',
         'parenright': 'RIGHTPAREN',
         'asterisk': 'ASTERISK',
-    }
+    })
     return f'K_{pygame_keys[key]}' if key in list(pygame_keys.keys()) else f'K_{key}'
+
 
 def init_shortcuts():
     draw = {
@@ -122,12 +124,13 @@ def init_controls():
         ds.update(dic)
         d['keys'][title] = dic
     d['pygame_keys'] = {k: get_pygame_key(v) for k, v in ds.items()}
-    return d
+    return aux.AttrDict(d)
 
-class ControlRegistry :
+
+class ControlRegistry:
     def __init__(self):
-        self.path=f'{reg.CONF_DIR}/controls.txt'
-        self.conf=init_controls()
+        self.path = f'{reg.CONF_DIR}/controls.txt'
+        self.conf = init_controls()
         self.save(self.conf)
 
     def save(self, conf=None):
@@ -140,6 +143,5 @@ class ControlRegistry :
         with open(self.path) as tfp:
             c = json.load(tfp)
         return aux.AttrDict(c)
-
 
 # controls=ControlRegistry()

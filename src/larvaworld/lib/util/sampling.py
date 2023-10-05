@@ -13,7 +13,7 @@ __all__ = [
     'imitateRef',
     'generate_agentGroup',
     'generate_agentConfs',
-    # 'generate_sourceConfs',
+    'get_sample_bout_distros',
     'sim_model',
     'sim_models',
 ]

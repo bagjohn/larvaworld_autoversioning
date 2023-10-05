@@ -12,7 +12,6 @@ __all__ = [
 ]
 
 
-
 def powerlaw_cdf(x, xmin, alpha):
     return 1 - (x / xmin) ** (1 - alpha)
 
@@ -124,10 +123,14 @@ def get_logNpow2(x, xmax, xmid, overlap=0, discrete=False):
     with aux.suppress_stdout_stderr():
         dic.alpha = powerlaw.Fit(x=x[x >= xmid], xmin=xmid, xmax=xmax, discrete=discrete).power_law.alpha
 
-
         return dic
 
+
 def generate_distro_database():
+    """
+    Database of the most common distributions
+    """
+
     d = aux.AttrDict({
         'powerlaw': {'cdf': powerlaw_cdf, 'pdf': powerlaw_pdf, 'args': ['xmin', 'alpha'],
                      'lab_func': lambda v: f'Powerlaw(a={np.round(v.alpha, 2)})',
@@ -157,8 +160,10 @@ def generate_distro_database():
     return d
 
 
-
 def get_dist(k, k0='intermitter', v=None, return_tabrows=False, return_all=False):
+    """
+    Retrieve a distribution from the database
+    """
 
     dict0 = {
         'stridechain_dist': ('exec length', ('N', 'R'), reg.units.dimensionless, '# $strides$'),
@@ -186,4 +191,3 @@ def get_dist(k, k0='intermitter', v=None, return_tabrows=False, return_all=False
         return p, pD, pR
     else:
         return p
-

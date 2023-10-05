@@ -38,13 +38,49 @@ __all__ = [
 
 
 def comp_bearing(xs, ys, ors, loc=(0.0, 0.0), in_deg=True):
+    """
+    Compute the bearing (azimuth) between a reference location and a set of oriented 2D point-vectors.
+
+    Parameters:
+    ----------
+    xs : array-like
+        x-coordinates of the points.
+    ys : array-like
+        y-coordinates of the points.
+    ors : float or array-like
+        The orientations (in degrees) of the point-vectors.
+    loc : tuple, optional
+        The reference location's coordinates as a (x, y) tuple. Default is (0.0, 0.0).
+    in_deg : bool, optional
+        If True, returns bearings in degrees (default). If False, returns bearings in radians.
+
+    Returns:
+    -------
+    array-like
+        An array of bearing angles in degrees or radians, depending on the 'in_deg' parameter.
+        Positive angles indicate clockwise rotation from the positive x-axis.
+
+    Examples:
+    --------
+    xs = [1.0, 2.0, 3.0]
+    ys = [1.0, 1.0, 4.0]
+    ors = 90.0
+    comp_bearing(xs, ys, ors)
+
+    array([90.        , 90.        , 45.        ])
+
+    comp_bearing(xs, ys, ors, in_deg=False)
+
+    array([1.57079633, 1.57079633, 0.78539816])
+    """
+
     x0, y0 = loc
     dxs = x0 - np.array(xs)
     dys = y0 - np.array(ys)
     rads = np.arctan2(dys, dxs)
     drads = (ors - np.rad2deg(rads)) % 360
     drads[drads > 180] -= 360
-    return drads if in_deg else np.deg2rad(rads)
+    return drads if in_deg else np.deg2rad(drads)
 
 
 def compute_dispersal_solo(xy):
