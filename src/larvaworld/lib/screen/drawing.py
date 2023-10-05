@@ -258,6 +258,8 @@ class ScreenManager(BaseScreenManager):
             pygame.time.wait(2000)
             box.visible = False
 
+            self.draw_arena_tank(v)
+
 
         kws={
             'reference_area':v,
@@ -350,6 +352,9 @@ class ScreenManager(BaseScreenManager):
             t.visible = t.start_time < pygame.time.get_ticks() < t.end_time
             t._draw(v)
 
+    def draw_arena_tank(self, v):
+        v.draw_polygon(self.model.space.vertices, color=self.tank_color)
+        v.draw_background()
 
     def draw_arena(self, v):
         m = self.model
@@ -367,8 +372,7 @@ class ScreenManager(BaseScreenManager):
             arena_drawn = True
 
         if not arena_drawn:
-            v.draw_polygon(m.space.vertices, color=self.tank_color)
-            v.draw_background()
+            self.draw_arena_tank(v)
 
 
 

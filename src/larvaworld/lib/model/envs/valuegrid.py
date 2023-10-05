@@ -11,7 +11,6 @@ from ...model import NamedObject
 from ...param import Substrate, ClassAttr, PositiveNumber, Phase, Viewable, Grid, ViewableNamedGrid
 from ...screen.rendering import ScreenTextBox
 
-
 __all__ = [
     'GridOverSpace',
     'ValueGrid',
@@ -24,7 +23,8 @@ __all__ = [
     'create_odor_layers',
 ]
 
-class SpatialEntity(Viewable,NamedObject):
+
+class SpatialEntity(Viewable, NamedObject):
     default_color = param.Color(default='white')
     visible = param.Boolean(default=False)
 
@@ -38,18 +38,20 @@ class SpatialEntity(Viewable,NamedObject):
         """
         for agent, pos in self.positions.items():
             for i, p in enumerate(pos):
-                agent.record(label+str(i), p)
+                agent.record(label + str(i), p)
+
 
 class GridOverSpace(ViewableNamedGrid, agentpy.Grid):
     unique_id = param.String('GridOverArena')
     default_color = param.Color(default='white')
     visible = param.Boolean(default=False)
+
     # initial_value = param.Number(0.0, doc='initial value over the grid')
     # fixed_max = param.Boolean(False, doc='whether the max is kept constant')
     # grid_dims = PositiveIntegerRange((51, 51), softmax=500, doc='The spatial resolution of the food grid.')
 
-    def __init__(self,model,**kwargs):
-        ViewableNamedGrid.__init__(self,**kwargs)
+    def __init__(self, model, **kwargs):
+        ViewableNamedGrid.__init__(self, **kwargs)
         agentpy.Grid.__init__(self, model=model, shape=self.grid_dims, **kwargs)
         self._torus = self.space._torus
         self.XY = np.array(self.grid_dims)
@@ -60,12 +62,12 @@ class GridOverSpace(ViewableNamedGrid, agentpy.Grid):
         self.meshgrid = np.meshgrid(np.linspace(x0, x1, self.X), np.linspace(y0, y1, self.Y))
         self.grid_vertices = self.generate_grid_vertices()
 
-    @ property
+    @property
     def space(self):
         return self.model.space
 
     def get_grid_cell(self, p):
-        return tuple(np.floor(self.XY*(p / self.xy + 0.5)).astype(int))
+        return tuple(np.floor(self.XY * (p / self.xy + 0.5)).astype(int))
 
     def generate_grid_vertices(self):
         vertices = np.zeros([self.X, self.Y, 4, 2])
@@ -78,16 +80,17 @@ class GridOverSpace(ViewableNamedGrid, agentpy.Grid):
         x, y = self.xy / self.XY
         X, Y = self.X / 2, self.Y / 2
         return np.array([(x * (i - X), y * (j - Y)),
-                      (x * (i + 1 - X), y * (j - Y)),
-                      (x * (i + 1 - X), y * (j + 1 - Y)),
-                      (x * (i - X), y * (j + 1 - Y))])
+                         (x * (i + 1 - X), y * (j - Y)),
+                         (x * (i + 1 - X), y * (j + 1 - Y)),
+                         (x * (i - X), y * (j + 1 - Y))])
+
 
 class ValueGrid(SpatialEntity, Grid):
     initial_value = param.Number(0.0, doc='initial value over the grid')
 
-    fixed_max = param.Boolean(False,doc='whether the max is kept constant')
-    # grid_dims = PositiveIntegerRange((51, 51),softmax=500, doc='The spatial resolution of the food grid.')
+    fixed_max = param.Boolean(False, doc='whether the max is kept constant')
 
+    # grid_dims = PositiveIntegerRange((51, 51),softmax=500, doc='The spatial resolution of the food grid.')
 
     def __init__(self, sources=None, max_value=None, min_value=0.0, **kwargs):
         super().__init__(**kwargs)
@@ -95,21 +98,21 @@ class ValueGrid(SpatialEntity, Grid):
         if sources is None:
             sources = []
         self.sources = sources
-        self.XY0=np.array(self.grid_dims)
+        self.XY0 = np.array(self.grid_dims)
         self.grid = np.ones(self.grid_dims) * self.initial_value
 
         if max_value is None:
             max_value = np.max(self.grid)
         self.max_value = max_value
         self.min_value = min_value
-        if self.model is not None :
+        if self.model is not None:
             self.match_space(self.model.space)
 
     def match_space(self, space):
-        self.xy0=np.array(space.dims)
-        self.x, self.y=self.xy0/self.XY0
-        x0, x1, y0, y1 =space.range
-        self.cell_radius = np.sum((self.xy0/self.XY0/2)**2)**0.5
+        self.xy0 = np.array(space.dims)
+        self.x, self.y = self.xy0 / self.XY0
+        x0, x1, y0, y1 = space.range
+        self.cell_radius = np.sum((self.xy0 / self.XY0 / 2) ** 2) ** 0.5
         self.meshgrid = np.meshgrid(np.linspace(x0, x1, self.X), np.linspace(y0, y1, self.Y))
         self.grid_vertices = self.generate_grid_vertices()
 
@@ -119,18 +122,12 @@ class ValueGrid(SpatialEntity, Grid):
     def add_value(self, p, value):
         return self.add_cell_value(self.get_grid_cell(p), value)
 
-
-
     def get_value(self, p):
         return self.grid[self.get_grid_cell(p)]
         # return self.get_cell_value(self.get_grid_cell(p))
 
-
     def get_grid_cell(self, p):
-        return tuple(np.floor(self.XY0*(p / self.xy0 + 0.5)).astype(int))
-
-
-
+        return tuple(np.floor(self.XY0 * (p / self.xy0 + 0.5)).astype(int))
 
     def add_cell_value(self, cell, value):
         v0 = self.grid[cell]
@@ -158,9 +155,9 @@ class ValueGrid(SpatialEntity, Grid):
         x, y = self.x, self.y
         X, Y = self.X / 2, self.Y / 2
         return np.array([(x * (i - X), y * (j - Y)),
-                      (x * (i + 1 - X), y * (j - Y)),
-                      (x * (i + 1 - X), y * (j + 1 - Y)),
-                      (x * (i - X), y * (j + 1 - Y))])
+                         (x * (i + 1 - X), y * (j - Y)),
+                         (x * (i + 1 - X), y * (j + 1 - Y)),
+                         (x * (i - X), y * (j + 1 - Y))])
 
     def cel_pos(self, i, j):
         return self.x * (i - self.X / 2 + 0.5), self.y * (j - self.Y / 2 + 0.5)
@@ -179,9 +176,8 @@ class ValueGrid(SpatialEntity, Grid):
         p_text = (p[0] + self.x, p[1] - self.y)
         text_box = ScreenTextBox(text=str(np.round(self.grid.max(), 2)),
                                  default_color=self.default_color, visible=True,
-                                 text_centre =tuple(v.space2screen_pos(p_text)))
+                                 text_centre=tuple(v.space2screen_pos(p_text)))
         text_box.draw(v)
-
 
     def draw(self, v, **kwargs):
         Cgrid = self.get_color_grid().reshape([self.X, self.Y, 3])
@@ -213,7 +209,7 @@ class ValueGrid(SpatialEntity, Grid):
                     pxy = ps[np.argmax(ps[:, 0]), :] + np.array([self.x, -self.y])
                     v.draw_convex(points, color=c, filled=False, width=0.0005)
                     text_box = ScreenTextBox(text=str(np.round(vv, 2)), default_color=c, visible=True,
-                                        text_centre =tuple(v.space2screen_pos(pxy)))
+                                             text_centre=tuple(v.space2screen_pos(pxy)))
                     text_box.draw(v)
                 except:
                     pass
@@ -229,13 +225,12 @@ class ValueGrid(SpatialEntity, Grid):
         return aux.col_range(q, low=(255, 255, 255), high=self.default_color, mul255=True)
 
 
-
 class FoodGrid(ValueGrid):
     unique_id = param.String('FoodGrid')
     default_color = param.Color(default='green')
     fixed_max = param.Boolean(default=True)
-    initial_value = param.Number(10**-6)
-    substrate = ClassAttr(Substrate,default=Substrate(type='standard'), doc='The substrate where the agent feeds')
+    initial_value = param.Number(10 ** -6)
+    substrate = ClassAttr(Substrate, default=Substrate(type='standard'), doc='The substrate where the agent feeds')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -260,9 +255,9 @@ class OdorScape(ValueGrid):
 
     def __init__(self, subclass_initialized=False, **kwargs):
 
-        if subclass_initialized :
+        if subclass_initialized:
             super().__init__(**kwargs)
-        else :
+        else:
             if 'odorscape' not in kwargs:
                 raise
             else:
@@ -270,17 +265,16 @@ class OdorScape(ValueGrid):
                     'Gaussian': GaussianValueLayer,
                     'Diffusion': DiffusionValueLayer,
                 }
-                odorscape=kwargs['odorscape']
+                odorscape = kwargs['odorscape']
                 kwargs.pop('odorscape')
                 subclasses[odorscape](**kwargs)
-
 
 
 class GaussianValueLayer(OdorScape):
     odorscape = param.Selector(default='Gaussian')
 
     def __init__(self, **kwargs):
-        super().__init__(subclass_initialized=True,**kwargs)
+        super().__init__(subclass_initialized=True, **kwargs)
 
     def get_value(self, pos):
 
@@ -307,26 +301,24 @@ class GaussianValueLayer(OdorScape):
         for s in self.sources:
             p = s.get_position()
 
-            if p[0]<0:
-                rsign=1
+            if p[0] < 0:
+                rsign = 1
             else:
-                rsign=-1
-            w=0.0005
-            for i,r0 in enumerate(np.arange(0, 0.040, 0.005)):
-                pX = (p[0] + r0*rsign, p[1])
-                vv = s.odor.gaussian_value((r0*rsign,0))
+                rsign = -1
+            w = 0.0005
+            for i, r0 in enumerate(np.arange(0, 0.040, 0.005)):
+                pX = (p[0] + r0 * rsign, p[1])
+                vv = s.odor.gaussian_value((r0 * rsign, 0))
                 v.draw_circle(p, r0, self.color, filled=False, width=w)
                 text_box = ScreenTextBox(text=str(np.round(vv, 2)), default_color=self.color, visible=True,
-                                    text_centre =tuple(v.space2screen_pos((p[0] + r0*rsign+5*w, p[1]))))
+                                         text_centre=tuple(v.space2screen_pos((p[0] + r0 * rsign + 5 * w, p[1]))))
                 text_box.draw(v)
-
 
 
 class DiffusionValueLayer(OdorScape):
     odorscape = param.Selector(default='Diffusion')
     evap_const = param.Magnitude(0.9, doc='The evaporation constant of the diffusion algorithm.')
     gaussian_sigma = param.NumericTuple((0.95, 0.95), doc='The sigma of the gaussian difusion algorithm.')
-
 
     '''
         A typical diffusion coefficient for a molecule in the gas phase is in the range of 10-6 to 10-5 m2/sigma           
@@ -340,8 +332,7 @@ class DiffusionValueLayer(OdorScape):
     '''
 
     def __init__(self, **kwargs):
-        super().__init__(subclass_initialized=True,**kwargs)
-
+        super().__init__(subclass_initialized=True, **kwargs)
 
     def update_values(self):
         k = 1000
@@ -371,15 +362,12 @@ class DiffusionValueLayer(OdorScape):
         self.grid = gaussian_filter(self.grid, sigma=self.gaussian_sigma) * self.evap_const
 
 
-
-
-
 class WindScape(SpatialEntity):
     unique_id = param.String('WindScape')
     default_color = param.Color(default='red')
-    wind_direction = Phase(np.pi,doc='The absolute polar direction of the wind/air puff.')
+    wind_direction = Phase(np.pi, doc='The absolute polar direction of the wind/air puff.')
     wind_speed = PositiveNumber(softmax=100.0, doc='The speed of the wind/air puff.')
-    puffs = param.Parameter({},label='air-puffs', doc='Repetitive or single air-puff stimuli.')
+    puffs = param.Parameter({}, label='air-puffs', doc='Repetitive or single air-puff stimuli.')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -416,7 +404,7 @@ class WindScape(SpatialEntity):
                 if len(ps) != 0:
                     p1 = ps[np.argmin([geometry.Point(p0).distance(p2) for p2 in ps])].coords[0]
                 v.draw_arrow_line(p0, p1, self.default_color, width=0.001,
-                                       phi=(self.draw_phi % 1000) / 1000)
+                                  phi=(self.draw_phi % 1000) / 1000)
         self.draw_phi += self.wind_speed
 
     def generate_scapelines(self, D, N, A):
@@ -433,7 +421,7 @@ class WindScape(SpatialEntity):
         self.scapelines = self.generate_scapelines(self.max_dim, self.N, self.wind_direction)
 
     def add_puff(self, duration, speed, direction=None, start_time=None, N=1, interval=10.0):
-        m=self.model
+        m = self.model
 
         Nticks = int(duration / m.dt)
         if start_time is None:
@@ -479,7 +467,6 @@ class ThermoScape(ValueGrid):
         self.thermo_spread = spread
         self.generate_thermoscape()
 
-
     def generate_thermoscape(self):
         '''
         size is the length of the square arena in mm.
@@ -499,7 +486,6 @@ class ThermoScape(ValueGrid):
 
         self.thermoscape_layers = rv_dict
 
-
     def get_thermo_value(self, pos):
 
         size, size2 = [1, 1]
@@ -512,7 +498,7 @@ class ThermoScape(ValueGrid):
             v = self.thermoscape_layers[k]
             pos_temp[k] = v.pdf(pos_ad) / v.pdf(self.thermo_sources[k]) * (
                     self.thermo_source_dTemps[k] * N)  # @todo need to check if this works
-            dgain=abs(pos_temp[k] / N)
+            dgain = abs(pos_temp[k] / N)
             if pos_temp[k] < 0:
                 thermo_gain['cool'] += dgain
             elif pos_temp[k] > 0:
@@ -566,9 +552,9 @@ def create_odor_layers(model, sources, pars=None):
         }
         if pars.odorscape == 'Diffusion':
             odor_layers[id] = DiffusionValueLayer(grid_dims=pars['grid_dims'],
-                                                        evap_const=pars['evap_const'],
-                                                        gaussian_sigma=pars['gaussian_sigma'],
-                                                        **kwargs)
+                                                  evap_const=pars['evap_const'],
+                                                  gaussian_sigma=pars['gaussian_sigma'],
+                                                  **kwargs)
         elif pars.odorscape == 'Gaussian':
             odor_layers[id] = GaussianValueLayer(**kwargs)
     return odor_layers
