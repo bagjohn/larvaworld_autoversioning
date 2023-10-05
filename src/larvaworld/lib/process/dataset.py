@@ -372,9 +372,8 @@ class ParamLarvaDataset(param.Parameterized):
     def comp_ang_moments(self, pars=None):
         s, e, c = self.data
         if pars is None:
-            vecs = ['head', 'tail', 'front', 'rear']
-            ho, to, fo, ro = aux.nam.orient(vecs)
-            if c.Npoints > 3:
+            ho, to, fo, ro = nam.orient(['head', 'tail', 'front', 'rear'])
+            if c.Npoints > 1:
                 base_pars = ['bend', ho, to, fo, ro]
                 pars = base_pars + c.angles + c.seg_orientations
             else:
@@ -387,13 +386,13 @@ class ParamLarvaDataset(param.Parameterized):
             acc = nam.acc(p)
             # ss = s[p]
             if p.endswith('orientation'):
-                p_unw = aux.nam.unwrap(p)
-                s[p_unw] = self.apply_per_level(pars=[p], func=aux.unwrap_deg).flatten()
+                p_unw = nam.unwrap(p)
+                s[p_unw] = self.apply_per_level(pars=p, func=aux.unwrap_deg).flatten()
                 pp=p_unw
             else:
                 pp=p
-            s[vel] = self.apply_per_level(pars=[pp], func=aux.rate, dt=c.dt).flatten()
-            s[acc] = self.apply_per_level(pars=[vel], func=aux.rate, dt=c.dt).flatten()
+            s[vel] = self.apply_per_level(pars=pp, func=aux.rate, dt=c.dt).flatten()
+            s[acc] = self.apply_per_level(pars=vel, func=aux.rate, dt=c.dt).flatten()
 
             self.comp_operators(pars=[p, vel, acc])
 
@@ -419,7 +418,7 @@ class ParamLarvaDataset(param.Parameterized):
 
         s[dst] = self.apply_per_level(pars=xy, func=aux.eudist).flatten()
         s[vel] = s[dst] / c.dt
-        s[acc] = self.apply_per_level(pars=[vel], func=aux.rate, dt=c.dt).flatten()
+        s[acc] = self.apply_per_level(pars=vel, func=aux.rate, dt=c.dt).flatten()
 
         self.scale_to_length(pars=[dst, vel, acc])
 
