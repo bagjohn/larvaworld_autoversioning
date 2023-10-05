@@ -591,6 +591,7 @@ class LabFormat(NestedConf):
             reg.vprint(f'xxxxx Failed to create dataset! -----', 1)
             return None
         else:
+            step = step.astype(float)
             d = self.build_dataset(step, end, parent_dir, proc_folder=proc_folder, group_id=group_id, N=N,
                                    id=id, sample=sample, color=color, epochs=epochs, age=age)
             d = self.enrich_dataset(d, conf=enrich_conf)
