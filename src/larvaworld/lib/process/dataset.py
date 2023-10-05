@@ -276,7 +276,7 @@ class ParamLarvaDataset(param.Parameterized):
         s[vel] = aux.apply_per_level(s[dst], aux.rate, dt=c.dt).flatten()
         s[acc] = aux.apply_per_level(s[vel], aux.rate, dt=c.dt).flatten()
 
-        self.scale_to_length(pars=[dst, vel.acc])
+        self.scale_to_length(pars=[dst, vel, acc])
 
         e[nam.cum(dst)] = s[dst].dropna().groupby('AgentID').sum()
         e[nam.mean(vel)] = s[vel].dropna().groupby('AgentID').mean()
