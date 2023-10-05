@@ -1,10 +1,10 @@
 from larvaworld.lib import reg, sim, aux
 
 
-def xx_test_replay() :
+def xx_test_replay():
     refIDs = reg.conf.Ref.confIDs
-    refID =  refIDs[-1]
-    dataset=reg.loadRef(refID)
+    refID = refIDs[-1]
+    dataset = reg.loadRef(refID)
     replay_kws = {
         'normal': {
             'time_range': (10, 80)
@@ -37,20 +37,22 @@ def xx_test_replay() :
             'draw_Nsegs': 2
         },
         'all_segs': {
-            'draw_Nsegs': dataset.config.Npoints - 1
+            'draw_Nsegs': 'all'
         },
     }
 
-    for mode, kws in replay_kws.items() :
+    for mode, kws in replay_kws.items():
         parameters = reg.gen.Replay(**aux.AttrDict({
             'refID': refID,
             # 'dataset' : dataset,
             **kws
         })).nestedConf
-        rep = sim.ReplayRun(parameters=parameters,dataset=dataset, id=f'{refID}_replay_{mode}', dir= f'./media/{mode}')
-        output=rep.run()
-        assert output.parameters.constants['id']==rep.id
+        rep = sim.ReplayRun(parameters=parameters, dataset=dataset, id=f'{refID}_replay_{mode}', dir=f'./media/{mode}')
+        output = rep.run()
+        assert output.parameters.constants['id'] == rep.id
         # raise
+
+
 '''
 
 def test_exp_run() :
@@ -111,4 +113,3 @@ def xtest_batch_run() :
         
         
 '''
-

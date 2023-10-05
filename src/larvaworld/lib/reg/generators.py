@@ -357,10 +357,18 @@ class SimConfigurationParams(SimConfiguration):
 
     def __init__(self, runtype='Exp', experiment=None, parameters=None, **kwargs):
         if parameters is None:
-            if experiment is None or experiment not in reg.conf[runtype].confIDs:
-                raise ValueError('Either a parameter dictionary or the name of the experiment must be provided')
+            if runtype in reg.CONFTYPES:
+                ct=reg.conf[runtype]
+                if experiment is None :
+                    raise ValueError('Either a parameter dictionary or the name of the experiment must be provided')
+                elif experiment not in ct.confIDs:
+                    raise ValueError(f'Experiment {experiment} not available in {runtype} configuration dictionary')
+                else:
+                    parameters = ct.expand(experiment)
+            elif runtype in reg.gen.keys():
+                parameters = reg.gen[runtype]().nestedConf
             else:
-                parameters = reg.conf[runtype].expand(experiment)
+                pass
         elif experiment is None and 'experiment' in parameters.keys():
             experiment = parameters['experiment']
         if parameters is not None:
