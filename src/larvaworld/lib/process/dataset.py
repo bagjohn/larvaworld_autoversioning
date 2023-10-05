@@ -723,10 +723,11 @@ class BaseLarvaDataset(ParamLarvaDataset):
             **kwargs: Any arguments to store in a novel configuration dictionary
         '''
         if initialize :
+            assert config is None
             kws={
                 'dir':dir,
                 'refID':refID,
-                'config':config,
+                # 'config':config,
                 **kwargs
             }
         else :
