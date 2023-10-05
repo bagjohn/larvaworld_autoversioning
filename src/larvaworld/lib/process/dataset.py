@@ -683,7 +683,7 @@ class BaseLarvaDataset(ParamLarvaDataset):
             # from larvaworld.lib.process.dataset import LarvaDataset
         return LarvaDataset(**kwargs)
 
-    def __init__(self, dir=None, refID=None, load_data=True, config=None, step=None, end=None, agents=None, **kwargs):
+    def __init__(self, dir=None, refID=None, load_data=True, config=None, step=None, end=None, agents=None,initialize=False, **kwargs):
         # def __init__(self, dir=None, config=None, refID=None, load_data=True, step=None, end=None, agents=None, **kwargs):
         '''
         Dataset class that stores a single experiment, real or simulated.
@@ -722,14 +722,23 @@ class BaseLarvaDataset(ParamLarvaDataset):
             config: The metadata dictionary. Defaults to None for attempting to load it from disc or generate a new.
             **kwargs: Any arguments to store in a novel configuration dictionary
         '''
+        if initialize :
+            kws={
+                'dir':dir,
+                'refID':refID,
+                'config':config,
+                **kwargs
+            }
+        else :
+            if config is None:
+                try:
+                    config = reg.getRef(dir=dir, id=refID)
+                    config.update(**kwargs)
+                except:
+                    config = self.generate_config(dir=dir, refID=refID, **kwargs)
+            kws=config
 
-        if config is None:
-            try:
-                config = reg.getRef(dir=dir, id=refID)
-            except:
-                config = self.generate_config(dir=dir, refID=refID, **kwargs)
-
-        super().__init__(**config)
+        super().__init__(**kws)
 
         if load_data:
             self.load()

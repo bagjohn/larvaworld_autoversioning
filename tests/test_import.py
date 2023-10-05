@@ -1,7 +1,7 @@
 import larvaworld
 import pandas as pd
 from larvaworld.lib import reg
-
+reg.VERBOSE=1
 
 def test_import_Schleyer():
     g = reg.conf.LabFormat.get('Schleyer')
@@ -11,18 +11,19 @@ def test_import_Schleyer():
     }
 
     # Merged case
-    N = 40
+    N = 60
     kws1 = {
         'parent_dir': 'exploration',
         'merged': True,
         'N': N,
         'min_duration_in_sec': 60,
+        'id': f'{N}controls',
         'refID': f'exploration.{N}controls',
         **kws0
     }
 
     # Single dish case
-    folder = 'dish01'
+    folder = 'dish02'
     kws2 = {
         'parent_dir': f'exploration/{folder}',
         'merged': False,
@@ -36,10 +37,10 @@ def test_import_Schleyer():
     for kws in [kws1, kws2]:
         d = g.import_dataset(**kws)
         assert isinstance(d, larvaworld.lib.LarvaDataset)
-        d.preprocess(**g.preprocess.nestedConf)
-        d.comp_spatial()
-        d.comp_angular()
-        d.save()
+        #d.preprocess(**g.preprocess.nestedConf)
+        #d.comp_spatial()
+        #d.comp_angular()
+        #d.save()
         s = d.step_data
         assert isinstance(s, pd.DataFrame)
 

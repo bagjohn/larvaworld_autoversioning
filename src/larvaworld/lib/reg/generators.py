@@ -511,6 +511,7 @@ class LabFormat(NestedConf):
         dir = f'{proc_folder}/{group_id}/{id}'
 
         conf = {
+            'initialize': True,
             'load_data': False,
             'dir': dir,
             'id': id,
