@@ -162,6 +162,75 @@ class ParamLarvaDataset(param.Parameterized):
             e.loc[id, 'cum_dur'] = len(s.xs(id, level='AgentID', drop_level=True).dropna()) * c.dt
         reg.vprint(f'Rows excluded according to {flag}.', 1)
 
+    def align_trajectories(self, track_point=None, arena_dims=None, transposition='origin', replace=True):
+        s, e, c = self.data
+
+        if transposition in ['', None, np.nan]:
+            return
+        mode = transposition
+
+        xy_flat = c.all_xy.existing(s)
+        xy_pairs = xy_flat.in_pairs
+        # xy_flat=np.unique(aux.flatten_list(xy_pairs))
+        # xy_pairs = aux.group_list_by_n(xy_flat, 2)
+
+        if replace:
+            ss = s
+        else:
+            ss = copy.deepcopy(s[xy_flat])
+
+        if mode == 'arena':
+            reg.vprint('Centralizing trajectories in arena center')
+            if arena_dims is None:
+                arena_dims = c.env_params.arena.dims
+            x0, y0 = arena_dims
+            X, Y = x0 / 2, y0 / 2
+
+            for x, y in xy_pairs:
+                ss[x] -= X
+                ss[y] -= Y
+            return ss
+        else:
+            if track_point is None:
+                track_point = c.point
+            XY = nam.xy(track_point) if aux.cols_exist(nam.xy(track_point), s) else ['x', 'y']
+            if not aux.cols_exist(XY, s):
+                raise ValueError('Defined point xy coordinates do not exist. Can not align trajectories! ')
+            ids = s.index.unique(level='AgentID').values
+            if mode == 'origin':
+                reg.vprint('Aligning trajectories to common origin')
+                xy = [s[XY].xs(id, level='AgentID').dropna().values[0] for id in ids]
+            elif mode == 'center':
+                reg.vprint('Centralizing trajectories in trajectory center using min-max positions')
+                xy_max = [s[XY].xs(id, level='AgentID').max().values for id in ids]
+                xy_min = [s[XY].xs(id, level='AgentID').min().values for id in ids]
+                xy = [(max + min) / 2 for max, min in zip(xy_max, xy_min)]
+            else:
+                raise ValueError('Supported modes are "arena", "origin" and "center"!')
+            xs = np.array([x for x, y in xy] * c.Nticks)
+            ys = np.array([y for x, y in xy] * c.Nticks)
+
+            for jj, (x, y) in enumerate(xy_pairs):
+                ss[x] = ss[x].values - xs
+                ss[y] = ss[y].values - ys
+
+            # if d is not None:
+            #     d.store(ss, f'traj.{mode}')
+            #     reg.vprint(f'traj_aligned2{mode} stored')
+            return ss
+
+    def preprocess(self, drop_collisions=False, interpolate_nans=False,filter_f=None,rescale_by=None,transposition=None, recompute=False):
+        if drop_collisions:
+            self.exclude_rows()
+        if interpolate_nans:
+            self.interpolate_nan_values()
+        if filter_f is not None:
+            self.filter(filter_f=filter_f, recompute=recompute)
+        if rescale_by is not None:
+            self.rescale(rescale_by=rescale_by, recompute=recompute)
+        if transposition is not None:
+            self.align_trajectories(transposition=transposition)
+
 
     def merge_configs(self):
         d = param.guess_param_types(**self.config2)

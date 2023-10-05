@@ -36,6 +36,7 @@ def test_import_Schleyer():
     for kws in [kws1, kws2]:
         d = g.import_dataset(**kws)
         assert isinstance(d, larvaworld.lib.LarvaDataset)
+        d.preprocess(**g.preprocess.nestedConf)
         d.comp_spatial()
         d.comp_angular()
         d.save()
