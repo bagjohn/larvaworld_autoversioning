@@ -42,7 +42,7 @@ class MediaDrawOps(NestedConf):
 
     @property
     def video_filepath(self):
-        if self.media_dir is not None and self.video_file is not None :
+        if self.media_dir is not None and self.video_file is not None:
             return f'{self.media_dir}/{self.video_file}.mp4'
         else:
             return None
@@ -56,7 +56,7 @@ class MediaDrawOps(NestedConf):
 
     @property
     def overlap_mode(self):
-        return self.image_mode=='overlap'
+        return self.image_mode == 'overlap'
 
     def new_video_writer(self, fps, video_filepath=None):
         if self.save_video:
@@ -199,7 +199,11 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
         pass
 
     def evaluate_graphs(self):
-        pass
+        for g in self.dynamic_graphs:
+            running = g.evaluate()
+            if not running:
+                self.dynamic_graphs.remove(g)
+                del g
 
     def draw_arena(self, v):
         pass
@@ -218,6 +222,16 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
     @property
     def snapshot_tick(self):
         return (self.model.Nticks - 1) % self.snapshot_interval == 0
+
+    @property
+    def snapshot_requested(self):
+        return self.mode == 'image' and self.image_mode == 'snapshots' and self.snapshot_tick
+
+    @property
+    def render_requested(self):
+        m = self.mode
+        return (m == 'image' and self.overlap_mode) or (
+                    m == 'video' and (self.image_mode != 'snapshots' or self.snapshot_tick))
 
 
 class GA_ScreenManager(BaseScreenManager):
@@ -288,11 +302,16 @@ class ScreenManager(BaseScreenManager):
             'reference_area': v,
             'default_color': 'black',
         }
-        self.screen_items = aux.AttrDict({
-            'clock': SimulationClock(sim_step_in_sec=m.dt, **kws),
-            'scale': SimulationScale(**kws),
-            'state': SimulationState(model=m, **kws),
-        })
+
+        self.screen_clock = SimulationClock(sim_step_in_sec=m.dt, **kws)
+        self.screen_scale = SimulationScale(**kws)
+        self.screen_state = SimulationState(model=m, **kws)
+
+        # self.screen_items = aux.AttrDict({
+        #     'clock': SimulationClock(sim_step_in_sec=m.dt, **kws),
+        #     'scale': SimulationScale(**kws),
+        #     'state': SimulationState(model=m, **kws),
+        # })
         self.screen_texts = aux.AttrDict({name: ScreenMsgText(text=name, **kws) for name in [
             'trail_dt',
             'trail_color',
@@ -325,16 +344,11 @@ class ScreenManager(BaseScreenManager):
     def step(self):
         self.check()
         if self.active:
-
             self.screen_clock.tick_clock()
-            if self.mode == 'video':
-                if self.image_mode != 'snapshots' or self.snapshot_tick:
-                    self.render()
-            elif self.mode == 'image':
-                if self.overlap_mode:
-                    self.render()
-                elif self.image_mode == 'snapshots' and self.snapshot_tick:
-                    self.capture_snapshot()
+            if self.render_requested:
+                self.render()
+            if self.snapshot_requested:
+                self.capture_snapshot()
 
     def finalize(self):
         if self.active:
@@ -354,7 +368,7 @@ class ScreenManager(BaseScreenManager):
 
     def draw_aux(self, v, **kwargs):
         v.draw_arena(self.tank_color, self.screen_color)
-        for t in list(self.screen_items.values()):
+        for t in [self.screen_clock, self.screen_scale, self.screen_state]:
             t._draw(v)
         for t in list(self.screen_texts.values()) + [self.input_box]:
             t.visible = t.start_time < pygame.time.get_ticks() < t.end_time
@@ -423,9 +437,8 @@ class ScreenManager(BaseScreenManager):
                 color = aux.random_colors(1)[0] if self.random_colors else f.default_color
                 f.set_default_color(color)
         elif name == 'black_background':
-            for a in m.get_all_objects() + list(
-                    self.screen_items.values()) + list(
-                self.screen_texts.values()):
+            for a in m.get_all_objects() + [self.screen_clock, self.screen_scale, self.screen_state] + list(
+                    self.screen_texts.values()):
                 a.invert_default_color()
         elif name == 'larva_collisions':
 
@@ -488,13 +501,13 @@ class ScreenManager(BaseScreenManager):
             #         f.set_color(f.default_color)
             self.toggle(k, 'ON' if temp else 'OFF', disp='IDs')
         elif k == 'visible_clock':
-            vis=self.screen_clock.toggle_vis()
+            vis = self.screen_clock.toggle_vis()
             self.toggle(k, 'ON' if vis else 'OFF', disp='clock')
         elif k == 'visible_scale':
-            vis=self.screen_scale.toggle_vis()
+            vis = self.screen_scale.toggle_vis()
             self.toggle(k, 'ON' if vis else 'OFF', disp='scale')
         elif k == 'visible_state':
-            vis=self.screen_state.toggle_vis()
+            vis = self.screen_state.toggle_vis()
             self.toggle(k, 'ON' if vis else 'OFF', disp='state')
         elif k == '▲ trail duration':
             self.toggle('trail_dt', plus=True, disp='trail duration')
@@ -519,7 +532,7 @@ class ScreenManager(BaseScreenManager):
             try:
                 layer_id = list(m.odor_layers.keys())[idx]
                 layer = m.odor_layers[layer_id]
-                vis=layer.toggle_vis()
+                vis = layer.toggle_vis()
                 self.toggle(layer_id, 'ON' if vis else 'OFF')
             except:
                 pass
@@ -527,7 +540,7 @@ class ScreenManager(BaseScreenManager):
             self.toggle('snapshot #')
         elif k == 'windscape':
             try:
-                vis=m.windscape.toggle_vis()
+                vis = m.windscape.toggle_vis()
                 self.toggle('windscape', 'ON' if vis else 'OFF')
             except:
                 pass
@@ -554,12 +567,7 @@ class ScreenManager(BaseScreenManager):
         else:
             self.toggle(k)
 
-    def evaluate_graphs(self):
-        for g in self.dynamic_graphs:
-            running = g.evaluate()
-            if not running:
-                self.dynamic_graphs.remove(g)
-                del g
+
 
     def eval_selection(self, p, ctrl):
         res = False if len(self.selected_agents) == 0 else True
@@ -577,14 +585,14 @@ class ScreenManager(BaseScreenManager):
                 self.selected_agents.remove(f)
         return res
 
-    @ property
-    def screen_clock(self):
-        return self.screen_items.clock
-
-    @property
-    def screen_scale(self):
-        return self.screen_items.scale
-
-    @property
-    def screen_state(self):
-        return self.screen_items.state
+    # @ property
+    # def screen_clock(self):
+    #     return self.screen_items.clock
+    #
+    # @property
+    # def screen_scale(self):
+    #     return self.screen_items.scale
+    #
+    # @property
+    # def screen_state(self):
+    #     return self.screen_items.state

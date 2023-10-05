@@ -396,28 +396,23 @@ class GAlauncher(BaseRun,GAselector,GAevaluation):
     def build_threads(self, robots):
         N = self.num_cpu
         threads = []
-        num_robots = len(robots)
-        num_robots_per_cpu = math.floor(num_robots / N)
+        N_per_cpu = math.floor(len(robots) / N)
 
-        reg.vprint(f'num_robots_per_cpu: {num_robots_per_cpu}', 2)
+        reg.vprint(f'num_robots_per_cpu: {N_per_cpu}', 2)
 
         for i in range(N - 1):
-            start_pos = i * num_robots_per_cpu
-            end_pos = (i + 1) * num_robots_per_cpu
-            reg.vprint(f'core: {i + 1} positions: {start_pos} : {end_pos}', 1)
-            robot_list = robots[start_pos:end_pos]
-
-            thread = GA_thread(robot_list)
+            p0 = i * N_per_cpu
+            p1 = (i + 1) * N_per_cpu
+            reg.vprint(f'core: {i + 1} positions: {p0} : {p1}', 1)
+            thread = GA_thread(robots[p0:p1])
             thread.start()
             reg.vprint(f'thread {i + 1} started', 1)
             threads.append(thread)
 
         # last sublist of robots
-        start_pos = (N - 1) * num_robots_per_cpu
-        reg.vprint(f'last core, start_pos {start_pos}', 1)
-        robot_list = robots[start_pos:]
-
-        thread = GA_thread(robot_list)
+        p0 = (N - 1) * N_per_cpu
+        reg.vprint(f'last core, start_pos {p0}', 1)
+        thread = GA_thread(robots[p0:])
         thread.start()
         reg.vprint(f'last thread started', 1)
         threads.append(thread)
