@@ -20,7 +20,9 @@
 
    tutorials/theoretical_background.ipynb
    tutorials/CONFTYPES.ipynb
+   tutorials/environment_configuration.ipynb
    tutorials/LabFormat.ipynb
+   tutorials/sensorscapes.ipynb
 
 
 

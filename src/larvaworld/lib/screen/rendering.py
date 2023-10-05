@@ -17,7 +17,7 @@ from ..param import Viewable, PositiveRange, PositiveNumber, \
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
-from .. import aux
+from .. import aux, reg
 
 __all__ = [
     'Viewer',
@@ -207,14 +207,16 @@ class Viewer(ScreenWindowAreaBackground):
         self.objects = []
 
         if self.manager.save_video:
-            os.makedirs(m.dir, exist_ok=True)
-            self.vid_writer = imageio.get_writer(f'{m.dir}/{self.manager.video_file}.mp4', mode='I', fps=self._fps)
+            os.makedirs(self.manager.media_dir, exist_ok=True)
+            video_filepath = f'{self.manager.media_dir}/{self.manager.video_file}.mp4'
+            self.vid_writer = imageio.get_writer(video_filepath, mode='I', fps=self._fps)
+            reg.vprint(f'Video will be saved as {video_filepath}', 1)
         else:
             self.vid_writer = None
 
         if self.manager.image_mode:
-            os.makedirs(m.dir,exist_ok=True)
-            self.img_writer = imageio.get_writer(f'{m.dir}/{self.manager.image_file}.png', mode='i')
+            os.makedirs(self.manager.media_dir,exist_ok=True)
+            self.img_writer = imageio.get_writer(f'{self.manager.media_dir}/{self.manager.image_file}.png', mode='i')
         else:
             self.img_writer = None
 

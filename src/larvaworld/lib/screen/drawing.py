@@ -29,6 +29,7 @@ class MediaDrawOps(NestedConf):
     image_file = String(None,doc='Filename for the saved image. File extension png sutomatically added.')
     snapshot_interval_in_sec= PositiveInteger(60, softmax=100,doc='Sec between snapshots')
     video_file = String(None,doc='Filename for the saved video. File extension mp4 sutomatically added.')
+    media_dir = String(None, doc='Directory where to save media. Defaults tp model.dir if not provided.')
     fps = PositiveInteger(60, softmax=100,doc='Video speed')
     save_video= Boolean(False, doc='Whether to save a video.')
     mode=OptionalSelector(objects=['video', 'image'],doc='Screen mode.')
@@ -75,6 +76,8 @@ class BaseScreenManager(Area2DPixel,ScreenOps) :
             self.video_file = str(m.id)
         if self.image_file is None:
             self.image_file = str(m.id)
+        if self.media_dir is None:
+            self.media_dir = m.dir
         self._fps= int(self.fps / m.dt)
         if vis_kwargs is not None:
             self.mode=vis_kwargs.render.mode
