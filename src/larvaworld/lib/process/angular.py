@@ -20,19 +20,11 @@ def comp_orientations(s, e, c, mode='minimal'):
         comp_orientation_1point(s, e)
         return
 
-    f1, f2 = c.front_vector
-    r1, r2 = c.rear_vector
-
     xy_pars = c.midline_xy
     Axy = s[xy_pars].values
 
     reg.vprint(f'Computing front/rear body-vector and head/tail orientation angles')
-    vector_idx = {
-        'front': (f2 - 1, f1 - 1),
-        'rear': (r2 - 1, r1 - 1),
-        'head': (1, 0),
-        'tail': (-1, -2),
-    }
+    vector_idx = c.vector_dict
 
     if mode == 'full':
         reg.vprint(f'Computing additional orients for {c.Nsegs} spinesegments')
@@ -67,9 +59,7 @@ def comp_angular(s, e, c, pars=None, **kwargs):
     if pars is None:
         if c.Npoints > 3:
             base_pars = ['bend', ho, to, fo, ro]
-            segs = c.midline_segs
-            ang_pars = [f'angle{i}' for i in range(c.Nangles)]
-            pars = base_pars + ang_pars + aux.nam.orient(segs)
+            pars = base_pars + c.angles + c.seg_orientations
         else:
             pars = [ho]
 

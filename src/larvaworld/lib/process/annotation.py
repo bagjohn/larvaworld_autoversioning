@@ -358,7 +358,6 @@ def cycle_curve_dict(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
 
 
 def cycle_curve_dict_multi(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
-
     ids = s.index.unique('AgentID').values
     dic={}
     for id in ids:
@@ -610,7 +609,7 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
 
 
 def track_par_in_chunk(d, chunk, par):
-    s, c = d.step_data, d.config
+    s, e, c = d.data
     A = np.zeros([c.Nticks, c.N, 3]) * np.nan
     for i, id in enumerate(c.agent_ids):
         epochs = d.chunk_dicts[id][chunk]
@@ -622,4 +621,4 @@ def track_par_in_chunk(d, chunk, par):
             A[t0s, i, 0] = b0s
             A[t1s, i, 1] = b1s
             A[t1s, i, 2] = b1s - b0s
-    s[aux.nam.at(par, aux.nam.start(chunk)), aux.nam.at(par, aux.nam.stop(chunk)), aux.nam.chunk_track(chunk, par)] = A.reshape([c.Nticks * c.N, 3])
+    s[aux.nam.atStartStopChunk(par, chunk)] = A.reshape([-1, 3])

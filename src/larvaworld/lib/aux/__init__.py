@@ -21,6 +21,5 @@ nam = NamingRegistry()
 from .xy import *
 
 from .freq import *
-from .sim_aux import *
 
 __displayname__ = 'Auxilliary methods'

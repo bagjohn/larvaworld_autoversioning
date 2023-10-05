@@ -2,13 +2,20 @@
 Methods for managing spatial metrics (2D x-y arrays)
 """
 
+import random
+from shapely import geometry, ops
 import numpy as np
 import pandas as pd
 import scipy as sp
+from typing import Optional
 
 from . import nam
 
 __all__ = [
+    'sense_food',
+    'generate_seg_shapes',
+    'Collision',
+    'rearrange_contour',
     'comp_bearing',
     'compute_dispersal_solo',
     'compute_dispersal_multi',
@@ -35,6 +42,96 @@ __all__ = [
     'comp_extrema',
 
 ]
+
+def sense_food(pos, sources=None, grid=None, radius=None):
+    if grid:
+        cell = grid.get_grid_cell(pos)
+        if grid.grid[cell] > 0:
+            return cell
+    elif sources and radius is not None:
+        valid = sources.select(eudi5x(np.array(sources.pos), pos) <= radius)
+        valid.select(valid.amount > 0)
+
+        if len(valid) > 0:
+            return random.choice(valid)
+    return None
+
+
+def generate_seg_shapes(Nsegs: int, points: np.ndarray, seg_ratio: Optional[np.ndarray] = None,
+                        centered: bool = True, closed: bool = False) -> np.ndarray:
+    """
+    Segments a body into equal-length or given-length segments via vertical lines.
+
+    Args:
+    - Nsegs: Number of segments to divide the body into.
+    - points: Array with shape (M,2) representing the contour of the body to be segmented.
+    - seg_ratio: List of N floats specifying the ratio of the length of each segment to the length of the body.
+                Defaults to None, in which case equal-length segments will be generated.
+    - centered: If True, centers the segments around the origin. Defaults to True.
+    - closed: If True, the last point of each segment is connected to the first point. Defaults to False.
+
+    Returns:
+    - ps: Numpy array with shape (Nsegs,L,2), where L is the number of vertices of each segment.
+          The first segment in the list is the front-most segment.
+    """
+
+    # If segment ratio is not provided, generate equal-length segments
+    if seg_ratio is None:
+        seg_ratio = np.array([1 / Nsegs] * Nsegs)
+
+    # Create a polygon from the given body contour
+    p = geometry.Polygon(points)
+    # Get maximum y value of contour
+    y0 = np.max(p.exterior.coords.xy[1])
+
+    # Segment body via vertical lines
+    ps = [p]
+    for cum_r in np.cumsum(seg_ratio):
+        l = geometry.LineString([(1 - cum_r, y0), (1 - cum_r, -y0)])
+        new_ps = []
+        for p in ps:
+            new_ps += list(ops.split(p, l).geoms)
+        ps = new_ps
+
+    # Sort segments so that front segments come first
+    ps.sort(key=lambda x: x.exterior.xy[0], reverse=True)
+
+    # Transform to 2D array of coords
+    ps = [p.exterior.coords.xy for p in ps]
+    ps = [np.array([[x, y] for x, y in zip(xs, ys)]) for xs, ys in ps]
+
+    # Center segments around 0,0
+    if centered:
+        for i, (r, cum_r) in enumerate(zip(seg_ratio, np.cumsum(seg_ratio))):
+            ps[i] -= [(1 - cum_r) + r / 2, 0]
+
+    # Put front point at the start of segment vertices. Drop duplicate rows
+    for i in range(len(ps)):
+        if i == 0:
+            ind = np.argmax(ps[i][:, 0])
+            ps[i] = np.flip(np.roll(ps[i], -ind - 1, axis=0), axis=0)
+        else:
+            ps[i] = np.flip(np.roll(ps[i], 1, axis=0), axis=0)
+        _, idx = np.unique(ps[i], axis=0, return_index=True)
+        ps[i] = ps[i][np.sort(idx)]
+        if closed:
+            ps[i] = np.concatenate([ps[i], [ps[i][0]]])
+    return np.array(ps)
+
+
+class Collision(Exception):
+
+    def __init__(self, object1, object2):
+        self.object1 = object1
+        self.object2 = object2
+
+
+def rearrange_contour(ps0):
+    ps_plus = [p for p in ps0 if p[1] >= 0]
+    ps_plus.sort(key=lambda x: x[0], reverse=True)
+    ps_minus = [p for p in ps0 if p[1] < 0]
+    ps_minus.sort(key=lambda x: x[0], reverse=False)
+    return ps_plus + ps_minus
 
 
 def comp_bearing(xs, ys, ors, loc=(0.0, 0.0), in_deg=True):

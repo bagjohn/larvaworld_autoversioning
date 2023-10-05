@@ -297,8 +297,13 @@ class LarvaMotile(LarvaSegmented):
             elif self.model.experiment == 'keep_the_flag':
                 carrier_group = self.group
                 carrier_group_odor_id = self.odor.id
+                if carrier_group == 'Left':
+                    opponent_group = 'Right'
+                elif carrier_group == 'Right':
+                    opponent_group = 'Left'
+                else:
+                    raise ValueError(f'Argument {carrier_group} is neither Left nor Right')
 
-                opponent_group = aux.LvsRtoggle(carrier_group)
                 opponent_group_odor_id = f'{opponent_group}_odor'
                 for f in self.model.agents:
                     if f.group == carrier_group:

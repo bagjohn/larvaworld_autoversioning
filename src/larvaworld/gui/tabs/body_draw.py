@@ -2,6 +2,7 @@ import numpy as np
 import PySimpleGUI as sg
 
 from ...gui import gui_aux
+from ...lib import aux
 
 __all__ = [
     'DrawBodyTab',
@@ -66,10 +67,8 @@ class DrawBodyTab(gui_aux.DrawTab):
         return l, c, {g1.name: g1}, {self.name: dic}
 
     def update(self, w, c, conf, id):
-        from ...lib.aux.sim_aux import rearrange_contour
-
         if conf[self.P] is not None:
-            conf[self.P] = rearrange_contour(conf[self.P])
+            conf[self.P] = aux.rearrange_contour(conf[self.P])
             self.c.update(w, conf)
 
             self.draw_body(conf)
@@ -145,11 +144,9 @@ class DrawBodyTab(gui_aux.DrawTab):
                 dic[self.O][i] = {'fig': f, 'pos': p}
 
     def draw_segs(self, conf, **kwargs):
-        from ...lib.aux.sim_aux import generate_seg_shapes
-
         dic = self.base_dict
         gg = self.graph
-        base_seg_vertices=generate_seg_shapes(centered=False, **conf)
+        base_seg_vertices=aux.generate_seg_shapes(centered=False, **conf)
         for i in range(base_seg_vertices.shape[0]):
             ps = [self.scale_xy(base_seg_vertices[i]- np.array([0.5, 0.0]), reverse=True) for i in range(base_seg_vertices.shape[0])]
             ps.append(ps[0])

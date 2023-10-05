@@ -247,6 +247,17 @@ class SimMetricOps(TrackedPointIdx):
     def Nbend_angles(self):
         return int(np.round(self.front_body_ratio * self.Nangles))
 
+    @property
+    def vector_dict(self):
+        f1, f2 = self.front_vector
+        r1, r2 = self.rear_vector
+        return aux.AttrDict({
+            'front': (f2 - 1, f1 - 1),
+            'rear': (r2 - 1, r1 - 1),
+            'head': (1, 0),
+            'tail': (-1, -2),
+            })
+
 
 class TrackerOps(SimMetricOps, FramerateOps): pass
 

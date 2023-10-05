@@ -24,56 +24,56 @@ __all__ = [
     'h5_kdic',
 ]
 
+
 class ParamLarvaDataset(param.Parameterized):
     config = ClassAttr(reg.generators.DatasetConfig, doc='The dataset metadata')
     step_data = StepDataFrame(doc='The timeseries data')
     endpoint_data = EndpointDataFrame(doc='The endpoint data')
     config2 = ClassDict(default=aux.AttrDict(), item_type=None, doc='Additional dataset metadata')
 
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
         if 'config' not in kwargs.keys():
-            kws=aux.AttrDict()
+            kws = aux.AttrDict()
             for k in reg.generators.DatasetConfig().param_keys:
                 if k in kwargs.keys():
-                    kws[k]=kwargs[k]
+                    kws[k] = kwargs[k]
                     kwargs.pop(k)
-            kwargs['config']=reg.generators.DatasetConfig(**kws)
+            kwargs['config'] = reg.generators.DatasetConfig(**kws)
         assert 'config2' not in kwargs.keys()
 
-        ks=list(kwargs.keys())
+        ks = list(kwargs.keys())
         kws2 = aux.AttrDict()
         for k in ks:
             if k not in self.param.objects().keys():
                 kws2[k] = kwargs[k]
                 kwargs.pop(k)
-        kwargs['config2']=aux.AttrDict(kws2)
+        kwargs['config2'] = aux.AttrDict(kws2)
         super().__init__(**kwargs)
         self.merge_configs()
         self.epoch_dict = aux.AttrDict({'pause': None, 'run': None})
         self.larva_dicts = {}
         self.__dict__.update(self.config.nestedConf)
 
-    #@param.depends('step_data', 'endpoint_data', watch=True)
+    # @param.depends('step_data', 'endpoint_data', watch=True)
     def validate_IDs(self):
         if self.step_data is not None and self.endpoint_data is not None:
-            s1=self.step_data.index.unique('AgentID').tolist()
+            s1 = self.step_data.index.unique('AgentID').tolist()
             s2 = self.endpoint_data.index.values.tolist()
-            print(len(s1),len(s2))
-            assert len(s1)==len(s2)
-            assert set(s1)==set(s2)
-            assert s1==s2
-            self.config.agent_ids=s1
+            print(len(s1), len(s2))
+            assert len(s1) == len(s2)
+            assert set(s1) == set(s2)
+            assert s1 == s2
+            self.config.agent_ids = s1
 
-    #@param.depends('config.agent_ids', watch=True)
+    # @param.depends('config.agent_ids', watch=True)
     def update_ids_in_data(self):
-        s,e=None,None
-        if self.step_data is not None :
-            s=self.step_data.loc[(slice(None), self.config.agent_ids), :]
+        s, e = None, None
+        if self.step_data is not None:
+            s = self.step_data.loc[(slice(None), self.config.agent_ids), :]
 
         if self.endpoint_data is not None:
-            e=self.endpoint_data.loc[self.config.agent_ids]
-        self.set_data(step=s,end=e)
-
+            e = self.endpoint_data.loc[self.config.agent_ids]
+        self.set_data(step=s, end=e)
 
     @param.depends('step_data', watch=True)
     def update_Nticks(self):
@@ -92,27 +92,23 @@ class ParamLarvaDataset(param.Parameterized):
     def c(self):
         return self.config
 
-
     def merge_configs(self):
-        d=param.guess_param_types(**self.config2)
-        for n,p in d.items():
-            self.config.param.add_parameter(n,p)
+        d = param.guess_param_types(**self.config2)
+        for n, p in d.items():
+            self.config.param.add_parameter(n, p)
 
-
-
-    def set_data(self, step=None, end=None,agents=None,**kwargs):
+    def set_data(self, step=None, end=None, agents=None, **kwargs):
         if step is not None:
             self.step_data = step.sort_index(level=self.param.step_data.levels)
         if end is not None:
             self.endpoint_data = end.sort_index()
         if agents is not None:
-            self.larva_dicts = aux.get_larva_dicts(agents, validIDs=self.config.agent_ids)
+            self.larva_dicts = get_larva_dicts(agents, validIDs=self.config.agent_ids)
         self.validate_IDs()
 
     @property
     def data(self):
         return self.step_data, self.endpoint_data, self.config
-
 
     def path_to_file(self, file='data'):
         return f'{self.config.data_dir}/{file}.h5'
@@ -122,16 +118,15 @@ class ParamLarvaDataset(param.Parameterized):
         return f'{self.config.data_dir}/conf.txt'
 
     def store(self, df, key, file='data'):
-        path=self.path_to_file(file)
+        path = self.path_to_file(file)
         if not isinstance(df, pd.DataFrame):
             pd.DataFrame(df).to_hdf(path, key)
-        else :
+        else:
             df.to_hdf(path, key)
 
-
     def read(self, key, file='data'):
-        path=self.path_to_file(file)
-        try :
+        path = self.path_to_file(file)
+        try:
             return pd.read_hdf(path, key)
         except:
             return None
@@ -143,22 +138,21 @@ class ParamLarvaDataset(param.Parameterized):
 
     def _load_step(self, h5_ks=None):
         s = self.read('step')
-        if h5_ks is None :
-            h5_ks=list(self.config.h5_kdic.keys())
+        if h5_ks is None:
+            h5_ks = list(self.config.h5_kdic.keys())
         for h5_k in h5_ks:
             ss = self.read(h5_k)
-            if ss is not None :
-                ps = aux.nonexisting_cols(ss.columns.values,s)
+            if ss is not None:
+                ps = aux.nonexisting_cols(ss.columns.values, s)
                 if len(ps) > 0:
                     s = s.join(ss[ps])
         return s
 
-
     def _save_step(self, s):
         s = s.loc[:, ~s.columns.duplicated()]
         stored_ps = []
-        for h5_k,ps in self.config.h5_kdic.items():
-            pps =ps.unique.existing(s)
+        for h5_k, ps in self.config.h5_kdic.items():
+            pps = ps.unique.existing(s)
             if len(pps) > 0:
                 self.store(s[pps], h5_k)
                 stored_ps += pps
@@ -174,7 +168,7 @@ class ParamLarvaDataset(param.Parameterized):
         reg.vprint(f'***** Dataset {self.config.id} stored.-----', 1)
 
     def save_config(self, refID=None):
-        c=self.config
+        c = self.config
         if refID is not None:
             c.refID = refID
         if c.refID is not None:
@@ -183,20 +177,19 @@ class ParamLarvaDataset(param.Parameterized):
         aux.save_dict(c.nestedConf, self.path_to_config)
 
     def load_traj(self, mode='default'):
-        key=f'traj.{mode}'
+        key = f'traj.{mode}'
         df = self.read(key)
-        if df is None :
-            if mode=='default':
+        if df is None:
+            if mode == 'default':
                 df = self._load_step(h5_ks=[])[['x', 'y']]
             elif mode in ['origin', 'center']:
                 s = self._load_step(h5_ks=['contour', 'midline'])
-                df=reg.funcs.preprocessing["transposition"](s, c=self.config, replace=False, transposition=mode)[['x', 'y']]
-            else :
+                df = reg.funcs.preprocessing["transposition"](s, c=self.config, replace=False, transposition=mode)[
+                    ['x', 'y']]
+            else:
                 raise ValueError('Not implemented')
-            self.store(df,key)
+            self.store(df, key)
         return df
-
-
 
     def load_dicts(self, type, ids=None):
         if ids is None:
@@ -205,17 +198,15 @@ class ParamLarvaDataset(param.Parameterized):
         if type in ds0 and all([id in ds0[type].keys() for id in ids]):
             ds = [ds0[type][id] for id in ids]
         else:
-            ds= aux.loadSoloDics(agent_ids=ids, path=f'{self.config.data_dir}/individuals/{type}.txt')
+            ds = aux.loadSoloDics(agent_ids=ids, path=f'{self.config.data_dir}/individuals/{type}.txt')
         return ds
 
     @property
     def contour_xy_data_byID(self):
-        xy=self.config.contour_xy
+        xy = self.config.contour_xy
         assert xy.exist_in(self.step_data)
-        grouped=self.step_data[self.config.contour_xy].groupby('AgentID')
+        grouped = self.step_data[self.config.contour_xy].groupby('AgentID')
         return aux.AttrDict({id: df.values.reshape([-1, self.config.Ncontour, 2]) for id, df in grouped})
-
-
 
     @property
     def midline_xy_data_byID(self):
@@ -236,16 +227,15 @@ class ParamLarvaDataset(param.Parameterized):
     #     xy=self.contour_xy_data
     #     return np.sum(xy, axis=1) / self.config.Ncontour
 
-
     def midline_xy_1less(self, mid):
-        mid2 = copy.deepcopy(mid[:,:-1,:])
-        for i in range(mid.shape[1]-1):
-            mid2[:, i, :] = (mid[:, i, :] + mid[:, i + 1,:]) / 2
+        mid2 = copy.deepcopy(mid[:, :-1, :])
+        for i in range(mid.shape[1] - 1):
+            mid2[:, i, :] = (mid[:, i, :] + mid[:, i + 1, :]) / 2
         return mid2
 
     @property
     def midline_seg_xy_data_byID(self):
-        g=self.midline_xy_data_byID
+        g = self.midline_xy_data_byID
         return aux.AttrDict({id: self.midline_xy_1less(mid) for id, mid in g.items()})
 
     @property
@@ -253,32 +243,30 @@ class ParamLarvaDataset(param.Parameterized):
         g = self.midline_xy_data_byID
         return aux.AttrDict({id: self.midline_seg_orients_from_mid(mid) for id, mid in g.items()})
 
-
-    def midline_seg_orients_from_mid(self,mid):
+    def midline_seg_orients_from_mid(self, mid):
         Ax, Ay = mid[:, :, 0], mid[:, :, 1]
         Adx = np.diff(Ax)
         Ady = np.diff(Ay)
         return np.arctan2(Ady, Adx) % (2 * np.pi)
 
     def comp_centroid(self):
-        c=self.config
-        self.step_data[c.centroid_xy] = np.sum(self.step_data[c.contour_xy].values.reshape([-1, c.Ncontour, 2]), axis=1)/c.Ncontour
+        c = self.config
+        self.step_data[c.centroid_xy] = np.sum(self.step_data[c.contour_xy].values.reshape([-1, c.Ncontour, 2]),
+                                               axis=1) / c.Ncontour
 
     def comp_length(self):
         self.step_data['length'] = np.sum(np.sum(np.diff(self.midline_xy_data, axis=1) ** 2, axis=2) ** (1 / 2), axis=1)
         self.endpoint_data['length'] = self.step_data['length'].groupby('AgentID').quantile(q=0.5)
 
-
     def get_par(self, par=None, k=None, key='step'):
-        s,e=self.step_data,self.endpoint_data
+        s, e = self.step_data, self.endpoint_data
         if par is None and k is not None:
-            par=reg.getPar(k)
+            par = reg.getPar(k)
 
-        def read_key(key,par):
-            res=self.read(key)[par]
+        def read_key(key, par):
+            res = self.read(key)[par]
             if res is not None:
                 return res
-
 
         if key == 'end':
             if e is not None and par in e.columns:
@@ -287,7 +275,7 @@ class ParamLarvaDataset(param.Parameterized):
             if s is not None and par in s.columns:
                 return s[par]
             else:
-                for h5_k,ps in self.config.h5_kdic.items():
+                for h5_k, ps in self.config.h5_kdic.items():
                     if par in ps:
                         try:
                             return read_key(h5_k, par)
@@ -296,31 +284,26 @@ class ParamLarvaDataset(param.Parameterized):
         try:
             return read_key(key, par)
         except:
-            if k is None :
+            if k is None:
                 k = reg.getPar(p=par, to_return='k')
             return reg.par.get(k=k, d=self, compute=True)
-
 
 
 class BaseLarvaDataset(ParamLarvaDataset):
 
     @staticmethod
-    def initGeo(to_Geo=False,**kwargs):
+    def initGeo(to_Geo=False, **kwargs):
         if to_Geo:
             try:
                 from ..process.dataset_geo import GeoLarvaDataset
                 return GeoLarvaDataset(**kwargs)
-            except :
+            except:
                 pass
             # from larvaworld.lib.process.dataset import LarvaDataset
         return LarvaDataset(**kwargs)
 
-
-
-
-
-    def __init__(self, dir=None,refID=None, load_data=True,config=None, step=None, end=None, agents=None, **kwargs):
-    # def __init__(self, dir=None, config=None, refID=None, load_data=True, step=None, end=None, agents=None, **kwargs):
+    def __init__(self, dir=None, refID=None, load_data=True, config=None, step=None, end=None, agents=None, **kwargs):
+        # def __init__(self, dir=None, config=None, refID=None, load_data=True, step=None, end=None, agents=None, **kwargs):
         '''
         Dataset class that stores a single experiment, real or simulated.
         Metadata and configuration parameters are stored in the 'config' dictionary.
@@ -359,13 +342,11 @@ class BaseLarvaDataset(ParamLarvaDataset):
             **kwargs: Any arguments to store in a novel configuration dictionary
         '''
 
-
         if config is None:
             try:
                 config = reg.getRef(dir=dir, id=refID)
             except:
                 config = self.generate_config(dir=dir, refID=refID, **kwargs)
-
 
         super().__init__(**config)
 
@@ -373,8 +354,6 @@ class BaseLarvaDataset(ParamLarvaDataset):
             self.load()
         elif step is not None or end is not None:
             self.set_data(step=step, end=end, agents=agents)
-
-
 
     # def set_data(self, step=None, end=None,**kwargs):
     #     pass
@@ -390,7 +369,7 @@ class BaseLarvaDataset(ParamLarvaDataset):
                            'Nsteps': None,
                            'Npoints': 3,
                            'Ncontour': 0,
-                           'u' : 'm',
+                           'u': 'm',
                            'x': 'x',
                            'y': 'y',
                            'sample': None,
@@ -403,10 +382,10 @@ class BaseLarvaDataset(ParamLarvaDataset):
                            })
 
         c0.update(kwargs)
-        if c0.dt is not None :
-            c0.fr=1/c0.dt
-        if c0.fr is not None :
-            c0.dt=1/c0.fr
+        if c0.dt is not None:
+            c0.fr = 1 / c0.dt
+        if c0.fr is not None:
+            c0.dt = 1 / c0.fr
         if c0.metric_definition is None:
             c0.metric_definition = reg.get_null('metric_definition')
 
@@ -467,7 +446,7 @@ class BaseLarvaDataset(ParamLarvaDataset):
 
     def delete(self):
         shutil.rmtree(self.config.dir)
-        reg.vprint(f'Dataset {self.id} deleted',2)
+        reg.vprint(f'Dataset {self.id} deleted', 2)
 
     def set_id(self, id, save=True):
         self.id = id
@@ -483,6 +462,7 @@ class BaseLarvaDataset(ParamLarvaDataset):
 
     # def load(self, **kwargs):
     #     pass
+
 
 class LarvaDataset(BaseLarvaDataset):
     def __init__(self, **kwargs):
@@ -501,11 +481,6 @@ class LarvaDataset(BaseLarvaDataset):
         All parameters not included in any of these groups stays with the original "step" key that is always saved and loaded
         '''
         super().__init__(**kwargs)
-
-
-
-
-
 
     # def set_data(self, step=None, end=None, agents=None):
     #     c=self.config
@@ -531,7 +506,6 @@ class LarvaDataset(BaseLarvaDataset):
     #
     #     if agents is not None :
     #         self.larva_dicts = aux.get_larva_dicts(agents, validIDs=self.agent_ids)
-
 
     # def _load_step(self, h5_ks=None):
     #     s = self.read('step')
@@ -615,26 +589,17 @@ class LarvaDataset(BaseLarvaDataset):
     #         ds= aux.loadSoloDics(agent_ids=ids, path=f'{self.data_dir}/individuals/{type}.txt')
     #     return ds
 
-    def visualize(self,parameters={}, **kwargs):
+    def visualize(self, parameters={}, **kwargs):
         from ..sim.dataset_replay import ReplayRun
         kwargs['dataset'] = self
         rep = ReplayRun(parameters=parameters, **kwargs)
         rep.run()
 
-
-
-
-
-
-
-
     # @property
     # def data_path(self):
     #     return f'{self.data_dir}/data.h5'
 
-
-
-    def enrich(self,pre_kws={}, proc_keys=[],anot_keys=[], is_last=True,**kwargs):
+    def enrich(self, pre_kws={}, proc_keys=[], anot_keys=[], is_last=True, **kwargs):
         cc = {
             'd': self,
             's': self.step_data,
@@ -646,8 +611,8 @@ class LarvaDataset(BaseLarvaDataset):
         warnings.filterwarnings('ignore')
         for k, v in pre_kws.items():
             if v:
-                ccc=cc
-                ccc[k]=v
+                ccc = cc
+                ccc[k] = v
                 reg.funcs.preprocessing[k](**ccc)
         for k in proc_keys:
             reg.funcs.processing[k](**cc)
@@ -657,13 +622,6 @@ class LarvaDataset(BaseLarvaDataset):
         if is_last:
             self.save()
         return self
-
-
-
-
-
-
-
 
     # def get_par(self, par=None, k=None, key='step'):
     #     if par is None and k is not None:
@@ -688,17 +646,12 @@ class LarvaDataset(BaseLarvaDataset):
     #             k = reg.getPar(p=par, to_return='k')
     #         return reg.par.get(k=k, d=self, compute=True)
 
-
-
-
-
-
     def get_chunk_par(self, chunk, k=None, par=None, min_dur=0, mode='distro'):
         chunk_idx = f'{chunk}_idx'
         chunk_dur = f'{chunk}_dur'
         if par is None:
             par = reg.getPar(k)
-            
+
         dic0 = aux.AttrDict(self.read('chunk_dicts'))
 
         dics = [dic0[id] for id in self.config.agent_ids]
@@ -709,7 +662,7 @@ class LarvaDataset(BaseLarvaDataset):
             vs = []
             for ss, dic in zip(sss, dics):
                 if min_dur == 0:
-                    idx = dic[chunk_idx]+1
+                    idx = dic[chunk_idx] + 1
                 else:
                     epochs = dic[chunk][dic[chunk_dur] >= min_dur]
                     Nepochs = epochs.shape[0]
@@ -740,9 +693,6 @@ class LarvaDataset(BaseLarvaDataset):
             cc01s = cc1s - cc0s
             return cc0s, cc1s, cc01s
 
-
-
-
     # @property
     # def data(self):
     #     s=self.step_data if hasattr(self, 'step_data') else None
@@ -750,11 +700,8 @@ class LarvaDataset(BaseLarvaDataset):
     #     return s, e, self.config
 
 
-
-
-
-class LarvaDatasetCollection :
-    def __init__(self,labels=None, add_samples=False,config=None,**kwargs):
+class LarvaDatasetCollection:
+    def __init__(self, labels=None, add_samples=False, config=None, **kwargs):
         datasets = self.get_datasets(**kwargs)
 
         for d in datasets:
@@ -777,57 +724,56 @@ class LarvaDatasetCollection :
 
         self.group_ids = aux.unique_list([d.config.group_id for d in self.datasets])
         self.Ngroups = len(self.group_ids)
-        self.dir=self.set_dir()
+        self.dir = self.set_dir()
 
     def set_dir(self, dir=None):
         if dir is not None:
             return dir
-        elif self.config and 'dir' in self.config :
+        elif self.config and 'dir' in self.config:
             return self.config.dir
-        elif self.Ndatasets>1 and self.Ngroups==1:
-            dir0=aux.unique_list([os.path.dirname(os.path.abspath(d.dir)) for d in self.datasets])
-            if len(dir0)==1:
+        elif self.Ndatasets > 1 and self.Ngroups == 1:
+            dir0 = aux.unique_list([os.path.dirname(os.path.abspath(d.dir)) for d in self.datasets])
+            if len(dir0) == 1:
                 return dir0[0]
-            else :
+            else:
                 raise
 
     @property
     def plot_dir(self):
         return f'{self.dir}/group_plots'
 
-    def plot(self,ids=[], gIDs=[],**kwargs):
-        kws={
-            'datasets':self.datasets,
-            'save_to':self.plot_dir,
-            'show':False,
-            'subfolder':None
+    def plot(self, ids=[], gIDs=[], **kwargs):
+        kws = {
+            'datasets': self.datasets,
+            'save_to': self.plot_dir,
+            'show': False,
+            'subfolder': None
         }
         kws.update(**kwargs)
-        plots=aux.AttrDict()
-        for id in ids :
-            plots[id]=reg.graphs.run(id, **kws)
-        for gID in gIDs :
-            plots[gID]=reg.graphs.run_group(gID, **kws)
+        plots = aux.AttrDict()
+        for id in ids:
+            plots[id] = reg.graphs.run(id, **kws)
+        for gID in gIDs:
+            plots[gID] = reg.graphs.run_group(gID, **kws)
         return plots
 
-
     def get_datasets(self, datasets=None, refIDs=None, dirs=None, group_id=None):
-        if datasets :
+        if datasets:
             pass
         elif refIDs:
-            datasets= [reg.loadRef(refID) for refID in refIDs]
-        elif dirs :
-            datasets= [LarvaDataset(dir=f'{reg.DATA_DIR}/{dir}', load_data=False) for dir in dirs]
-        elif group_id :
+            datasets = [reg.loadRef(refID) for refID in refIDs]
+        elif dirs:
+            datasets = [LarvaDataset(dir=f'{reg.DATA_DIR}/{dir}', load_data=False) for dir in dirs]
+        elif group_id:
             datasets = reg.conf.Ref.loadRefGroup(group_id, to_return='list')
         return datasets
 
     def get_colors(self):
-        colors=[]
-        for d in self.datasets :
-            color=d.config.color
-            while color is None or color in colors :
-                color=aux.random_colors(1)[0]
+        colors = []
+        for d in self.datasets:
+            color = d.config.color
+            while color is None or color in colors:
+                color = aux.random_colors(1)[0]
             colors.append(color)
         return colors
 
@@ -859,7 +805,7 @@ class LarvaDatasetCollection :
 
     @property
     def labels_with_N(self):
-        return [f'{l} (N={d.config.N})' for l,d in self.data_dict.items()]
+        return [f'{l} (N={d.config.N})' for l, d in self.data_dict.items()]
 
     @property
     def fr(self):
@@ -890,17 +836,17 @@ class LarvaDatasetCollection :
 
     @property
     def arena_dims(self):
-        dims=np.array([d.env_params.arena.dims for d in self.datasets])
-        if self.Ndatasets>1:
-            dims=np.max(dims, axis=0)
-        else :
-            dims=dims[0]
+        dims = np.array([d.env_params.arena.dims for d in self.datasets])
+        if self.Ndatasets > 1:
+            dims = np.max(dims, axis=0)
+        else:
+            dims = dims[0]
         return tuple(dims)
 
     @property
     def arena_geometry(self):
         geos = aux.unique_list([d.env_params.arena.geometry for d in self.datasets])
-        if len(geos) ==1:
+        if len(geos) == 1:
             return geos[0]
         else:
             return None
@@ -908,8 +854,8 @@ class LarvaDatasetCollection :
     def concat_data(self, key):
         return aux.concat_datasets(dict(zip(self.labels, self.datasets)), key=key)
 
-    @ classmethod
-    def from_agentpy_output(cls, output=None, agents=None,to_Geo=False):
+    @classmethod
+    def from_agentpy_output(cls, output=None, agents=None, to_Geo=False):
         config0 = aux.AttrDict(output.parameters['constants'])
         ds = []
         for gID, df in output.variables.items():
@@ -947,17 +893,15 @@ class LarvaDatasetCollection :
 
                 })
             config.update(**kws)
-            d=BaseLarvaDataset.initGeo(to_Geo=to_Geo,config=config,load_data=False,step=step,end=end,agents=agents)
+            d = BaseLarvaDataset.initGeo(to_Geo=to_Geo, config=config, load_data=False, step=step, end=end,
+                                         agents=agents)
 
             ds.append(d)
 
         return cls(datasets=ds, config=config0)
 
 
-
 def convert_group_output_to_dataset(df, collectors):
-
-
     df.index.set_names(['AgentID', 'Step'], inplace=True)
     df = df.reorder_levels(order=['Step', 'AgentID'], axis=0)
     df.sort_index(level=['Step', 'AgentID'], inplace=True)
@@ -1012,5 +956,28 @@ def h5_kdic(p, N, Nc):
     return dic
 
 
+def get_larva_dicts(ls, validIDs=None):
+    deb_dicts = {}
+    nengo_dicts = {}
+    bout_dicts = {}
+    for id, l in ls.items():
+        if validIDs and id not in validIDs:
+            continue
+        if hasattr(l, 'deb') and l.deb is not None:
+            deb_dicts[id] = l.deb.finalize_dict()
+        try:
+            from ..model.modules.nengobrain import NengoBrain
+            if isinstance(l.brain, NengoBrain):
+                if l.brain.dict is not None:
+                    nengo_dicts[id] = l.brain.dict
+        except:
+            pass
+        if l.brain.locomotor.intermitter is not None:
+            bout_dicts[id] = l.brain.locomotor.intermitter.build_dict()
 
+    dic0 = aux.AttrDict({'deb': deb_dicts,
+                         'nengo': nengo_dicts,
+                         'bouts': bout_dicts,
+                         })
 
+    return aux.AttrDict({k: v for k, v in dic0.items() if len(v) > 0})

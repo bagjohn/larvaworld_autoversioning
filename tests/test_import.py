@@ -2,10 +2,11 @@ import larvaworld
 import pandas as pd
 from larvaworld.lib import reg
 
+
 def test_import_Schleyer():
     g = reg.conf.LabFormat.get('Schleyer')
     kws0 = {
-        #'labID': 'Schleyer',
+        # 'labID': 'Schleyer',
         'group_id': 'exploration',
     }
 
@@ -43,7 +44,7 @@ def xx_test_import_Jovanic():
     g = reg.conf.LabFormat.get('Jovanic')
 
     kws0 = {
-     #   'labID': 'Jovanic',
+        #   'labID': 'Jovanic',
         'merged': False
     }
 
