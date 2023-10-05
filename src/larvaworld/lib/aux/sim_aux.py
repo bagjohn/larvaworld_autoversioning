@@ -18,8 +18,6 @@ __all__ = [
     'generate_seg_shapes',
     'sense_food',
     'get_larva_dicts',
-    'get_step_slice',
-    'index_unique',
 ]
 
 from .dictsNlists import existing_cols, cols_exist, AttrDict
@@ -319,52 +317,52 @@ def get_larva_dicts(ls, validIDs=None):
             bout_dicts[id] = l.brain.locomotor.intermitter.build_dict()
 
     dic0 = AttrDict({'deb': deb_dicts,
-                         'nengo': nengo_dicts, 'bouts': bout_dicts,
-                         })
+                     'nengo': nengo_dicts,
+                     'bouts': bout_dicts,
+                     })
 
     return AttrDict({k: v for k, v in dic0.items() if len(v) > 0})
 
+# def get_step_slice(s, e, dt, pars=None, t0=0, t1=40, track_t0_min=0, track_t1_min=0, ids=None):
+#     s0, s1 = int(t0 / dt), int(t1 / dt)
+#     trange = np.arange(s0, s1, 1)
+#
+#     if cols_exist(['t0', 't1'], e):
+#         tmin = track_t0_min + t0
+#         tmax = t1 - track_t1_min
+#         valid_ids = e[(e['t0'] <= tmin) & (e['t1'] >= tmax)].index
+#         if ids:
+#             valid_ids = existing_cols(valid_ids, ids)
+#         if pars:
+#             return s.loc[(trange, valid_ids), pars]
+#         else:
+#             return s.loc[(trange, valid_ids), :]
+#     else:
+#         if pars:
+#             if ids:
+#                 return s.loc[(trange, ids), pars]
+#             else:
+#                 return s.loc[(trange, slice(None)), pars]
+#         else:
+#             if ids:
+#                 return s.loc[(trange, ids), :]
+#             else:
+#                 return s.loc[(trange, slice(None)), :]
 
-def get_step_slice(s, e, dt, pars=None, t0=0, t1=40, track_t0_min=0, track_t1_min=0, ids=None):
-    s0, s1 = int(t0 / dt), int(t1 / dt)
-    trange = np.arange(s0, s1, 1)
 
-    if cols_exist(['t0', 't1'], e):
-        tmin = track_t0_min + t0
-        tmax = t1 - track_t1_min
-        valid_ids = e[(e['t0'] <= tmin) & (e['t1'] >= tmax)].index
-        if ids:
-            valid_ids = existing_cols(valid_ids, ids)
-        if pars:
-            return s.loc[(trange, valid_ids), pars]
-        else:
-            return s.loc[(trange, valid_ids), :]
-    else:
-        if pars:
-            if ids:
-                return s.loc[(trange, ids), pars]
-            else:
-                return s.loc[(trange, slice(None)), pars]
-        else:
-            if ids:
-                return s.loc[(trange, ids), :]
-            else:
-                return s.loc[(trange, slice(None)), :]
-
-
-def index_unique(df, level='Step', ascending=True, as_array=False):
-    """
-    Get the unique values of a level of a pandas Multiindex
-
-    Args:
-    - df: pd.DataFrame - The dataframe.
-    - level: str - The level to index.
-    - ascending: bool - Whether to sort the data in ascending order or not.
-    - as_array: bool - Whether to return the result as an array or not.
-    """
-
-    a = df.index.get_level_values(level).sort_values(ascending=ascending).drop_duplicates()
-    if as_array:
-        return a.values
-    else:
-        return a
+# def index_unique(df, level='Step', ascending=True, as_array=False):
+#     """
+#     Get the unique values of a level of a pandas Multiindex
+#
+#     Args:
+#     - df: pd.DataFrame - The dataframe.
+#     - level: str - The level to index.
+#     - ascending: bool - Whether to sort the data in ascending order or not.
+#     - as_array: bool - Whether to return the result as an array or not.
+#     """
+#
+#     a = df.index.get_level_values(level).sort_values(ascending=ascending).drop_duplicates()
+#     if as_array:
+#         return a.values
+#     else:
+#         return a

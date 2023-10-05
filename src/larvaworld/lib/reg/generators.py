@@ -4,7 +4,7 @@ import shutil
 import param
 
 from .. import reg, aux, util
-from ..param import Area, NestedConf, Larva_Distro, ClassAttr, SimTimeOps, \
+from ..param import BoundedArea, NestedConf, Larva_Distro, ClassAttr, SimTimeOps, \
     SimMetricOps, ClassDict, EnrichConf, OptionalPositiveRange, OptionalSelector, OptionalPositiveInteger, \
     generate_xyNor_distro, Odor, Life, class_generator, SimOps, RuntimeOps, Epoch, RuntimeDataOps, RandomizedColor, \
     OptionalPositiveNumber, Filesystem, TrackerOps, PreprocessConf, Substrate, AirPuff
@@ -289,7 +289,7 @@ from ..model import Food, Border, WindScape, ThermoScape, FoodGrid, OdorScape, D
 gen = aux.AttrDict({
     'FoodGroup': class_generator(Food, mode='Group'),
     'Food': class_generator(Food),
-    'Arena': class_generator(Area),
+    'Arena': class_generator(BoundedArea),
     'Border': class_generator(Border),
     'Odor': class_generator(Odor),
     'Epoch': class_generator(Epoch),

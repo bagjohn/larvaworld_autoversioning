@@ -39,7 +39,7 @@ __all__ = [
 
 def comp_bearing(xs, ys, ors, loc=(0.0, 0.0), in_deg=True):
     """
-    Compute the bearing (azimuth) between a reference location and a set of oriented 2D point-vectors.
+    Compute the bearing (azimuth) of a set of oriented 2D point-vectors relative to a location point.
 
     Parameters:
     ----------
@@ -63,15 +63,11 @@ def comp_bearing(xs, ys, ors, loc=(0.0, 0.0), in_deg=True):
     Examples:
     --------
     xs = [1.0, 2.0, 3.0]
-    ys = [1.0, 1.0, 4.0]
+    ys = [1.0, 2.0, 0.0]
     ors = 90.0
     comp_bearing(xs, ys, ors)
 
-    array([90.        , 90.        , 45.        ])
-
-    comp_bearing(xs, ys, ors, in_deg=False)
-
-    array([1.57079633, 1.57079633, 0.78539816])
+    array([-135., -135.,  -90.])
     """
 
     x0, y0 = loc
@@ -83,25 +79,93 @@ def comp_bearing(xs, ys, ors, loc=(0.0, 0.0), in_deg=True):
     return drads if in_deg else np.deg2rad(drads)
 
 
-def compute_dispersal_solo(xy):
+def compute_dispersal_solo(xy, min_valid_proportion=0.2, max_start_proportion=0.1, min_end_proportion=0.9):
+    """
+    Compute dispersal values for a given trajectory.
+
+    This function calculates dispersal values based on a trajectory represented as a 2D array or DataFrame.
+    It checks for the validity of the input trajectory and returns dispersal values accordingly.
+
+    Parameters:
+    ----------
+    xy : array-like or DataFrame
+        The trajectory data, where each row represents a point in 2D space.
+    min_valid_proportion : float, optional
+        The minimum proportion of valid data points required in the trajectory.
+        Defaults to 0.2, meaning at least 20% of non-missing data points are required.
+    max_start_proportion : float, optional
+        The maximum proportion of missing data allowed before the first valid point.
+        Defaults to 0.1, meaning up to 10% of missing data is allowed at the start.
+    min_end_proportion : float, optional
+        The minimum proportion of data allowed before the last valid point.
+        Defaults to 0.9, meaning up to 10% of missing data is allowed at the end.
+
+    Returns:
+    -------
+    array-like
+        An array of dispersal values or NaNs based on the input trajectory's validity.
+
+    Notes:
+    ------
+    - The input trajectory should be a 2D array or a DataFrame with columns representing x and y coordinates.
+    - The function checks for the proportion of valid data points and the presence of missing data at the start and end.
+    - If the trajectory is valid, dispersal values are computed using a custom function (eudi5x).
+
+
+    """
+
     if isinstance(xy, pd.DataFrame):
         xy = xy.values
     N = xy.shape[0]
-    valid_idx = np.where(~np.isnan(xy))[0]
-    if valid_idx.shape[0] < N * 0.2 or valid_idx[0] > N * 0.1 or valid_idx[-1] < N * 0.9:
+    idx = np.where(~np.isnan(xy))[0]
+    if idx.shape[0] < N * min_valid_proportion or idx[0] > N * max_start_proportion or idx[-1] < N * min_end_proportion:
         return np.zeros(N) * np.nan
     else:
-        return eudi5x(xy, xy[valid_idx[0]])
+        return eudi5x(xy, xy[idx[0]])
 
 
-def compute_dispersal_multi(xy0, t0, t1, dt):
+def compute_dispersal_multi(xy0, t0, t1, dt, **kwargs):
+    """
+    Compute dispersal values for multiple agents over a time range.
+
+    Parameters:
+    ----------
+    xy0 : pd.DataFrame
+        A DataFrame containing agent positions and timestamps.
+    t0 : float
+        The start time for dispersal computation in sec.
+    t1 : float
+        The end time for dispersal computation in sec.
+    dt : float
+        Timestep of the timeseries.
+    **kwargs : keyword arguments
+        Additional arguments to pass to compute_dispersal_solo.
+
+    Returns:
+    -------
+    np.ndarray
+        An array of dispersal values for all agents at each time step.
+    int
+        The number of time steps.
+
+    Example:
+    --------
+    xy0 = pd.DataFrame({'AgentID': [1, 1, 2, 2],
+                       'Step': [0, 1, 0, 1],
+                       'x': [0.0, 1.0, 2.0, 3.0],
+                       'y': [0.0, 1.0, 2.0, 3.0]})
+
+    AA, Nt = compute_dispersal_multi(xy0, t0=0, t1=1, dt=1)
+
+    # AA will contain dispersal values, and Nt will be the number of time steps.
+    """
     s0 = int(t0 / dt)
     s1 = int(t1 / dt)
     xy = xy0.loc[(slice(s0, s1), slice(None)), ['x', 'y']]
 
-    AA = apply_per_level(xy, compute_dispersal_solo)
+    AA = apply_per_level(xy, compute_dispersal_solo, **kwargs)
     Nt = AA.shape[0]
-    N = xy0.index.unique('AgentID').values.shape[0]
+    N = xy0.index.unique('AgentID').size
     Nticks = xy0.index.unique('Step').size
 
     AA0 = np.zeros([Nticks, N]) * np.nan
@@ -111,11 +175,39 @@ def compute_dispersal_multi(xy0, t0, t1, dt):
 
 
 def compute_component_velocity(xy, angles, dt, return_dst=False):
-    x = xy[:, 0]
-    y = xy[:, 1]
-    dx = np.diff(x, prepend=[np.nan])
-    dy = np.diff(y, prepend=[np.nan])
+    """
+    Compute the component velocity along a given orientation angle.
+
+    This function calculates the component velocity of a set of 2D points (xy) along
+    the specified orientation angles. It can optionally return the displacement along
+    the orientation vector as well.
+
+    Parameters:
+    ----------
+    xy : ndarray
+        An array of shape (n, 2) representing the x and y coordinates of the points.
+    angles : ndarray
+        An array of shape (n,) containing the orientation angles in radians.
+    dt : float
+        The time interval for velocity calculation.
+    return_dst : bool, optional
+        If True, the function returns both velocities and displacements.
+        If False (default), it returns only velocities.
+
+    Returns:
+    -------
+    ndarray
+        An array of component velocities calculated along the specified angles.
+
+    ndarray (optional)
+        An array of displacements along the specified orientation angles.
+        Returned only if `return_dst` is True.
+
+    """
+    dx = np.diff(xy[:, 0], prepend=np.nan)
+    dy = np.diff(xy[:, 1], prepend=np.nan)
     d_temp = np.sqrt(dx ** 2 + dy ** 2)
+
     # This is the angle of the displacement vector relative to x-axis
     rads = np.arctan2(dy, dx)
     # And this is the angle of the displacement vector relative to the front-segment orientation vector
@@ -130,10 +222,38 @@ def compute_component_velocity(xy, angles, dt, return_dst=False):
 
 
 def compute_velocity_threshold(v, Nbins=500, max_v=None, kernel_width=0.02):
+    """
+    Compute a velocity threshold using a density-based approach.
+
+    Parameters:
+    ----------
+    v : array-like
+        The input velocity data.
+    Nbins : int, optional
+        Number of bins for the velocity histogram. Default is 500.
+    max_v : float or None, optional
+        Maximum velocity value. If None, it is computed from the data. Default is None.
+    kernel_width : float, optional
+        Width of the Gaussian kernel for density estimation. Default is 0.02.
+
+    Returns:
+    -------
+    float
+        The computed velocity threshold.
+
+    Notes:
+    -----
+    This function calculates a velocity threshold by estimating the density of the velocity data.
+    It uses a histogram with `Nbins` bins, applies a Gaussian kernel of width `kernel_width`,
+    and identifies the minimum between local maxima and minima in the density curve.
+
+    """
+
     import matplotlib.pyplot as plt
     if max_v is None:
         max_v = np.nanmax(v)
     bins = np.linspace(0, max_v, Nbins)
+
     hist, bin_edges = np.histogram(v, bins=bins, density=True)
     vals = bin_edges[0:-1] + 0.5 * np.diff(bin_edges)
     hist += 1 / len(v)
@@ -258,30 +378,42 @@ def body_contour(points=[(0.9, 0.1), (0.05, 0.1)], start=(1, 0), stop=(0, 0)):
 
 
 def apply_per_level(s, func, level='AgentID', **kwargs):
-    '''
-    Apply a function to each subdataframe of a dataframe after grouping by level
+    """
+    Apply a function to each subdataframe of a MultiIndex DataFrame after grouping by a specified level.
 
-    Args:
-        level:
-        s: MultiIndex Dataframe with levels : ['Step', 'AgentID']
-        func:function to apply on each subdataframe
+    Parameters:
+    ----------
+    s : pandas.DataFrame
+        A MultiIndex DataFrame with levels ['Step', 'AgentID'].
+    func : function
+        The function to apply to each subdataframe.
+    level : str, optional
+        The level by which to group the DataFrame. Default is 'AgentID'.
+    **kwargs : dict
+        Additional keyword arguments to pass to the 'func' function.
 
     Returns:
-        A : Array of dimensions [Nticks, Nids]
-    '''
+    -------
+    numpy.ndarray
+        An array of dimensions [N_ticks, N_ids], where N_ticks is the number of unique 'Step' values,
+        and N_ids is the number of unique 'AgentID' values.
+
+    Notes:
+    -----
+    This function groups the DataFrame 's' by the specified 'level', applies 'func' to each subdataframe, and
+    returns the results as a numpy array.
+    """
 
     def init_A(Ndims):
         ids = s.index.unique('AgentID').values
         Nids = len(ids)
         N = s.index.unique('Step').size
-
         if Ndims == 1:
-            A = np.zeros([N, Nids]) * np.nan
+            return np.zeros([N, Nids]) * np.nan
         elif Ndims == 2:
-            A = np.zeros([N, Nids, Ai.shape[1]]) * np.nan
+            return np.zeros([N, Nids, Ai.shape[1]]) * np.nan
         else:
             raise ValueError('Not implemented')
-        return A
 
     A = None
 
@@ -291,12 +423,10 @@ def apply_per_level(s, func, level='AgentID', **kwargs):
         Ai = func(ss, **kwargs)
         if A is None:
             A = init_A(len(Ai.shape))
-            # print(i,'ff')
         if level == 'AgentID':
             A[:, i] = Ai
         elif level == 'Step':
             A[i, :] = Ai
-    # print(s)
     return A
 
 
@@ -332,6 +462,21 @@ def eudist(xy):
 
 
 def eudi5x(a, b):
+    """
+    Calculate the Euclidean distance between points in arrays 'a' and 'b'.
+
+    Parameters:
+    ----------
+    a : numpy.ndarray
+        An array containing the coordinates of the first set of points.
+    b : numpy.ndarray
+        An array containing the coordinates of the second set of points.
+
+    Returns:
+    -------
+    numpy.ndarray
+        An array of Euclidean distances between each pair of points from 'a' and 'b'.
+    """
     return np.sqrt(np.sum((a - np.array(b)) ** 2, axis=1))
 
 
@@ -345,15 +490,41 @@ def compute_dst(s, point=''):
 
 
 def comp_extrema(a, order=3, threshold=None, return_2D=True):
+    """
+    Compute local extrema in a one-dimensional array or time series.
+
+    Parameters:
+    ----------
+    a : pd.Series
+        The input time series data as a pandas Series.
+    order : int, optional
+        The order of the extrema detection. Default is 3.
+    threshold : tuple, optional
+        A tuple (min_threshold, max_threshold) to filter extrema based on values.
+        Default is None, which means no thresholding is applied.
+    return_2D : bool, optional
+        If True, returns a 2D array with flags for minima and maxima.
+        If False, returns a 1D array with -1 for minima, 1 for maxima, and NaN for non-extrema.
+        Default is True.
+
+    Returns:
+    -------
+    np.ndarray
+        An array with extrema flags based on the specified criteria.
+
+    Notes:
+    ------
+    - This function uses `scipy.signal.argrelextrema` for extrema detection.
+    """
     A = a.values
     N = A.shape[0]
     i_min = sp.signal.argrelextrema(A, np.less_equal, order=order)[0]
     i_max = sp.signal.argrelextrema(A, np.greater_equal, order=order)[0]
 
-    i_min_dif = np.diff(i_min, append=order)
-    i_max_dif = np.diff(i_max, append=order)
-    i_min = i_min[i_min_dif >= order]
-    i_max = i_max[i_max_dif >= order]
+    # i_min_dif = np.diff(i_min, append=order)
+    # i_max_dif = np.diff(i_max, append=order)
+    # i_min = i_min[i_min_dif >= order]
+    # i_max = i_max[i_max_dif >= order]
 
     if threshold is not None:
         t0 = a.index.min()
