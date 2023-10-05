@@ -321,6 +321,90 @@ class ParamLarvaDataset(param.Parameterized):
         Ady = np.diff(Ay)
         return np.arctan2(Ady, Adx) % (2 * np.pi)
 
+    # def comp_seg_orientations(self):
+    #     s, e, c = self.data
+    #     mid = self.midline_xy_data
+    #     seg_ors = self.midline_seg_orients_from_mid(mid)
+    #     return seg_ors
+
+    def comp_orientations(self):
+        s, e, c = self.data
+        mid = self.midline_xy_data
+        s[c.seg_orientations] = self.midline_seg_orients_from_mid(mid)
+        # or_pars=c.seg_orientations
+        for vec, (idx1, idx2) in c.vector_idx.items():
+            par = aux.nam.orient(vec)
+            x, y = mid[:, idx2, 0] - mid[:, idx1, 0], mid[:, idx2, 1] - mid[:, idx1, 1]
+            s[par] = np.arctan2(y, x) % 2 * np.pi
+            # or_pars.append(par)
+        # for p in or_pars:
+        #     p_unw = aux.nam.unwrap(p)
+        #     s[p_unw] = aux.apply_per_level(s[p], aux.unwrap_deg).flatten()
+
+        # ss = s[p_unw]
+        # e[nam.initial(par)] = s[par].dropna().groupby('AgentID').first()
+
+    def comp_angular(self, is_last=False):
+        self.comp_orientations()
+        self.comp_bend()
+        self.comp_ang_moments()
+        if is_last:
+            self.save()
+
+    def comp_bend(self):
+        s, e, c = self.data
+        if c.bend == 'from_vectors':
+            reg.vprint(f'Computing bending angle as the difference between front and rear orients')
+            fo, ro = nam.orient(['front', 'rear'])
+            a = np.remainder(s[fo] - s[ro], 2 * np.pi)
+            a[a > np.pi] -= 2 * np.pi
+        elif c.bend == 'from_angles':
+            reg.vprint(f'Computing bending angle as the sum of the first {c.Nbend_angles} front angles')
+            Ada = np.diff(s[c.seg_orientations]) % (2 * np.pi)
+            Ada[Ada > np.pi] -= 2 * np.pi
+            a = np.sum(Ada[:, :c.Nbend_angles], axis=1)
+            s[c.angles] = Ada
+        else:
+            raise
+
+        s['bend'] = np.degrees(a)
+
+    def comp_ang_moments(self, pars=None):
+        s, e, c = self.data
+        if pars is None:
+            vecs = ['head', 'tail', 'front', 'rear']
+            ho, to, fo, ro = aux.nam.orient(vecs)
+            if c.Npoints > 3:
+                base_pars = ['bend', ho, to, fo, ro]
+                pars = base_pars + c.angles + c.seg_orientations
+            else:
+                pars = [ho]
+
+        pars = aux.existing_cols(aux.unique_list(pars), s)
+
+        for p in pars:
+            vel = nam.vel(p)
+            acc = nam.acc(p)
+            # ss = s[p]
+            if p.endswith('orientation'):
+                p_unw = aux.nam.unwrap(p)
+                s[p_unw] = self.apply_per_level(pars=[p], func=aux.unwrap_deg).flatten()
+                pp=p_unw
+            else:
+                pp=p
+            s[vel] = self.apply_per_level(pars=[pp], func=aux.rate, dt=c.dt).flatten()
+            s[acc] = self.apply_per_level(pars=[vel], func=aux.rate, dt=c.dt).flatten()
+
+            self.comp_operators(pars=[p, vel, acc])
+
+            # if p in ['bend', ho, to, fo, ro]:
+            #     for pp in [p, vel, acc]:
+            #         temp = s[pp].dropna().groupby('AgentID')
+            #         e[aux.nam.mean(pp)] = temp.mean()
+            #         e[aux.nam.std(pp)] = temp.std()
+            #         e[aux.nam.initial(pp)] = temp.first()
+            # s[[aux.nam.min(pp), aux.nam.max(pp)]] = comp_extrema_solo(sss, dt=dt, **kwargs).reshape(-1, 2)
+
     def comp_xy_moments(self, point=''):
         s, e, c = self.data
         xy = nam.xy(point)
@@ -349,14 +433,13 @@ class ParamLarvaDataset(param.Parameterized):
         e[nam.mean(svel)] = s[svel].dropna().groupby('AgentID').mean()
 
     def comp_tortuosity(self, dur=20, **kwargs):
-        from ..process.spatial import rolling_window,straightness_index
+        from ..process.spatial import rolling_window, straightness_index
         s, e, c = self.data
         p = reg.getPar(f'tor{dur}')
         w = int(dur / c.dt / 2)
         ticks = np.arange(c.Nticks)
-        rolling_ticks = rolling_window(ticks, w)
         s[p] = self.apply_per_level(pars=['x', 'y', 'dst'], func=straightness_index,
-                                    rolling_ticks=rolling_ticks, **kwargs).flatten()
+                                    rolling_ticks=rolling_window(ticks, w), **kwargs).flatten()
         e[nam.mean(p)] = s[p].groupby('AgentID').mean()
         e[nam.std(p)] = s[p].groupby('AgentID').std()
 
@@ -375,6 +458,8 @@ class ParamLarvaDataset(param.Parameterized):
             g = s[p].dropna().groupby('AgentID')
             e[nam.max(p)] = g.max()
             e[nam.mean(p)] = g.mean()
+            e[nam.std(p)] = g.std()
+            e[nam.initial(p)] = g.first()
             e[nam.final(p)] = g.last()
             e[nam.cum(p)] = g.sum()
 
@@ -386,7 +471,7 @@ class ParamLarvaDataset(param.Parameterized):
         self.step_data['length'] = np.sum(np.sum(np.diff(self.midline_xy_data, axis=1) ** 2, axis=2) ** (1 / 2), axis=1)
         self.endpoint_data['length'] = self.step_data['length'].groupby('AgentID').quantile(q=0.5)
 
-    def comp_spatial(self, dsp_starts=[0], dsp_stops=[40, 60],tor_durs=[5,10,20], is_last=True):
+    def comp_spatial(self, dsp_starts=[0], dsp_stops=[40, 60], tor_durs=[5, 10, 20], is_last=False):
         self.comp_centroid()
         self.comp_length()
         self.step_data[self.config.traj_xy] = self.step_data[self.config.point_xy]
@@ -394,7 +479,7 @@ class ParamLarvaDataset(param.Parameterized):
             self.comp_xy_moments(point)
         for t0, t1 in itertools.product(dsp_starts, dsp_stops):
             self.comp_dispersal(t0, t1)
-        for dur in tor_durs :
+        for dur in tor_durs:
             self.comp_tortuosity(dur)
         if is_last:
             self.save()
