@@ -500,6 +500,10 @@ def concatenate_larva_tracks(dfs, dt):
         df[aID] = f'Larva_{i}'
         df.set_index(keys=[aID], inplace=True)
     s = pd.concat(dfs, axis=0, sort=False)
+    try :
+        s = s.astype(float)
+    except :
+        pass
     # I add this because some 'na' values were found
     s = s.mask(s == 'na', np.nan)
     return s
