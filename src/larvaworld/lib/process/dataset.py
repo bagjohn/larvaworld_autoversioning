@@ -268,20 +268,25 @@ class ParamLarvaDataset(param.Parameterized):
         dst = nam.dst(point)
         vel = nam.vel(point)
         acc = nam.acc(point)
+        cdst = nam.cum(dst)
 
         sdst=nam.scal(dst)
         svel=nam.scal(vel)
+        csdst=nam.cum(sdst)
 
         s[dst] = aux.apply_per_level(s[xy], aux.eudist).flatten()
-        s[vel] = aux.apply_per_level(s[dst], aux.rate, dt=c.dt).flatten()
+        s[vel] = s[dst]/c.dt
         s[acc] = aux.apply_per_level(s[vel], aux.rate, dt=c.dt).flatten()
 
         self.scale_to_length(pars=[dst, vel, acc])
 
-        e[nam.cum(dst)] = s[dst].dropna().groupby('AgentID').sum()
+        s[cdst] = s[dst].groupby('AgentID').cumsum()
+        s[csdst] = s[sdst].groupby('AgentID').cumsum()
+
+        e[cdst] = s[dst].dropna().groupby('AgentID').sum()
         e[nam.mean(vel)] = s[vel].dropna().groupby('AgentID').mean()
 
-        e[nam.cum(sdst)] = s[sdst].dropna().groupby('AgentID').sum()
+        e[csdst] = s[sdst].dropna().groupby('AgentID').sum()
         e[nam.mean(svel)] = s[svel].dropna().groupby('AgentID').mean()
 
 
