@@ -1,11 +1,11 @@
 import larvaworld
 import pandas as pd
-from larvaworld.lib.process.importing import import_dataset, import_datasets
-
+from larvaworld.lib import reg
 
 def test_import_Schleyer():
+    g = reg.conf.LabFormat.get('Schleyer')
     kws0 = {
-        'labID': 'Schleyer',
+        #'labID': 'Schleyer',
         'group_id': 'exploration',
     }
 
@@ -33,15 +33,17 @@ def test_import_Schleyer():
     }
 
     for kws in [kws1, kws2]:
-        d = import_dataset(**kws)
+        d = g.import_dataset(**kws)
         assert isinstance(d, larvaworld.lib.LarvaDataset)
         s = d.step_data
         assert isinstance(s, pd.DataFrame)
 
 
 def xx_test_import_Jovanic():
+    g = reg.conf.LabFormat.get('Jovanic')
+
     kws0 = {
-        'labID': 'Jovanic',
+     #   'labID': 'Jovanic',
         'merged': False
     }
 
@@ -53,6 +55,6 @@ def xx_test_import_Jovanic():
     }
 
     for kws in [kws1]:
-        ds = import_datasets(**kws)
+        ds = g.import_datasets(**kws)
         for d in ds:
             assert isinstance(d, larvaworld.lib.LarvaDataset)

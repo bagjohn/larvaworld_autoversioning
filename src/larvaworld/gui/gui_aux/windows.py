@@ -270,9 +270,9 @@ def import_window(labID, raw_dic):
     from ...gui.tabs.larvaworld_gui import check_togglesNcollapsibles
     from .elements import PadDict
     g = reg.conf.LabFormat.get(labID)
-    group_dir = g.path
-    raw_folder = f'{group_dir}/raw'
-    proc_folder = f'{group_dir}/processed'
+    # group_dir = g.path
+    raw_folder = g.raw_folder
+    proc_folder = g.processed_folder
 
     M, E = 'Merge', 'Enumerate'
     E0 = f'{E}_id'
@@ -332,11 +332,10 @@ def import_window(labID, raw_dic):
             if e == 'Ok':
                 conf = s1.get_dict(v, w)
                 kws = {
-                    'labID': labID,
+                    #'labID': labID,
                     # 'larva_groups': {gID: preg.get_null('LarvaGroup', sample=None)},
                     **conf}
                 w.close()
-                from ...lib.process.importing import import_dataset
                 targets = [f.replace(raw_folder, proc_folder) for f in raw_dirs]
                 if not merge:
                     print(f'------ Building {N} discrete datasets ------')
@@ -373,7 +372,7 @@ def import_window(labID, raw_dic):
                                             n.startswith(source_id)],
                                 **kws
                             }
-                        dd = import_dataset(**kws0)
+                        dd = g.import_dataset(**kws0)
 
                         if dd is not None:
                             proc_dir[target_id] = dd
@@ -402,7 +401,7 @@ def import_window(labID, raw_dic):
                         }
                     elif labID in ['Jovanic']:
                         raise NotImplemented
-                    dd = import_dataset(**kws0)
+                    dd = g.import_dataset(**kws0)
                     proc_dir[dd.id] = dd
                 break
     return proc_dir
