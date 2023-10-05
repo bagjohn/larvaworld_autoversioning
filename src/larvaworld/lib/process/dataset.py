@@ -13,6 +13,7 @@ import warnings
 import param
 
 from .. import reg, aux
+from ..aux import nam
 from ..param import ClassAttr, StepDataFrame, EndpointDataFrame, ClassDict
 
 __all__ = [
@@ -205,7 +206,7 @@ class ParamLarvaDataset(param.Parameterized):
     def contour_xy_data_byID(self):
         xy = self.config.contour_xy
         assert xy.exist_in(self.step_data)
-        grouped = self.step_data[self.config.contour_xy].groupby('AgentID')
+        grouped = self.step_data[xy].groupby('AgentID')
         return aux.AttrDict({id: df.values.reshape([-1, self.config.Ncontour, 2]) for id, df in grouped})
 
     @property
@@ -214,6 +215,18 @@ class ParamLarvaDataset(param.Parameterized):
         assert xy.exist_in(self.step_data)
         grouped = self.step_data[xy].groupby('AgentID')
         return aux.AttrDict({id: df.values.reshape([-1, self.config.Npoints, 2]) for id, df in grouped})
+
+    @property
+    def traj_xy_data_byID(self):
+        s=self.step_data
+        xy = self.config.traj_xy
+        if not xy.exist_in(s) :
+            xy0=self.config.point_xy
+            assert xy0.exist_in(s)
+            s[xy]=s[xy0]
+        assert xy.exist_in(s)
+        grouped = s[xy].groupby('AgentID')
+        return aux.AttrDict({id: df.values for id, df in grouped})
 
     @property
     def midline_xy_data(self):
@@ -249,14 +262,69 @@ class ParamLarvaDataset(param.Parameterized):
         Ady = np.diff(Ay)
         return np.arctan2(Ady, Adx) % (2 * np.pi)
 
+    def comp_xy_moments(self, point=''):
+        s, e, c = self.data
+        xy=nam.xy(point)
+        dst = nam.dst(point)
+        vel = nam.vel(point)
+        acc = nam.acc(point)
+
+        sdst=nam.scal(dst)
+        svel=nam.scal(vel)
+
+        s[dst] = aux.apply_per_level(s[xy], aux.eudist).flatten()
+        s[vel] = aux.apply_per_level(s[dst], aux.rate, dt=c.dt).flatten()
+        s[acc] = aux.apply_per_level(s[vel], aux.rate, dt=c.dt).flatten()
+
+        self.scale_to_length(pars=[dst, vel.acc])
+
+        e[nam.cum(dst)] = s[dst].dropna().groupby('AgentID').sum()
+        e[nam.mean(vel)] = s[vel].dropna().groupby('AgentID').mean()
+
+        e[nam.cum(sdst)] = s[sdst].dropna().groupby('AgentID').sum()
+        e[nam.mean(svel)] = s[svel].dropna().groupby('AgentID').mean()
+
+
+
+
     def comp_centroid(self):
         c = self.config
-        self.step_data[c.centroid_xy] = np.sum(self.step_data[c.contour_xy].values.reshape([-1, c.Ncontour, 2]),
-                                               axis=1) / c.Ncontour
+        self.step_data[c.centroid_xy] = np.sum(self.contour_xy_data, axis=1) / c.Ncontour
 
     def comp_length(self):
         self.step_data['length'] = np.sum(np.sum(np.diff(self.midline_xy_data, axis=1) ** 2, axis=2) ** (1 / 2), axis=1)
         self.endpoint_data['length'] = self.step_data['length'].groupby('AgentID').quantile(q=0.5)
+
+    def comp_spatial(self, is_last=True):
+        self.comp_centroid()
+        self.comp_length()
+        self.step_data[self.config.traj_xy] = self.step_data[self.config.point_xy]
+        for point in ['', 'centroid']:
+            self.comp_xy_moments(point)
+        if is_last :
+            self.save()
+
+    def scale_to_length(self, pars=None, keys=None):
+        s, e, c = self.data
+        l_par = 'length'
+        if l_par not in e.keys():
+            self.comp_length()
+        l = e[l_par]
+        if pars is None:
+            if keys is not None:
+                pars = reg.getPar(keys)
+            else:
+                raise ValueError('No parameter names or keys provided.')
+        s_pars = aux.existing_cols(pars, s)
+
+        if len(s_pars) > 0:
+            ids = s.index.get_level_values('AgentID').values
+            ls = l.loc[ids].values
+            s[nam.scal(s_pars)] = (s[s_pars].values.T / ls).T
+        e_pars = aux.existing_cols(pars, e)
+        if len(e_pars) > 0:
+            e[nam.scal(e_pars)] = (e[e_pars].values.T / l.values).T
+
 
     def get_par(self, par=None, k=None, key='step'):
         s, e = self.step_data, self.endpoint_data

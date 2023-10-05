@@ -108,6 +108,10 @@ class XYops(NestedConf):
         return aux.nam.xy('centroid')
 
     @property
+    def traj_xy(self):
+        return aux.nam.xy('')
+
+    @property
     def all_xy(self, flat=True):
         return aux.nam.xy(self.midline_points + self.contour_points + ['centroid', ''], flat=flat)
 
@@ -217,6 +221,10 @@ class TrackedPointIdx(XYops):
         self.param.point_idx.bounds = (hardmin, hardmax) = (-1, self.Npoints)
         self.point_idx = self.param.point_idx.crop_to_bounds(self.point_idx)
         self.point = self.get_track_point(self.point_idx)
+
+    @property
+    def point_xy(self):
+        return aux.nam.xy(self.point)
 
 
 class SimMetricOps(TrackedPointIdx):

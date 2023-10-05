@@ -3,7 +3,7 @@
 
 [tool.poetry]
 name='larvaworld'
-version = "0.0.94"
+version = "0.0.95"
 description='Drosophila larva behavioral analysis and simulation platform'
 authors=['Panagiotis Sakagiannis']
 license = "GPL-3"

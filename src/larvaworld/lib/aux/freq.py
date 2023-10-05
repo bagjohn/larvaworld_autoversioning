@@ -73,5 +73,5 @@ def fft_freqs(s, e, c):
 
 
 def get_freq(d, par, fr_range=(0.0, +np.inf)):
-    s, e, c = d.step_data, d.endpoint_data, d.config
+    s, e, c = d.data
     e[nam.freq(par)] = s[par].groupby("AgentID").apply(fft_max, dt=c.dt, fr_range=fr_range)
