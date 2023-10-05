@@ -409,9 +409,6 @@ class WindScape(SpatialEntity):
 
     def generate_scapelines(self, D, N, A):
         ds = D / N * np.sqrt(2)
-        # R= aux.rotationMatrix(-A)
-        # [[(-D, (i - N / 2) * ds),(D, (i - N / 2) * ds)] for i in range(N)]
-
         p0s = aux.rotate_points_around_point([(-D, (i - N / 2) * ds) for i in range(N)], -A)
         p1s = aux.rotate_points_around_point([(D, (i - N / 2) * ds) for i in range(N)], -A)
         return [(p0, p1) for p0, p1 in zip(p0s, p1s)]
@@ -438,9 +435,10 @@ class WindScape(SpatialEntity):
 
     def update(self):
         for t, args in self.events.items():
+            wd=args['wind_direction']
             if self.model.Nticks == t:
-                if args['wind_direction'] is not None and args['wind_direction'] != self.wind_direction:
-                    self.set_wind_direction(args['wind_direction'])
+                if wd is not None and wd != self.wind_direction:
+                    self.set_wind_direction(wd)
                 self.wind_speed = args['wind_speed']
 
 

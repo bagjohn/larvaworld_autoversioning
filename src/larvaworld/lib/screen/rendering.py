@@ -264,7 +264,7 @@ class Viewer(ScreenWindowAreaBackground):
             self.img_writer.close()
         del self
 
-        print('Screen closed')
+        reg.vprint('Screen closed', 1)
 
     @staticmethod
     def load_from_file(file_path, **kwargs):

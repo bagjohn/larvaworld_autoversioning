@@ -25,27 +25,33 @@ __all__ = [
 
 
 class MediaDrawOps(NestedConf):
-    image_mode = OptionalSelector(objects=['final', 'snapshots', 'overlap'],doc='When to save images.')
-    image_file = String(None,doc='Filename for the saved image. File extension png sutomatically added.')
-    snapshot_interval_in_sec= PositiveInteger(60, softmax=100,doc='Sec between snapshots')
-    video_file = String(None,doc='Filename for the saved video. File extension mp4 sutomatically added.')
+    image_mode = OptionalSelector(objects=['final', 'snapshots', 'overlap'], doc='When to save images.')
+    image_file = String(None, doc='Filename for the saved image. File extension png sutomatically added.')
+    snapshot_interval_in_sec = PositiveInteger(60, softmax=100, doc='Sec between snapshots')
+    video_file = String(None, doc='Filename for the saved video. File extension mp4 sutomatically added.')
     media_dir = String(None, doc='Directory where to save media. Defaults tp model.dir if not provided.')
-    fps = PositiveInteger(60, softmax=100,doc='Video speed')
-    save_video= Boolean(False, doc='Whether to save a video.')
-    mode=OptionalSelector(objects=['video', 'image'],doc='Screen mode.')
+    fps = PositiveInteger(60, softmax=100, doc='Video speed')
+    save_video = Boolean(False, doc='Whether to save a video.')
+    mode = OptionalSelector(objects=['video', 'image'], doc='Screen mode.')
     show_display = Boolean(False, doc='Whether to launch the pygame-visualization.')
 
+    @property
+    def overlap_mode(self):
+        return self.image_mode=='overlap'
+
+
 class AgentDrawOps(NestedConf):
-    visible_trails = Boolean(True,doc='Draw the larva trajectories')
-    trail_dt = PositiveNumber(20,step=0.2,doc='Duration of the drawn trajectories')
-    trail_color = param.Selector(objects=['normal', 'linear', 'angular'], doc='Whether to display larva tracks according to the instantaneous forward or angular velocity.')
-    draw_sensors = Boolean(False,doc='Draw the larva sensors')
-    draw_contour = Boolean(True,doc='Draw the larva contour')
-    draw_segs = Boolean(True,doc='Draw the larva body segments')
-    draw_midline = Boolean(True,doc='Draw the larva midline')
-    draw_centroid = Boolean(False,doc='Draw the larva centroid')
-    draw_head = Boolean(False,doc='Draw the larva head')
-    draw_orientations = Boolean(False,doc='Draw the larva body vector orientations')
+    visible_trails = Boolean(True, doc='Draw the larva trajectories')
+    trail_dt = PositiveNumber(20, step=0.2, doc='Duration of the drawn trajectories')
+    trail_color = param.Selector(objects=['normal', 'linear', 'angular'],
+                                 doc='Whether to display larva tracks according to the instantaneous forward or angular velocity.')
+    draw_sensors = Boolean(False, doc='Draw the larva sensors')
+    draw_contour = Boolean(True, doc='Draw the larva contour')
+    draw_segs = Boolean(True, doc='Draw the larva body segments')
+    draw_midline = Boolean(True, doc='Draw the larva midline')
+    draw_centroid = Boolean(False, doc='Draw the larva centroid')
+    draw_head = Boolean(False, doc='Draw the larva head')
+    draw_orientations = Boolean(False, doc='Draw the larva body vector orientations')
 
 
 class ColorDrawOps(NestedConf):
@@ -53,21 +59,23 @@ class ColorDrawOps(NestedConf):
     odor_aura = Boolean(False, doc='Draw the aura around odor sources')
     allow_clicks = Boolean(True, doc='Whether to allow input from display')
     black_background = Boolean(False, doc='Set the background color to black')
-    random_colors = Boolean(False,doc='Color each larva with a random color')
-    color_behavior = Boolean(False,doc='Color the larvae according to their instantaneous behavior')
+    random_colors = Boolean(False, doc='Color each larva with a random color')
+    color_behavior = Boolean(False, doc='Color the larvae according to their instantaneous behavior')
     panel_width = PositiveInteger(0, doc='The width of the side panel in pixels')
 
+
 # class VisOps(NestedConf):
-    # visible_clock = Boolean(True, doc='Whether clock is visible')
-    # visible_scale = Boolean(True, doc='Whether scale is visible')
-    # visible_state = Boolean(False, doc='Whether state is visible')
-    # visible_ids = Boolean(False, doc='Whether the agent IDs are visible')
+# visible_clock = Boolean(True, doc='Whether clock is visible')
+# visible_scale = Boolean(True, doc='Whether scale is visible')
+# visible_state = Boolean(False, doc='Whether state is visible')
+# visible_ids = Boolean(False, doc='Whether the agent IDs are visible')
 
-class ScreenOps(ColorDrawOps, AgentDrawOps, MediaDrawOps):pass
+class ScreenOps(ColorDrawOps, AgentDrawOps, MediaDrawOps): pass
 
-class BaseScreenManager(Area2DPixel,ScreenOps) :
 
-    def __init__(self, model, background_motion=None,vis_kwargs=None, video=None, **kwargs):
+class BaseScreenManager(Area2DPixel, ScreenOps):
+
+    def __init__(self, model, background_motion=None, vis_kwargs=None, video=None, **kwargs):
         m = self.model = model
         super().__init__(dims=aux.get_window_dims(m.space.dims), **kwargs)
         if self.model.offline:
@@ -78,13 +86,11 @@ class BaseScreenManager(Area2DPixel,ScreenOps) :
             self.image_file = str(m.id)
         if self.media_dir is None:
             self.media_dir = m.dir
-        self._fps= int(self.fps / m.dt)
+        self._fps = int(self.fps / m.dt)
         if vis_kwargs is not None:
-            self.mode=vis_kwargs.render.mode
-            # self.__dict__.update(vis_kwargs.aux)
-            if self.mode=='video' and not self.save_video:
-                self.show_display=True
-
+            self.mode = vis_kwargs.render.mode
+            if self.mode == 'video' and not self.save_video:
+                self.show_display = True
 
         self.bg = background_motion
 
@@ -107,10 +113,7 @@ class BaseScreenManager(Area2DPixel,ScreenOps) :
         self.screen_kws = aux.AttrDict({
             'manager': self,
 
-
         })
-
-
 
     def draw_agents(self, v):
 
@@ -119,15 +122,11 @@ class BaseScreenManager(Area2DPixel,ScreenOps) :
         for g in self.model.agents:
             g._draw(v=v)
 
-
-
-
-    def check(self,**kwargs):
+    def check(self, **kwargs):
         if self.v is None:
             self.v = self.initialize(**kwargs)
         elif self.v.close_requested():
             self.close()
-
 
     def close(self):
         self.v.close()
@@ -136,19 +135,18 @@ class BaseScreenManager(Area2DPixel,ScreenOps) :
         reg.vprint('Terminated by the user', 3)
         return
 
-
-    def render(self,**kwargs):
+    def render(self, **kwargs):
 
         if self.active:
             self.check(**kwargs)
-            if self.image_mode != 'overlap':
+            if not self.overlap_mode:
                 self.draw_arena(self.v)
 
             self.draw_agents(self.v)
             if self.show_display:
                 self.evaluate_input()
                 self.evaluate_graphs()
-            if self.image_mode != 'overlap':
+            if not self.overlap_mode:
                 self.draw_aux(self.v)
                 self.v.render()
 
@@ -164,7 +162,7 @@ class BaseScreenManager(Area2DPixel,ScreenOps) :
     def draw_arena(self, v):
         pass
 
-    def draw_aux(self, v,**kwargs):
+    def draw_aux(self, v, **kwargs):
         pass
 
     @property
@@ -179,12 +177,12 @@ class BaseScreenManager(Area2DPixel,ScreenOps) :
     def snapshot_tick(self):
         return (self.model.Nticks - 1) % self.snapshot_interval == 0
 
+
 class GA_ScreenManager(BaseScreenManager):
-    def __init__(self, panel_width=600,scene='no_boxes',**kwargs):
-        super().__init__(black_background=True,panel_width=panel_width,**kwargs)
+    def __init__(self, panel_width=600, scene='no_boxes', **kwargs):
+        super().__init__(black_background=True, panel_width=panel_width, **kwargs)
         self.screen_kws.caption = f'GA {self.model.experiment} : {self.model.id}'
         self.screen_kws.file_path = f'{reg.ROOT_DIR}/lib/sim/ga_scenes/{scene}.txt'
-
 
     def evaluate_input(self):
         for e in pygame.event.get():
@@ -196,19 +194,16 @@ class GA_ScreenManager(BaseScreenManager):
             elif e.type == pygame.KEYDOWN and (e.key == pygame.K_MINUS or e.key == 47 or e.key == 269):
                 self.v.decrease_fps()
 
-
-
-
     def initialize(self):
         v = Viewer.load_from_file(**self.screen_kws)
         self.side_panel = SidePanel(v)
-        print('Screen opened')
+        reg.vprint('Screen opened', 1)
         return v
 
     def draw_arena(self, v):
         v._window.fill(aux.Color.BLACK)
 
-    def draw_aux(self, v,**kwargs):
+    def draw_aux(self, v, **kwargs):
         self.side_panel.draw(v)
 
     def finalize(self):
@@ -216,37 +211,24 @@ class GA_ScreenManager(BaseScreenManager):
             self.v.close()
 
 
-
-
 class ScreenManager(BaseScreenManager):
     def __init__(self, **kwargs):
-
         super().__init__(**kwargs)
         self.screen_kws.caption = str(self.model.id)
 
-
-
-
     def initialize(self):
-
         v = Viewer(**self.screen_kws)
+        reg.vprint('Screen opened', 1)
         self.build_aux(v)
-
         self.draw_arena(v)
-
-        print('Screen opened')
         return v
 
-
-
-
-
-    def build_aux(self,v):
-        m=self.model
+    def build_aux(self, v):
+        m = self.model
         self.input_box = ScreenTextBoxRect(text_color='lightgreen', default_color='white',
-                                              frame_rect=v.get_rect_at_pos(),
-                                         font_type = "comicsansms",font_size = 40,
-        )
+                                           frame_rect=v.get_rect_at_pos(),
+                                           font_type="comicsansms", font_size=40,
+                                           )
         if self.intro_text:
             box = ScreenTextBoxRect(
                 text=m.configuration_text,
@@ -260,15 +242,14 @@ class ScreenManager(BaseScreenManager):
 
             self.draw_arena_tank(v)
 
-
-        kws={
-            'reference_area':v,
-            'default_color':'black',
+        kws = {
+            'reference_area': v,
+            'default_color': 'black',
         }
         self.screen_items = aux.AttrDict({
             'clock': SimulationClock(sim_step_in_sec=m.dt, **kws),
             'scale': SimulationScale(**kws),
-            'state': SimulationState(model=m,**kws),
+            'state': SimulationState(model=m, **kws),
         })
         self.screen_texts = aux.AttrDict({name: ScreenMsgText(text=name, **kws) for name in [
             'trail_dt',
@@ -297,28 +278,25 @@ class ScreenManager(BaseScreenManager):
             'windscape',
             'is_paused',
         ] + list(m.odor_layers.keys())
-                              })
-
-
-
+                                          })
 
     def step(self):
         self.check()
-        if self.active :
+        if self.active:
 
-            self.screen_items.clock.tick_clock()
+            self.screen_clock.tick_clock()
             if self.mode == 'video':
                 if self.image_mode != 'snapshots' or self.snapshot_tick:
                     self.render()
             elif self.mode == 'image':
-                if self.image_mode == 'overlap':
+                if self.overlap_mode:
                     self.render()
                 elif self.image_mode == 'snapshots' and self.snapshot_tick:
                     self.capture_snapshot()
 
     def finalize(self):
         if self.active:
-            if self.image_mode == 'overlap':
+            if self.overlap_mode:
                 self.v.render()
                 pygame.time.wait(5000)
                 # raise
@@ -331,18 +309,6 @@ class ScreenManager(BaseScreenManager):
         self.render()
         self.toggle('snapshot #')
         self.v.render()
-
-
-
-
-
-
-
-
-
-
-
-
 
     def draw_aux(self, v, **kwargs):
         v.draw_arena(self.tank_color, self.screen_color)
@@ -365,7 +331,6 @@ class ScreenManager(BaseScreenManager):
                 arena_drawn = True
                 break
 
-
         if not arena_drawn and m.food_grid is not None:
             m.food_grid._draw(v=v)
             # print(self.model.food_grid.visible)
@@ -374,8 +339,6 @@ class ScreenManager(BaseScreenManager):
         if not arena_drawn:
             self.draw_arena_tank(v)
 
-
-
         if m.windscape is not None:
             m.windscape._draw(v=v)
 
@@ -383,11 +346,8 @@ class ScreenManager(BaseScreenManager):
             b._draw(v=v)
         # self.model.borders._draw(v=v)
 
-
-
-
     def toggle(self, name, value=None, show=False, minus=False, plus=False, disp=None):
-        m=self.model
+        m = self.model
         if disp is None:
             disp = name
 
@@ -396,7 +356,7 @@ class ScreenManager(BaseScreenManager):
             value = self.snapshot_counter
             self.snapshot_counter += 1
         elif name == 'odorscape #':
-            reg.graphs.dict['odorscape'](odor_layers = m.odor_layers,save_to=m.plot_dir,
+            reg.graphs.dict['odorscape'](odor_layers=m.odor_layers, save_to=m.plot_dir,
                                          show=show, scale=m.scaling_factor, idx=self.odorscape_counter)
             value = self.odorscape_counter
             self.odorscape_counter += 1
@@ -408,7 +368,7 @@ class ScreenManager(BaseScreenManager):
             self.trail_dt = np.clip(self.trail_dt + 5 * dt, a_min=0, a_max=np.inf)
             value = self.trail_dt
         elif name == 'trail_color':
-            obs=self.param.trail_color.objects
+            obs = self.param.trail_color.objects
             self.trail_color = obs[(obs.index(self.trail_color) + 1) % len(obs)]
             value = self.trail_color
 
@@ -418,27 +378,18 @@ class ScreenManager(BaseScreenManager):
 
         self.screen_texts[name].flash_text(f'{disp} {value}')
 
-
         if name == 'random_colors':
             for f in m.agents:
                 color = aux.random_colors(1)[0] if self.random_colors else f.default_color
                 f.set_default_color(color)
         elif name == 'black_background':
-            for a in self.model.get_all_objects() + list(
+            for a in m.get_all_objects() + list(
                     self.screen_items.values()) + list(
-                    self.screen_texts.values()):
+                self.screen_texts.values()):
                 a.invert_default_color()
         elif name == 'larva_collisions':
 
-            self.model.eliminate_overlap()
-
-
-
-
-
-
-
-
+            m.eliminate_overlap()
 
     def evaluate_input(self):
 
@@ -461,14 +412,17 @@ class ScreenManager(BaseScreenManager):
                     self.toggle(name='zoom', value=self.v.zoom)
                 elif e.type == pygame.MOUSEBUTTONUP:
                     if e.button == 1:
-                        if not self.eval_selection(p=self.v.mouse_position, ctrl=pygame.key.get_mods() & pygame.KMOD_CTRL):
-                        #     self.model.add_agent(agent_class=self.selected_type, p0=tuple(p),
-                        #                 p1=tuple(self.mousebuttondown_pos))
+                        if not self.eval_selection(p=self.v.mouse_position,
+                                                   ctrl=pygame.key.get_mods() & pygame.KMOD_CTRL):
+                            #     self.model.add_agent(agent_class=self.selected_type, p0=tuple(p),
+                            #                 p1=tuple(self.mousebuttondown_pos))
                             pass
 
                     elif e.button == 3:
                         from larvaworld.gui.gui_aux.windows import set_agent_kwargs, object_menu
-                        loc = tuple(np.array([int(x) for x in os.environ['SDL_VIDEO_WINDOW_POS'].split(',')]) + np.array(pygame.mouse.get_pos()))
+                        loc = tuple(
+                            np.array([int(x) for x in os.environ['SDL_VIDEO_WINDOW_POS'].split(',')]) + np.array(
+                                pygame.mouse.get_pos()))
                         if len(self.selected_agents) > 0:
                             for sel in self.selected_agents:
                                 sel = set_agent_kwargs(sel, location=loc)
@@ -484,26 +438,24 @@ class ScreenManager(BaseScreenManager):
         # print(self.selected_agents)
 
     def eval_keypress(self, k):
-
-        # print(k)
+        m = self.model
         if k == 'visible_ids':
-            for a in self.model.agents + self.model.sources:
-                a.id_box.toggle_vis()
-                temp=a.id_box.visible
-        # elif name == 'color_behavior':
+            for a in m.agents + m.sources:
+                temp = a.id_box.toggle_vis()
+            # elif name == 'color_behavior':
             # if not self.color_behavior:
             #     for f in self.model.agents:
             #         f.set_color(f.default_color)
             self.toggle(k, 'ON' if temp else 'OFF', disp='IDs')
         elif k == 'visible_clock':
-            self.screen_items.clock.toggle_vis()
-            self.toggle(k,'ON' if self.screen_items.clock.visible else 'OFF', disp='clock')
+            vis=self.screen_clock.toggle_vis()
+            self.toggle(k, 'ON' if vis else 'OFF', disp='clock')
         elif k == 'visible_scale':
-            self.screen_items.scale.toggle_vis()
-            self.toggle(k, 'ON' if self.screen_items.scale.visible else 'OFF', disp='scale')
+            vis=self.screen_scale.toggle_vis()
+            self.toggle(k, 'ON' if vis else 'OFF', disp='scale')
         elif k == 'visible_state':
-            self.screen_items.state.toggle_vis()
-            self.toggle(k, 'ON' if self.screen_items.state.visible else 'OFF', disp='state')
+            vis=self.screen_state.toggle_vis()
+            self.toggle(k, 'ON' if vis else 'OFF', disp='state')
         elif k == '▲ trail duration':
             self.toggle('trail_dt', plus=True, disp='trail duration')
         elif k == '▼ trail duration':
@@ -525,18 +477,18 @@ class ScreenManager(BaseScreenManager):
         elif 'odorscape' in k:
             idx = int(k.split(' ')[-1])
             try:
-                layer_id = list(self.model.odor_layers.keys())[idx]
-                layer = self.model.odor_layers[layer_id]
-                layer.toggle_vis()
-                self.toggle(layer_id, 'ON' if layer.visible else 'OFF')
+                layer_id = list(m.odor_layers.keys())[idx]
+                layer = m.odor_layers[layer_id]
+                vis=layer.toggle_vis()
+                self.toggle(layer_id, 'ON' if vis else 'OFF')
             except:
                 pass
         elif k == 'snapshot':
             self.toggle('snapshot #')
         elif k == 'windscape':
             try:
-                self.model.windscape.toggle_vis()
-                self.toggle('windscape', 'ON' if self.model.windscape.visible else 'OFF')
+                vis=m.windscape.toggle_vis()
+                self.toggle('windscape', 'ON' if vis else 'OFF')
             except:
                 pass
         elif k == 'delete item':
@@ -544,7 +496,7 @@ class ScreenManager(BaseScreenManager):
             if delete_objects_window(self.selected_agents):
                 for f in self.selected_agents:
                     self.selected_agents.remove(f)
-                    self.model.delete_agent(f)
+                    m.delete_agent(f)
         elif k == 'dynamic graph':
             from larvaworld.lib.model.agents._larva import Larva
             if len(self.selected_agents) > 0:
@@ -569,7 +521,6 @@ class ScreenManager(BaseScreenManager):
                 self.dynamic_graphs.remove(g)
                 del g
 
-
     def eval_selection(self, p, ctrl):
         res = False if len(self.selected_agents) == 0 else True
         for f in self.model.get_all_objects():
@@ -586,6 +537,14 @@ class ScreenManager(BaseScreenManager):
                 self.selected_agents.remove(f)
         return res
 
+    @ property
+    def screen_clock(self):
+        return self.screen_items.clock
 
+    @property
+    def screen_scale(self):
+        return self.screen_items.scale
 
-
+    @property
+    def screen_state(self):
+        return self.screen_items.state

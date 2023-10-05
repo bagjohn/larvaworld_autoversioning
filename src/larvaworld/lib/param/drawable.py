@@ -67,6 +67,7 @@ class Viewable(NestedConf) :
     #@property
     def toggle_vis(self):
         self.visible = not self.visible
+        return self.visible
 
 class ViewableToggleable(Viewable):
     active = param.Boolean(False, doc='Whether entity is active')

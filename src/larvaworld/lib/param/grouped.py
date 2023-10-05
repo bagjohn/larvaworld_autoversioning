@@ -284,7 +284,7 @@ class AirPuff(NestedConf):
     direction = PositiveNumber(default=0.0, softmax=100.0, step=0.1, doc='The directions of the air puff in radians.')
     start_time = PositiveNumber(default=0.0, softmax=10000.0, step=1.0,
                                 doc='The starting time of the air-puff in seconds.')
-    N = PositiveInteger(softmax=10000,
+    N = OptionalPositiveInteger(default=None, softmax=10000,
                         doc='The number of repetitions of the puff. If N>1 an interval must be provided.')
     interval = PositiveNumber(default=5.0, softmax=10000.0, step=0.1,
                               doc='Whether the puff will reoccur at constant time intervals in seconds. Ignored if N=1.')
