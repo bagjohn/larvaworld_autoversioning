@@ -37,6 +37,10 @@ class MediaDrawOps(NestedConf):
     show_display = Boolean(False, doc='Whether to launch the pygame-visualization.')
 
     @property
+    def active(self):
+        return self.save_video or self.image_mode or self.show_display or (self.mode is not None)
+
+    @property
     def video_filepath(self):
         if self.media_dir is not None and self.video_file is not None :
             return f'{self.media_dir}/{self.video_file}.mp4'
@@ -114,7 +118,8 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
 
     def __init__(self, model, background_motion=None, vis_kwargs=None, video=None, **kwargs):
         m = self.model = model
-        super().__init__(dims=aux.get_window_dims(m.space.dims), **kwargs)
+        super().__init__(dims=aux.get_window_dims(m.p.env_params.arena.dims), **kwargs)
+        # super().__init__(dims=aux.get_window_dims(m.space.dims), **kwargs)
         if self.model.offline:
             self.show_display = False
         if self.video_file is None:
@@ -131,7 +136,7 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
 
         self.bg = background_motion
 
-        self.active = self.save_video or self.image_mode or self.show_display or (self.mode is not None)
+        # self.active = self.save_video or self.image_mode or self.show_display or (self.mode is not None)
         self.v = None
 
         self.selected_type = ''

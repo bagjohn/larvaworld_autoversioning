@@ -417,11 +417,8 @@ class ABModel(BasicABModel, reg.generators.SimConfigurationParams):
         """
 
         reg.generators.SimConfigurationParams.__init__(self, **kwargs)
-        # self.initialize_superclasses(self.parameters)
         self.parameters.steps = self.Nsteps
         self.parameters.agentpy_output_kws = {'exp_name': self.experiment, 'exp_id': self.id,
                                               'path': f'{self.data_dir}/agentpy_output'}
         BasicABModel.__init__(self, parameters=self.parameters, id=self.id)
 
-    # def initialize_superclasses(self, parameters,**kwargs):
-    #     pass
