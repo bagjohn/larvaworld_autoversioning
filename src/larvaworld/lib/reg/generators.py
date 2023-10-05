@@ -1,10 +1,11 @@
 import os
 import shutil
 
+import numpy as np
 import param
 
 from .. import reg, aux, util
-from ..param import BoundedArea, NestedConf, Larva_Distro, ClassAttr, SimTimeOps, \
+from ..param import Area, BoundedArea, NestedConf, Larva_Distro, ClassAttr, SimTimeOps, \
     SimMetricOps, ClassDict, EnrichConf, OptionalPositiveRange, OptionalSelector, OptionalPositiveInteger, \
     generate_xyNor_distro, Odor, Life, class_generator, SimOps, RuntimeOps, Epoch, RuntimeDataOps, RandomizedColor, \
     OptionalPositiveNumber, Filesystem, TrackerOps, PreprocessConf, Substrate, AirPuff
@@ -289,7 +290,7 @@ from ..model import Food, Border, WindScape, ThermoScape, FoodGrid, OdorScape, D
 gen = aux.AttrDict({
     'FoodGroup': class_generator(Food, mode='Group'),
     'Food': class_generator(Food),
-    'Arena': class_generator(BoundedArea),
+    'Arena': class_generator(Area),
     'Border': class_generator(Border),
     'Odor': class_generator(Odor),
     'Epoch': class_generator(Epoch),
@@ -359,7 +360,8 @@ class SimConfigurationParams(SimConfiguration):
             if runtype in reg.CONFTYPES:
                 ct = reg.conf[runtype]
                 if experiment is None:
-                    raise ValueError(f'Either a parameter dictionary or the ID of an available {runtype} configuration must be provided')
+                    raise ValueError(
+                        f'Either a parameter dictionary or the ID of an available {runtype} configuration must be provided')
                 elif experiment not in ct.confIDs:
                     raise ValueError(f'Experiment {experiment} not available in {runtype} configuration dictionary')
                 else:
@@ -774,3 +776,9 @@ class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
     @param.depends('agent_ids', watch=True)
     def update_Nagents(self):
         self.N = len(self.agent_ids)
+
+    @property
+    def arena_vertices(self):
+        a = self.env_params.arena
+        vs = BoundedArea(dims=a.dims, geometry=a.geometry).vertices
+        return np.array(vs)

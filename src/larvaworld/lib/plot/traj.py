@@ -24,15 +24,15 @@ __all__ = [
 ]
 
 
-
 def traj_1group(xy, c, unit='mm', title=None, single_color=False, **kwargs):
     ids = xy.index.unique('AgentID').values
     color = c.color if single_color else None
     scale = 1000 if unit == 'mm' else 1
     P = plot.AutoBasePlot(name=f'trajectories', **kwargs)
     ax = P.axs[0]
-    tank = aux.get_tank_polygon(c, return_polygon=False) * scale
-    tank=np.array(tank)
+    # tank = aux.get_tank_polygon(c, return_polygon=False) * scale
+    # tank=np.array(tank)
+    tank = c.arena_vertices * scale
     for id in ids:
         xy0 = xy.xs(id, level="AgentID").values * scale
         ax.plot(xy0[:, 0], xy0[:, 1], color=color)
@@ -47,15 +47,14 @@ def traj_1group(xy, c, unit='mm', title=None, single_color=False, **kwargs):
     return P.get()
 
 
-
-@reg.funcs.graph('trajectories', required={'traj':[]})
+@reg.funcs.graph('trajectories', required={'traj': []})
 def traj_grouped(unit='mm', name=None, subfolder='trajectories',
                  range=None, mode='default', single_color=False, **kwargs):
     if name is None:
         name = f'comparative_trajectories_{mode}'
 
     P = plot.AutoPlot(name=name, subfolder=subfolder,  # subplot_kw=dict(projection='polar'),
-                 build_kws={'Ncols': 'Ndatasets', 'wh': 5, 'sharex': True, 'sharey': True}, **kwargs)
+                      build_kws={'Ncols': 'Ndatasets', 'wh': 5, 'sharex': True, 'sharey': True}, **kwargs)
     for ii, (l, d) in enumerate(P.data_dict.items()):
         xy = d.load_traj(mode)
         c = d.config
@@ -70,13 +69,14 @@ def traj_grouped(unit='mm', name=None, subfolder='trajectories',
     P.adjust((0.1, 0.9), (0.2, 0.9), 0.1, 0.01)
     return P.get()
 
-def ax_conf_kws(kws, trange, Ndatasets,Nrows, i=0, ylab=None, ylim=None, xlim=None):
+
+def ax_conf_kws(kws, trange, Ndatasets, Nrows, i=0, ylab=None, ylim=None, xlim=None):
     conf_kws = {
         'ylab': kws.ylab if ylab is None else ylab,
         'ylim': kws.ylim if ylim is None else ylim,
         'xlim': (0, trange[-1]) if xlim is None else xlim,
         'xlab': r'time $(sec)$',
-        'xvis' : True if i == Nrows - 1 else False,
+        'xvis': True if i == Nrows - 1 else False,
     }
 
     leg_kws = {
@@ -87,6 +87,7 @@ def ax_conf_kws(kws, trange, Ndatasets,Nrows, i=0, ylab=None, ylim=None, xlim=No
     }
 
     return {**conf_kws, **leg_kws}
+
 
 def epoch_func(**kwargs):
     from larvaworld.lib.process.annotation import detect_turns, detect_strides, detect_pauses, process_epochs
@@ -127,7 +128,7 @@ def epoch_func(**kwargs):
     epoch_dict = aux.AttrDict({
         'stride': {
             'ylab': "velocity (1/sec)",
-            'ylim': (0.0,1.0),
+            'ylim': (0.0, 1.0),
             'labels': ['runs', 'pauses'],
             'chunk_cols': ["lightblue", "grey"],
             'func': stride_epochs,
@@ -136,7 +137,7 @@ def epoch_func(**kwargs):
         },
         'turn': {
             'ylab': "angular velocity (deg/sec)",
-            'ylim': (-100.0,100.0),
+            'ylim': (-100.0, 100.0),
             'labels': ['L turns', 'R turns'],
             'chunk_cols': ["lightgreen", "orange"],
             'func': turn_epochs,
@@ -173,20 +174,21 @@ def epoch_func(**kwargs):
                     for s0, s1 in epoch:
                         ax.axvspan(trange[s0], trange[s1], color=color, alpha=1.0)
 
-
             def ax_conf0(P, **kwargs):
-                ax_conf = ax_conf_kws(kws=kws, trange=trange, Ndatasets=P.Ndatasets,Nrows=P.Nrows, **kwargs)
+                ax_conf = ax_conf_kws(kws=kws, trange=trange, Ndatasets=P.Ndatasets, Nrows=P.Nrows, **kwargs)
                 return ax_conf
 
-            def P0_f(P, i=0,title=None,**kwargs):
+            def P0_f(P, i=0, title=None, **kwargs):
                 ax0_f(ax=P.axs[i], **kwargs)
                 ax_conf = ax_conf0(P=P, i=i, **kwargs)
                 P.conf_ax(i, title=title, **ax_conf)
+
             return P0_f
 
         return ss_f
 
     return epoch_f
+
 
 def track_annotated(epoch='stride', a=None, dt=0.1, a2plot=None, ylab=None, ylim=None, xlim=None,
                     slice=None, agent_idx=0, agent_id=None,
@@ -196,7 +198,7 @@ def track_annotated(epoch='stride', a=None, dt=0.1, a2plot=None, ylab=None, ylim
     temp = f'track_{slice[0]}-{slice[1]}' if slice is not None else f'track'
     name = f'{temp}_{agent_id}' if agent_id is not None else f'{temp}_{agent_idx}'
     P = plot.AutoPlot(name=name, subfolder=subfolder,
-                 build_kws={'Nrows': 'Ndatasets', 'w': 20, 'h': 5, 'sharex': True, 'sharey': True}, ** kwargs)
+                      build_kws={'Nrows': 'Ndatasets', 'w': 20, 'h': 5, 'sharex': True, 'sharey': True}, **kwargs)
 
     trange = np.arange(0, a.shape[0] * dt, dt)
 
@@ -277,11 +279,14 @@ def track_annotated(epoch='stride', a=None, dt=0.1, a2plot=None, ylab=None, ylim
     P.conf_ax(0, **conf_kws, **leg_kws)
     return P.get()
 
+
 def annotated_strideplot(**kwargs):
     return track_annotated(epoch='stride', **kwargs)
 
+
 def annotated_turnplot(**kwargs):
     return track_annotated(epoch='turn', **kwargs)
+
 
 def track_annotated_data(name=None, subfolder='tracks',
                          epoch='stride', a2plot_k=None, agent_idx=[3, 4, 5, 6, 7], dur=1, **kwargs):
@@ -290,8 +295,9 @@ def track_annotated_data(name=None, subfolder='tracks',
     Nidx = len(agent_idx)
 
     P = plot.AutoPlot(name=name, subfolder=subfolder,
-                 build_kws={'Nrows': 'Ndatasets', 'Nrows_coef': Nidx, 'Ncols': 1, 'w': 15, 'h': 3, 'sharex': True, 'sharey': True},
-                 **kwargs)
+                      build_kws={'Nrows': 'Ndatasets', 'Nrows_coef': Nidx, 'Ncols': 1, 'w': 15, 'h': 3, 'sharex': True,
+                                 'sharey': True},
+                      **kwargs)
     epoch_kdic = {
         'stride': 'sv',
         'turn': 'fov'
@@ -310,7 +316,7 @@ def track_annotated_data(name=None, subfolder='tracks',
     def get_a2plot(ss):
         return ss[par].values if par is not None else None
 
-    def get_title(idx,c,e, l):
+    def get_title(idx, c, e, l):
         id = c.agent_ids[idx]
         ee = e.loc[id]
 
@@ -342,7 +348,7 @@ def track_annotated_data(name=None, subfolder='tracks',
             ii = Nidx * jj + i
             id = c.agent_ids[idx]
             ss = s.xs(id, level='AgentID', drop_level=True).loc[:Nticks]
-            title=get_title(idx,c,e,l)
+            title = get_title(idx, c, e, l)
             kws1 = aux.AttrDict({
                 'agent_idx': idx,
                 'a': get_a(ss),
@@ -357,13 +363,16 @@ def track_annotated_data(name=None, subfolder='tracks',
     P.fig.align_ylabels(P.axs[:])
     return P.get()
 
+
 @reg.funcs.graph('stride track')
 def annotated_strideplot_data(**kwargs):
     return track_annotated_data(epoch='stride', **kwargs)
 
+
 @reg.funcs.graph('turn track')
 def annotated_turnplot_data(**kwargs):
     return track_annotated_data(epoch='turn', **kwargs)
+
 
 @reg.funcs.graph('marked strides')
 def plot_marked_strides(agent_idx=0, agent_id=None, slice=[20, 40], subfolder='individuals', **kwargs):
@@ -373,7 +382,8 @@ def plot_marked_strides(agent_idx=0, agent_id=None, slice=[20, 40], subfolder='i
     chunks = ['stride', 'pause']
     chunk_cols = ['lightblue', 'grey']
     p, ylab = reg.getPar('sv', to_return=['d', 'l'])
-    P = plot.AutoPlot(name=name, subfolder=subfolder,build_kws={'Nrows': 'Ndatasets', 'sharex': True,'sharey': True, 'w' : figx, 'h' : 5}, **kwargs)
+    P = plot.AutoPlot(name=name, subfolder=subfolder,
+                      build_kws={'Nrows': 'Ndatasets', 'sharex': True, 'sharey': True, 'w': figx, 'h': 5}, **kwargs)
     handles = [patches.Patch(color=col, label=n) for n, col in zip(['stride', 'pause'], chunk_cols)]
 
     for ii, (d, l) in enumerate(zip(P.datasets, P.labels)):
@@ -397,6 +407,7 @@ def plot_marked_strides(agent_idx=0, agent_id=None, slice=[20, 40], subfolder='i
     P.adjust((0.08, 0.95), (0.15, 0.95), H=0.1)
     return P.get()
 
+
 @reg.funcs.graph('sample tracks')
 def plot_sample_tracks(mode=['strides', 'turns'], agent_idx=0, agent_id=None, slice=[20, 40], subfolder='individuals',
                        **kwargs):
@@ -409,7 +420,8 @@ def plot_sample_tracks(mode=['strides', 'turns'], agent_idx=0, agent_id=None, sl
     figx = 15 * 6 * 3 if slice is None else int((t1 - t0) / 3)
     temp = f'sample_marked_{suf}_{t0}-{t1}'
     name = f'{temp}_{agent_id}' if agent_id is not None else f'{temp}_{agent_idx}'
-    P = plot.AutoPlot(name=name, subfolder=subfolder,build_kws={'Ncols':'Ndatasets','Nrows':Nrows, 'w':figx, 'h':5, 'sharey': True},  **kwargs)
+    P = plot.AutoPlot(name=name, subfolder=subfolder,
+                      build_kws={'Ncols': 'Ndatasets', 'Nrows': Nrows, 'w': figx, 'h': 5, 'sharey': True}, **kwargs)
 
     for ii, (l, d) in enumerate(P.data_dict.items()):
         for jj, key in enumerate(mode):
