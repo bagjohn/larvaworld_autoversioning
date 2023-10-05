@@ -366,11 +366,10 @@ class ScreenManager(BaseScreenManager):
             if layer.visible:
                 layer.draw(v)
                 arena_drawn = True
-                #break
+                break
 
         if not arena_drawn and m.food_grid is not None:
             m.food_grid._draw(v=v)
-            # print(self.model.food_grid.visible)
             arena_drawn = True
 
         if not arena_drawn:
@@ -381,7 +380,6 @@ class ScreenManager(BaseScreenManager):
 
         for b in m.borders:
             b._draw(v=v)
-        # self.model.borders._draw(v=v)
 
     def toggle(self, name, value=None, show=False, minus=False, plus=False, disp=None):
         m = self.model
