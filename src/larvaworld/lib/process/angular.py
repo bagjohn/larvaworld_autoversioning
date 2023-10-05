@@ -124,7 +124,7 @@ def angular_processing(s, e, c, d=None, recompute=False, mode='minimal', **kwarg
 
             s[fo] = aux.apply_per_level(s[['x', 'y']], func).flatten()
         else:
-            Axy = s[c.midline_xy].values.astype(float)
+            Axy = s[c.midline_xy].values
             Ax, Ay = Axy[:, ::2], Axy[:, 1::2]
             Adx = np.diff(Ax)
             Ady = np.diff(Ay)
