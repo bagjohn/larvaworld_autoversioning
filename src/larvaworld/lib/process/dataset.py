@@ -90,8 +90,27 @@ class ParamLarvaDataset(param.Parameterized):
         return self.endpoint_data
 
     @property
+    def end_ps(self):
+        return aux.SuperList(self.endpoint_data.columns).sorted
+
+    @property
+    def step_ps(self):
+        return aux.SuperList(self.step_data.columns).sorted
+
+    @property
+    def end_ks(self):
+        return aux.SuperList(reg.getPar(self.end_ps, to_return='k')).sorted
+
+    @property
+    def step_ks(self):
+        return aux.SuperList(reg.getPar(self.step_ps, to_return='k')).sorted
+
+
+    @property
     def c(self):
         return self.config
+
+
 
     def merge_configs(self):
         d = param.guess_param_types(**self.config2)
@@ -243,9 +262,9 @@ class ParamLarvaDataset(param.Parameterized):
         elif dim3 > 1:
             return np.zeros([c.Nticks, c.N, dim3]) * np.nan
 
-    def apply_per_level(self, pars, func, level='AgentID', time_range=None, **kwargs):
+    def apply_per_agent(self, pars, func, time_range=None, **kwargs):
         """
-        Apply a function to each subdataframe of a MultiIndex DataFrame after grouping by a specified level.
+        Apply a function to each subdataframe of a MultiIndex DataFrame after grouping by the agentID.
 
         Parameters:
         ----------
@@ -253,8 +272,7 @@ class ParamLarvaDataset(param.Parameterized):
             A MultiIndex DataFrame with levels ['Step', 'AgentID'].
         func : function
             The function to apply to each subdataframe.
-        level : str, optional
-            The level by which to group the DataFrame. Default is 'AgentID'.
+
         **kwargs : dict
             Additional keyword arguments to pass to the 'func' function.
 
@@ -269,9 +287,9 @@ class ParamLarvaDataset(param.Parameterized):
         This function groups the DataFrame 's' by the specified 'level', applies 'func' to each subdataframe, and
         returns the results as a numpy array.
         """
+        level = 'AgentID'
         c = self.config
         if time_range is not None:
-            assert level == 'AgentID'
             s0 = int(time_range[0] / c.dt)
             s1 = int(time_range[1] / c.dt)
             Nt = s1 - s0
@@ -289,10 +307,7 @@ class ParamLarvaDataset(param.Parameterized):
             Ai = func(ss, **kwargs)
             if A is None:
                 A = self.empty_df(dim3=len(Ai.shape))
-            if level == 'AgentID':
-                A[s0:s0 + Nt, i] = Ai
-            elif level == 'Step':
-                A[i, :] = Ai
+            A[s0:s0 + Nt, i] = Ai
         return A
 
     # def centroid_xy_data(self):
@@ -387,12 +402,12 @@ class ParamLarvaDataset(param.Parameterized):
             # ss = s[p]
             if p.endswith('orientation'):
                 p_unw = nam.unwrap(p)
-                s[p_unw] = self.apply_per_level(pars=p, func=aux.unwrap_deg).flatten()
+                s[p_unw] = self.apply_per_agent(pars=p, func=aux.unwrap_deg).flatten()
                 pp=p_unw
             else:
                 pp=p
-            s[vel] = self.apply_per_level(pars=pp, func=aux.rate, dt=c.dt).flatten()
-            s[acc] = self.apply_per_level(pars=vel, func=aux.rate, dt=c.dt).flatten()
+            s[vel] = self.apply_per_agent(pars=pp, func=aux.rate, dt=c.dt).flatten()
+            s[acc] = self.apply_per_agent(pars=vel, func=aux.rate, dt=c.dt).flatten()
 
             self.comp_operators(pars=[p, vel, acc])
 
@@ -416,9 +431,9 @@ class ParamLarvaDataset(param.Parameterized):
         svel = nam.scal(vel)
         csdst = nam.cum(sdst)
 
-        s[dst] = self.apply_per_level(pars=xy, func=aux.eudist).flatten()
+        s[dst] = self.apply_per_agent(pars=xy, func=aux.eudist).flatten()
         s[vel] = s[dst] / c.dt
-        s[acc] = self.apply_per_level(pars=vel, func=aux.rate, dt=c.dt).flatten()
+        s[acc] = self.apply_per_agent(pars=vel, func=aux.rate, dt=c.dt).flatten()
 
         self.scale_to_length(pars=[dst, vel, acc])
 
@@ -437,7 +452,7 @@ class ParamLarvaDataset(param.Parameterized):
         p = reg.getPar(f'tor{dur}')
         w = int(dur / c.dt / 2)
         ticks = np.arange(c.Nticks)
-        s[p] = self.apply_per_level(pars=['x', 'y', 'dst'], func=straightness_index,
+        s[p] = self.apply_per_agent(pars=['x', 'y', 'dst'], func=straightness_index,
                                     rolling_ticks=rolling_window(ticks, w), **kwargs).flatten()
         e[nam.mean(p)] = s[p].groupby('AgentID').mean()
         e[nam.std(p)] = s[p].groupby('AgentID').std()
@@ -445,7 +460,7 @@ class ParamLarvaDataset(param.Parameterized):
     def comp_dispersal(self, t0=0, t1=60, **kwargs):
         s, e, c = self.data
         p = reg.getPar(f'dsp_{int(t0)}_{int(t1)}')
-        s[p] = self.apply_per_level(pars=c.traj_xy, func=aux.compute_dispersal_solo, time_range=(t0, t1),
+        s[p] = self.apply_per_agent(pars=c.traj_xy, func=aux.compute_dispersal_solo, time_range=(t0, t1),
                                     **kwargs).flatten()
         self.scale_to_length(pars=[p])
         sp = nam.scal(p)
