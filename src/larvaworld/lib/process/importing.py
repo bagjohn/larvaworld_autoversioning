@@ -24,53 +24,57 @@ __all__ = [
 ]
 
 
-def import_datasets(source_ids, ids=None, colors=None, refIDs=None, **kwargs):
-    """
-    Imports multiple experimental datasets defined by their IDs.
-
-    Parameters
-    ----------
-    source_ids: list of strings
-        The IDs of the datasets to be imported as appearing in the source files.
-    ids: list of strings, optional
-        The IDs under which to store the datasets to be imported.
-        The source_ids are used if not provided.
-    refIDs: list of strings, optional
-        The reference IDs under which to store the imported datasets as reference datasets.
-         If not provided the datasets are not stored in the reference database.
-    colors: list of strings, optional
-        The colors of the datasets to be imported.
-        Randomly selected if not provided.
-    **kwargs: keyword arguments
-        Additional keyword arguments to be passed to the import_dataset function.
-
-    Returns
-    -------
-    list of lib.process.dataset.LarvaDataset
-        The imported datasets in the common larvaworld format.
-    """
-
-    Nds = len(source_ids)
-    if colors is None:
-        colors = aux.N_colors(Nds)
-    if ids is None:
-        ids = source_ids
-    if refIDs is None:
-        refIDs = [None] * Nds
-
-    assert len(ids) == Nds
-    assert len(colors) == Nds
-    assert len(refIDs) == Nds
-
-    return [import_dataset(id=ids[i], color=colors[i], source_id=source_ids[i], refID=refIDs[i], **kwargs) for i in
-            range(Nds)]
-
-
+# def import_datasets2(source_ids, ids=None, colors=None, refIDs=None, **kwargs):
+#     """
+#     Imports multiple experimental datasets defined by their IDs.
+#
+#     Parameters
+#     ----------
+#     source_ids: list of strings
+#         The IDs of the datasets to be imported as appearing in the source files.
+#     ids: list of strings, optional
+#         The IDs under which to store the datasets to be imported.
+#         The source_ids are used if not provided.
+#     refIDs: list of strings, optional
+#         The reference IDs under which to store the imported datasets as reference datasets.
+#          If not provided the datasets are not stored in the reference database.
+#     colors: list of strings, optional
+#         The colors of the datasets to be imported.
+#         Randomly selected if not provided.
+#     **kwargs: keyword arguments
+#         Additional keyword arguments to be passed to the import_dataset function.
+#
+#     Returns
+#     -------
+#     list of lib.process.dataset.LarvaDataset
+#         The imported datasets in the common larvaworld format.
+#     """
+#
+#     Nds = len(source_ids)
+#     if colors is None:
+#         colors = aux.N_colors(Nds)
+#     if ids is None:
+#         ids = source_ids
+#     if refIDs is None:
+#         refIDs = [None] * Nds
+#
+#     assert len(ids) == Nds
+#     assert len(colors) == Nds
+#     assert len(refIDs) == Nds
+#
+#     return [import_dataset(id=ids[i], color=colors[i], source_id=source_ids[i], refID=refIDs[i], **kwargs) for i in
+#             range(Nds)]
 
 
-def import_dataset(labID, **kwargs) :
+def import_datasets(labID,source_ids, **kwargs):
+    g = reg.conf.LabFormat.get(labID)
+    return g.import_datasets(source_ids=source_ids,**kwargs)
+
+
+def import_dataset(labID, **kwargs):
     g = reg.conf.LabFormat.get(labID)
     return g.import_dataset(**kwargs)
+
 
 # def import_dataset2(labID, parent_dir, raw_folder=None, merged=False,
 #                    proc_folder=None, group_id=None, N=None, id=None, sample=None, color='black', epochs={}, age=0.0,
@@ -240,8 +244,6 @@ def import_dataset(labID, **kwargs) :
 #     return d
 
 
-
-
 def import_Jovanic(source_id, source_dir, match_ids=True, matchID_kws={}, interpolate_ticks=True, **kwargs):
     """
     Builds a larvaworld dataset from Jovanic-lab-specific raw data
@@ -378,10 +380,9 @@ def import_Arguello(source_files, **kwargs):
     return generate_dataframes(dfs, dt, **kwargs)
 
 
-
 lab_specific_import_functions = {
-        'Jovanic': import_Jovanic,
-        'Berni': import_Berni,
-        'Schleyer': import_Schleyer,
-        'Arguello': import_Arguello,
-    }
+    'Jovanic': import_Jovanic,
+    'Berni': import_Berni,
+    'Schleyer': import_Schleyer,
+    'Arguello': import_Arguello,
+}

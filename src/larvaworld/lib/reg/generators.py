@@ -345,9 +345,8 @@ class SimConfiguration(RuntimeOps, SimMetricOps, SimOps):
             'default': defaults[runtype],
             'doc': 'The experiment simulated'
         }
-        if runtype in ['Exp', 'Batch', 'Ga']:
-            ids = conf[runtype].confIDs
-            return param.Selector(objects=ids, **kws)
+        if runtype in reg.CONFTYPES:
+            return param.Selector(objects=conf[runtype].confIDs, **kws)
         else:
             return param.Parameter(**kws)
 
@@ -358,9 +357,9 @@ class SimConfigurationParams(SimConfiguration):
     def __init__(self, runtype='Exp', experiment=None, parameters=None, **kwargs):
         if parameters is None:
             if runtype in reg.CONFTYPES:
-                ct=reg.conf[runtype]
-                if experiment is None :
-                    raise ValueError('Either a parameter dictionary or the name of the experiment must be provided')
+                ct = reg.conf[runtype]
+                if experiment is None:
+                    raise ValueError(f'Either a parameter dictionary or the ID of an available {runtype} configuration must be provided')
                 elif experiment not in ct.confIDs:
                     raise ValueError(f'Experiment {experiment} not available in {runtype} configuration dictionary')
                 else:
@@ -668,11 +667,6 @@ class ExpConf(SimOps):
     def __init__(self, id=None, **kwargs):
         super().__init__(**kwargs)
 
-
-# class DatasetConf(NestedConf):
-#     environment = ClassAttr(EnvConf, doc='The environment configuration')
-#     sim_options = ClassAttr(SimOps, doc='The spatiotemporal resolution')
-#     larva_groups = ClassDict(item_type=LarvaGroup, doc='The larva groups')
 
 class ReplayConfGroup(NestedConf):
     agent_ids = param.List(item_type=int,

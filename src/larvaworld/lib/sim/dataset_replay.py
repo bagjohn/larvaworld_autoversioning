@@ -35,6 +35,9 @@ class ReplayRun(BaseRun):
                          'dt': c.dt,
                          'Nsteps': c.Nsteps})
 
+        if parameters.draw_Nsegs == 'all':
+            parameters.draw_Nsegs = c.Npoints - 1
+
         super().__init__(runtype='Replay', parameters=parameters, **kwargs)
 
     @property
@@ -51,10 +54,6 @@ class ReplayRun(BaseRun):
         return text
 
     def setup(self):
-        # s,e,c=self.step_data,self.endpoint_data,self.config
-        if self.p.draw_Nsegs == 'all':
-            self.p.draw_Nsegs = self.refDataset.config.Npoints - 1
-
         self.draw_Nsegs = self.p.draw_Nsegs
         self.build_env(self.p.env_params)
         self.build_agents(d=self.refDataset)
