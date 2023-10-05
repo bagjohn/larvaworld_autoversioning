@@ -3,7 +3,7 @@
 
 [tool.poetry]
 name='larvaworld'
-version = "0.0.76"
+version = "0.0.77"
 description='Drosophila larva behavioral analysis and simulation platform'
 authors=['Panagiotis Sakagiannis']
 license = "GPL-3"
@@ -69,7 +69,7 @@ repository = "https://github.com/nawrotlab/larvaworld"
 [tool.poetry.scripts]
 larvaworld-cli = "larvaworld.cli.main:main"
 larvaworld-gui = "larvaworld.gui.main:main"
-larvaworld-examples = "larvaworld.examples.main:main"
+#larvaworld-examples = "larvaworld.examples.main:main"
 
 [tool.semantic_release]
 version_variable = "pyproject.toml:version"

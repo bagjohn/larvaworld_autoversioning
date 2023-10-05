@@ -54,7 +54,8 @@ class ReplayRun(BaseRun):
 
     def setup(self):
         # s,e,c=self.step_data,self.endpoint_data,self.config
-
+        if self.p.draw_Nsegs=='all':
+            self.p.draw_Nsegs = self.refDataset.config.Npoints-1
 
         self.draw_Nsegs = self.p.draw_Nsegs
         self.build_env(self.p.env_params)
