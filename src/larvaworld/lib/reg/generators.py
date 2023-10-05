@@ -349,7 +349,7 @@ class SimConfiguration(RuntimeOps, SimMetricOps, SimOps):
             ids = conf[runtype].confIDs
             return param.Selector(objects=ids, **kws)
         else:
-            return param.String(**kws)
+            return param.Parameter(**kws)
 
 
 class SimConfigurationParams(SimConfiguration):
