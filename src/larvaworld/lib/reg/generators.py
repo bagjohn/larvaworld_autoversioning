@@ -528,7 +528,7 @@ class LabFormat(NestedConf):
     def enrich_dataset(self, d, conf=None):
         if conf is None:
             conf = reg.gen.EnrichConf(proc_keys=[], anot_keys=[]).nestedConf
-        conf.pre_kws = self.preprocess.nestedConf
+        #conf.pre_kws = self.preprocess.nestedConf
         d = d.enrich(**conf, is_last=False)
         reg.vprint(f'****- Processed dataset {d.id} to derive secondary metrics -----', 1)
         return d

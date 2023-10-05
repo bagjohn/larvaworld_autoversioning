@@ -110,6 +110,57 @@ class ParamLarvaDataset(param.Parameterized):
     def c(self):
         return self.config
 
+    def interpolate_nan_values(self):
+        s, e, c = self.data
+        for p in c.all_xy.existing(s):
+            for id in c.agent_ids:
+                s.loc[(slice(None), id), p] = aux.interpolate_nans(s[p].xs(id, level='AgentID', drop_level=True).values)
+        reg.vprint('All parameters interpolated', 1)
+
+    def filter(self, filter_f=2.0, recompute=False):
+        s, e, c = self.data
+        if filter_f in ['', None, np.nan]:
+            return
+        if c.filtered_at is not None and not recompute:
+            reg.vprint(
+                f'Dataset already filtered at {c.filtered_at}. To apply additional filter set recompute to True',
+                1)
+            return
+        c.filtered_at = filter_f
+
+        pars = c.all_xy.existing(s)
+        data = np.dstack(list(s[pars].groupby('AgentID').apply(pd.DataFrame.to_numpy))).astype(None)
+        f_array = aux.apply_filter_to_array_with_nans_multidim(data, freq=filter_f, fr=1 / c.dt)
+        for j, p in enumerate(pars):
+            s[p] = f_array[:, j, :].flatten()
+        reg.vprint(f'All spatial parameters filtered at {filter_f} Hz', 1)
+
+    def rescale(self, recompute=False, rescale_by=1.0):
+        s, e, c = self.data
+        if rescale_by in ['', None, np.nan]:
+            return
+        if c.rescaled_by is not None and not recompute:
+            reg.vprint(
+                f'Dataset already rescaled by {c.rescaled_by}. To rescale again set recompute to True', 1)
+            return
+        c.rescaled_by = rescale_by
+        points = c.midline_points + ['centroid', '']
+        pars = c.all_xy + nam.dst(points) + nam.vel(points) + nam.acc(points) + ['length']
+        for p in aux.existing_cols(pars, s):
+            s[p] = s[p].apply(lambda x: x * rescale_by)
+        if 'length' in e.columns:
+            e['length'] = e['length'].apply(lambda x: x * rescale_by)
+        reg.vprint(f'Dataset rescaled by {rescale_by}.', 1)
+
+    def exclude_rows(self, flag='collision_flag', accepted=[0], rejected=None):
+        s, e, c = self.data
+        if accepted is not None:
+            s.loc[s[flag] != accepted[0]] = np.nan
+        if rejected is not None:
+            s.loc[s[flag] == rejected[0]] = np.nan
+        for id in c.agent_ids:
+            e.loc[id, 'cum_dur'] = len(s.xs(id, level='AgentID', drop_level=True).dropna()) * c.dt
+        reg.vprint(f'Rows excluded according to {flag}.', 1)
 
 
     def merge_configs(self):
