@@ -218,12 +218,12 @@ class ParamLarvaDataset(param.Parameterized):
 
     @property
     def traj_xy_data_byID(self):
-        s=self.step_data
+        s = self.step_data
         xy = self.config.traj_xy
-        if not xy.exist_in(s) :
-            xy0=self.config.point_xy
+        if not xy.exist_in(s):
+            xy0 = self.config.point_xy
             assert xy0.exist_in(s)
-            s[xy]=s[xy0]
+            s[xy] = s[xy0]
         assert xy.exist_in(s)
         grouped = s[xy].groupby('AgentID')
         return aux.AttrDict({id: df.values for id, df in grouped})
@@ -264,18 +264,18 @@ class ParamLarvaDataset(param.Parameterized):
 
     def comp_xy_moments(self, point=''):
         s, e, c = self.data
-        xy=nam.xy(point)
+        xy = nam.xy(point)
         dst = nam.dst(point)
         vel = nam.vel(point)
         acc = nam.acc(point)
         cdst = nam.cum(dst)
 
-        sdst=nam.scal(dst)
-        svel=nam.scal(vel)
-        csdst=nam.cum(sdst)
+        sdst = nam.scal(dst)
+        svel = nam.scal(vel)
+        csdst = nam.cum(sdst)
 
         s[dst] = aux.apply_per_level(s[xy], aux.eudist).flatten()
-        s[vel] = s[dst]/c.dt
+        s[vel] = s[dst] / c.dt
         s[acc] = aux.apply_per_level(s[vel], aux.rate, dt=c.dt).flatten()
 
         self.scale_to_length(pars=[dst, vel, acc])
@@ -289,8 +289,21 @@ class ParamLarvaDataset(param.Parameterized):
         e[csdst] = s[sdst].dropna().groupby('AgentID').sum()
         e[nam.mean(svel)] = s[svel].dropna().groupby('AgentID').mean()
 
-
-
+    def comp_dispersal(self, t0=0, t1=60):
+        s, e, c = self.data
+        p = reg.getPar(f'dsp_{int(t0)}_{int(t1)}')
+        xy0 = s[c.traj_xy]
+        s[p], Nt = aux.compute_dispersal_multi(xy0, t0, t1, c.dt)
+        self.scale_to_length(pars=[p])
+        sp = nam.scal(p)
+        g = s[p].dropna().groupby('AgentID')
+        sg = s[sp].dropna().groupby('AgentID')
+        e[nam.max(p)] = g.max()
+        e[nam.mean(p)] = g.mean()
+        e[nam.final(p)] = g.last()
+        e[nam.max(sp)] = sg.max()
+        e[nam.mean(sp)] = sg.mean()
+        e[nam.final(sp)] = sg.last()
 
     def comp_centroid(self):
         c = self.config
@@ -300,13 +313,15 @@ class ParamLarvaDataset(param.Parameterized):
         self.step_data['length'] = np.sum(np.sum(np.diff(self.midline_xy_data, axis=1) ** 2, axis=2) ** (1 / 2), axis=1)
         self.endpoint_data['length'] = self.step_data['length'].groupby('AgentID').quantile(q=0.5)
 
-    def comp_spatial(self, is_last=True):
+    def comp_spatial(self, dsp_starts=[0], dsp_stops=[40, 60], is_last=True):
         self.comp_centroid()
         self.comp_length()
         self.step_data[self.config.traj_xy] = self.step_data[self.config.point_xy]
         for point in ['', 'centroid']:
             self.comp_xy_moments(point)
-        if is_last :
+        for t0, t1 in itertools.product(dsp_starts, dsp_stops):
+            self.comp_dispersal(t0, t1)
+        if is_last:
             self.save()
 
     def scale_to_length(self, pars=None, keys=None):
@@ -329,7 +344,6 @@ class ParamLarvaDataset(param.Parameterized):
         e_pars = aux.existing_cols(pars, e)
         if len(e_pars) > 0:
             e[nam.scal(e_pars)] = (e[e_pars].values.T / l.values).T
-
 
     def get_par(self, par=None, k=None, key='step'):
         s, e = self.step_data, self.endpoint_data

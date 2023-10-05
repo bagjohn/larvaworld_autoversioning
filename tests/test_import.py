@@ -36,6 +36,7 @@ def test_import_Schleyer():
     for kws in [kws1, kws2]:
         d = g.import_dataset(**kws)
         assert isinstance(d, larvaworld.lib.LarvaDataset)
+        d.comp_spatial()
         s = d.step_data
         assert isinstance(s, pd.DataFrame)
 
