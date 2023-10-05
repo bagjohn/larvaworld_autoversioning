@@ -366,7 +366,7 @@ class ScreenManager(BaseScreenManager):
             if layer.visible:
                 layer.draw(v)
                 arena_drawn = True
-                break
+                #break
 
         if not arena_drawn and m.food_grid is not None:
             m.food_grid._draw(v=v)
