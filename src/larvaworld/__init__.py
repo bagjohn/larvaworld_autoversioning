@@ -2,7 +2,7 @@
 Larvaworld : A Drosophila larva behavioral analysis and simulation platform
 """
 
-from . import lib, cli, gui, examples
+from . import lib, cli, gui
 
 lib.reg.generators.resetConfs(init=True)
 

@@ -1,21 +1,19 @@
 import copy
 import numpy as np
 
-
-from ..import reg, aux, util
+from .. import reg, aux, util
 from ..aux import nam
-
 
 from ..screen import ScreenManager
 from ..sim.base_run import BaseRun
-
 
 __all__ = [
     'ReplayRun',
 ]
 
+
 class ReplayRun(BaseRun):
-    def __init__(self,parameters,  dataset=None, screen_kws={},**kwargs):
+    def __init__(self, parameters, dataset=None, screen_kws={}, **kwargs):
         '''
         Simulation mode 'Replay' reconstructs a real or simulated experiment from stored data.
 
@@ -27,17 +25,17 @@ class ReplayRun(BaseRun):
         '''
         d = reg.conf.Ref.retrieve_dataset(dataset=dataset, id=parameters.refID, dir=parameters.refDir)
 
-        self.refDataset=copy.deepcopy(d)
+        self.refDataset = copy.deepcopy(d)
 
         # Configure the dataset to replay
-        self.refDataset=self.smaller_dataset(p=parameters, d=self.refDataset)
-        c=self.refDataset.config
+        self.refDataset = self.smaller_dataset(p=parameters, d=self.refDataset)
+        c = self.refDataset.config
         parameters.steps = c.Nsteps
-        kwargs.update(**{'duration':c.duration,
-                       'dt':c.dt,
-                       'Nsteps':c.Nsteps})
+        kwargs.update(**{'duration': c.duration,
+                         'dt': c.dt,
+                         'Nsteps': c.Nsteps})
 
-        super().__init__(runtype='Replay', parameters=parameters,**kwargs)
+        super().__init__(runtype='Replay', parameters=parameters, **kwargs)
 
     @property
     def configuration_text(self):
@@ -54,21 +52,19 @@ class ReplayRun(BaseRun):
 
     def setup(self):
         # s,e,c=self.step_data,self.endpoint_data,self.config
-        if self.p.draw_Nsegs=='all':
-            self.p.draw_Nsegs = self.refDataset.config.Npoints-1
+        if self.p.draw_Nsegs == 'all':
+            self.p.draw_Nsegs = self.refDataset.config.Npoints - 1
 
         self.draw_Nsegs = self.p.draw_Nsegs
         self.build_env(self.p.env_params)
         self.build_agents(d=self.refDataset)
         screen_kws = {
             'mode': 'video' if not self.p.overlap_mode else 'image',
-            'show_display' : True,
-            'image_mode':'overlap' if self.p.overlap_mode else None,
+            'show_display': True,
+            'image_mode': 'overlap' if self.p.overlap_mode else None,
             'background_motion': self.background_motion,
         }
         self.screen_manager = ScreenManager(model=self, **screen_kws)
-
-
 
     def build_agents(self, d):
         s, e, c = d.data
@@ -78,7 +74,7 @@ class ReplayRun(BaseRun):
         else:
             ls = np.ones(c.N) * 0.005
 
-        ors=['front_orientation','rear_orientation']
+        ors = ['front_orientation', 'rear_orientation']
         assert aux.cols_exist(ors, s)
         # mid_ps = c.midline_xy
         # con_ps = c.contour_xy
@@ -89,32 +85,32 @@ class ReplayRun(BaseRun):
                 # or_ps = c.seg_orientations
                 # assert or_ps.exist_in(s)
                 # assert mid_ps.exist_in(s)
-                seg_orientD=d.midline_seg_orients_data_byID
-                midlineD=d.midline_seg_xy_data_byID
+                seg_orientD = d.midline_seg_orients_data_byID
+                midlineD = d.midline_seg_xy_data_byID
             else:
                 raise
         else:
-            contourD=d.contour_xy_data_byID
-            midlineD=d.midline_xy_data_byID
+            contourD = d.contour_xy_data_byID
+            midlineD = d.midline_xy_data_byID
 
-        confs=[]
+        confs = []
         for i, id in enumerate(c.agent_ids):
             conf = aux.AttrDict({'unique_id': id, 'length': ls[i]})
             data = aux.AttrDict()
-            ss=s.xs(id, level='AgentID', drop_level=True)
-            xy=ss[['x', 'y']].values
+            ss = s.xs(id, level='AgentID', drop_level=True)
+            xy = ss[['x', 'y']].values
             data.pos = aux.np2Dtotuples(xy)
-            fo,ro=ss['front_orientation'].values, ss['rear_orientation'].values
+            fo, ro = ss['front_orientation'].values, ss['rear_orientation'].values
             data.front_orientation = fo
             data.rear_orientation = ro
             if self.p.draw_Nsegs is not None:
-                conf.Nsegs=self.p.draw_Nsegs
+                conf.Nsegs = self.p.draw_Nsegs
                 if conf.Nsegs == 2:
-                    data.seg_orientations =np.vstack([fo,ro]).T
-                    l1, l2 = conf.length/2,  conf.length/2
+                    data.seg_orientations = np.vstack([fo, ro]).T
+                    l1, l2 = conf.length / 2, conf.length / 2
                     p1 = xy + aux.rotationMatrix(-fo).T @ (l1 / 2, 0)
                     p2 = xy - aux.rotationMatrix(-ro).T @ (l2 / 2, 0)
-                    data.midline = np.hstack([p1,p2]).reshape([-1,2,2])
+                    data.midline = np.hstack([p1, p2]).reshape([-1, 2, 2])
                 elif conf.Nsegs == c.Npoints - 1:
                     # or_ps = aux.nam.orient(aux.nam.midline(conf.Nsegs, type='seg'))
                     # assert or_ps.exist_in(ss)
@@ -134,12 +130,9 @@ class ReplayRun(BaseRun):
                 data.contour = contourD[id]
                 # assert mid_ps.exist_in(ss)
                 data.midline = midlineD[id]
-            conf.data=data
+            conf.data = data
             confs.append(conf)
         self.place_agents(confs)
-
-
-
 
     def sim_step(self):
         """ Proceeds the simulation by one step, incrementing `Model.t` by 1
@@ -148,7 +141,7 @@ class ReplayRun(BaseRun):
             self.step()
             self.update()
             self.t += 1
-            if self.t >= self._steps :
+            if self.t >= self._steps:
                 self.running = False
 
     def step(self):
@@ -159,21 +152,14 @@ class ReplayRun(BaseRun):
     def end(self):
         self.screen_manager.finalize()
 
-
-    def smaller_dataset(self,p, d):
+    def smaller_dataset(self, p, d):
         d.load(h5_ks=['contour', 'midline', 'angular'])
-        c=d.config
+        c = d.config
 
         assert isinstance(c, reg.generators.DatasetConfig)
         # Group mode
         if p.track_point is not None:
-            c.point_idx=p.track_point
-
-
-
-
-
-
+            c.point_idx = p.track_point
 
         # Unit mode
         if p.fix_point is not None:
@@ -200,8 +186,6 @@ class ReplayRun(BaseRun):
             c.agent_ids = c.agent_ids[:1]
         d.update_ids_in_data()
 
-
-
         if p.env_params is None:
             p.env_params = c.env_params.nestedConf
 
@@ -209,7 +193,6 @@ class ReplayRun(BaseRun):
             p.env_params.arena = reg.gen.Arena(dims=(0.01, 0.01)).nestedConf
 
         s = d.step_data
-
 
         if p.time_range is not None:
             a, b = p.time_range
@@ -220,15 +203,15 @@ class ReplayRun(BaseRun):
         s[['x', 'y']] = s[xy_pars]
 
         if c.fix_point is not None:
-            s, bg = reg.funcs.preprocessing['fixation'](s, c, P1=c.fix_point,P2=c.fix_point2)
+            s, bg = reg.funcs.preprocessing['fixation'](s, c, P1=c.fix_point, P2=c.fix_point2)
         else:
             bg = None
-        self.background_motion=bg
+        self.background_motion = bg
 
         if p.transposition is not None:
-            s = reg.funcs.preprocessing["transposition"](s, c=c, transposition=p.transposition,replace=True)
-            xy_max=2*np.max(s[nam.xy(c.point)].dropna().abs().values.flatten())
-            p.env_params.arena=reg.gen.Arena(dims=(xy_max, xy_max)).nestedConf
+            s = reg.funcs.preprocessing["transposition"](s, c=c, transposition=p.transposition, replace=True)
+            xy_max = 2 * np.max(s[nam.xy(c.point)].dropna().abs().values.flatten())
+            p.env_params.arena = reg.gen.Arena(dims=(xy_max, xy_max)).nestedConf
 
         d.set_data(step=s)
 
