@@ -12,7 +12,6 @@ from ..param import OptionalPositiveNumber, OptionalSelector, PositiveInteger, \
 __all__ = [
     'FramerateOps',
     'XYops',
-    'Resolution',
     'SimTimeOps',
     'SimSpatialOps',
     'SimOps',
@@ -122,8 +121,15 @@ class XYops(NestedConf):
         else:
             return self.midline_points[idx - 1]
 
+    def get_midline_xy_data(self, s):
+        xy = self.midline_xy
+        assert xy.exist_in(s)
+        return s[xy].values.reshape([-1, self.Npoints, 2])
 
-class Resolution(FramerateOps, XYops): pass
+    def get_contour_xy_data(self, s):
+        xy = self.contour_xy
+        assert xy.exist_in(s)
+        return s[xy].values.reshape([-1, self.Ncontour, 2])
 
 
 class SimTimeOps(FramerateOps):
@@ -265,7 +271,7 @@ class SimMetricOps(TrackedPointIdx):
             'rear': (r2 - 1, r1 - 1),
             'head': (1, 0),
             'tail': (-1, -2),
-            })
+        })
 
 
 class TrackerOps(SimMetricOps, FramerateOps): pass
@@ -280,13 +286,14 @@ class PreprocessConf(NestedConf):
     interpolate_nans = Boolean(False, doc='Whether to interpolate missing values.')
     drop_collisions = Boolean(False, doc='Whether to drop timepoints where larva collisions are detected.')
 
+
 class ProcessConf(NestedConf):
     proc_keys = ListSelector(default=['angular', 'spatial'],
                              objects=['angular', 'spatial', 'source', 'PI', 'wind'],
                              doc='The processing pipelines')
-    dsp_starts=param.List(default=[0.0],item_type=float, doc='The starting times for dispersal computation.')
-    dsp_stops=param.List(default=[40.0, 60.0],item_type=float, doc='The stopping times for dispersal computation.')
-    tor_durs=param.List(default=[5,10,20],item_type=int, doc='The time windows for tortuosity computation.')
+    dsp_starts = param.List(default=[0.0], item_type=float, doc='The starting times for dispersal computation.')
+    dsp_stops = param.List(default=[40.0, 60.0], item_type=float, doc='The stopping times for dispersal computation.')
+    tor_durs = param.List(default=[5, 10, 20], item_type=int, doc='The time windows for tortuosity computation.')
 
 
 class EnrichConf(NestedConf):
@@ -301,11 +308,6 @@ class EnrichConf(NestedConf):
     mode = Selector(objects=['minimal', 'full'], doc='The processing mode')
 
 
-# class DataProcessOps(NestedConf):
-#     enrichment = aux.ClassAttr(EnrichConf, doc='The spatiotemporal resolution')
-#     metric_definition = ClassAttr(SimMetricOps,doc='The metric_definition')
-
-
 class AirPuff(NestedConf):
     duration = PositiveNumber(default=1.0, softmax=100.0, step=0.1, doc='The duration of the air-puff in seconds.')
     speed = PositiveNumber(default=10.0, softmax=1000.0, step=0.1, doc='The wind speed of the air-puff.')
@@ -313,6 +315,6 @@ class AirPuff(NestedConf):
     start_time = PositiveNumber(default=0.0, softmax=10000.0, step=1.0,
                                 doc='The starting time of the air-puff in seconds.')
     N = OptionalPositiveInteger(default=None, softmax=10000,
-                        doc='The number of repetitions of the puff. If N>1 an interval must be provided.')
+                                doc='The number of repetitions of the puff. If N>1 an interval must be provided.')
     interval = PositiveNumber(default=5.0, softmax=10000.0, step=0.1,
                               doc='Whether the puff will reoccur at constant time intervals in seconds. Ignored if N=1.')

@@ -515,6 +515,7 @@ class LabFormat(NestedConf):
             'load_data': False,
             'dir': dir,
             'id': id,
+            'color': color,
             'larva_groups': reg.config.lg(id=group_id, c=color, sample=sample, mID=None, N=N, epochs=epochs, age=age),
             'env_params': self.env_params.nestedConf,
             **self.tracker.nestedConf,

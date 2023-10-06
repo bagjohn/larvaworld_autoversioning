@@ -105,22 +105,25 @@ class ParamLarvaDataset(param.Parameterized):
     def step_ks(self):
         return aux.SuperList(reg.getPar(self.step_ps, to_return='k')).sorted
 
-
     @property
     def c(self):
         return self.config
 
     def interpolate_nan_values(self):
         s, e, c = self.data
-        for p in c.all_xy.existing(s):
-            for id in c.agent_ids:
-                s.loc[(slice(None), id), p] = aux.interpolate_nans(s[p].xs(id, level='AgentID', drop_level=True).values)
+        pars=c.all_xy.existing(s)
+        Npars=len(pars)
+        for id in c.agent_ids:
+            A=np.zeros([c.Nticks, Npars])
+            ss=s.xs(id, level='AgentID')
+            for i,p in enumerate(pars):
+                A[:,i]=aux.interpolate_nans(ss[p].values)
+            s.loc[(slice(None), id), pars] = A
         reg.vprint('All parameters interpolated', 1)
 
     def filter(self, filter_f=2.0, recompute=False):
         s, e, c = self.data
-        if filter_f in ['', None, np.nan]:
-            return
+        assert isinstance(filter_f, float)
         if c.filtered_at is not None and not recompute:
             reg.vprint(
                 f'Dataset already filtered at {c.filtered_at}. To apply additional filter set recompute to True',
@@ -137,8 +140,7 @@ class ParamLarvaDataset(param.Parameterized):
 
     def rescale(self, recompute=False, rescale_by=1.0):
         s, e, c = self.data
-        if rescale_by in ['', None, np.nan]:
-            return
+        assert isinstance(rescale_by, float)
         if c.rescaled_by is not None and not recompute:
             reg.vprint(
                 f'Dataset already rescaled by {c.rescaled_by}. To rescale again set recompute to True', 1)
@@ -165,14 +167,11 @@ class ParamLarvaDataset(param.Parameterized):
     def align_trajectories(self, track_point=None, arena_dims=None, transposition='origin', replace=True):
         s, e, c = self.data
 
-        if transposition in ['', None, np.nan]:
-            return
+        assert transposition in ['arena', 'origin', 'center']
         mode = transposition
 
         xy_flat = c.all_xy.existing(s)
         xy_pairs = xy_flat.in_pairs
-        # xy_flat=np.unique(aux.flatten_list(xy_pairs))
-        # xy_pairs = aux.group_list_by_n(xy_flat, 2)
 
         if replace:
             ss = s
@@ -183,12 +182,9 @@ class ParamLarvaDataset(param.Parameterized):
             reg.vprint('Centralizing trajectories in arena center')
             if arena_dims is None:
                 arena_dims = c.env_params.arena.dims
-            x0, y0 = arena_dims
-            X, Y = x0 / 2, y0 / 2
-
             for x, y in xy_pairs:
-                ss[x] -= X
-                ss[y] -= Y
+                ss[x] -= arena_dims[0] / 2
+                ss[y] -= arena_dims[1] / 2
             return ss
         else:
             if track_point is None:
@@ -202,13 +198,14 @@ class ParamLarvaDataset(param.Parameterized):
                 xy = [s[XY].xs(id, level='AgentID').dropna().values[0] for id in ids]
             elif mode == 'center':
                 reg.vprint('Centralizing trajectories in trajectory center using min-max positions')
-                xy = [(s[XY].xs(id, level='AgentID').max().values-s[XY].xs(id, level='AgentID').min().values)/ 2 for id in ids]
+                xy = [(s[XY].xs(id, level='AgentID').max().values - s[XY].xs(id, level='AgentID').min().values) / 2 for
+                      id in ids]
             else:
                 raise ValueError('Supported modes are "arena", "origin" and "center"!')
             xs = np.array([x for x, y in xy] * c.Nticks)
             ys = np.array([y for x, y in xy] * c.Nticks)
 
-            for jj, (x, y) in enumerate(xy_pairs):
+            for x, y in xy_pairs:
                 ss[x] = ss[x].values - xs
                 ss[y] = ss[y].values - ys
 
@@ -217,7 +214,8 @@ class ParamLarvaDataset(param.Parameterized):
             #     reg.vprint(f'traj_aligned2{mode} stored')
             return ss
 
-    def preprocess(self, drop_collisions=False, interpolate_nans=False,filter_f=None,rescale_by=None,transposition=None, recompute=False):
+    def preprocess(self, drop_collisions=False, interpolate_nans=False, filter_f=None, rescale_by=None,
+                   transposition=None, recompute=False):
         if drop_collisions:
             self.exclude_rows()
         if interpolate_nans:
@@ -228,7 +226,6 @@ class ParamLarvaDataset(param.Parameterized):
             self.rescale(rescale_by=rescale_by, recompute=recompute)
         if transposition is not None:
             self.align_trajectories(transposition=transposition)
-
 
     def merge_configs(self):
         d = param.guess_param_types(**self.config2)
@@ -521,9 +518,9 @@ class ParamLarvaDataset(param.Parameterized):
             if p.endswith('orientation'):
                 p_unw = nam.unwrap(p)
                 s[p_unw] = self.apply_per_agent(pars=p, func=aux.unwrap_deg).flatten()
-                pp=p_unw
+                pp = p_unw
             else:
-                pp=p
+                pp = p
             s[vel] = self.apply_per_agent(pars=pp, func=aux.rate, dt=c.dt).flatten()
             s[acc] = self.apply_per_agent(pars=vel, func=aux.rate, dt=c.dt).flatten()
 
@@ -655,7 +652,8 @@ class ParamLarvaDataset(param.Parameterized):
 
                 def rowFunc(row):
                     return row[d] / rowLength(row)
-                sd=nam.scal(d)
+
+                sd = nam.scal(d)
                 s[sd] = s.apply(rowFunc, axis=1)
                 self.comp_operators(pars=[sd])
 
@@ -701,7 +699,7 @@ class ParamLarvaDataset(param.Parameterized):
             a = np.array([aux.angle_dif(ang, woo) for ang in angs])
             e['anemotaxis'] = d * np.cos(a)
 
-    def comp_PI2(self,xys, x=0.04):
+    def comp_PI2(self, xys, x=0.04):
         Nticks = xys.index.unique('Step').size
         ids = xys.index.unique('AgentID').values
         N = len(ids)
@@ -715,7 +713,7 @@ class ParamLarvaDataset(param.Parameterized):
         mu_dLR_mu = np.mean(dLR_mu)
         return mu_dLR_mu
 
-    def comp_PI(self,arena_xdim, xs, return_num=False):
+    def comp_PI(self, arena_xdim, xs, return_num=False):
         N = len(xs)
         r = 0.2 * arena_xdim
         xs = np.array(xs)
@@ -751,7 +749,7 @@ class ParamLarvaDataset(param.Parameterized):
         except:
             pass
 
-    def process(self,proc_keys=['angular', 'spatial'],
+    def process(self, proc_keys=['angular', 'spatial'],
                 dsp_starts=[0], dsp_stops=[40, 60], tor_durs=[5, 10, 20], is_last=False):
         if 'angular' in proc_keys:
             self.comp_angular()
@@ -769,7 +767,6 @@ class ParamLarvaDataset(param.Parameterized):
             self.comp_dataPI()
         if is_last:
             self.save()
-
 
     def get_par(self, par=None, k=None, key='step'):
         s, e = self.step_data, self.endpoint_data
@@ -815,8 +812,8 @@ class BaseLarvaDataset(ParamLarvaDataset):
             # from larvaworld.lib.process.dataset import LarvaDataset
         return LarvaDataset(**kwargs)
 
-    def __init__(self, dir=None, refID=None, load_data=True, config=None, step=None, end=None, agents=None,initialize=False, **kwargs):
-        # def __init__(self, dir=None, config=None, refID=None, load_data=True, step=None, end=None, agents=None, **kwargs):
+    def __init__(self, dir=None, refID=None, load_data=True, config=None, step=None, end=None, agents=None,
+                 initialize=False, **kwargs):
         '''
         Dataset class that stores a single experiment, real or simulated.
         Metadata and configuration parameters are stored in the 'config' dictionary.
@@ -854,22 +851,22 @@ class BaseLarvaDataset(ParamLarvaDataset):
             config: The metadata dictionary. Defaults to None for attempting to load it from disc or generate a new.
             **kwargs: Any arguments to store in a novel configuration dictionary
         '''
-        if initialize :
+        if initialize:
             assert config is None
-            kws={
-                'dir':dir,
-                'refID':refID,
+            kws = {
+                'dir': dir,
+                'refID': refID,
                 # 'config':config,
                 **kwargs
             }
-        else :
+        else:
             if config is None:
                 try:
                     config = reg.getRef(dir=dir, id=refID)
                     config.update(**kwargs)
                 except:
                     config = self.generate_config(dir=dir, refID=refID, **kwargs)
-            kws=config
+            kws = config
 
         super().__init__(**kws)
 

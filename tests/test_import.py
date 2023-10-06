@@ -11,10 +11,11 @@ def test_import_Schleyer():
     }
 
     # Merged case
-    N = 60
+    N = 40
     kws1 = {
         'parent_dir': 'exploration',
         'merged': True,
+        'color': 'blue',
         'N': N,
         'min_duration_in_sec': 60,
         'id': f'{N}controls',
@@ -23,11 +24,12 @@ def test_import_Schleyer():
     }
 
     # Single dish case
-    folder = 'dish02'
+    folder = 'dish01'
     kws2 = {
         'parent_dir': f'exploration/{folder}',
         'merged': False,
         'N': None,
+        'color': 'red',
         'min_duration_in_sec': 90,
         'id': folder,
         'refID': f'exploration.{folder}',
