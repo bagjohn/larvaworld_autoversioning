@@ -374,7 +374,10 @@ class SimConfigurationParams(SimConfiguration):
             experiment = parameters['experiment']
         if parameters is not None:
             for k in set(parameters).intersection(set(SimOps().nestedConf)):
-                kwargs[k] = parameters[k]
+                if k in kwargs.keys():
+                    parameters[k]=kwargs[k]
+                else:
+                    kwargs[k] = parameters[k]
         super().__init__(runtype=runtype, experiment=experiment, parameters=parameters, **kwargs)
 
 

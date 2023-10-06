@@ -1,6 +1,6 @@
 from larvaworld.lib import reg, sim, aux
 from larvaworld.lib.process.dataset import LarvaDataset
-
+reg.VERBOSE=1
 
 def xx_test_replay():
     refIDs = reg.conf.Ref.confIDs
@@ -55,6 +55,21 @@ def xx_test_replay():
         # raise
 
 
+def test_genetic_algorithm_simulation():
+    exp = 'realism'
+    ga1 = sim.GAlauncher(experiment=exp)
+    ga1.selector.Ngenerations = 5
+    best1 = ga1.run()
+    print(best1)
+    assert best1 is not None
+
+    p = reg.conf.Ga.expand(exp)
+    p.ga_select_kws.Ngenerations = 5
+    ga2 = sim.GAlauncher(parameters=p, screen_kws={'show_display': True})
+    best2 = ga2.run()
+    print(best2)
+    assert best2 is not None
+
 
 '''
 
@@ -70,21 +85,7 @@ def test_exp_run():
             assert isinstance(d, LarvaDataset)
 
 
-def test_GA() :
-    conf=reg.conf.Ga.expand('realism')
-    conf.ga_select_kws.Ngenerations = 5
 
-    ga_run = sim.GAlauncher(parameters=conf)
-    best1=ga_run.run()
-    print(best1)
-    assert best1 is not None
-
-    conf.offline=True
-    conf.show_screen=False
-    ga_run = sim.GAlauncher(parameters=conf)
-    best2=ga_run.run()
-    print(best2)
-    assert best2 is not None
 
 
 

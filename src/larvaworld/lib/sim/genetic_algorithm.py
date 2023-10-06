@@ -187,13 +187,9 @@ class GAselector(NestedConf):
         return g
 
 
-# class GAlauncher2(BaseRun):
-#     def __init__(self, parameters, **kwargs):
-#         super().__init__(runtype='Ga', parameters=parameters, **kwargs)
 
 
 class GAlauncher(BaseRun):
-    # class GAlauncher(BaseRun,GAselector,GAevaluation):
 
     def __init__(self, dataset=None,screen_kws={}, **kwargs):
         '''
@@ -205,22 +201,10 @@ class GAlauncher(BaseRun):
         '''
 
         super().__init__(runtype='Ga', **kwargs)
-
-        # raise
-
         self.evaluator = GAevaluation(dataset=dataset, **self.p.ga_eval_kws)
-        # GAevaluation.__init__(self,dataset=dataset,**self.p.ga_eval_kws)
-        # GAselector.__init__(self,**self.p.ga_select_kws,dataset=dataset,**self.p.ga_eval_kws)
         self.selector = GAselector(**self.p.ga_select_kws)
-        # GAselector.__init__(self,**self.p.ga_select_kws)
         self.screen_kws = screen_kws
 
-    # def initialize_superclasses(self, parameters,dataset=None):
-    #     # print('DD')
-    #     GAevaluation.__init__(self, dataset=dataset, **parameters.ga_eval_kws)
-    #     # print('DDD')
-    #     GAselector.__init__(self, **parameters.ga_select_kws,dataset=dataset, **parameters.ga_eval_kws)
-    #     # print('DDDD')
 
     def setup(self):
         self.genome_dict = None
@@ -245,7 +229,6 @@ class GAlauncher(BaseRun):
         reg.vprint(
             f'Launching {temp} generations of {self.duration} minutes, with {self.selector.Nagents} agents each!', 2)
         self.p.collections = ['pose']
-        # self.odor_ids = self.get_all_odors()
         self.build_env(self.p.env_params)
         self.screen_manager = GA_ScreenManager(model=self, **self.screen_kws)
         self.build_generation()
@@ -284,11 +267,6 @@ class GAlauncher(BaseRun):
                 # for id in d.config.agent_ids:
                 ss = d.step_data.xs(str(i), level='AgentID')
                 g.fitness_dict = self.evaluator.fit_func(ss)
-
-                # fit_dicts = self.fit_func(s=d.step_data)
-
-                # for i, g in genome_dict.items():
-                #     g.fitness_dict = aux.AttrDict({k: dic[str(i)] for k, dic in fit_dicts.items()})
                 mus = aux.AttrDict({k: -np.mean(list(dic.values())) for k, dic in g.fitness_dict.items()})
                 if len(mus) == 1:
                     g.fitness = list(mus.values())[0]
@@ -308,7 +286,6 @@ class GAlauncher(BaseRun):
         if self.best_genome is None or sorted_gs[0].fitness > self.best_genome.fitness:
             self.best_genome = sorted_gs[0]
             self.best_fitness = self.best_genome.fitness
-
             if bestID is not None:
                 reg.conf.Model.setID(bestID, self.best_genome.mConf)
         reg.vprint(f'Generation {Ngen} best_fitness : {self.best_fitness}', 1)
@@ -347,7 +324,6 @@ class GAlauncher(BaseRun):
             for robot in self.agents:
                 if self.evaluator.exclude_func(robot):
                     robot.genome.fitness = -np.inf
-                    # self.delete_agent(robot)
         self.screen_manager.render()
 
     def end(self):
@@ -359,7 +335,6 @@ class GAlauncher(BaseRun):
         self.t = 0
 
     def update(self):
-
         self.agents.nest_record(self.collectors['step'])
 
     def finalize(self):
@@ -382,14 +357,17 @@ class GAlauncher(BaseRun):
         cols = [p.name for k, p in self.selector.space_dict.items()]
 
         self.corr_df = df[['fitness'] + cols].corr()
-        self.diff_df, row_colors = reg.model.diff_df(mIDs=[self.selector.base_model, self.selector.bestConfID],
+        try:
+            self.diff_df, row_colors = reg.model.diff_df(mIDs=[self.selector.base_model, self.selector.bestConfID],
                                                      ms=[self.selector.mConf0, self.best_genome.mConf])
+        except:
+            pass
+
 
     def build_threads(self, robots):
         N = self.num_cpu
         threads = []
         N_per_cpu = math.floor(len(robots) / N)
-
         reg.vprint(f'num_robots_per_cpu: {N_per_cpu}', 2)
 
         for i in range(N - 1):
