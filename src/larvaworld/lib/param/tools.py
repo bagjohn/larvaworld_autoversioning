@@ -79,6 +79,7 @@ def class_generator(A0, mode='Unit') :
                         confs = [{'unique_id': id, 'pos': p, 'orientation': ori, **gconf} for id, p,ori in zip(ids, ps, ors)]
                     except:
                         ps = Ainst.distribution()
+                        # print(ps, ids)
                         confs = [{'unique_id': id, 'pos': p, **gconf} for id, p in zip(ids, ps)]
                     all_confs += confs
                 else:

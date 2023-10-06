@@ -59,7 +59,7 @@ def Ga_dict():
                   Nel=3, N=10, env='arena_200mm'),
         **ga_conf('chemorbit', dur=1, m0='RE_NEU_PHI_DEF_nav', m1='RE_NEU_PHI_DEF_nav2',
                   mkeys=['olfactor'], fitID='dst2source', fit_kws={'source_xy': None},
-                  Nel=5, N=50, env='mid_odor_gaussian_square'),
+                  Nel=5, N=50, env='odor_gaussian_square'),
         **ga_conf('obstacle_avoidance', dur=0.5, m0='obstacle_avoider', m1='obstacle_avoider2',
                   mkeys=['sensorimotor'], fitID='cum_dst',
                   Nel=2, N=15, env='dish_40mm',

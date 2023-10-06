@@ -79,7 +79,7 @@ class ConfType(param.Parameterized):
 
     def get(self, id):
         entry = self.getID(id)
-        return self.conf_class(**entry)
+        return self.conf_class(**entry, name=id)
 
     def load(self):
         self.dict = aux.load_dict(self.path_to_dict)
@@ -88,6 +88,7 @@ class ConfType(param.Parameterized):
         return aux.save_dict(self.dict, self.path_to_dict)
 
     def reset(self, init=False):
+
         dd = reg.funcs.stored_confs[self.conftype]()
 
         if os.path.isfile(self.path_to_dict):
@@ -109,6 +110,7 @@ class ConfType(param.Parameterized):
         self.param.params('dict').item_type = self.dict_entry_type
         self.dict = d
         self.save()
+
         reg.vprint(f'{self.conftype}  configurations : {Nnew} added , {Nup} updated,{Ncur} now existing', 1)
 
     def setID(self, id, conf, mode='overwrite'):
@@ -280,7 +282,9 @@ def resetConfs(conftypes=None, **kwargs):
         conftypes = reg.CONFTYPES
 
     for conftype in conftypes:
+
         conf[conftype].reset(**kwargs)
+
 
 
 from ..model import Food, Border, WindScape, ThermoScape, FoodGrid, OdorScape, DiffusionValueLayer, GaussianValueLayer
@@ -398,6 +402,15 @@ class EnvConf(NestedConf):
     windscape = ClassAttr(gen.WindScape, default=None, doc='The wind landscape in the arena')
     thermoscape = ClassAttr(gen.ThermoScape, default=None, doc='The thermal landscape in the arena')
 
+    def __init__(self, odorscape=None, **kwargs):
+        if odorscape is not None and isinstance(odorscape, aux.AttrDict):
+            mode=odorscape.odorscape
+            odorscape_classes=list(EnvConf.param.odorscape.class_)
+            odorscape_modes=dict(zip(['Gaussian', 'Diffusion'], odorscape_classes))
+            odorscape=odorscape_modes[mode](**odorscape)
+
+        super().__init__(odorscape=odorscape,**kwargs)
+
 
 class LarvaGroup(NestedConf):
     model = conf.Model.confID_selector()
@@ -462,7 +475,8 @@ class LarvaGroup(NestedConf):
         return confs
 
 
-gen.Env = class_generator(EnvConf)
+# gen.Env = class_generator(EnvConf)
+gen.Env = EnvConf
 
 
 class LabFormat(NestedConf):

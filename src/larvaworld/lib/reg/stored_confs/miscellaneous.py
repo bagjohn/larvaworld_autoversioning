@@ -75,7 +75,13 @@ def Life_dict() :
 def Tree_dict() :
     return aux.AttrDict()
 
+
+
+
 @reg.funcs.stored_conf("Food")
 def Food_dict() :
+    from ...reg import gen
+
+
     return aux.AttrDict()
 

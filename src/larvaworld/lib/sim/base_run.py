@@ -1,17 +1,24 @@
 import agentpy
+# import larvaworld.lib.reg as reg
+# import larvaworld.lib.aux as aux
+# import larvaworld.lib.model.agents as agents
+# import larvaworld.lib.model.envs as envs
+# import larvaworld.lib.sim as sim
 
-from .. import reg, aux
+
+from .. import reg, aux,sim, screen
 from ..model import envs, agents
-from ..sim import ABModel
+# from ..sim import ABModel
+# import larvaworld.lib.screen as screen
 
 __all__ = [
     'BaseRun',
 ]
 
 
-class BaseRun(ABModel):
+class BaseRun(sim.ABModel):
 
-    def __init__(self, **kwargs):
+    def __init__(self, screen_kws={}, **kwargs):
         '''
         Basic simulation class that extends the agentpy.Model class and creates a larvaworld agent-based model (ABM).
         Further extended by classes supporting the various simulation modes in larvaworld.
@@ -40,9 +47,38 @@ class BaseRun(ABModel):
         self.is_paused = False
         self.datasets = None
         self.results = None
+        self.exp_condition = None
         self.figs = {}
+
+        self.agents = []
+        self.sources = []
         self.obstacles = []
         self._odor_ids = None
+        self.screen_kws = screen_kws
+
+        self.screen_class=self.define_screen_class()
+
+        self.screen_manager = self.screen_class(model=self, **self.screen_kws)
+
+
+    @property
+    def end_condition_met(self):
+        if self.exp_condition is not None:
+            return self.exp_condition.check(self)
+        return False
+
+    # @profile
+    def sim_step(self):
+        """ Proceeds the simulation by one step, incrementing `Model.t` by 1
+        and then calling :func:`Model.step` and :func:`Model.update`."""
+        if not self.is_paused:
+            self.step()
+            self.screen_manager.step()
+            self.update()
+            self.t += 1
+            if self.t >= self._steps or self.end_condition_met:
+                self.running = False
+
 
     @property
     def Nticks(self):
@@ -63,7 +99,7 @@ class BaseRun(ABModel):
         - Temperature landscape : thermoscape
         '''
 
-        self.odor_layers = envs.create_odor_layers(model=self, sources=self.sources, pars=p.odorscape)
+        self.odor_layers = envs.create_odor_layers(model=self, sources=self.sources, pars=p.odorscape) if p.odorscape else {}
         self.windscape = envs.WindScape(model=self, **p.windscape) if p.windscape else None
         self.thermoscape = envs.ThermoScape(**p.thermoscape) if p.thermoscape else None
 
@@ -80,13 +116,17 @@ class BaseRun(ABModel):
         return self._odor_ids
 
     def place_obstacles(self, barriers={}):
-        border_list = [envs.Border(model=self, unique_id=id, **pars) for id, pars in barriers.items()]
+        borderConfs = reg.gen.Border.from_entries(barriers)
+        border_list = [envs.Border(model=self, **conf) for conf in borderConfs]
+        # border_list = [envs.Border(model=self, **pars) for pars in barriers]
+        # border_list = [envs.Border(model=self, unique_id=id, **pars) for id, pars in barriers.items()]
         self.borders = agentpy.AgentList(model=self, objs=border_list)
-        self.border_lines = self.borders.border_lines
+        self.border_lines = aux.SuperList(self.borders.border_lines).flatten
 
     def place_food(self, p):
         self.food_grid = envs.FoodGrid(**p.food_grid, model=self) if p.food_grid else None
         sourceConfs = reg.gen.FoodGroup.from_entries(p.source_groups) + reg.gen.Food.from_entries(p.source_units)
+        # print(sourceConfs)
         source_list = [agents.Food(model=self, **conf) for conf in sourceConfs]
         self.p.source_xy = aux.AttrDict({a.id: a.pos for a in source_list})
         self.space.add_sources(source_list, positions=[a.pos for a in source_list])
@@ -118,6 +158,12 @@ class BaseRun(ABModel):
         else:
             return agents.LarvaSim
 
+    def define_screen_class(self):
+        if self.runtype == 'Ga':
+            return screen.GA_ScreenManager
+        else:
+            return screen.ScreenManager
+
     def delete_agent(self, a):
         self.agents.remove(a)
         self.space.remove_agents([a])
@@ -132,3 +178,28 @@ class BaseRun(ABModel):
         self.collectors = reg.par.get_reporters(collections=collections, agents=self.agents)
         self.p.collectors = aux.AttrDict({'step': list(self.collectors['step'].keys()),
                                           'end': list(self.collectors['end'].keys())})
+
+    @property
+    def configuration_text(self):
+        c = self.p
+        pref0 = '     '
+        text = f"Simulation configuration : \n" \
+               f"{pref0}Simulation mode : {c.runtype}\n" \
+               f"{pref0}Experiment : {c.experiment}\n" \
+               f"{pref0}Simulation ID : {c.id}\n" \
+               f"{pref0}Duration (min) : {c.duration}\n" \
+               f"{pref0}Timestep (sec) : {c.dt}\n" \
+               f"{pref0}Ticks (#) : {c.Nsteps}\n" \
+               f"{pref0}Box2D active : {c.Box2D}\n" \
+ \
+               f"{pref0}Offline mode : {c.offline}\n" \
+               f"{pref0}Data storage : {c.store_data}\n" \
+               f"{pref0}Parent path : {c.dir}"
+        return text
+
+
+if __name__ == "__main__":
+    m = BaseRun(runtype='Exp', experiment='dish', duration=5, screen_kws={'show_display':True, 'mode':'video'})
+    m.build_env(m.p.env_params)
+    # print(m.id, m.dt, m.duration, m.Nsteps)
+    m.run()

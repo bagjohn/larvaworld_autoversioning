@@ -6,7 +6,7 @@ from shapely import geometry
 
 from ... import aux
 from ...model import NamedObject
-from ...param import Contour
+from ...param import Contour, ViewableLine
 
 
 __all__ = [
@@ -27,6 +27,19 @@ class Obstacle(NamedObject, Contour):
 
     # def draw(self, viewer):
     #     viewer.draw_polyline(vertices=self.vertices,color=self.color,width=self.width,closed=True)
+
+class Barrier(NamedObject, ViewableLine):
+
+    def __init__(self,model,edges=None,**kwargs):
+        NamedObject.__init__(self,model=model)
+        ViewableLine.__init__(self,**kwargs)
+
+        # self.vertices = vertices
+        self.edges = edges
+
+    # def draw(self, viewer):
+    #     viewer.draw_polyline(vertices=self.vertices,color=self.color,width=self.width,closed=True)
+
 
 
 
@@ -49,7 +62,7 @@ class Box(Obstacle):
 
 
 
-class Wall(Obstacle):
+class Wall(Barrier):
     closed = param.Boolean(False)
 
     def __init__(self, point1, point2, **kwargs):
@@ -62,14 +75,14 @@ class Wall(Obstacle):
 
 
 
-class Border(Obstacle):
+class Border(Barrier):
     closed = param.Boolean(False)
 
-    def __init__(self, points=None, **kwargs):
+    def __init__(self, vertices,points=None, **kwargs):
         self.points = points
-        self.border_xy, self.border_lines = self.define_lines(points)
+        self.border_xy, self.border_lines = self.define_lines(vertices)
         edges = []
-        vertices = self.border_xy
+        #vertices = self.border_xy
         for l in self.border_lines:
             (x1, y1), (x2, y2) = list(l.coords)
             point1 = geometry.Point(x1, y1)
@@ -79,8 +92,11 @@ class Border(Obstacle):
 
         super().__init__(vertices =vertices, edges =edges,**kwargs)
 
-    def define_lines(self, points, s=1):
-        lines = [geometry.LineString([tuple(p1), tuple(p2)]) for p1, p2 in aux.group_list_by_n(points, 2)]
+    def define_lines(self, vertices, s=1):
+        # print(points)
+        # print(len(points))
+
+        lines = [geometry.LineString([tuple(p1), tuple(p2)]) for (p1, p2) in aux.SuperList(vertices).in_pairs]
 
         T = [s, 0, 0, s, 0, 0]
         ls = [affine_transform(l, T) for l in lines]

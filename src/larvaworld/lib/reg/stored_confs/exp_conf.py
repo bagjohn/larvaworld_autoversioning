@@ -105,7 +105,7 @@ def grouped_exp_dic():
         'chemorbit_x3': {'env': 'mid_odor_gaussian', 'dur': 3.0,
                          'l': lgs(mIDs=['RE_NEU_PHI_DEF_nav', 'RL_navigator'],
                                   ids=['CoupledOsc', 'RL'], N=10)},
-        'chemorbit_x4': {'env': 'mid_odor_gaussian_square', 'dur': 3.0, 'l': lgs_x4()},
+        'chemorbit_x4': {'env': 'odor_gaussian_square', 'dur': 3.0, 'l': lgs_x4()},
         'chemotaxis_diffusion': {'env': 'mid_odor_diffusion', 'l': lg(mID='RE_NEU_PHI_DEF_nav', N=30)},
         'chemotaxis_RL': {'env': 'mid_odor_diffusion', 'c': ['memory'],
                           'l': lg(mID='RL_navigator', N=10, mode='periphery', s=0.04)},
@@ -138,7 +138,7 @@ def grouped_exp_dic():
     d33 = {id: exp(id=id, c0=['wind', 'olfactor', 'pose'],
                    enrichment=gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],
                                              proc_keys=['spatial', 'angular', 'source', 'wind']).nestedConf,
-                   **kws) for id, kws in d2.items()}
+                   **kws) for id, kws in d3.items()}
 
     d = {
         'exploration': d00,

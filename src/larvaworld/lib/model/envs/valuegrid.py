@@ -403,6 +403,7 @@ class WindScape(SpatialEntity):
                 ps = [l.intersection(b) for b in self.model.border_lines if l.intersects(b)]
                 if len(ps) != 0:
                     p1 = ps[np.argmin([geometry.Point(p0).distance(p2) for p2 in ps])].coords[0]
+                    # print(p1)
                 v.draw_arrow_line(p0, p1, self.default_color, width=0.001,
                                   phi=(self.draw_phi % 1000) / 1000)
         self.draw_phi += self.wind_speed

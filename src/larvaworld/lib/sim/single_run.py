@@ -7,7 +7,7 @@ import pandas as pd
 from pandas import to_datetime
 
 from larvaworld.lib import reg, aux, util, plot
-from larvaworld.lib.screen.drawing import ScreenManager
+
 from larvaworld.lib.model.envs.conditions import get_exp_condition
 from larvaworld.lib.sim.base_run import BaseRun
 import larvaworld
@@ -17,7 +17,7 @@ __all__ = [
 ]
 
 class ExpRun(BaseRun):
-    def __init__(self,experiment=None,parameters=None, screen_kws={},parameter_dict={}, **kwargs):
+    def __init__(self,experiment=None,parameters=None, parameter_dict={}, **kwargs):
         '''
         Simulation mode 'Exp' launches a single simulation of a specified experiment type.
 
@@ -28,26 +28,10 @@ class ExpRun(BaseRun):
 
         super().__init__(runtype = 'Exp',experiment=experiment,parameters=parameters, **kwargs)
 
-        self.screen_kws = screen_kws
+
         self.parameter_dict = parameter_dict
 
-    @property
-    def configuration_text(self):
-        c = self.p
-        pref0 = '     '
-        text = f"Simulation configuration : \n" \
-               f"{pref0}Simulation mode : {c.runtype}\n" \
-               f"{pref0}Experiment : {c.experiment}\n" \
-               f"{pref0}Simulation ID : {c.id}\n" \
-               f"{pref0}Duration (min) : {c.duration}\n" \
-               f"{pref0}Timestep (sec) : {c.dt}\n" \
-               f"{pref0}Ticks (#) : {c.Nsteps}\n" \
-               f"{pref0}Box2D active : {c.Box2D}\n" \
- \
-               f"{pref0}Offline mode : {c.offline}\n" \
-               f"{pref0}Data storage : {c.store_data}\n" \
-               f"{pref0}Parent path : {c.dir}"
-        return text
+
 
     def setup(self):
 
@@ -62,7 +46,7 @@ class ExpRun(BaseRun):
         self.set_collectors(self.p.collections)
         self.accessible_sources = None
 
-        self.screen_manager = ScreenManager(model=self, **self.screen_kws)
+
 
 
         if not self.larva_collisions:
@@ -74,22 +58,9 @@ class ExpRun(BaseRun):
         # self.report(['source_xy'])
 
 
-    @property
-    def end_condition_met(self):
-        if self.exp_condition is not None:
-            return self.exp_condition.check(self)
-        return False
 
-    # @profile
-    def sim_step(self):
-        """ Proceeds the simulation by one step, incrementing `Model.t` by 1
-        and then calling :func:`Model.step` and :func:`Model.update`."""
-        if not self.is_paused:
-            self.t += 1
-            self.step()
-            self.update()
-            if self.t >= self._steps or self.end_condition_met:
-                self.running = False
+
+
 
     # @profile
     def step(self):
@@ -107,7 +78,7 @@ class ExpRun(BaseRun):
             self.space.Step(self.dt, 6, 2)
             self.agents.updated_by_Box2D()
 
-        self.screen_manager.step()
+
 
     def update(self):
         """ Record a dynamic variable. """

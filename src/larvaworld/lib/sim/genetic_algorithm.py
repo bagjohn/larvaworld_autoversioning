@@ -191,7 +191,7 @@ class GAselector(NestedConf):
 
 class GAlauncher(BaseRun):
 
-    def __init__(self, dataset=None,screen_kws={}, **kwargs):
+    def __init__(self, dataset=None, **kwargs):
         '''
         Simulation mode 'Ga' launches a genetic algorith optimization simulation of a specified agent model.
 
@@ -203,7 +203,6 @@ class GAlauncher(BaseRun):
         super().__init__(runtype='Ga', **kwargs)
         self.evaluator = GAevaluation(dataset=dataset, **self.p.ga_eval_kws)
         self.selector = GAselector(**self.p.ga_select_kws)
-        self.screen_kws = screen_kws
 
 
     def setup(self):
@@ -230,7 +229,7 @@ class GAlauncher(BaseRun):
             f'Launching {temp} generations of {self.duration} minutes, with {self.selector.Nagents} agents each!', 2)
         self.p.collections = ['pose']
         self.build_env(self.p.env_params)
-        self.screen_manager = GA_ScreenManager(model=self, **self.screen_kws)
+
         self.build_generation()
 
     def simulate(self):
@@ -303,6 +302,7 @@ class GAlauncher(BaseRun):
     def sim_step(self):
         self.t += 1
         self.step()
+        self.screen_manager.step()
         self.update()
         # self.generation_step_num += 1
         if self.generation_completed:
@@ -322,7 +322,7 @@ class GAlauncher(BaseRun):
             for robot in self.agents:
                 if self.evaluator.exclude_func(robot):
                     robot.genome.fitness = -np.inf
-        self.screen_manager.render()
+
 
     def end(self):
         self.agents.nest_record(self.collectors['end'])

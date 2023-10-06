@@ -298,6 +298,15 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
         return (m == 'image' and self.overlap_mode) or (
                 m == 'video' and (self.image_mode != 'snapshots' or self.snapshot_tick))
 
+    def step(self):
+        self.check()
+        if self.active:
+            # self.screen_clock.tick_clock()
+            if self.render_valid:
+                self.render()
+            # if self.snapshot_valid:
+            #     self.capture_snapshot()
+
 
 class GA_ScreenManager(BaseScreenManager):
     """
@@ -469,7 +478,7 @@ class ScreenManager(BaseScreenManager):
         """
         Draw the arena and sensory landscapes
         """
-
+        self.draw_arena_tank(v)
         m = self.model
         arena_drawn = False
         for id, layer in m.odor_layers.items():
@@ -482,8 +491,8 @@ class ScreenManager(BaseScreenManager):
             m.food_grid._draw(v=v)
             arena_drawn = True
 
-        if not arena_drawn:
-            self.draw_arena_tank(v)
+        # if not arena_drawn:
+        #     self.draw_arena_tank(v)
 
         if m.windscape is not None:
             m.windscape._draw(v=v)
@@ -534,9 +543,9 @@ class ScreenManager(BaseScreenManager):
             for a in m.get_all_objects() + [self.screen_clock, self.screen_scale, self.screen_state] + list(
                     self.screen_texts.values()):
                 a.invert_default_color()
-        elif name == 'larva_collisions':
-
-            m.eliminate_overlap()
+        # elif name == 'larva_collisions':
+        #
+        #     m.eliminate_overlap()
 
     def evaluate_input(self):
         """
@@ -665,6 +674,9 @@ class ScreenManager(BaseScreenManager):
                 if isinstance(sel, LarvaSim) and sel.brain.olfactor is not None:
                     from larvaworld.gui.gui_aux.windows import set_kwargs
                     sel.brain.olfactor.gain = set_kwargs(sel.brain.olfactor.gain, title='Odor gains')
+        elif k == 'larva_collisions':
+            m.larva_collisions=not m.larva_collisions
+            #m.eliminate_overlap()
         else:
             self.toggle(k)
 

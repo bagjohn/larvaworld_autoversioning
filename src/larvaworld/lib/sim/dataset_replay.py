@@ -13,7 +13,7 @@ __all__ = [
 
 
 class ReplayRun(BaseRun):
-    def __init__(self, parameters, dataset=None, screen_kws={}, **kwargs):
+    def __init__(self, parameters, dataset=None, **kwargs):
         '''
         Simulation mode 'Replay' reconstructs a real or simulated experiment from stored data.
 
@@ -63,7 +63,6 @@ class ReplayRun(BaseRun):
             'image_mode': 'overlap' if self.p.overlap_mode else None,
             'background_motion': self.background_motion,
         }
-        self.screen_manager = ScreenManager(model=self, **screen_kws)
 
     def build_agents(self, d):
         s, e, c = d.data
@@ -133,20 +132,10 @@ class ReplayRun(BaseRun):
             confs.append(conf)
         self.place_agents(confs)
 
-    def sim_step(self):
-        """ Proceeds the simulation by one step, incrementing `Model.t` by 1
-        and then calling :func:`Model.step` and :func:`Model.update`."""
-        if not self.is_paused:
-            self.step()
-            self.update()
-            self.t += 1
-            if self.t >= self._steps:
-                self.running = False
 
     def step(self):
         """ Defines the models' events per simulation step. """
         self.agents.step()
-        self.screen_manager.step()
 
     def end(self):
         self.screen_manager.finalize()
