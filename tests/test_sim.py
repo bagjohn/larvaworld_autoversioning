@@ -55,7 +55,10 @@ def xx_test_replay():
         # raise
 
 
-def xx_test_exp_run():
+
+'''
+
+def test_exp_run():
     for exp in ['chemotaxis']:
         conf=reg.conf.Exp.expand(exp)
         # conf.sim_params.duration=1
@@ -66,8 +69,6 @@ def xx_test_exp_run():
         for d in exp_run.datasets:
             assert isinstance(d, LarvaDataset)
 
-
-'''
 
 def test_GA() :
     conf=reg.conf.Ga.expand('realism')
@@ -84,6 +85,8 @@ def test_GA() :
     best2=ga_run.run()
     print(best2)
     assert best2 is not None
+
+
 
 def test_evaluation() :
     # refID = 'exploration.merged_dishes'

@@ -163,10 +163,14 @@ def col_df(shorts, groups):
          'group_color': [group_col_dic[g] for g in groups]
          })
 
-    df['cols'] = df.apply(lambda row: [(row['group'], p) for p in row['symbols']], axis=1)
-    df['par_colors'] = df.apply(
-        lambda row: [cm.get_cmap(row['group_color'])(i) for i in np.linspace(0.4, 0.7, len(row['pars']))],
-        axis=1)
+    if groups!=[] and shorts!=[] :
+        df['cols'] = df.apply(lambda row: [(row['group'], p) for p in row['symbols']], axis=1)
+        df['par_colors'] = df.apply(
+            lambda row: [cm.get_cmap(row['group_color'])(i) for i in np.linspace(0.4, 0.7, len(row['pars']))],
+            axis=1)
+    else:
+        df['cols'] =[]
+        df['par_colors'] =[]
     df.set_index('group', inplace=True)
     return df
 
