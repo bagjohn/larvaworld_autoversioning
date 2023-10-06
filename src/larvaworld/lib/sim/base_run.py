@@ -72,6 +72,7 @@ class BaseRun(sim.ABModel):
         """ Proceeds the simulation by one step, incrementing `Model.t` by 1
         and then calling :func:`Model.step` and :func:`Model.update`."""
         if not self.is_paused:
+            self.step_env()
             self.step()
             self.screen_manager.step()
             self.update()
@@ -79,6 +80,11 @@ class BaseRun(sim.ABModel):
             if self.t >= self._steps or self.end_condition_met:
                 self.running = False
 
+    def step_env(self):
+        for id, layer in self.odor_layers.items():
+            layer.update_values()  # Currently doing something only for the DiffusionValueLayer
+        if self.windscape is not None:
+            self.windscape.update()
 
     @property
     def Nticks(self):

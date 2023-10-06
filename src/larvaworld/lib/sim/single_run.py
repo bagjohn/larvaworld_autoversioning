@@ -67,10 +67,10 @@ class ExpRun(BaseRun):
         """ Defines the models' events per simulation step. """
         if not self.larva_collisions:
             self.larva_bodies = self.get_larva_bodies()
-        for id, layer in self.odor_layers.items():
-            layer.update_values()  # Currently doing something only for the DiffusionValueLayer
-        if self.windscape is not None:
-            self.windscape.update()
+        # for id, layer in self.odor_layers.items():
+        #     layer.update_values()  # Currently doing something only for the DiffusionValueLayer
+        # if self.windscape is not None:
+        #     self.windscape.update()
         if len(self.sources)>10 :
             self.space.accessible_sources_multi(self.agents)
         self.agents.step()
