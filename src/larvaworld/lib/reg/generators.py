@@ -223,9 +223,7 @@ class RefType(ConfType):
 
     def retrieve_dataset(self, dataset=None, load=True, **kwargs):
         if dataset is None:
-            dataset = self.loadRef(load=False, **kwargs)
-        if load:
-            dataset.load()
+            dataset = self.loadRef(load=load, **kwargs)
         return dataset
 
     @property

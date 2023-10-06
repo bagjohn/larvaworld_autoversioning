@@ -212,7 +212,7 @@ class GAlauncher(BaseRun):
         self.best_fitness = None
         self.sorted_genomes = None
         self.all_genomes_dic = []
-        self.num_cpu = multiprocessing.cpu_count()
+
         self.generation_num = 0
         self.start_total_time = aux.TimeUtil.current_time_millis()
 
@@ -249,7 +249,7 @@ class GAlauncher(BaseRun):
         else:
             self.threads = None
         self.generation_num += 1
-        self.generation_step_num = 0
+        # self.generation_step_num = 0
         self.start_generation_time = aux.TimeUtil.current_time_millis()
         reg.vprint(f'Generation {self.generation_num} started', 1)
         if self.progress_bar:
@@ -296,7 +296,7 @@ class GAlauncher(BaseRun):
 
     @property
     def generation_completed(self):
-        return self.generation_step_num >= self.Nsteps or len(self.agents) <= self.selector.Nagents_min
+        return self.t >= self.Nsteps or len(self.agents) <= self.selector.Nagents_min
 
     @property
     def max_generation_completed(self):
@@ -306,7 +306,7 @@ class GAlauncher(BaseRun):
         self.t += 1
         self.step()
         self.update()
-        self.generation_step_num += 1
+        # self.generation_step_num += 1
         if self.generation_completed:
             self.end()
             if not self.max_generation_completed:
@@ -365,7 +365,7 @@ class GAlauncher(BaseRun):
 
 
     def build_threads(self, robots):
-        N = self.num_cpu
+        N = multiprocessing.cpu_count()
         threads = []
         N_per_cpu = math.floor(len(robots) / N)
         reg.vprint(f'num_robots_per_cpu: {N_per_cpu}', 2)

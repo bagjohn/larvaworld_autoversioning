@@ -52,7 +52,7 @@ class SidePanel:
             'Total time: ' + aux.TimeUtil.format_time_seconds(cum_t),
             'Generation: ' + str(m.generation_num),
             'Population: ' + str(len(m.agents)) + '/' + str(m.selector.Nagents),
-            'Generation real-time: ' + aux.TimeUtil.format_time_seconds(m.generation_step_num*m.dt),
+            'Generation real-time: ' + aux.TimeUtil.format_time_seconds(m.t*m.dt),
             '',
         ]
 

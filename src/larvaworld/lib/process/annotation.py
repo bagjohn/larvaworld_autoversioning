@@ -23,6 +23,7 @@ __all__ = [
     'bout_distribution',
     'bout_detection',
     'compute_interference_data',
+    'compute_interference',
     'turn_mode_annotation',
     'turn_annotation',
     'crawl_annotation',

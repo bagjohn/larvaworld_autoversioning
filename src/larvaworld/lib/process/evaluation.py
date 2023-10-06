@@ -11,7 +11,6 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from .. import reg, aux
 from ..param import NestedConf
 
-
 __all__ = [
     'eval_end_fast',
     'eval_distro_fast',
@@ -24,6 +23,7 @@ __all__ = [
     'DataEvaluation',
 ]
 
+
 def eval_end_fast(ee, e_data, e_sym, mode='pooled'):
     E = {}
     for p, sym in e_sym.items():
@@ -35,6 +35,7 @@ def eval_end_fast(ee, e_data, e_sym, mode='pooled'):
             elif mode == 'pooled':
                 E[sym] = ks_2samp(e_vs.values, ee[p].values)[0]
     return E
+
 
 def eval_distro_fast(ss, s_data, s_sym, mode='pooled', min_size=20):
     if mode == '1:1':
@@ -56,8 +57,8 @@ def eval_distro_fast(ss, s_data, s_sym, mode='pooled', min_size=20):
                 if spp.shape[0] > min_size and sspp.shape[0] > min_size:
                     E[sym] = ks_2samp(spp, sspp)[0]
     elif mode == '1:pooled':
-        ids=ss.index.unique('AgentID').values
-        E = {id:{} for id in ids}
+        ids = ss.index.unique('AgentID').values
+        E = {id: {} for id in ids}
         for id in ids:
             sss = ss.xs(id, level="AgentID")
             for p, sym in s_sym.items():
@@ -70,6 +71,7 @@ def eval_distro_fast(ss, s_data, s_sym, mode='pooled', min_size=20):
 
     return E
 
+
 def eval_fast(datasets, data, symbols, mode='pooled', min_size=20):
     GEend = {d.id: eval_end_fast(d.endpoint_data, data.end, symbols.end, mode=mode) for d in datasets}
     GEdistro = {d.id: eval_distro_fast(d.step_data, data.step, symbols.step, mode=mode, min_size=min_size) for d
@@ -80,7 +82,7 @@ def eval_fast(datasets, data, symbols, mode='pooled', min_size=20):
     #     labels = ['pooled endpoint KS$_{D}$', 'pooled distribution KS$_{D}$']
     # elif mode == '1:pooled':
     #     labels = ['individual endpoint KS$_{D}$', 'individual distribution KS$_{D}$']
-    E = aux.AttrDict({'end': pd.DataFrame.from_records(GEend).T,'step': pd.DataFrame.from_records(GEdistro).T})
+    E = aux.AttrDict({'end': pd.DataFrame.from_records(GEend).T, 'step': pd.DataFrame.from_records(GEdistro).T})
     E.end.index.name = 'metric'
     E.step.index.name = 'metric'
     return E
@@ -120,16 +122,16 @@ def RSS_dic(dd, d):
     dd.config.pooled_cycle_curves_errors = aux.AttrDict({'dict': dic, 'stat': stat})
     return stat
 
-def eval_RSS(rss,rss_target,rss_sym, mode='1:pooled') :
+
+def eval_RSS(rss, rss_target, rss_sym, mode='1:pooled'):
     assert mode == '1:pooled'
-    RSS_dic={}
+    RSS_dic = {}
     for id, rrss in rss.items():
         RSS_dic[id] = {}
         for p, sym in rss_sym.items():
             if p in rrss.keys():
                 RSS_dic[id][sym] = RSS(rrss[p], rss_target[p])
     return RSS_dic
-
 
 
 def col_df(shorts, groups):
@@ -163,16 +165,17 @@ def col_df(shorts, groups):
          'group_color': [group_col_dic[g] for g in groups]
          })
 
-    if groups!=[] and shorts!=[] :
+    if groups != [] and shorts != []:
         df['cols'] = df.apply(lambda row: [(row['group'], p) for p in row['symbols']], axis=1)
         df['par_colors'] = df.apply(
             lambda row: [cm.get_cmap(row['group_color'])(i) for i in np.linspace(0.4, 0.7, len(row['pars']))],
             axis=1)
     else:
-        df['cols'] =[]
-        df['par_colors'] =[]
+        df['cols'] = []
+        df['par_colors'] = []
     df.set_index('group', inplace=True)
     return df
+
 
 # def arrange_evaluation(d, evaluation_metrics=None):
 #     if evaluation_metrics is None:
@@ -213,7 +216,7 @@ def col_df(shorts, groups):
 #
 #     return ev, target_data
 
-class Evaluation(NestedConf) :
+class Evaluation(NestedConf):
     refID = reg.conf.Ref.confID_selector()
     eval_metrics = param.Dict(default=aux.AttrDict({
         'angular kinematics': ['run_fov_mu', 'pau_fov_mu', 'b', 'fov', 'foa', 'rov', 'roa', 'tur_fou'],
@@ -226,49 +229,43 @@ class Evaluation(NestedConf) :
         doc='Evaluation metrics to use')
     cycle_curve_metrics = param.List()
 
-
-    def __init__(self, dataset=None,**kwargs):
+    def __init__(self, dataset=None, **kwargs):
         super().__init__(**kwargs)
-        self.target = reg.conf.Ref.retrieve_dataset(dataset=dataset, id=self.refID)
-        print(self.eval_metrics)
-
-        if not hasattr(self.target, 'step_data'):
-            self.target.load(h5_ks=['epochs', 'base_spatial', 'angular', 'dspNtor'])
-
+        self.target = reg.conf.Ref.retrieve_dataset(dataset=dataset, id=self.refID, load=True,
+                                                    h5_ks=['epochs', 'base_spatial', 'angular', 'dspNtor'])
         self.build(d=self.target)
 
     def build(self, d):
-        if len(self.eval_metrics) > 0:
-            self.evaluation, self.target_data = self.arrange_evaluation()
-        else:
-            self.s_shorts = []
-        if len(self.cycle_curve_metrics)>0:
-            if not hasattr(d.config,'pooled_cycle_curves') :
+        s, e, c = d.data
+        self.target_data = self.get_target_data(s, e)
+        self.evaluation = self.arrange_evaluation(data=self.target_data)
+
+        # if len(self.eval_metrics) > 0:
+        #     self.evaluation, self.target_data = self.arrange_evaluation(s,e)
+        # else:
+        #     self.s_shorts = []
+        if len(self.cycle_curve_metrics) > 0:
+            if not hasattr(c, 'pooled_cycle_curves'):
                 from ..process.annotation import compute_interference
-                s, e, c = d.data
                 c.pooled_cycle_curves = compute_interference(s, e, c=c, d=d, chunk_dicts=d.read('chunk_dicts'))
 
             cycle_dict = {'sv': 'abs', 'fov': 'norm', 'rov': 'norm', 'foa': 'norm', 'b': 'norm'}
             self.cycle_modes = {sh: cycle_dict[sh] for sh in self.cycle_curve_metrics}
-            self.cycle_curve_target = aux.AttrDict({sh: np.array(d.config.pooled_cycle_curves[sh][mod]) for sh, mod in self.cycle_modes.items()})
+            self.cycle_curve_target = aux.AttrDict(
+                {sh: np.array(c.pooled_cycle_curves[sh][mod]) for sh, mod in self.cycle_modes.items()})
             self.rss_sym = {sh: sh for sh in self.cycle_curve_metrics}
 
-
-
-
-
-    def arrange_evaluation(self):
-
-        s, e = self.target.step_data, self.target.endpoint_data
+    def get_target_data(self, s, e):
         all_ks = aux.SuperList(self.eval_metrics.values()).flatten.unique
         all_ps = aux.SuperList(reg.getPar(all_ks[:]))
         Eps = all_ps.existing(e)
         Dps = all_ps.existing(s)
         Dps = Dps.nonexisting(Eps)
-        Eks = reg.getPar(p=Eps[:], to_return='k')
-        Dks = reg.getPar(p=Dps[:], to_return='k')
-        target_data = aux.AttrDict({'step': {p: s[p].dropna() for p in Dps}, 'end': {p: e[p] for p in Eps}})
+        return aux.AttrDict({'step': {p: s[p].dropna() for p in Dps}, 'end': {p: e[p] for p in Eps}})
 
+    def arrange_evaluation(self, data):
+        Eks = reg.getPar(p=list(data.end.keys()), to_return='k')
+        Dks = reg.getPar(p=list(data.step.keys()), to_return='k')
         dic = aux.AttrDict({'end': {'shorts': [], 'groups': []}, 'step': {'shorts': [], 'groups': []}})
         for g, shs in self.eval_metrics.items():
             Eshorts, Dshorts = aux.existing_cols(shs, Eks), aux.existing_cols(shs, Dks)
@@ -280,14 +277,15 @@ class Evaluation(NestedConf) :
                 dic.step.shorts.append(Dshorts)
                 dic.step.groups.append(g)
         ev = aux.AttrDict({k: col_df(**v) for k, v in dic.items()})
-        self.s_pars = aux.flatten_list(ev['step']['pars'].values.tolist())
-        self.s_shorts = aux.flatten_list(ev['step']['shorts'].values.tolist())
-        self.s_symbols = aux.flatten_list(ev['step']['symbols'].values.tolist())
-        self.e_pars = aux.flatten_list(ev['end']['pars'].values.tolist())
-        self.e_symbols = aux.flatten_list(ev['end']['symbols'].values.tolist())
+
+        self.s_pars = aux.SuperList(ev['step']['pars'].values.tolist()).flatten
+        self.s_shorts = aux.SuperList(ev['step']['shorts'].values.tolist()).flatten
+        self.s_symbols = aux.SuperList(ev['step']['symbols'].values.tolist()).flatten
+        self.e_pars = aux.SuperList(ev['end']['pars'].values.tolist()).flatten
+        self.e_symbols = aux.SuperList(ev['end']['symbols'].values.tolist()).flatten
         self.eval_symbols = aux.AttrDict(
             {'step': dict(zip(self.s_pars, self.s_symbols)), 'end': dict(zip(self.e_pars, self.e_symbols))})
-        return ev, target_data
+        return ev
 
     @property
     def func_eval_metric_solo(self):
@@ -301,7 +299,8 @@ class Evaluation(NestedConf) :
     def func_eval_metric_multi(self):
         def gfunc(s):
             return aux.AttrDict(
-                {'KS': eval_distro_fast(s, self.target_data.step, self.eval_symbols.step, mode='1:pooled', min_size=10)})
+                {'KS': eval_distro_fast(s, self.target_data.step, self.eval_symbols.step, mode='1:pooled',
+                                        min_size=10)})
 
         return gfunc
 
@@ -325,6 +324,7 @@ class Evaluation(NestedConf) :
             rss = aux.AttrDict(
                 {id: {sh: dic[sh][mod] for sh, mod in self.cycle_modes.items()} for id, dic in rss0.items()})
             return aux.AttrDict({'RSS': eval_RSS(rss, self.cycle_curve_target, self.rss_sym, mode='1:pooled')})
+
         return gfunc
 
     @property
@@ -336,6 +336,7 @@ class Evaluation(NestedConf) :
             if len(self.eval_metrics) > 0:
                 fit_dicts.update(self.func_eval_metric_multi(s))
             return fit_dicts
+
         return fit_func
 
     @property
@@ -350,43 +351,29 @@ class Evaluation(NestedConf) :
 
         return fit_func
 
-
-    def eval_datasets(self,ds,mode, min_size=20):
+    def eval_datasets(self, ds, mode, min_size=20):
         return eval_fast(datasets=ds, data=self.target_data, symbols=self.eval_symbols, mode=mode, min_size=min_size)
 
 
-class DataEvaluation(Evaluation) :
-
-
+class DataEvaluation(Evaluation):
     norm_modes = param.ListSelector(default=['raw', 'minmax'], objects=['raw', 'minmax', 'std'],
                                     doc='Normalization modes to use')
     eval_modes = param.ListSelector(default=['pooled'], objects=['pooled', '1:1', '1:pooled'],
                                     doc='Evaluation modes to use')
 
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-
-
-
         self.error_dicts = aux.AttrDict()
-
-
-
-
-
-
 
     def norm_error_dict(self, error_dict, mode='raw'):
         if mode == 'raw':
             return error_dict
         elif mode == 'minmax':
-            return aux.AttrDict({k : pd.DataFrame(MinMaxScaler().fit(df).transform(df), index=df.index, columns=df.columns) for k, df in error_dict.items()})
+            return aux.AttrDict(
+                {k: pd.DataFrame(MinMaxScaler().fit(df).transform(df), index=df.index, columns=df.columns) for k, df in
+                 error_dict.items()})
         elif mode == 'std':
-            return aux.AttrDict({k : pd.DataFrame(StandardScaler().fit(df).transform(df), index=df.index, columns=df.columns) for k, df in error_dict.items()})
-
-
-
-
-
+            return aux.AttrDict(
+                {k: pd.DataFrame(StandardScaler().fit(df).transform(df), index=df.index, columns=df.columns) for k, df
+                 in error_dict.items()})
