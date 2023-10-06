@@ -323,6 +323,14 @@ class SuperList(list):
         """ Return self+value. """
         return SuperList(super().__add__(*args, **kwargs))
 
+    def suf(self, suf=''):
+        return SuperList([i for i in self if i.endswith(suf)])
+
+    def pref(self, pref=''):
+        return SuperList([i for i in self if i.startswith(pref)])
+
+    def contains(self, l=''):
+        return SuperList([i for i in self if l in i])
 
 def existing_cols(cols, df):
     if isinstance(df, pd.DataFrame):

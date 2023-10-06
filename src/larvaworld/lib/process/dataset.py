@@ -193,18 +193,16 @@ class ParamLarvaDataset(param.Parameterized):
         else:
             if track_point is None:
                 track_point = c.point
-            XY = nam.xy(track_point) if aux.cols_exist(nam.xy(track_point), s) else ['x', 'y']
+            XY = nam.xy(track_point) if aux.cols_exist(nam.xy(track_point), s) else c.traj_xy
             if not aux.cols_exist(XY, s):
                 raise ValueError('Defined point xy coordinates do not exist. Can not align trajectories! ')
-            ids = s.index.unique(level='AgentID').values
+            ids = c.agent_ids
             if mode == 'origin':
                 reg.vprint('Aligning trajectories to common origin')
                 xy = [s[XY].xs(id, level='AgentID').dropna().values[0] for id in ids]
             elif mode == 'center':
                 reg.vprint('Centralizing trajectories in trajectory center using min-max positions')
-                xy_max = [s[XY].xs(id, level='AgentID').max().values for id in ids]
-                xy_min = [s[XY].xs(id, level='AgentID').min().values for id in ids]
-                xy = [(max + min) / 2 for max, min in zip(xy_max, xy_min)]
+                xy = [(s[XY].xs(id, level='AgentID').max().values-s[XY].xs(id, level='AgentID').min().values)/ 2 for id in ids]
             else:
                 raise ValueError('Supported modes are "arena", "origin" and "center"!')
             xs = np.array([x for x, y in xy] * c.Nticks)
