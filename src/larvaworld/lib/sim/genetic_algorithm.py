@@ -203,7 +203,8 @@ class GAselector(NestedConf):
 #         super().__init__(runtype='Ga', parameters=parameters, **kwargs)
 
 
-class GAlauncher(BaseRun,GAselector,GAevaluation):
+class GAlauncher(BaseRun):
+# class GAlauncher(BaseRun,GAselector,GAevaluation):
 
 
     def __init__(self,dataset=None, **kwargs):
@@ -219,13 +220,15 @@ class GAlauncher(BaseRun,GAselector,GAevaluation):
 
 
 
-        BaseRun.__init__(self, runtype='Ga',dataset=dataset, **kwargs)
+        super().__init__(runtype='Ga',**kwargs)
 
 
         # raise
-        GAevaluation.__init__(self,dataset=dataset,**self.p.ga_eval_kws)
+        self.evaluator=GAevaluation(dataset=dataset,**self.p.ga_eval_kws)
+        # GAevaluation.__init__(self,dataset=dataset,**self.p.ga_eval_kws)
         # GAselector.__init__(self,**self.p.ga_select_kws,dataset=dataset,**self.p.ga_eval_kws)
-        GAselector.__init__(self,**self.p.ga_select_kws)
+        self.selector=GAselector(**self.p.ga_select_kws)
+        # GAselector.__init__(self,**self.p.ga_select_kws)
 
 
 
@@ -246,13 +249,13 @@ class GAlauncher(BaseRun,GAselector,GAevaluation):
         self.generation_num = 0
         self.start_total_time = aux.TimeUtil.current_time_millis()
 
-
+        Ngens=self.selector.Ngenerations
 
         reg.vprint(f'--- Genetic Algorithm  "{self.id}" initialized!--- ', 2)
-        temp = self.Ngenerations if self.Ngenerations is not None else 'unlimited'
-        reg.vprint(f'Launching {temp} generations of {self.duration} minutes, with {self.Nagents} agents each!', 2)
-        if self.Ngenerations is not None:
-            self.progress_bar = progressbar.ProgressBar(self.Ngenerations)
+        temp = Ngens if Ngens is not None else 'unlimited'
+        reg.vprint(f'Launching {temp} generations of {self.duration} minutes, with {self.selector.Nagents} agents each!', 2)
+        if self.selector.Ngenerations is not None:
+            self.progress_bar = progressbar.ProgressBar(Ngens)
             self.progress_bar.start()
         else:
             self.progress_bar = None
@@ -271,8 +274,8 @@ class GAlauncher(BaseRun,GAselector,GAevaluation):
         return self.best_genome
 
     def build_generation(self, sorted_genomes=None):
-        self.create_generation(sorted_genomes)
-        confs = [{'larva_pars': g.mConf, 'unique_id': str(id), 'genome': g} for id, g in self.genome_dict.items()]
+        self.selector.create_generation(sorted_genomes)
+        confs = [{'larva_pars': g.mConf, 'unique_id': str(id), 'genome': g} for id, g in self.selector.genome_dict.items()]
         self.place_agents(confs)
         self.set_collectors(self.p.collections)
         if self.multicore:
@@ -290,7 +293,7 @@ class GAlauncher(BaseRun,GAselector,GAevaluation):
 
     def eval_robots(self, Ngen, genome_dict):
         reg.vprint(f'Evaluating generation {Ngen}', 1)
-        assert self.fit_func_arg =='s'
+        assert self.evaluator.fit_func_arg =='s'
 
         self.data_collection = larvaworld.lib.LarvaDatasetCollection.from_agentpy_output(self.output)
         for d in self.data_collection.datasets:
@@ -299,7 +302,7 @@ class GAlauncher(BaseRun,GAselector,GAevaluation):
             for i, g in genome_dict.items():
             # for id in d.config.agent_ids:
                 ss = d.step_data.xs(str(i), level='AgentID')
-                g.fitness_dict = self.fit_func(ss)
+                g.fitness_dict = self.evaluator.fit_func(ss)
 
 
             # fit_dicts = self.fit_func(s=d.step_data)
@@ -321,25 +324,26 @@ class GAlauncher(BaseRun,GAselector,GAevaluation):
             return sorted_gs
 
     def store(self, sorted_gs, Ngen):
+        bestID=self.selector.bestConfID
         if self.best_genome is None or sorted_gs[0].fitness > self.best_genome.fitness:
             self.best_genome = sorted_gs[0]
             self.best_fitness = self.best_genome.fitness
 
-            if self.bestConfID is not None:
-                reg.conf.Model.setID(self.bestConfID, self.best_genome.mConf)
+            if bestID is not None:
+                reg.conf.Model.setID(bestID, self.best_genome.mConf)
         reg.vprint(f'Generation {Ngen} best_fitness : {self.best_fitness}', 1)
         self.all_genomes_dic += [
-            {'generation': Ngen, **{p.name: g.gConf[k] for k, p in self.space_dict.items()},
+            {'generation': Ngen, **{p.name: g.gConf[k] for k, p in self.selector.space_dict.items()},
              'fitness': g.fitness, **g.fitness_dict.flatten()}
             for g in sorted_gs if g.fitness_dict is not None]
 
     @property
     def generation_completed(self):
-        return self.generation_step_num >= self.Nsteps or len(self.agents) <= self.Nagents_min
+        return self.generation_step_num >= self.Nsteps or len(self.agents) <= self.selector.Nagents_min
 
     @property
     def max_generation_completed(self):
-        return self.Ngenerations is not None and self.generation_num >= self.Ngenerations
+        return self.selector.Ngenerations is not None and self.generation_num >= self.selector.Ngenerations
 
     def sim_step(self):
         self.t += 1
@@ -359,9 +363,9 @@ class GAlauncher(BaseRun,GAselector,GAevaluation):
                 thr.step()
         else:
             self.agents.step()
-        if self.exclude_func is not None:
+        if self.evaluator.exclude_func is not None:
             for robot in self.agents:
-                if self.exclude_func(robot):
+                if self.evaluator.exclude_func(robot):
                     robot.genome.fitness = -np.inf
                     # self.delete_agent(robot)
         self.screen_manager.render()
@@ -369,7 +373,7 @@ class GAlauncher(BaseRun,GAselector,GAevaluation):
     def end(self):
         self.agents.nest_record(self.collectors['end'])
         self.create_output()
-        self.sorted_genomes = self.eval_robots(Ngen=self.generation_num, genome_dict=self.genome_dict)
+        self.sorted_genomes = self.eval_robots(Ngen=self.generation_num, genome_dict=self.selector.genome_dict)
         self.delete_agents()
         self._logs = {}
         self.t = 0
@@ -393,11 +397,11 @@ class GAlauncher(BaseRun,GAselector,GAevaluation):
         df = df.round(3)
         df.sort_values(by='fitness', ascending=False, inplace=True)
         reg.graphs.dict['mpl'](data=df, font_size=18, save_to=save_to,
-                               name=self.bestConfID)
-        df.to_csv(f'{save_to}/{self.bestConfID}.csv')
+                               name=self.selector.bestConfID)
+        df.to_csv(f'{save_to}/{self.selector.bestConfID}.csv')
 
-        self.corr_df=df[['fitness']+self.space_columns].corr()
-        self.diff_df, row_colors=reg.model.diff_df(mIDs=[self.base_model, self.bestConfID], ms=[self.mConf0,self.best_genome.mConf])
+        self.corr_df=df[['fitness']+self.selector.space_columns].corr()
+        self.diff_df, row_colors=reg.model.diff_df(mIDs=[self.selector.base_model, self.selector.bestConfID], ms=[self.selector.mConf0,self.best_genome.mConf])
 
     def build_threads(self, robots):
         N = self.num_cpu
