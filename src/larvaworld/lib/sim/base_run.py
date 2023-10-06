@@ -6,8 +6,9 @@ import agentpy
 # import larvaworld.lib.sim as sim
 
 
-from .. import reg, aux,sim, screen
+from .. import reg, aux, sim, screen
 from ..model import envs, agents
+
 # from ..sim import ABModel
 # import larvaworld.lib.screen as screen
 
@@ -56,10 +57,9 @@ class BaseRun(sim.ABModel):
         self._odor_ids = None
         self.screen_kws = screen_kws
 
-        self.screen_class=self.define_screen_class()
+        self.screen_class = self.define_screen_class()
 
         self.screen_manager = self.screen_class(model=self, **self.screen_kws)
-
 
     @property
     def end_condition_met(self):
@@ -90,6 +90,16 @@ class BaseRun(sim.ABModel):
     def Nticks(self):
         return self.t
 
+    @property
+    def sensorscapes(self):
+        ls = [self.windscape, self.thermoscape, self.food_grid] + list(self.odor_layers.values())
+        ls = [l for l in ls if l is not None]
+        return ls
+
+    def set_obj_visibility(self, objs, vis=True):
+        for obj in objs:
+            obj.visible = vis
+
     def build_env(self, p):
         # reg.vprint(f'--- Simulation {self.id} : Building environment!--- ', 1)
         # Define environment
@@ -105,7 +115,8 @@ class BaseRun(sim.ABModel):
         - Temperature landscape : thermoscape
         '''
 
-        self.odor_layers = envs.create_odor_layers(model=self, sources=self.sources, pars=p.odorscape) if p.odorscape else {}
+        self.odor_layers = envs.create_odor_layers(model=self, sources=self.sources,
+                                                   pars=p.odorscape) if p.odorscape else {}
         self.windscape = envs.WindScape(model=self, **p.windscape) if p.windscape else None
         self.thermoscape = envs.ThermoScape(**p.thermoscape) if p.thermoscape else None
 
@@ -203,9 +214,52 @@ class BaseRun(sim.ABModel):
                f"{pref0}Parent path : {c.dir}"
         return text
 
+    @classmethod
+    def visualize_Env(cls, envID=None, envConf=None, id=None, duration=1, screen_kws={},func=None, **kwargs):
+        if envConf is None:
+            if envID and envID in reg.conf.Env.confIDs:
+                envConf = reg.conf.Env.get(envID).nestedConf
+        if id is None:
+            if envID:
+                id = envID
+            else:
+                id = 'Env_visualization'
+
+        kws = aux.AttrDict({
+            'screen_kws': {'show_display': True,
+                           'mode': 'video',
+                           'odor_aura': True,
+                           'intro_text': False,
+                           'fps': 60,
+                           },
+            'parameters': aux.AttrDict({'env_params': envConf}),
+            'duration': duration,
+            'id': id,
+            'runtype': 'Exp',
+            'experiment': 'dish',
+            **kwargs
+
+        })
+        kws.screen_kws.update(**screen_kws)
+
+        m = cls(**kws)
+        m.sim_setup(steps=m.p.steps, seed=None)
+        m.build_env(m.p.env_params)
+        m.set_obj_visibility(m.sensorscapes, True)
+        while m.running:
+            if func is not None:
+                func(model=m)
+            # if Wm == 'direction':
+            #     m.windscape.set_wind_direction((m.t / 10 / np.pi) % (2 * np.pi))
+            # elif Wm == 'speed':
+            #     m.windscape.wind_speed = m.t % 100
+            m.sim_step()
+        m.end()
+        m.screen_manager.close()
+
 
 if __name__ == "__main__":
-    m = BaseRun(runtype='Exp', experiment='dish', duration=5, screen_kws={'show_display':True, 'mode':'video'})
+    m = BaseRun(runtype='Exp', experiment='dish', duration=5, screen_kws={'show_display': True, 'mode': 'video'})
     m.build_env(m.p.env_params)
     # print(m.id, m.dt, m.duration, m.Nsteps)
     m.run()

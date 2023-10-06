@@ -411,6 +411,10 @@ class EnvConf(NestedConf):
 
         super().__init__(odorscape=odorscape,**kwargs)
 
+    def visualize(self, **kwargs):
+        from larvaworld.lib.sim.base_run import BaseRun
+        BaseRun.visualize_Env(envConf=self.nestedConf, envID=self.name, **kwargs)
+
 
 class LarvaGroup(NestedConf):
     model = conf.Model.confID_selector()
