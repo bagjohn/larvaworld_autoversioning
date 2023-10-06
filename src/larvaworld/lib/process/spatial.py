@@ -466,8 +466,6 @@ def comp_source_metrics(s, e, c, **kwargs):
                 e[nam.scal(p)] = e[p] / l
 
         reg.vprint('Bearing and distance to source computed')
-
-@reg.funcs.proc("wind")
 def comp_wind(**kwargs) :
     try :
         comp_wind_metrics(**kwargs)
@@ -507,6 +505,8 @@ def comp_final_anemotaxis(s, e, c, **kwargs):
         angs = np.arctan2(dy, dx)
         a = np.array([aux.angle_dif(ang, woo) for ang in angs])
         e['anemotaxis'] = d * np.cos(a)
+@reg.funcs.proc("wind")
+
 
 
 @reg.funcs.preproc("transposition")

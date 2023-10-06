@@ -605,18 +605,13 @@ class ParamLarvaDataset(param.Parameterized):
         self.step_data['length'] = np.sum(np.sum(np.diff(self.midline_xy_data, axis=1) ** 2, axis=2) ** (1 / 2), axis=1)
         self.endpoint_data['length'] = self.step_data['length'].groupby('AgentID').quantile(q=0.5)
 
-    def comp_spatial(self, dsp_starts=[0], dsp_stops=[40, 60], tor_durs=[5, 10, 20], is_last=False):
+    def comp_spatial(self):
         self.comp_centroid()
         self.comp_length()
         self.step_data[self.config.traj_xy] = self.step_data[self.config.point_xy]
+        self.comp_operators(pars=self.config.traj_xy)
         for point in ['', 'centroid']:
             self.comp_xy_moments(point)
-        for t0, t1 in itertools.product(dsp_starts, dsp_stops):
-            self.comp_dispersal(t0, t1)
-        for dur in tor_durs:
-            self.comp_tortuosity(dur)
-        if is_last:
-            self.save()
 
     def scale_to_length(self, pars=None, keys=None):
         s, e, c = self.data
@@ -638,6 +633,145 @@ class ParamLarvaDataset(param.Parameterized):
         e_pars = aux.existing_cols(pars, e)
         if len(e_pars) > 0:
             e[nam.scal(e_pars)] = (e[e_pars].values.T / l.values).T
+
+    def comp_source_metrics(self):
+        s, e, c = self.data
+        fo = reg.getPar('fo')
+        for n, pos in c.source_xy.items():
+            reg.vprint(f'Computing bearing and distance to {n} based on xy position')
+            o, d = nam.bearing_to(n), nam.dst_to(n)
+            pabs = nam.abs(o)
+            temp = np.array(pos) - s[c.traj_xy].values
+            s[o] = (s[fo] + 180 - np.rad2deg(np.arctan2(temp[:, 1], temp[:, 0]))) % 360 - 180
+            s[pabs] = s[o].abs()
+            s[d] = aux.eudi5x(s[c.traj_xy].values, pos)
+            self.comp_operators(pars=[d, pabs])
+            if 'length' in e.columns:
+                l = e['length']
+
+                def rowIndex(row):
+                    return row.name[1]
+
+                def rowLength(row):
+                    return l.loc[rowIndex(row)]
+
+                def rowFunc(row):
+                    return row[d] / rowLength(row)
+                sd=nam.scal(d)
+                s[sd] = s.apply(rowFunc, axis=1)
+                self.comp_operators(pars=[sd])
+
+            reg.vprint('Bearing and distance to source computed')
+
+    def comp_wind(self):
+        try:
+            self.comp_wind_metrics()
+        except:
+            self.comp_final_anemotaxis()
+
+    def comp_wind_metrics(self):
+        s, e, c = self.data
+        w = c.env_params.windscape
+        if w is not None:
+            wo, wv = w.wind_direction, w.wind_speed
+            woo = np.deg2rad(wo)
+
+            for id in c.agent_ids:
+                xy = s[c.traj_xy].xs(id, level='AgentID', drop_level=True).values
+                origin = e[[nam.initial('x'), nam.initial('y')]].loc[id]
+                d = aux.eudi5x(xy, origin)
+                dx = xy[:, 0] - origin[0]
+                dy = xy[:, 1] - origin[1]
+                angs = np.arctan2(dy, dx)
+                a = np.array([aux.angle_dif(ang, woo) for ang in angs])
+                s.loc[(slice(None), id), 'anemotaxis'] = d * np.cos(a)
+            s[nam.bearing_to('wind')] = s.apply(lambda r: aux.angle_dif(r[nam.orient('front')], wo), axis=1)
+            e['anemotaxis'] = s['anemotaxis'].groupby('AgentID').last()
+
+    def comp_final_anemotaxis(self):
+        s, e, c = self.data
+        w = c.env_params.windscape
+        if w is not None:
+            wo, wv = w.wind_direction, w.wind_speed
+            woo = np.deg2rad(wo)
+            xy0 = s[c.traj_xy].groupby('AgentID').first()
+            xy1 = s[c.traj_xy].groupby('AgentID').last()
+            dx = xy1.values[:, 0] - xy0.values[:, 0]
+            dy = xy1.values[:, 1] - xy0.values[:, 1]
+            d = np.sqrt(dx ** 2 + dy ** 2)
+            angs = np.arctan2(dy, dx)
+            a = np.array([aux.angle_dif(ang, woo) for ang in angs])
+            e['anemotaxis'] = d * np.cos(a)
+
+    def comp_PI2(self,xys, x=0.04):
+        Nticks = xys.index.unique('Step').size
+        ids = xys.index.unique('AgentID').values
+        N = len(ids)
+        dLR = np.zeros([N, Nticks]) * np.nan
+        for i, id in enumerate(ids):
+            xy = xys.xs(id, level='AgentID').values
+            dL = aux.eudi5x(xy, [-x, 0])
+            dR = aux.eudi5x(xy, [x, 0])
+            dLR[i, :] = (dR - dL) / (2 * x)
+        dLR_mu = np.mean(dLR, axis=1)
+        mu_dLR_mu = np.mean(dLR_mu)
+        return mu_dLR_mu
+
+    def comp_PI(self,arena_xdim, xs, return_num=False):
+        N = len(xs)
+        r = 0.2 * arena_xdim
+        xs = np.array(xs)
+        N_l = len(xs[xs <= -r / 2])
+        N_r = len(xs[xs >= +r / 2])
+        # N_m = len(xs[(xs <= +r / 2) & (xs >= -r / 2)])
+        pI = np.round((N_l - N_r) / N, 3)
+        if return_num:
+            return pI, N
+        else:
+            return pI
+
+    def comp_dataPI(self):
+        s, e, c = self.data
+        if 'x' in e.keys():
+            px = 'x'
+            xs = e[px].values
+        elif nam.final('x') in e.keys():
+            px = nam.final('x')
+            xs = e[px].values
+        elif 'x' in s.keys():
+            px = 'x'
+            xs = s[px].dropna().groupby('AgentID').last().values
+        elif 'centroid_x' in s.keys():
+            px = 'centroid_x'
+            xs = s[px].dropna().groupby('AgentID').last().values
+        else:
+            raise ValueError('No x coordinate found')
+        PI, N = self.comp_PI(xs=xs, arena_xdim=c.env_params.arena.dims[0], return_num=True)
+        c.PI = {'PI': PI, 'N': N}
+        try:
+            c.PI2 = self.comp_PI2(xys=s[nam.xy('')])
+        except:
+            pass
+
+    def process(self,proc_keys=['angular', 'spatial'],
+                dsp_starts=[0], dsp_stops=[40, 60], tor_durs=[5, 10, 20], is_last=False):
+        if 'angular' in proc_keys:
+            self.comp_angular()
+        if 'spatial' in proc_keys:
+            self.comp_spatial()
+        for t0, t1 in itertools.product(dsp_starts, dsp_stops):
+            self.comp_dispersal(t0, t1)
+        for dur in tor_durs:
+            self.comp_tortuosity(dur)
+        if 'source' in proc_keys:
+            self.comp_source_metrics()
+        if 'wind' in proc_keys:
+            self.comp_wind()
+        if 'PI' in proc_keys:
+            self.comp_dataPI()
+        if is_last:
+            self.save()
+
 
     def get_par(self, par=None, k=None, key='step'):
         s, e = self.step_data, self.endpoint_data

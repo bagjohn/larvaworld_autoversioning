@@ -24,6 +24,7 @@ __all__ = [
     'SimMetricOps',
     'TrackerOps',
     'PreprocessConf',
+    'ProcessConf',
     'EnrichConf',
     'AirPuff',
 ]
@@ -278,6 +279,14 @@ class PreprocessConf(NestedConf):
     transposition = OptionalSelector(['origin', 'arena', 'center'], doc='Whether to transpose spatial coordinates.')
     interpolate_nans = Boolean(False, doc='Whether to interpolate missing values.')
     drop_collisions = Boolean(False, doc='Whether to drop timepoints where larva collisions are detected.')
+
+class ProcessConf(NestedConf):
+    proc_keys = ListSelector(default=['angular', 'spatial'],
+                             objects=['angular', 'spatial', 'source', 'PI', 'wind'],
+                             doc='The processing pipelines')
+    dsp_starts=param.List(default=[0.0],item_type=float, doc='The starting times for dispersal computation.')
+    dsp_stops=param.List(default=[40.0, 60.0],item_type=float, doc='The stopping times for dispersal computation.')
+    tor_durs=param.List(default=[5,10,20],item_type=int, doc='The time windows for tortuosity computation.')
 
 
 class EnrichConf(NestedConf):
