@@ -213,7 +213,7 @@ class GAlauncher(BaseRun):
         self.all_genomes_dic = []
 
         self.generation_num = 0
-        self.start_total_time = aux.TimeUtil.current_time_millis()
+        # self.start_total_time = aux.TimeUtil.current_time_millis()
 
         Ngens = self.selector.Ngenerations
 

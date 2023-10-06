@@ -111,11 +111,11 @@ class Color:
         return r, g, b
 
     @staticmethod
-    def random_bright(min_value=127):
+    def random_bright(min_value=187):
         r = random.randint(min_value, 255)
         g = random.randint(min_value, 255)
         b = random.randint(min_value, 255)
-        return r, g, b
+        return colortuple2str((r, g, b))
 
     @staticmethod
     def timeseries_to_col(a, lim=1.0, color_range=[RED, GREEN]):

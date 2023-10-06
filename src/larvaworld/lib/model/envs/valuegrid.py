@@ -187,12 +187,13 @@ class ValueGrid(SpatialEntity, Grid):
                     v.draw_polygon(self.grid_vertices[i, j], Cgrid[i, j], filled=True)
         except:
             pass
-        self.draw_peak(v)
+
         if self.model.screen_manager.odor_aura:
             self.draw_isocontours(v)
+        self.draw_peak(v)
 
     def draw_isocontours(self, v):
-        N = 8
+        N = 6
         k = 4
         g = self.grid
         c = self.default_color

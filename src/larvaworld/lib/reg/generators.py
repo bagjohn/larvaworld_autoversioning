@@ -412,6 +412,10 @@ class EnvConf(NestedConf):
         super().__init__(odorscape=odorscape,**kwargs)
 
     def visualize(self, **kwargs):
+        """
+        Visualize the environment by launching a simulation without agents
+        """
+
         from larvaworld.lib.sim.base_run import BaseRun
         BaseRun.visualize_Env(envConf=self.nestedConf, envID=self.name, **kwargs)
 

@@ -109,7 +109,7 @@ class SidePanel:
         :param text: The text to render.
         :param extra_margin: Additional margin for the text.
         """
-        line = self.font.render(text, 1, aux.Color.WHITE)
+        line = self.font.render(text, 1, self.viewer.manager.tank_color)
         x = self.viewer.w + self.DEFAULT_MARGIN + extra_margin
         y = self.line_num * self.line_spacing
         lint_pos = pygame.Rect(x, y, 20, 20)
@@ -124,6 +124,6 @@ class SidePanel:
         :param kwargs: Additional drawing arguments.
         """
         # Draw a black background for the side panel
-        pygame.draw.rect(v._window, aux.Color.BLACK, self.panel_rect)
-        v.draw_line((v.w, 0), (v.w, v.h), color=aux.Color.WHITE)
+        pygame.draw.rect(v._window, v.manager.sidepanel_color, self.panel_rect)
+        v.draw_line((v.w, 0), (v.w, v.h), color=aux.Color.RED)
         self.display_ga_info()

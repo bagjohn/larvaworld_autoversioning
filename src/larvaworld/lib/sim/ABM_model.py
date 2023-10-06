@@ -220,6 +220,8 @@ class BasicABModel(Object):
         Initiates (additional) steps and the two random number generators,
         and then calls :func:`Model.setup` and :func:`Model.update`. """
 
+        self.start_total_time = aux.TimeUtil.current_time_millis()
+
         # Prepare random number generators if initial run
         if self._partly_run is False:
             if seed is None:
