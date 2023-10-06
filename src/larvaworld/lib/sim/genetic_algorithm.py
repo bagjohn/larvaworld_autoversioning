@@ -15,7 +15,6 @@ from larvaworld.lib.process.evaluation import Evaluation
 from larvaworld.lib.screen import GA_ScreenManager
 from larvaworld.lib.sim.base_run import BaseRun
 
-
 __all__ = [
     'GAevaluation',
     'GAselector',
@@ -28,11 +27,12 @@ def dst2source_evaluation(robot, source_xy):
     traj = np.array(robot.trajectory)
     dst = np.sqrt(np.diff(traj[:, 0]) ** 2 + np.diff(traj[:, 1]) ** 2)
     cum_dst = np.sum(dst)
-    l=[]
+    l = []
     for label, pos in source_xy.items():
         l.append(aux.eudi5x(traj, pos))
-    fitness= - np.mean(np.min(np.vstack(l),axis=0))/ cum_dst
+    fitness = - np.mean(np.min(np.vstack(l), axis=0)) / cum_dst
     return fitness
+
 
 def cum_dst(robot, **kwargs):
     return robot.cum_dst / robot.real_length
@@ -50,32 +50,30 @@ fitness_funcs = aux.AttrDict({
     'cum_dst': cum_dst,
 })
 
-
-
 exclusion_funcs = aux.AttrDict({
     'bend_errors': bend_error_exclusion
 })
 
 
-
-
 class GAevaluation(Evaluation):
-    exclusion_mode = param.Boolean(default=False,label='exclusion mode', doc='Whether to apply exclusion mode')
-    exclude_func_name = OptionalSelector(default=None,objects=list(exclusion_funcs.keys()),
-                                       label='name of exclusion function',doc='The function that evaluates exclusion', allow_None=True)
-    fitness_func_name = OptionalSelector(default=None,objects=list(fitness_funcs.keys()),
-                                       label='name of fitness function',doc='The function that evaluates fitness', allow_None=True)
+    exclusion_mode = param.Boolean(default=False, label='exclusion mode', doc='Whether to apply exclusion mode')
+    exclude_func_name = OptionalSelector(default=None, objects=list(exclusion_funcs.keys()),
+                                         label='name of exclusion function',
+                                         doc='The function that evaluates exclusion', allow_None=True)
+    fitness_func_name = OptionalSelector(default=None, objects=list(fitness_funcs.keys()),
+                                         label='name of fitness function', doc='The function that evaluates fitness',
+                                         allow_None=True)
 
     fit_kws = param.Dict(default={}, label='fitness metrics to evaluate', doc='The target metrics to optimize against')
 
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.exclude_func = exclusion_funcs[self.exclude_func_name] if type(self.exclude_func_name)==str else None
+        self.exclude_func = exclusion_funcs[self.exclude_func_name] if type(self.exclude_func_name) == str else None
 
         if self.exclusion_mode:
             self.fit_func = None
-        elif self.fitness_func_name and self.fitness_func_name in fitness_funcs.keys() :
+        elif self.fitness_func_name and self.fitness_func_name in fitness_funcs.keys():
 
             def func(robot):
                 return fitness_funcs[self.fitness_func_name](robot, **self.fit_kws)
@@ -106,11 +104,12 @@ class GAselector(NestedConf):
                               doc='ID for the optimized model')
 
     init_mode = param.Selector(default='random', objects=['random', 'model', 'default'],
-                               label='mode of initial generation',doc='Mode of initial generation')
+                               label='mode of initial generation', doc='Mode of initial generation')
     base_model = reg.conf.Model.confID_selector('loco_default')
 
     space_mkeys = param.ListSelector(default=[], objects=reg.model.mkeys,
-                                     label='keys of modules to include in space search',doc='Keys of the modules where the optimization parameters are')
+                                     label='keys of modules to include in space search',
+                                     doc='Keys of the modules where the optimization parameters are')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -121,16 +120,15 @@ class GAselector(NestedConf):
                              'Please increase population (' + str(self.Nagents) + ') or selection ratio (' +
                              str(self.selection_ratio) + ')')
 
-
         self.mConf0 = reg.conf.Model.getID(self.base_model)
         self.space_dict = reg.model.space_dict(mkeys=self.space_mkeys, mConf0=self.mConf0)
-        self.space_columns = [p.name for k, p in self.space_dict.items()]
+        # self.space_columns = [p.name for k, p in self.space_dict.items()]
         self.gConf0 = reg.model.conf(self.space_dict)
 
     def create_first_generation(self):
-        mode=self.init_mode
-        N=self.Nagents
-        d=self.space_dict
+        mode = self.init_mode
+        N = self.Nagents
+        d = self.space_dict
         if mode == 'default':
             gConf = reg.model.conf(d)
             gConfs = [gConf] * N
@@ -143,7 +141,7 @@ class GAselector(NestedConf):
                 reg.model.randomize(d)
                 gConf = reg.model.conf(d)
                 gConfs.append(gConf)
-        else :
+        else:
             raise ValueError('Not implemented')
         return gConfs
 
@@ -173,11 +171,11 @@ class GAselector(NestedConf):
         return gs
 
     def create_generation(self, sorted_gs=None):
-        if sorted_gs is None :
+        if sorted_gs is None:
             self.gConfs = self.create_first_generation()
-        else :
+        else:
             self.gConfs = self.create_new_generation(sorted_gs)
-        self.genome_dict = {i: self.new_genome(gConf, self.mConf0) for i, gConf in enumerate(self.gConfs)}
+        return {i: self.new_genome(gConf, self.mConf0) for i, gConf in enumerate(self.gConfs)}
 
     def crossover(self, g1, g2):
         g = {}
@@ -189,25 +187,15 @@ class GAselector(NestedConf):
         return g
 
 
-
-
-
-
-
-
-
-
-
 # class GAlauncher2(BaseRun):
 #     def __init__(self, parameters, **kwargs):
 #         super().__init__(runtype='Ga', parameters=parameters, **kwargs)
 
 
 class GAlauncher(BaseRun):
-# class GAlauncher(BaseRun,GAselector,GAevaluation):
+    # class GAlauncher(BaseRun,GAselector,GAevaluation):
 
-
-    def __init__(self,dataset=None, **kwargs):
+    def __init__(self, dataset=None,screen_kws={}, **kwargs):
         '''
         Simulation mode 'Ga' launches a genetic algorith optimization simulation of a specified agent model.
 
@@ -216,21 +204,16 @@ class GAlauncher(BaseRun):
 
         '''
 
-
-
-
-
-        super().__init__(runtype='Ga',**kwargs)
-
+        super().__init__(runtype='Ga', **kwargs)
 
         # raise
-        self.evaluator=GAevaluation(dataset=dataset,**self.p.ga_eval_kws)
+
+        self.evaluator = GAevaluation(dataset=dataset, **self.p.ga_eval_kws)
         # GAevaluation.__init__(self,dataset=dataset,**self.p.ga_eval_kws)
         # GAselector.__init__(self,**self.p.ga_select_kws,dataset=dataset,**self.p.ga_eval_kws)
-        self.selector=GAselector(**self.p.ga_select_kws)
+        self.selector = GAselector(**self.p.ga_select_kws)
         # GAselector.__init__(self,**self.p.ga_select_kws)
-
-
+        self.screen_kws = screen_kws
 
     # def initialize_superclasses(self, parameters,dataset=None):
     #     # print('DD')
@@ -239,8 +222,8 @@ class GAlauncher(BaseRun):
     #     GAselector.__init__(self, **parameters.ga_select_kws,dataset=dataset, **parameters.ga_eval_kws)
     #     # print('DDDD')
 
-
     def setup(self):
+        self.genome_dict = None
         self.best_genome = None
         self.best_fitness = None
         self.sorted_genomes = None
@@ -249,23 +232,23 @@ class GAlauncher(BaseRun):
         self.generation_num = 0
         self.start_total_time = aux.TimeUtil.current_time_millis()
 
-        Ngens=self.selector.Ngenerations
+        Ngens = self.selector.Ngenerations
 
         reg.vprint(f'--- Genetic Algorithm  "{self.id}" initialized!--- ', 2)
-        temp = Ngens if Ngens is not None else 'unlimited'
-        reg.vprint(f'Launching {temp} generations of {self.duration} minutes, with {self.selector.Nagents} agents each!', 2)
-        if self.selector.Ngenerations is not None:
+        if Ngens is not None:
             self.progress_bar = progressbar.ProgressBar(Ngens)
             self.progress_bar.start()
+            temp = Ngens
         else:
             self.progress_bar = None
+            temp = 'unlimited'
+        reg.vprint(
+            f'Launching {temp} generations of {self.duration} minutes, with {self.selector.Nagents} agents each!', 2)
         self.p.collections = ['pose']
         # self.odor_ids = self.get_all_odors()
         self.build_env(self.p.env_params)
-        self.screen_manager = GA_ScreenManager(model=self)
+        self.screen_manager = GA_ScreenManager(model=self, **self.screen_kws)
         self.build_generation()
-
-
 
     def simulate(self):
         self.sim_setup()
@@ -274,8 +257,8 @@ class GAlauncher(BaseRun):
         return self.best_genome
 
     def build_generation(self, sorted_genomes=None):
-        self.selector.create_generation(sorted_genomes)
-        confs = [{'larva_pars': g.mConf, 'unique_id': str(id), 'genome': g} for id, g in self.selector.genome_dict.items()]
+        self.genome_dict = self.selector.create_generation(sorted_genomes)
+        confs = [{'larva_pars': g.mConf, 'unique_id': str(id), 'genome': g} for id, g in self.genome_dict.items()]
         self.place_agents(confs)
         self.set_collectors(self.p.collections)
         if self.multicore:
@@ -289,26 +272,23 @@ class GAlauncher(BaseRun):
         if self.progress_bar:
             self.progress_bar.update(self.generation_num)
 
-
-
     def eval_robots(self, Ngen, genome_dict):
         reg.vprint(f'Evaluating generation {Ngen}', 1)
-        assert self.evaluator.fit_func_arg =='s'
+        assert self.evaluator.fit_func_arg == 's'
 
         self.data_collection = larvaworld.lib.LarvaDatasetCollection.from_agentpy_output(self.output)
         for d in self.data_collection.datasets:
             d.enrich(proc_keys=['angular', 'spatial'], is_last=False)
             valid_gs = {}
             for i, g in genome_dict.items():
-            # for id in d.config.agent_ids:
+                # for id in d.config.agent_ids:
                 ss = d.step_data.xs(str(i), level='AgentID')
                 g.fitness_dict = self.evaluator.fit_func(ss)
 
+                # fit_dicts = self.fit_func(s=d.step_data)
 
-            # fit_dicts = self.fit_func(s=d.step_data)
-
-            # for i, g in genome_dict.items():
-            #     g.fitness_dict = aux.AttrDict({k: dic[str(i)] for k, dic in fit_dicts.items()})
+                # for i, g in genome_dict.items():
+                #     g.fitness_dict = aux.AttrDict({k: dic[str(i)] for k, dic in fit_dicts.items()})
                 mus = aux.AttrDict({k: -np.mean(list(dic.values())) for k, dic in g.fitness_dict.items()})
                 if len(mus) == 1:
                     g.fitness = list(mus.values())[0]
@@ -324,7 +304,7 @@ class GAlauncher(BaseRun):
             return sorted_gs
 
     def store(self, sorted_gs, Ngen):
-        bestID=self.selector.bestConfID
+        bestID = self.selector.bestConfID
         if self.best_genome is None or sorted_gs[0].fitness > self.best_genome.fitness:
             self.best_genome = sorted_gs[0]
             self.best_fitness = self.best_genome.fitness
@@ -373,11 +353,10 @@ class GAlauncher(BaseRun):
     def end(self):
         self.agents.nest_record(self.collectors['end'])
         self.create_output()
-        self.sorted_genomes = self.eval_robots(Ngen=self.generation_num, genome_dict=self.selector.genome_dict)
+        self.sorted_genomes = self.eval_robots(Ngen=self.generation_num, genome_dict=self.genome_dict)
         self.delete_agents()
         self._logs = {}
         self.t = 0
-
 
     def update(self):
 
@@ -400,8 +379,11 @@ class GAlauncher(BaseRun):
                                name=self.selector.bestConfID)
         df.to_csv(f'{save_to}/{self.selector.bestConfID}.csv')
 
-        self.corr_df=df[['fitness']+self.selector.space_columns].corr()
-        self.diff_df, row_colors=reg.model.diff_df(mIDs=[self.selector.base_model, self.selector.bestConfID], ms=[self.selector.mConf0,self.best_genome.mConf])
+        cols = [p.name for k, p in self.selector.space_dict.items()]
+
+        self.corr_df = df[['fitness'] + cols].corr()
+        self.diff_df, row_colors = reg.model.diff_df(mIDs=[self.selector.base_model, self.selector.bestConfID],
+                                                     ms=[self.selector.mConf0, self.best_genome.mConf])
 
     def build_threads(self, robots):
         N = self.num_cpu
@@ -443,34 +425,33 @@ class GA_thread(threading.Thread):
 
 
 def optimize_mID(mID0, mID1=None, refID=None, space_mkeys=['turner', 'interference'], init='model',
-               exclusion_mode=False,experiment='exploration',
-                 id=None, dt=1 / 16, dur=0.5, dir=None,  Nagents=30, Nelits=6, Ngenerations=20,
+                 exclusion_mode=False, experiment='exploration',
+                 id=None, dt=1 / 16, dur=0.5, dir=None, Nagents=30, Nelits=6, Ngenerations=20,
                  **kwargs):
-
     warnings.filterwarnings('ignore')
     if mID1 is None:
         mID1 = mID0
 
     gaconf = reg.gen.Ga(ga_select_kws=reg.gen.GAselector(Nagents=Nagents, Nelits=Nelits, Ngenerations=Ngenerations,
-                                      selection_ratio=0.1,init_mode=init, space_mkeys=space_mkeys,
-                                      base_model=mID0,bestConfID=mID1),
-                      ga_eval_kws=reg.gen.GAevaluation(refID=refID,**kwargs),
-                      env_params='arena_200mm',
-                      experiment=experiment).nestedConf
-
+                                                         selection_ratio=0.1, init_mode=init, space_mkeys=space_mkeys,
+                                                         base_model=mID0, bestConfID=mID1),
+                        ga_eval_kws=reg.gen.GAevaluation(refID=refID, **kwargs),
+                        env_params='arena_200mm',
+                        experiment=experiment).nestedConf
 
     gaconf.env_params = reg.conf.Env.getID(gaconf.env_params)
 
     # conf.ga_build_kws.
 
-    GA = GAlauncher(parameters=gaconf, dir=dir, id=id, duration=dur,dt=dt)
+    GA = GAlauncher(parameters=gaconf, dir=dir, id=id, duration=dur, dt=dt)
     best_genome = GA.simulate()
     entry = {mID1: best_genome.mConf}
     return entry
 
 
-reg.gen.GAselector=class_generator(GAselector)
-reg.gen.GAevaluation=class_generator(GAevaluation)
+reg.gen.GAselector = class_generator(GAselector)
+reg.gen.GAevaluation = class_generator(GAevaluation)
+
 
 class GAconf(SimOps):
     env_params = reg.conf.Env.confID_selector()
@@ -480,5 +461,6 @@ class GAconf(SimOps):
 
     scene = param.String('no_boxes', doc='The name of the scene to load')
 
+
 # reg.gen.Ga=class_generator(GAlauncher)
-reg.gen.Ga=class_generator(GAconf)
+reg.gen.Ga = class_generator(GAconf)
