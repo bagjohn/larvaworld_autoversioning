@@ -1413,8 +1413,8 @@ class LarvaDatasetCollection:
 
                 })
             config.update(**kws)
-            d = BaseLarvaDataset.initGeo(to_Geo=to_Geo, config=config, load_data=False, step=step, end=end,
-                                         agents=agents)
+            d = BaseLarvaDataset.initGeo(to_Geo=to_Geo, load_data=False, step=step, end=end,
+                                         agents=agents, initialize=True,**config)
 
             ds.append(d)
 

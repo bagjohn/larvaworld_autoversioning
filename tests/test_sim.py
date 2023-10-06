@@ -1,10 +1,11 @@
 from larvaworld.lib import reg, sim, aux
+from larvaworld.lib.process.dataset import LarvaDataset
 
 
 def xx_test_replay():
     refIDs = reg.conf.Ref.confIDs
     refID = refIDs[-1]
-    dataset = reg.loadRef(refID)
+    d = reg.loadRef(refID)
     replay_kws = {
         'normal': {
             'time_range': (10, 80)
@@ -37,33 +38,36 @@ def xx_test_replay():
             'draw_Nsegs': 2
         },
         'all_segs': {
-            'draw_Nsegs': 'all'
+            'draw_Nsegs': d.config.Npoints - 1
         },
     }
 
     for mode, kws in replay_kws.items():
+        print(mode)
         parameters = reg.gen.Replay(**aux.AttrDict({
             'refID': refID,
             # 'dataset' : dataset,
             **kws
         })).nestedConf
-        rep = sim.ReplayRun(parameters=parameters, dataset=dataset, id=f'{refID}_replay_{mode}', dir=f'./media/{mode}')
+        rep = sim.ReplayRun(parameters=parameters, dataset=d, id=f'{refID}_replay_{mode}', dir=f'./media/{mode}')
         output = rep.run()
         assert output.parameters.constants['id'] == rep.id
         # raise
 
 
-'''
-
-def test_exp_run() :
-    for exp in ['chemotaxis'] :
+def xx_test_exp_run():
+    for exp in ['chemotaxis']:
         conf=reg.conf.Exp.expand(exp)
-        conf.sim_params.duration=1
-        exp_run = sim.ExpRun(parameters=conf)
+        # conf.sim_params.duration=1
+        # exp_run = sim.ExpRun(experiment=exp, duration=1)
+        exp_run = sim.ExpRun(parameters=conf, duration=1)
+        # exp_run.run()
         exp_run.simulate()
-        for d in exp_run.datasets :
-            assert isinstance(d, larvaworld.LarvaDataset)
+        for d in exp_run.datasets:
+            assert isinstance(d, LarvaDataset)
 
+
+'''
 
 def test_GA() :
     conf=reg.conf.Ga.expand('realism')
