@@ -50,6 +50,7 @@ class Box(Obstacle):
 
 
 class Wall(Obstacle):
+    closed = param.Boolean(False)
 
     def __init__(self, point1, point2, **kwargs):
         self.point1 = point1
@@ -57,11 +58,13 @@ class Wall(Obstacle):
 
         vertices = [(point1.x, point1.y), (point2.x, point2.y)]
         edges = [[point1, point2]]
-        super().__init__(vertices =vertices, edges =edges,closed=False, **kwargs)
+        super().__init__(vertices =vertices, edges =edges,**kwargs)
 
 
 
 class Border(Obstacle):
+    closed = param.Boolean(False)
+
     def __init__(self, points=None, **kwargs):
         self.points = points
         self.border_xy, self.border_lines = self.define_lines(points)
@@ -74,7 +77,7 @@ class Border(Obstacle):
             edges.append([point1, point2])
 
 
-        super().__init__(vertices =vertices, edges =edges,closed=False, **kwargs)
+        super().__init__(vertices =vertices, edges =edges,**kwargs)
 
     def define_lines(self, points, s=1):
         lines = [geometry.LineString([tuple(p1), tuple(p2)]) for p1, p2 in aux.group_list_by_n(points, 2)]

@@ -189,8 +189,9 @@ class LineExtended(NestedConf):
 
 
 class LineClosed(LineExtended):
+    closed = param.Boolean(True)
     def __init__(self, **kwargs):
-        super().__init__(closed=True,**kwargs)
+        super().__init__(**kwargs)
 
 
 
