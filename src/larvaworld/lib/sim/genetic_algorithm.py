@@ -255,12 +255,10 @@ class GAlauncher(BaseRun):
         if self.progress_bar:
             self.progress_bar.update(self.generation_num)
 
-    def eval_robots(self, Ngen, genome_dict):
+    def eval_robots(self, ds, Ngen, genome_dict):
         reg.vprint(f'Evaluating generation {Ngen}', 1)
         assert self.evaluator.fit_func_arg == 's'
-
-        self.data_collection = larvaworld.lib.LarvaDatasetCollection.from_agentpy_output(self.output)
-        for d in self.data_collection.datasets:
+        for d in ds:
             d.enrich(proc_keys=['angular', 'spatial'], is_last=False)
             valid_gs = {}
             for i, g in genome_dict.items():
@@ -329,7 +327,8 @@ class GAlauncher(BaseRun):
     def end(self):
         self.agents.nest_record(self.collectors['end'])
         self.create_output()
-        self.sorted_genomes = self.eval_robots(Ngen=self.generation_num, genome_dict=self.genome_dict)
+        self.data_collection = larvaworld.lib.LarvaDatasetCollection.from_agentpy_output(self.output)
+        self.sorted_genomes = self.eval_robots(ds=self.data_collection.datasets, Ngen=self.generation_num, genome_dict=self.genome_dict)
         self.delete_agents()
         self._logs = {}
         self.t = 0

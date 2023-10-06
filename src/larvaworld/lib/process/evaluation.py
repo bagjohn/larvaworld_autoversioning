@@ -221,11 +221,11 @@ class Evaluation(NestedConf):
     eval_metrics = param.Dict(default=aux.AttrDict({
         'angular kinematics': ['run_fov_mu', 'pau_fov_mu', 'b', 'fov', 'foa', 'rov', 'roa', 'tur_fou'],
         'spatial displacement': ['cum_d', 'run_d', 'str_c_l', 'v_mu', 'pau_v_mu', 'run_v_mu', 'v', 'a',
-                                 'dsp_0_40_max', 'str_N', 'tor5', 'tor20'],
+                                 'dsp_0_40_max', 'str_N'],
         'temporal dynamics': ['fsv', 'ffov', 'run_t', 'pau_t', 'run_tr', 'pau_tr'],
         'stride cycle': ['str_d_mu', 'str_d_std', 'str_sv_mu', 'str_fov_mu', 'str_fov_std', 'str_N'],
         'epochs': ['run_t', 'pau_t'],
-        'tortuosity': ['tor5', 'tor20']}),
+        'tortuosity': ['tor5', 'tor20', 'tor5_mu', 'tor20_mu']}),
         doc='Evaluation metrics to use')
     cycle_curve_metrics = param.List()
 
@@ -278,11 +278,11 @@ class Evaluation(NestedConf):
                 dic.step.groups.append(g)
         ev = aux.AttrDict({k: col_df(**v) for k, v in dic.items()})
 
-        self.s_pars = aux.SuperList(ev['step']['pars'].values.tolist()).flatten
-        self.s_shorts = aux.SuperList(ev['step']['shorts'].values.tolist()).flatten
-        self.s_symbols = aux.SuperList(ev['step']['symbols'].values.tolist()).flatten
-        self.e_pars = aux.SuperList(ev['end']['pars'].values.tolist()).flatten
-        self.e_symbols = aux.SuperList(ev['end']['symbols'].values.tolist()).flatten
+        self.s_pars = aux.SuperList(ev.step.pars).flatten
+        self.s_shorts = aux.SuperList(ev.step.shorts).flatten
+        self.s_symbols = aux.SuperList(ev.step.symbols).flatten
+        self.e_pars = aux.SuperList(ev.end.pars).flatten
+        self.e_symbols = aux.SuperList(ev.end.symbols).flatten
         self.eval_symbols = aux.AttrDict(
             {'step': dict(zip(self.s_pars, self.s_symbols)), 'end': dict(zip(self.e_pars, self.e_symbols))})
         return ev
