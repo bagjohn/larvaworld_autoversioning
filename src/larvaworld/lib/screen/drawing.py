@@ -316,6 +316,7 @@ class GA_ScreenManager(BaseScreenManager):
         v, objects = Viewer.load_from_file(**self.screen_kws)
         self.model.objects = agentpy.AgentList(model=self.model, objs=objects)
         self.side_panel = SidePanel(v)
+        self.draw_arena(v)
         reg.vprint('Screen opened', 1)
         return v
 
