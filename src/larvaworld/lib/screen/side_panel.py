@@ -51,7 +51,7 @@ class SidePanel:
         lines = [
             'Total time: ' + aux.TimeUtil.format_time_seconds(cum_t),
             'Generation: ' + str(m.generation_num),
-            'Population: ' + str(len(m.agents)) + '/' + str(m.Nagents),
+            'Population: ' + str(len(m.agents)) + '/' + str(m.selector.Nagents),
             'Generation real-time: ' + aux.TimeUtil.format_time_seconds(m.generation_step_num*m.dt),
             '',
         ]
@@ -88,7 +88,7 @@ class SidePanel:
                     for short, ks in dic.items():
                         self.render_line(f'{short}: ' + str(np.round(ks, 2)), self.LEFT_MARGIN)
             self.render_line('Best genome: ')
-            for k, p in m.space_dict.items():
+            for k, p in m.selector.space_dict.items():
                 self.render_line(f'{p.name}: {best_gen.gConf[k]}', self.LEFT_MARGIN)
         else:
             self.render_line('No best genome yet!')
