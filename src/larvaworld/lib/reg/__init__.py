@@ -54,6 +54,7 @@ DATA_DIR = f'{ROOT_DIR}/data'
 SIM_DIR = f'{DATA_DIR}/SimGroup'
 BATCH_DIR = f'{SIM_DIR}/batch_runs'
 CONF_DIR = f'{ROOT_DIR}/lib/reg/confDicts'
+TEST_DIR = f'{ROOT_DIR}/../../tests'
 
 os.makedirs(CONF_DIR, exist_ok=True)
 
@@ -115,11 +116,41 @@ def loadRefGroup(group_id, **kwargs):
 
 vprint(f"Registry configured!", 2)
 
-if len(conf.Ref.confIDs) == 0:
-    TEST_DIR = f'{ROOT_DIR}/../../tests'
-    TEST_IMPORT_FILE = f'{TEST_DIR}/test_import.py'
-    import runpy
-    runpy.run_path(TEST_IMPORT_FILE, run_name='__main__')['test_import_Schleyer']()
 
-if len(conf.Ref.confIDs) > 0:
-    default_refID = conf.Ref.confIDs[0]
+def define_default_refID_by_running_test():
+    if len(conf.Ref.confIDs) == 0:
+        filename = 'test_import.py'
+        filepath = f'{TEST_DIR}/{filename}'
+        import_method = 'test_import_Schleyer'
+        vprint('No reference datasets are available.', 2)
+        vprint(f'Automatically importing one by running the {import_method} method in {filename} file.', 2)
+        import runpy
+        runpy.run_path(filepath, run_name='__main__')[import_method]()
+        assert len(conf.Ref.confIDs) > 0
+    return conf.Ref.confIDs[0]
+
+def define_default_refID():
+    if len(conf.Ref.confIDs) == 0:
+
+        vprint('No reference datasets are available.', 2)
+        vprint(f'Automatically importing one from the raw experimental data folder.', 2)
+
+        g = conf.LabFormat.get('Schleyer')
+        # Merged case
+        N = 30
+        kws = {
+            'group_id': 'exploration',
+            'parent_dir': 'exploration',
+            'merged': True,
+            'color': 'blue',
+            'N': N,
+            'min_duration_in_sec': 60,
+            'id': f'{N}controls',
+            'refID': f'exploration.{N}controls',
+        }
+        d = g.import_dataset(**kws)
+        d.process(is_last=True)
+        assert len(conf.Ref.confIDs) ==1
+    return conf.Ref.confIDs[0]
+
+default_refID = define_default_refID()
