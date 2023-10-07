@@ -14,11 +14,9 @@ __all__ = [
 __displayname__ = 'Braitenberg-like larva'
 
 class LarvaRobot(LarvaSim):
-    default_color = RandomizedColor(doc='The default color of the entity', instantiate=True)
 
     def __init__(self, larva_pars,genome=None,**kwargs):
         super().__init__(**larva_pars, **kwargs)
-
         self.genome = genome
 
 

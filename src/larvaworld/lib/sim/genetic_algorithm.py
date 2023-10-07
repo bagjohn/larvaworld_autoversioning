@@ -240,6 +240,7 @@ class GAlauncher(BaseRun):
 
     def build_generation(self, sorted_genomes=None):
         self.genome_dict = self.selector.create_generation(sorted_genomes)
+        # confs = [{'larva_pars': g.mConf, 'unique_id': str(id), 'genome': g} for id, g in self.genome_dict.items()]
         confs = [{'larva_pars': g.mConf, 'unique_id': str(id), 'genome': g, 'default_color' : aux.Color.random_bright()} for id, g in self.genome_dict.items()]
         self.place_agents(confs)
         self.set_collectors(self.p.collections)

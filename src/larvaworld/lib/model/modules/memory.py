@@ -144,7 +144,7 @@ class RLmemory(Memory):
 
 
 class RLOlfMemory(RLmemory):
-    def __init__(self, mode='olf', **kwargs):
+    def __init__(self, modality='olfaction', **kwargs):
         super().__init__(**kwargs)
 
     @property
@@ -157,7 +157,7 @@ class RLOlfMemory(RLmemory):
 
 
 class RLTouchMemory(RLmemory):
-    def __init__(self, mode='touch', **kwargs):
+    def __init__(self, modality='touch', **kwargs):
         # gain = {s: 0.0 for s in brain.agent.get_sensors()}
         super().__init__(**kwargs)
 

@@ -97,27 +97,35 @@ class DefaultBrain(Brain):
         self.memory = None
 
         mods = conf.modules
-        memory_modes = {
-            'RL': modules.RLOlfMemory,
-            'MB': modules.RemoteBrianModelMemory,
-            'touchRL': modules.RLTouchMemory,
-        }
-        if mods['memory']:
-            mm = conf['memory_params']
-            class_func=memory_modes[mm['mode']]
-
-
-
 
         if mods.olfactor:
             self.olfactor=modules.Olfactor(**kws,**conf['olfactor_params'])
-            if mods['memory']:
-                mm.gain = self.olfactor.gain
-                self.memory = class_func(**mm, **kws)
         if mods.toucher:
             self.toucher=modules.Toucher(**kws,**conf['toucher_params'])
             self.toucher.init_sensors()
-            if mods['memory']:
+
+        memory_modes = {
+            'RL': {'olfaction' : modules.RLOlfMemory, 'touch' : modules.RLTouchMemory},
+            'MB':  {'olfaction' : modules.RemoteBrianModelMemory, 'touch' : modules.RemoteBrianModelMemory}
+        }
+        if mods['memory']:
+            mm = conf['memory_params']
+            # FIXME
+            if 'mode' not in mm.keys():
+                mm['mode']='RL'
+            modality_classes=memory_modes[mm['mode']]
+            modality=mm['modality']
+            class_func=modality_classes[modality]
+
+
+
+
+
+            if modality=='olfaction' and self.olfactor:
+                mm.gain = self.olfactor.gain
+                self.memory = class_func(**mm, **kws)
+
+            elif modality=='touch' and self.toucher:
                 mm.gain = self.toucher.gain
                 self.touch_memory = class_func(**mm, **kws)
         if mods.windsensor:

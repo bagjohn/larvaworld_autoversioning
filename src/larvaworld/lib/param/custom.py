@@ -165,18 +165,18 @@ class RandomizedPhase(Phase):
 class RandomizedColor(param.Color):
     """Phase number within (0,2pi)"""
 
-    def __init__(self, default=None, **kwargs):
+    def __init__(self, default=None, instantiate=True, allow_None=True, per_instance=True,**kwargs):
         if default in [None, np.nan, '']:
             default = random.choice(super()._named_colors)
-        if isinstance(default, tuple):
-            default = aux.colortuple2str(default)
-        super().__init__(default=default, **kwargs)
+        # if isinstance(default, tuple):
+        #     default = aux.colortuple2str(default)
+        super().__init__(default=default,instantiate=instantiate, allow_None=allow_None, per_instance=per_instance, **kwargs)
 
     def _validate_value(self, val, allow_None):
         if val in [None, np.nan, '']:
             val = random.choice(super()._named_colors)
-        if isinstance(val, tuple):
-            val = aux.colortuple2str(val)
+        # if isinstance(val, tuple):
+        #     val = aux.colortuple2str(val)
         super(RandomizedColor, self)._validate_value(val, allow_None)
 
 
