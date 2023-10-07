@@ -1,7 +1,7 @@
 import param
 
 from .. import aux
-from ..param import NestedConf, BoundedArea, LineExtended, LineClosed,RandomizedColor
+from ..param import NestedConf, LineExtended, LineClosed,RandomizedColor
 
 __all__ = [
     'Viewable',
@@ -86,7 +86,6 @@ class ViewableToggleable(Viewable):
         self.active = not self.active
 
 
-# class ViewableNamed(Viewable, Named): pass
 
 
 class ViewableLine(Viewable, LineExtended):

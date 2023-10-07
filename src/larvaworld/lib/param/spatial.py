@@ -22,7 +22,7 @@ __all__ = [
     'Area',
     'ScreenWindowAreaBasic',
     'ScreenWindowAreaZoomable',
-    'ScreenWindowArea',
+    # 'ScreenWindowArea',
     'BoundedArea',
     'PosPixelRel2Point',
     'PosPixelRel2Area',
@@ -65,6 +65,8 @@ class Pos2D(NestedConf):
 
 class Pos2DPixel(Pos2D):
     pos = IntegerTuple2DRobust(doc='The xy spatial position coordinates')
+
+
 
 
 class RadiallyExtended(Pos2D):
@@ -225,94 +227,45 @@ class Area(Area2D):
     torus = param.Boolean(False, doc='Whether to allow a toroidal space')
 
 
-class ScreenWindowAreaBasic(Area2DPixel):
-    scaling_factor = PositiveNumber(1., doc='Scaling factor')
-    space = param.ClassSelector(Area, default=Area(), doc='Arena')
+
+
+class PosPixelRel2Point(Pos2DPixel):
+    reference_point = param.ClassSelector(Pos2DPixel, doc='The reference position instance', is_instance=False)
+    pos_scale = PositiveRange((0.5, 0.5), softmax=1.0, step=0.01,
+                              doc='The position relative to reference position')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.dims = aux.get_window_dims(self.space.dims)
+        self.update_pos()
 
-    def space2screen_pos(self, pos):
-        if pos is None:
-            return None
-        if any(np.isnan(pos)):
-            return (np.nan, np.nan)
-        try:
-            return self._transform(pos)
-        except:
-            s = self.scaling_factor
-            rw, rh = self.w / self.space.w, self.h / self.space.h
-            # X, Y = np.array(self.space.dims) * self.scaling_factor
-
-            # p = pos[0] * 2 / self.space.w/s, pos[1] * 2 / self.space.h/s
-            pp = (pos[0] / s * rw + self.w / 2, -pos[1] * 2 / s * rh + self.h)
-            return pp
-
-    def get_rect_at_pos(self, pos=(0, 0), convert2screen_pos=True):
-        if convert2screen_pos:
-            pos = self.space2screen_pos(pos)
-        return super().get_rect_at_pos(pos)
-
-    def get_relative_pos(self, pos_scale):
-        w, h = pos_scale
-        x_pos = int(self.w * w)
-        y_pos = int(self.h * h)
-        return x_pos, y_pos
-
-    def get_relative_font_size(self, font_size_scale):
-        return int(self.w * font_size_scale)
+    @param.depends('pos_scale', 'reference_point', watch=True)
+    def update_pos(self):
+        w, h = self.pos_scale
+        x_pos = int(self.reference_point.x * w)
+        y_pos = int(self.reference_point.y * h)
+        self.pos = (x_pos, y_pos)
 
 
-class ScreenWindowAreaZoomable(ScreenWindowAreaBasic):
-    zoom = PositiveNumber(1., doc='Zoom factor')
-    center = param.Parameter(np.array([0., 0.]), doc='Center xy')
-    center_lim = param.Parameter(np.array([0., 0.]), doc='Center xy lim')
-    _scale = param.Parameter(np.array([[1., .0], [.0, -1.]]), doc='Scale of xy')
-    _translation = param.Parameter(np.zeros(2), doc='Translation of xy')
+class PosPixelRel2Area(Pos2DPixel):
+    reference_area = param.ClassSelector(Area2DPixel, doc='The reference position instance', is_instance=True)
+    pos_scale = PositiveRange((0.5, 0.5), softmax=1.0, step=0.01,
+                              doc='The position relative to reference position')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.set_bounds()
+        self.update_pos()
 
-    @property
-    def display_size(self):
-        return (np.array(self.dims) / self.zoom).astype(int)
-
-    @param.depends('zoom', 'center', watch=True)
-    def set_bounds(self):
-        s, z = self.scaling_factor, self.zoom
-        rw, rh = self.w / self.space.w, self.h / self.space.h
-        # left, right, bottom, top=self.space.range * s
-        # assert right > left and top > bottom
-        # x = int(self.w/ z) / (self.space.w* s)
-        # y = int(self.h/ z) / (self.space.h* s)
-        self._scale = np.array([[rw, .0], [.0, -rh]]) / z / s
-        self._translation = np.array(self.dims) / 2 + self.center / z / s * [-rw, rh]
-        self.center_lim = (z - 1) * s * np.array(self.space.dims) / 2
-
-    def _transform(self, position):
-        return np.round(self._scale.dot(position) + self._translation).astype(int)
-
-    def move_center(self, dx=0, dy=0, pos=None):
-        if pos is None:
-            pos = self.center - self.center_lim * [dx, dy]
-        self.center = np.clip(pos, self.center_lim, -self.center_lim)
-
-    def zoom_screen(self, sign, pos=None):
-        d_zoom = -0.01 * sign
-        if pos is None:
-            pos = self.mouse_position
-        if 0.001 <= self.zoom + d_zoom <= 1:
-            self.zoom = np.round(self.zoom + d_zoom, 2)
-            self.center = np.clip(self.center - np.array(pos) * d_zoom, self.center_lim, -self.center_lim)
-        if self.zoom == 1.0:
-            self.center = np.array([0.0, 0.0])
+    @param.depends('pos_scale', 'reference_area', watch=True)
+    def update_pos(self):
+        w, h = self.pos_scale
+        x_pos = int(self.reference_area.w * w)
+        y_pos = int(self.reference_area.h * h)
+        self.pos = (x_pos, y_pos)
 
 
-class ScreenWindowArea(ScreenWindowAreaZoomable):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+
+
+
 
 
 class BoundedArea(Area, LineClosed):
@@ -354,38 +307,7 @@ class BoundedArea(Area, LineClosed):
 #         return self.grid_dims[1]
 
 
-class PosPixelRel2Point(Pos2DPixel):
-    reference_point = param.ClassSelector(Pos2DPixel, doc='The reference position instance', is_instance=False)
-    pos_scale = PositiveRange((0.5, 0.5), softmax=1.0, step=0.01,
-                              doc='The position relative to reference position')
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.update_pos()
-
-    @param.depends('pos_scale', 'reference_point', watch=True)
-    def update_pos(self):
-        w, h = self.pos_scale
-        x_pos = int(self.reference_point.x * w)
-        y_pos = int(self.reference_point.y * h)
-        self.pos = (x_pos, y_pos)
-
-
-class PosPixelRel2Area(Pos2DPixel):
-    reference_area = param.ClassSelector(Area2DPixel, doc='The reference position instance', is_instance=True)
-    pos_scale = PositiveRange((0.5, 0.5), softmax=1.0, step=0.01,
-                              doc='The position relative to reference position')
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.update_pos()
-
-    @param.depends('pos_scale', 'reference_area', watch=True)
-    def update_pos(self):
-        w, h = self.pos_scale
-        x_pos = int(self.reference_area.w * w)
-        y_pos = int(self.reference_area.h * h)
-        self.pos = (x_pos, y_pos)
 
 # class PositionedArea2DPixel(Pos2DPixel, Area2DPixel): pass
 

@@ -6,7 +6,7 @@ from shapely import geometry
 
 from .. import Object
 from ... import aux
-# from ... import Object
+from ...screen import LabelledGroupedObject
 from ...param import Contour, ViewableLine
 
 
@@ -17,19 +17,9 @@ __all__ = [
     'Border',
 ]
 
-class Obstacle(Object, Contour):
 
-    def __init__(self,model,edges=None,**kwargs):
-        Object.__init__(self,model=model)
-        Contour.__init__(self,**kwargs)
 
-        # self.vertices = vertices
-        self.edges = edges
-
-    # def draw(self, viewer):
-    #     viewer.draw_polyline(vertices=self.vertices,color=self.color,width=self.width,closed=True)
-
-class Barrier(Object, ViewableLine):
+class Obstacle(LabelledGroupedObject, ViewableLine):
 
     def __init__(self,model,edges=None,**kwargs):
         Object.__init__(self,model=model)
@@ -43,8 +33,8 @@ class Barrier(Object, ViewableLine):
 
 
 
-
 class Box(Obstacle):
+    closed = param.Boolean(True)
 
     def __init__(self, x, y, size, **kwargs):
         self.x = x
@@ -63,7 +53,7 @@ class Box(Obstacle):
 
 
 
-class Wall(Barrier):
+class Wall(Obstacle):
     closed = param.Boolean(False)
 
     def __init__(self, point1, point2, **kwargs):
@@ -76,7 +66,7 @@ class Wall(Barrier):
 
 
 
-class Border(Barrier):
+class Border(Obstacle):
     closed = param.Boolean(False)
 
     def __init__(self, vertices,points=None, **kwargs):
