@@ -1,22 +1,25 @@
 import agentpy
 import numpy as np
 import param
-from shapely import geometry
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point
 
+from .valuegrid import SpatialEntity
 from ... import aux
-from ...param.drawable import ViewableNamedBoundedArea
+from ...param import BoundedArea
 
 __all__ = [
     'Arena',
 ]
 
 
-class Arena(ViewableNamedBoundedArea, agentpy.Space):
+class ViewableBoundedArea(SpatialEntity, BoundedArea): pass
+
+
+class Arena(ViewableBoundedArea, agentpy.Space):
     boundary_margin = param.Magnitude(0.96)
 
     def __init__(self, model=None, **kwargs):
-        ViewableNamedBoundedArea.__init__(self, **kwargs)
+        ViewableBoundedArea.__init__(self, **kwargs)
         self.edges = [[Point(x1, y1), Point(x2, y2)] for (x1, y1), (x2, y2) in aux.SuperList(self.vertices).in_pairs]
         if model is not None:
             agentpy.Space.__init__(self, model=model, torus=self.torus, shape=self.dims)

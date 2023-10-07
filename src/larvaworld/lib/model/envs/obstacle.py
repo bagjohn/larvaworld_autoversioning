@@ -4,8 +4,9 @@ import param
 from shapely.affinity import affine_transform
 from shapely import geometry
 
+from .. import Object
 from ... import aux
-from ...model import NamedObject
+# from ... import Object
 from ...param import Contour, ViewableLine
 
 
@@ -16,10 +17,10 @@ __all__ = [
     'Border',
 ]
 
-class Obstacle(NamedObject, Contour):
+class Obstacle(Object, Contour):
 
     def __init__(self,model,edges=None,**kwargs):
-        NamedObject.__init__(self,model=model)
+        Object.__init__(self,model=model)
         Contour.__init__(self,**kwargs)
 
         # self.vertices = vertices
@@ -28,10 +29,10 @@ class Obstacle(NamedObject, Contour):
     # def draw(self, viewer):
     #     viewer.draw_polyline(vertices=self.vertices,color=self.color,width=self.width,closed=True)
 
-class Barrier(NamedObject, ViewableLine):
+class Barrier(Object, ViewableLine):
 
     def __init__(self,model,edges=None,**kwargs):
-        NamedObject.__init__(self,model=model)
+        Object.__init__(self,model=model)
         ViewableLine.__init__(self,**kwargs)
 
         # self.vertices = vertices

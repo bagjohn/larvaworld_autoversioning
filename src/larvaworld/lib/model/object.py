@@ -1,18 +1,18 @@
 import param
-from ..param import Named
+
+from ..param import NestedConf
 
 from .. import aux
 
 __all__ = [
     'Object',
-    'NamedObject',
     'GroupedObject',
 ]
 
 __displayname__ = 'Basic ABM class'
 
 
-class Object:
+class Object(NestedConf):
     """
     Basic Class for all Larvaworld model objects.
 
@@ -73,17 +73,23 @@ class Object:
         self.z = self.p.z  # Value defined in parameters
     """
 
-    def __init__(self, model=None, id='Nada'):
+    unique_id = param.String(None, doc='The unique ID of the entity')
+
+    def __init__(self, model=None,unique_id=None, id='Object', **kwargs):
+        if unique_id is None and id is not None:
+            unique_id=id
+        super().__init__(unique_id=unique_id,**kwargs)
         self._var_ignore = []
         self.id = id
         self.type = type(self).__name__
         self.log = {}
-        self.model = model
+
         if model is not None:
             self.p = model.p
+        self.model = model
 
     def __repr__(self):
-        return f"{self.type} (Obj {self.id})"
+        return f"{self.type} (Obj {self.unique_id})"
 
     def __getattr__(self, key):
         raise AttributeError(f"{self} has no attribute '{key}'.")
@@ -266,28 +272,34 @@ class Object:
             setattr(self, k, v)
 
 
-class NamedObject(Named, Object):
-    """
-    A named simulation object that extends the basic Object class.
+# class NamedObject(Object):
+#     """
+#     A named simulation object that extends the basic Object class.
+#
+#     Parameters
+#     ----------
+#     model : object, optional
+#         The model this object belongs to.
+#     **kwargs
+#         Additional keyword arguments.
+#
+#     Attributes
+#     ----------
+#     Inherits attributes from Object class.
+#     """
+#     unique_id = param.String(None, doc='The unique ID of the entity')
+#
+#     def __init__(self, unique_id=None,**kwargs):
+#         super().__init__(id=unique_id,unique_id=unique_id,**kwargs)
+#
+#     def __init__(self, model=None, **kwargs):
+#         Object.__init__(self, model=model, id=self.unique_id)
+#
+#     def set_id(self, id):
+#         self.unique_id = id
 
-    Parameters
-    ----------
-    model : object, optional
-        The model this object belongs to.
-    **kwargs
-        Additional keyword arguments.
 
-    Attributes
-    ----------
-    Inherits attributes from Object class.
-    """
-
-    def __init__(self, model=None, **kwargs):
-        Named.__init__(self, **kwargs)
-        Object.__init__(self, model=model, id=self.unique_id)
-
-
-class GroupedObject(NamedObject):
+class GroupedObject(Object):
     """
     A grouped simulation object that extends the NamedObject class.
 

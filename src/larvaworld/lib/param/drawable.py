@@ -1,19 +1,13 @@
 import param
 
 from .. import aux
-from ..param import NestedConf, Named, RadiallyExtended, BoundedArea, LineExtended, LineClosed, \
-    RandomizedColor, Grid
+from ..param import NestedConf, BoundedArea, LineExtended, LineClosed,RandomizedColor
 
 __all__ = [
     'Viewable',
     'ViewableToggleable',
-    'ViewableNamed',
     'ViewableLine',
     'Contour',
-    'ViewableLine',
-    'ViewableNamedBoundedArea',
-    'ViewableNamedGrid',
-    'ViewableCircle',
 ]
 
 __displayname__ = 'Viewable elements'
@@ -92,7 +86,7 @@ class ViewableToggleable(Viewable):
         self.active = not self.active
 
 
-class ViewableNamed(Viewable, Named): pass
+# class ViewableNamed(Viewable, Named): pass
 
 
 class ViewableLine(Viewable, LineExtended):
@@ -112,16 +106,14 @@ class Contour(Viewable, LineClosed):
         v.draw_polygon(self.vertices, filled=True, color=self.color)
 
 
-class ViewableNamedBoundedArea(Viewable, BoundedArea, Named): pass
 
 
-class ViewableNamedGrid(Viewable, Grid, Named): pass
 
 
-class ViewableCircle(Viewable, RadiallyExtended):
-
-    def draw(self, v, filled=True, radius_coeff=1, color=None, width_as_radius_fraction=5):
-        if color is None:
-            color = self.color
-        v.draw_circle(position=self.get_position(), radius=self.radius * radius_coeff, color=color, filled=filled,
-                      width=self.radius / width_as_radius_fraction)
+# class ViewableCircle(Viewable, RadiallyExtended):
+#
+#     def draw(self, v, filled=True, radius_coeff=1, color=None, width_as_radius_fraction=5):
+#         if color is None:
+#             color = self.color
+#         v.draw_circle(position=self.get_position(), radius=self.radius * radius_coeff, color=color, filled=filled,
+#                       width=self.radius / width_as_radius_fraction)

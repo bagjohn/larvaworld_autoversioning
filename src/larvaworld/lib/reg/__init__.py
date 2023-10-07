@@ -88,6 +88,9 @@ from .config import Path, StoredConfRegistry
 stored = StoredConfRegistry()
 from .generators import gen, conf
 
+if len(conf.Ref.confIDs)>0:
+    default_refID = conf.Ref.confIDs[0]
+
 from . import config, generators, models, graph
 
 model = models.ModelRegistry()

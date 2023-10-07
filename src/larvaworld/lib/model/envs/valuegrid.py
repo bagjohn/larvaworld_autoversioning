@@ -6,12 +6,14 @@ import param
 from scipy.ndimage.filters import gaussian_filter
 from shapely import geometry
 
+from .. import Object
 from ... import aux
-from ...model import NamedObject
-from ...param import Substrate, ClassAttr, PositiveNumber, Phase, Viewable, Grid, ViewableNamedGrid
+from ...param import Substrate, ClassAttr, PositiveNumber, Phase, Viewable,PositiveIntegerRange
 from ...screen.rendering import ScreenTextBox
 
 __all__ = [
+    'SpatialEntity',
+    'Grid',
     'GridOverSpace',
     'ValueGrid',
     'FoodGrid',
@@ -24,7 +26,7 @@ __all__ = [
 ]
 
 
-class SpatialEntity(Viewable, NamedObject):
+class SpatialEntity(Viewable, Object):
     default_color = param.Color(default='white')
     visible = param.Boolean(default=False)
 
@@ -41,7 +43,19 @@ class SpatialEntity(Viewable, NamedObject):
                 agent.record(label + str(i), p)
 
 
-class GridOverSpace(ViewableNamedGrid, agentpy.Grid):
+class Grid(SpatialEntity):
+    grid_dims = PositiveIntegerRange((51, 51), softmax=500, doc='The spatial resolution of the food grid.')
+
+    @property
+    def X(self):
+        return self.grid_dims[0]
+
+    @property
+    def Y(self):
+        return self.grid_dims[1]
+
+
+class GridOverSpace(Grid, agentpy.Grid):
     unique_id = param.String('GridOverArena')
     default_color = param.Color(default='white')
     visible = param.Boolean(default=False)
@@ -51,7 +65,7 @@ class GridOverSpace(ViewableNamedGrid, agentpy.Grid):
     # grid_dims = PositiveIntegerRange((51, 51), softmax=500, doc='The spatial resolution of the food grid.')
 
     def __init__(self, model, **kwargs):
-        ViewableNamedGrid.__init__(self, **kwargs)
+        Grid.__init__(self, **kwargs)
         agentpy.Grid.__init__(self, model=model, shape=self.grid_dims, **kwargs)
         self._torus = self.space._torus
         self.XY = np.array(self.grid_dims)
@@ -85,7 +99,7 @@ class GridOverSpace(ViewableNamedGrid, agentpy.Grid):
                          (x * (i - X), y * (j + 1 - Y))])
 
 
-class ValueGrid(SpatialEntity, Grid):
+class ValueGrid(Grid):
     initial_value = param.Number(0.0, doc='initial value over the grid')
 
     fixed_max = param.Boolean(False, doc='whether the max is kept constant')
@@ -437,7 +451,7 @@ class WindScape(SpatialEntity):
 
     def update(self):
         for t, args in self.events.items():
-            wd=args['wind_direction']
+            wd = args['wind_direction']
             if self.model.Nticks == t:
                 if wd is not None and wd != self.wind_direction:
                     self.set_wind_direction(wd)
