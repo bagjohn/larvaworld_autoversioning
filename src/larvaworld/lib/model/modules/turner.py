@@ -3,7 +3,7 @@ import random
 import numpy as np
 import param
 
-from basic import Effector
+from .basic import Effector
 from ...param import PositiveNumber, PositiveInteger
 
 __all__ = [
