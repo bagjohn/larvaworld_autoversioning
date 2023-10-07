@@ -9,11 +9,10 @@ import progressbar
 import numpy as np
 
 import larvaworld
-from larvaworld.lib import reg, aux, util
-from larvaworld.lib.param import NestedConf, ClassAttr, class_generator, SimOps, OptionalSelector
-from larvaworld.lib.process.evaluation import Evaluation
-from larvaworld.lib.screen import GA_ScreenManager
-from larvaworld.lib.sim.base_run import BaseRun
+from .. import reg, aux, util
+from ..param import NestedConf, ClassAttr, class_generator, SimOps, OptionalSelector
+from ..process.evaluation import Evaluation
+from .base_run import BaseRun
 
 __all__ = [
     'GAevaluation',

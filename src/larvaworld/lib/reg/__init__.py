@@ -48,7 +48,6 @@ def vprint(text='', verbose=0):
 
 vprint("Initializing larvaworld registry", 2)
 
-default_refID = None
 # default_refID = 'exploration.40controls'
 ROOT_DIR = dirname(dirname(dirname(abspath(__file__))))
 DATA_DIR = f'{ROOT_DIR}/data'
@@ -86,10 +85,7 @@ vprint("Initializing configuration registry")
 from .config import Path, StoredConfRegistry
 
 stored = StoredConfRegistry()
-from .generators import gen, conf
-
-if len(conf.Ref.confIDs)>0:
-    default_refID = conf.Ref.confIDs[0]
+from .generators import gen, conf, resetConfs
 
 from . import config, generators, models, graph
 
@@ -118,3 +114,10 @@ def loadRefGroup(group_id, **kwargs):
 
 
 vprint(f"Registry configured!", 2)
+
+#print(conf.Ref.confIDs)
+if len(conf.Ref.confIDs) > 0:
+    default_refID = conf.Ref.confIDs[0]
+
+else:
+    default_refID = None

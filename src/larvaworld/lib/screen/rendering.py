@@ -686,8 +686,8 @@ class ScreenMsgText(ScreenTextFontRel, Viewable):
 #         self.text_font.draw(v, **kwargs)
 
 
-class SimulationClock(Pos2DPixel, Viewable):
-    # pos_scale = PositiveRange((0.94, 0.04))
+class SimulationClock(PosPixelRel2AreaViewable):
+    pos_scale = PositiveRange((0.94, 0.04))
 
     def __init__(self, sim_step_in_sec, **kwargs):
         super().__init__(**kwargs)
@@ -739,8 +739,8 @@ class SimulationClock(Pos2DPixel, Viewable):
             v.text_color = self.color
 
 
-class SimulationScale(Pos2DPixel, Viewable):
-    # pos_scale = PositiveRange((0.1, 0.04))
+class SimulationScale(PosPixelRel2AreaViewable):
+    pos_scale = PositiveRange((0.1, 0.04))
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

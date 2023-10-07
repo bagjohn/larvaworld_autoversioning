@@ -732,6 +732,8 @@ gen.LabFormat = LabFormat
 gen.Replay = class_generator(ReplayConf)
 
 
+
+
 def full_lg(id=None, expand=False, as_entry=True, **conf):
     try:
         lg = LarvaGroup(id=id, **conf)
@@ -740,7 +742,7 @@ def full_lg(id=None, expand=False, as_entry=True, **conf):
         raise
 
 
-def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, sample=reg.default_refID, substrate_type='standard', pref='',
+def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, sample=None, substrate_type='standard', pref='',
            navigator=False, expand=False, **kwargs):
     if age == 0.0:
         epochs = {}

@@ -58,6 +58,7 @@ class BodyContour(LineClosed):
 
 
 class ShapeMobile(LineClosed, MobileVector):
+    length = PositiveNumber(0.005)
     base_vertices = XYLine(doc='The list of 2d points')
 
     def __init__(self, **kwargs):

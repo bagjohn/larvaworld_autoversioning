@@ -548,7 +548,7 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
             self.draw_arena_tank(v)
 
         kws = {
-            # 'reference_area': v,
+            'reference_area': v,
             'default_color': self.sidepanel_color,
         }
 

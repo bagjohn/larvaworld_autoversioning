@@ -12,12 +12,11 @@ __all__ = [
 def ga_conf(name, env, mkeys, scene='no_boxes', refID=None, fit_kws={},
             cycle_curve_metrics=[], eval_metrics=aux.AttrDict(), dt=0.1, dur=3, N=30, Nel=3, m0='phasic_explorer',
             m1=None, fitID=None, init='random', excludeID=None):
-    from ...reg import gen
 
-    conf = gen.Ga(ga_select_kws=gen.GAselector(Nagents=N, Nelits=Nel, base_model=m0, bestConfID=m1,
+    conf = reg.gen.Ga(ga_select_kws=reg.gen.GAselector(Nagents=N, Nelits=Nel, base_model=m0, bestConfID=m1,
                                                init_mode=init,
                                                space_mkeys=mkeys),
-                  ga_eval_kws=gen.GAevaluation(
+                  ga_eval_kws=reg.gen.GAevaluation(
                       fit_kws=fit_kws,
                       cycle_curve_metrics=cycle_curve_metrics,
                       eval_metrics=eval_metrics,
