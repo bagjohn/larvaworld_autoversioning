@@ -1,8 +1,7 @@
-from larvaworld.lib import aux
-from larvaworld.lib.model.agents._larva_sim import LarvaSim
-from larvaworld.lib.model.modules.motor_controller import MotorController, Actuator
-from larvaworld.lib.model.modules.sensor2 import ProximitySensor
-from larvaworld.lib.param import RandomizedColor
+from ... import aux
+from . import LarvaSim
+from ...model.modules.motor_controller import MotorController, Actuator
+from ...model.modules.sensor2 import ProximitySensor
 
 
 

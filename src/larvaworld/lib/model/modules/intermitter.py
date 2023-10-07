@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import param
 
-from .oscillator import Timer
+from oscillator import Timer
 from ... import reg, aux, util
 from ...aux import nam
 from ...param import PositiveNumber, OptionalPositiveNumber

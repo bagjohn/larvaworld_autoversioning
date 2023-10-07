@@ -4,9 +4,9 @@ import numpy as np
 import param
 from shapely import geometry
 
-from larvaworld.lib import aux
-from larvaworld.lib.model import agents
-from larvaworld.lib.param import PositiveNumber
+from ... import aux
+from . import LarvaMotile
+from ...param import PositiveNumber
 
 __all__ = [
     'BaseController',
@@ -210,7 +210,7 @@ class BaseController(param.Parameterized):
 
 
 
-class LarvaSim(agents.LarvaMotile, BaseController):
+class LarvaSim(LarvaMotile, BaseController):
     """
     Simulated larva agent.
 
@@ -243,7 +243,7 @@ class LarvaSim(agents.LarvaMotile, BaseController):
 
     def __init__(self, physics, Box2D_params, **kwargs):
         BaseController.__init__(self, **physics)
-        agents.LarvaMotile.__init__(self,**kwargs)
+        LarvaMotile.__init__(self,**kwargs)
 
 
         self.collision_with_object = False

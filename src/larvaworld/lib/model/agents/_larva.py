@@ -1,13 +1,10 @@
 import math
-import random
 from copy import deepcopy
 import numpy as np
-import param
 
-from larvaworld.lib import reg, aux
-from larvaworld.lib.model.agents import Source
-from larvaworld.lib.model.agents._agent import MobileAgent
-from larvaworld.lib.param import SegmentedBodySensored, Contour
+from ... import reg, aux
+from . import Source, MobileAgent
+from ...param import SegmentedBodySensored, Contour
 
 __all__ = [
     'Larva',
@@ -18,6 +15,7 @@ __all__ = [
 
 __displayname__ = 'Larva agent'
 
+
 class Larva(MobileAgent):
     """A Larva as a mobile agent.
 
@@ -27,14 +25,14 @@ class Larva(MobileAgent):
         **kwargs (dict) : Additional keyword arguments.
 
     """
-    def __init__(self, model=None,unique_id=None, **kwargs):
+
+    def __init__(self, model=None, unique_id=None, **kwargs):
         if unique_id is None and model:
             unique_id = model.next_id(type='Larva')
-        super().__init__(unique_id=unique_id, model=model,**kwargs)
+        super().__init__(unique_id=unique_id, model=model, **kwargs)
         self.trajectory = [self.initial_pos]
         self.orientation_trajectory = [self.initial_orientation]
         self.cum_dur = 0
-
 
     def draw(self, v, **kwargs):
         p, c, r, l = self.get_position(), self.color, self.radius, self.length
@@ -42,7 +40,7 @@ class Larva(MobileAgent):
         if np.isnan(p).all():
             return
         if v.manager.draw_centroid:
-            v.draw_circle(p, r / 4, c,True, r / 10)
+            v.draw_circle(p, r / 4, c, True, r / 10)
 
         if v.manager.draw_midline:
             if not any(np.isnan(np.array(mid).flatten())):
@@ -55,7 +53,7 @@ class Larva(MobileAgent):
         if v.manager.draw_head:
             v.draw_circle(mid[0], l / 4, color=(255, 0, 0), width=l / 12)
 
-        if v.manager.visible_trails :
+        if v.manager.visible_trails:
             Nfade = int(v.manager.trail_dt / self.model.dt)
             traj = self.trajectory[-Nfade:]
             or_traj = self.orientation_trajectory[-Nfade:]
@@ -66,33 +64,30 @@ class Larva(MobileAgent):
                 return
             # This is the case for larva trajectories derived from experiments where some values are np.nan
             else:
-                ds, de = aux.parse_array_at_nans(np.array(traj)[:,0])
+                ds, de = aux.parse_array_at_nans(np.array(traj)[:, 0])
                 parsed_traj = [traj[s:e] for s, e in zip(ds, de)]
                 parsed_or_traj = [or_traj[s:e] for s, e in zip(ds, de)]
-            Npars=len(parsed_traj)
+            Npars = len(parsed_traj)
             for i in range(Npars):
-                t=parsed_traj[i]
-                or_t=parsed_or_traj[i]
+                t = parsed_traj[i]
+                or_t = parsed_or_traj[i]
                 # If trajectory has one point, skip
                 if len(t) < 2:
                     pass
                 else:
-                    if v.manager.trail_color=='normal':
+                    if v.manager.trail_color == 'normal':
                         color = self.color
-                    elif v.manager.trail_color =='linear':
+                    elif v.manager.trail_color == 'linear':
                         color = aux.scaled_velocity_to_col(aux.eudist(np.array(t)) / self.length / self.model.dt)
-                    elif v.manager.trail_color =='angular':
-                        color = aux.angular_velocity_to_col(np.diff(np.array(or_t))/self.model.dt)
+                    elif v.manager.trail_color == 'angular':
+                        color = aux.angular_velocity_to_col(np.diff(np.array(or_t)) / self.model.dt)
                     else:
                         raise
 
-                    try :
-                        v.draw_polyline(t, color=color,width=0.0005)
-                    except :
+                    try:
+                        v.draw_polyline(t, color=color, width=0.0005)
+                    except:
                         pass
-
-
-
 
         if v.manager.draw_orientations:
             p02 = [p[0] + math.cos(self.front_orientation) * l,
@@ -104,7 +99,6 @@ class Larva(MobileAgent):
         super().draw(v, **kwargs)
 
 
-
 class LarvaContoured(Larva, Contour):
     """A larva surrounded by a contour."""
 
@@ -113,8 +107,6 @@ class LarvaContoured(Larva, Contour):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-
-
     def draw(self, v, **kwargs):
         if v.manager.draw_contour:
             Contour.draw(self, v, **kwargs)
@@ -122,7 +114,7 @@ class LarvaContoured(Larva, Contour):
 
     def draw_selected(self, v, **kwargs):
         v.draw_polygon(vertices=self.vertices, color=v.manager.selection_color,
-                           filled=False, width=0.0002)
+                       filled=False, width=0.0002)
 
 
 class LarvaSegmented(Larva, SegmentedBodySensored):
@@ -150,6 +142,7 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
         v.draw_polygon(vertices=self.get_shape(), color=v.manager.selection_color,
                        filled=False, width=0.0002)
 
+
 class LarvaMotile(LarvaSegmented):
     """ A larva with a segmented body, sensors, a brain, energetics, and life history.
 
@@ -164,8 +157,8 @@ class LarvaMotile(LarvaSegmented):
 
     __displayname__ = 'Behaving & growing larva'
 
-    def __init__(self, brain, energetics, life_history,body, **kwargs):
-        super().__init__(**body,**kwargs)
+    def __init__(self, brain, energetics, life_history, body, **kwargs):
+        super().__init__(**body, **kwargs)
         self.carried_objects = []
         self.brain = self.build_brain(brain)
         self.build_energetics(energetics, life_history=life_history)
@@ -175,7 +168,6 @@ class LarvaMotile(LarvaSegmented):
     # @property
     # def sim_length(self):
     #     return self.real_length * self.model.scaling_factor
-
 
     def build_brain(self, conf):
         """Build the brain for the larva agent."""
@@ -187,13 +179,10 @@ class LarvaMotile(LarvaSegmented):
             from larvaworld.lib.model.modules.brain import DefaultBrain
             return DefaultBrain(agent=self, conf=conf, dt=self.model.dt)
 
-
-
-
     def feed(self, source, motion):
 
         def get_max_V_bite():
-            return self.brain.locomotor.feeder.V_bite * self.V*1000  # ** (2 / 3)
+            return self.brain.locomotor.feeder.V_bite * self.V * 1000  # ** (2 / 3)
 
         if motion:
             a_max = get_max_V_bite()
@@ -209,8 +198,6 @@ class LarvaMotile(LarvaSegmented):
                 return 0
         else:
             return 0
-
-
 
     def build_energetics(self, energetic_pars, life_history):
         from larvaworld.lib.model.deb.deb import DEB
@@ -256,14 +243,13 @@ class LarvaMotile(LarvaSegmented):
                 self.adjust_body_vertices()
 
     def get_feed_success(self, t):
-        if self.feeder_motion :
-            if self.on_food :
+        if self.feeder_motion:
+            if self.on_food:
                 return 1
             else:
                 return -1
         else:
             return 0
-
 
     @property
     def on_food_dur_ratio(self):
@@ -281,7 +267,7 @@ class LarvaMotile(LarvaSegmented):
         return self.amount_eaten / self.real_mass
 
     def resolve_carrying(self, food):
-        gain_for_base_odor=100.0
+        gain_for_base_odor = 100.0
         if food is None or not isinstance(food, Source):
             return
         if food.can_be_carried and food not in self.carried_objects:
@@ -326,7 +312,7 @@ class LarvaMotile(LarvaSegmented):
                 color = np.array([255, 0, 0])
             elif f:
                 color = np.array([0, 0, 255])
-            else :
+            else:
                 raise
         elif mode == 'ang':
             color = deepcopy(self.default_color)
@@ -335,12 +321,9 @@ class LarvaMotile(LarvaSegmented):
                 color[2] = 150
             elif orvel < 0:
                 color[2] = 50
-        else :
+        else:
             raise
         self.set_color(color)
-
-
-
 
     def sense(self):
         pass
@@ -351,11 +334,12 @@ class LarvaMotile(LarvaSegmented):
         self.sense()
         pos = self.olfactor_pos
 
-        if self.model.space.accessible_sources :
+        if self.model.space.accessible_sources:
             self.food_detected = self.model.space.accessible_sources[self]
 
-        elif self.brain.locomotor.feeder  or self.brain.toucher:
-            self.food_detected = aux.sense_food(pos, sources=self.model.sources, grid=self.model.food_grid,radius=self.radius)
+        elif self.brain.locomotor.feeder or self.brain.toucher:
+            self.food_detected = aux.sense_food(pos, sources=self.model.sources, grid=self.model.food_grid,
+                                                radius=self.radius)
         self.resolve_carrying(self.food_detected)
 
         lin, ang, self.feeder_motion = self.brain.step(pos, length=self.length, on_food=self.on_food)
@@ -366,11 +350,8 @@ class LarvaMotile(LarvaSegmented):
         self.cum_food_detected += int(self.on_food)
         self.run_energetics(V)
 
-
         # for o in self.carried_objects:
         #     o.pos = self.pos
-
-
 
         try:
             if self.model.screen_manager.color_behavior:
@@ -383,8 +364,3 @@ class LarvaMotile(LarvaSegmented):
     def prepare_motion(self, lin, ang):
         pass
         # Overriden by subclasses
-
-
-
-
-

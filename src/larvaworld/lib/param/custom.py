@@ -389,8 +389,10 @@ class NestedConf(Parameterized):
 
         :param kwargs: Keyword arguments for configuring the instance.
         """
+
         param_classes = self.param.objects()
         for k, p in param_classes.items():
+            # print(k)
             try:
                 if k in kwargs.keys():
                     if type(p) == ClassAttr and not isinstance(kwargs[k], p.class_):

@@ -7,7 +7,7 @@ from ._agent import PointAgent, OrientedAgent, MobileAgent
 
 from ._source import Source, Food
 # from .controller import BaseController
-from ._larva import Larva, LarvaMotile
+from ._larva import Larva, LarvaContoured, LarvaSegmented, LarvaMotile
 
 from ._larva_replay import LarvaReplay,LarvaReplayContoured, LarvaReplaySegmented
 from ._larva_sim import BaseController, LarvaSim

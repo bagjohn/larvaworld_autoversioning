@@ -1,8 +1,8 @@
 import numpy as np
 
-from larvaworld.lib.model.agents.larva_robot import LarvaRobot
+from .larva_robot import LarvaRobot
 # from larvaworld.lib.model.agents._larva_sim import LarvaSim
-from larvaworld.lib import aux
+from ... import aux
 
 
 

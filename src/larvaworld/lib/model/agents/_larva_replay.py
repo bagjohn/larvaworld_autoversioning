@@ -1,8 +1,8 @@
 import numpy as np
 
-from larvaworld.lib import aux
-from larvaworld.lib.aux import nam
-from larvaworld.lib.model.agents._larva import Larva, LarvaContoured, LarvaSegmented
+from ... import aux, reg
+from ...aux import nam
+from . import Larva, LarvaContoured, LarvaSegmented
 
 __all__ = [
     'LarvaReplay',

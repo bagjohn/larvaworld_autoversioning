@@ -6,12 +6,11 @@ import os
 import numpy as np
 import param
 
-import larvaworld.lib.param.custom
-from larvaworld.lib import reg, aux
-from larvaworld.lib.aux import nam
+from ... import reg, aux
+from ...aux import nam
 
-from larvaworld.lib.model import deb
-from larvaworld.lib.param import Substrate, NestedConf, PositiveNumber, PositiveInteger, ClassAttr, substrate_dict, \
+from ...model import deb
+from ...param import Substrate, NestedConf, PositiveNumber, PositiveInteger, ClassAttr, substrate_dict, \
     Epoch
 
 '''

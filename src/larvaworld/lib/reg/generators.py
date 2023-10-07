@@ -358,6 +358,7 @@ class SimConfigurationParams(SimConfiguration):
     parameters = param.Parameter(default=None)
 
     def __init__(self, runtype='Exp', experiment=None, parameters=None, **kwargs):
+        # print(experiment)
         if parameters is None:
             if runtype in reg.CONFTYPES:
                 ct = reg.conf[runtype]

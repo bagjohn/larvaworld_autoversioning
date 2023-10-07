@@ -2,8 +2,8 @@ import random
 import pygame
 import numpy as np
 
-from larvaworld.lib.model.modules.rot_surface import RotTriangle
-from larvaworld.lib import aux
+from ...model.modules.rot_surface import RotTriangle
+from ... import aux
 
 
 __all__ = [

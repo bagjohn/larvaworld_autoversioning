@@ -3,7 +3,7 @@ import numpy as np
 import param
 from shapely.geometry import Point
 
-from .valuegrid import SpatialEntity
+from valuegrid import SpatialEntity
 from ... import aux
 from ...param import BoundedArea
 

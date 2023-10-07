@@ -1,8 +1,8 @@
 import numpy as np
 import param
 
-from larvaworld.lib.model.agents import PointAgent
-from larvaworld.lib.param import xy_uniform_circle,Substrate, PositiveNumber, ClassAttr
+from . import PointAgent
+from ...param import xy_uniform_circle,Substrate, PositiveNumber, ClassAttr
 
 __all__ = [
     'Source',

@@ -52,6 +52,8 @@ class Viewable(NestedConf):
             if self.selected:
                 # raise
                 self.draw_selected(v, **kwargs)
+            if hasattr(self,'id_box'):
+                self.id_box._draw(v, **kwargs)
 
     def draw_selected(self, v, **kwargs):
         pass

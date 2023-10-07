@@ -1,12 +1,13 @@
 import numpy as np
-import param
+
 #import pygame
 from shapely.affinity import affine_transform
 from shapely import geometry
 
 from .. import Object
 from ... import aux
-from ...screen import LabelledGroupedObject
+import param
+from ...model import GroupedObject
 from ...param import ViewableLine, Pos2D
 
 __all__ = [
@@ -18,7 +19,7 @@ __all__ = [
 
 
 
-class Obstacle(LabelledGroupedObject, ViewableLine):
+class Obstacle(GroupedObject, ViewableLine):
 
     def __init__(self,model=None,edges=None,**kwargs):
         Object.__init__(self,model=model)

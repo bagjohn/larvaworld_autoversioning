@@ -12,7 +12,7 @@ __all__ = [
 __displayname__ = 'Basic ABM class'
 
 
-class Object(NestedConf):
+class Object:
     """
     Basic Class for all Larvaworld model objects.
 
@@ -73,14 +73,15 @@ class Object(NestedConf):
         self.z = self.p.z  # Value defined in parameters
     """
 
-    unique_id = param.String(None, doc='The unique ID of the entity')
+    # unique_id = param.String(None, doc='The unique ID of the entity')
 
     def __init__(self, model=None,unique_id=None, id='Object', **kwargs):
         if unique_id is None and id is not None:
             unique_id=id
-        super().__init__(unique_id=unique_id,**kwargs)
+        #super().__init__(unique_id=unique_id,**kwargs)
         self._var_ignore = []
         self.id = id
+        self.unique_id = unique_id
         self.type = type(self).__name__
         self.log = {}
 

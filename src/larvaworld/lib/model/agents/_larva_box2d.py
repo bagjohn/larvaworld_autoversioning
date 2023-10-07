@@ -3,9 +3,8 @@ import numpy as np
 import param
 from shapely import geometry
 
-from larvaworld.lib import aux, reg
-from larvaworld.lib.model import LarvaSim
-
+from ... import aux, reg
+from . import LarvaSim
 
 __all__ = [
     'BaseSegment',
@@ -14,6 +13,7 @@ __all__ = [
 ]
 
 __displayname__ = 'Box2D larva'
+
 
 class BaseSegment:
     """
@@ -31,7 +31,7 @@ class BaseSegment:
 
     __displayname__ = 'Body segment'
 
-    def __init__(self, pos, orientation,color, base_seg_vertices,base_seg_ratio, body_length):
+    def __init__(self, pos, orientation, color, base_seg_vertices, base_seg_ratio, body_length):
         self.color = color
         self.pos = pos
         self.orientation = orientation % (np.pi * 2)
@@ -39,7 +39,7 @@ class BaseSegment:
         self.base_local_rear_end = np.array([np.min(self.base_seg_vertices[:, 0]), 0])
         self.base_local_front_end = np.array([np.max(self.base_seg_vertices[:, 0]), 0])
         self.base_seg_ratio = base_seg_ratio
-        self.body_length=body_length
+        self.body_length = body_length
 
     @property
     def seg_vertices(self):
@@ -371,14 +371,13 @@ class LarvaBox2D(LarvaSim):
         # Option : Apply to all body segments. This allows to control velocity for any Npoints. But it has the same shitty visualization as all options
         # for seg in [self.segs[0]]:
         for seg in self.segs:
-            l=lin *  seg.get_world_facing_axis()
+            l = lin * seg.get_world_facing_axis()
             if self.lin_mode == 'impulse':
                 seg._body.ApplyLinearImpulse(l * self.lin_vel_coef / seg.get_mass(), seg._body.worldCenter, wake=True)
             elif self.lin_mode == 'force':
-                seg._body.ApplyForceToCenter(l * self.lin_force_coef , wake=True)
+                seg._body.ApplyForceToCenter(l * self.lin_force_coef, wake=True)
             elif self.lin_mode == 'velocity':
                 seg.set_linearvelocity(l * self.lin_vel_coef, local=False)
-
 
     def updated_by_Box2D(self):
         """
@@ -460,7 +459,7 @@ class LarvaBox2D(LarvaSim):
         if joint_types is None:
             joint_types = reg.get_null('Box2D_params').joint_types
         space = self.model.space
-        l0 = self.sim_length/self.Nsegs
+        l0 = self.sim_length / self.Nsegs
 
         # TODO Find compatible parameters.
         # Until now for the 12-seg body : density 30000 and maxForce 100000000  and torque_coef 3.5 seem to work for natural bend
@@ -574,5 +573,3 @@ class LarvaBox2D(LarvaSim):
                                                   localAnchorA=tuple(l0 * x for x in (-0.5, 0)),
                                                   localAnchorB=tuple(l0 * x for x in (0.5, 0)))
                     self.joints.append(j)
-
-

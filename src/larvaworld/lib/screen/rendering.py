@@ -5,16 +5,14 @@ Screen renderable items for pygame-based simulation visualization
 import math
 import os
 
-import agentpy
 import numpy as np
-import imageio
+import pandas as pd
 import param
 from shapely import geometry
 
-from ..model import GroupedObject
 from ..param import Viewable, PositiveRange, PositiveNumber, \
     ViewableToggleable, NestedConf, PositiveInteger, Area2DPixel, PosPixelRel2Area, \
-    NumericTuple2DRobust, Pos2D, Area, Pos2DPixel
+    NumericTuple2DRobust, Pos2D, Pos2DPixel
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
@@ -27,7 +25,6 @@ __all__ = [
     'ScreenAreaPygame',
     'Viewer',
     'IDBox',
-    'LabelledGroupedObject',
     'ScreenTextBoxRect',
     'ScreenMsgText',
     'ScreenTextBox',
@@ -81,8 +78,6 @@ class ScreenArea(Area2DPixel):
         # m = manager.model
         super().__init__(dims=aux.get_window_dims(self.space.dims), **kwargs)
 
-
-
     @property
     def space(self):
         return self.manager.model.space
@@ -112,13 +107,15 @@ class ScreenArea(Area2DPixel):
             pos = self.space2screen_pos(pos)
         return super().get_rect_at_pos(pos)
 
-    def get_relative_pos(self, pos_scale):
+    def get_relative_pos(self, pos_scale, reference=None):
+        if reference is None:
+            reference = (self.w, self.h)
         w, h = pos_scale
-        x_pos = int(self.w * w)
-        y_pos = int(self.h * h)
+        x_pos = int(reference[0] * w)
+        y_pos = int(reference[1] * h)
         return x_pos, y_pos
 
-    def item_pos(self,item):
+    def item_pos(self, item):
         item_pos_scale = aux.AttrDict({
             'clock': (0.85, 0.94),
             'scale': (0.1, 0.04),
@@ -126,6 +123,26 @@ class ScreenArea(Area2DPixel):
         })
         assert item in item_pos_scale.keys()
         return self.get_relative_pos(item_pos_scale[item])
+
+    def item_textfonts(self):
+        rel_pos = {
+            'clock': [(0.85, 0.94), [(0.91, 1.0), (0.95, 1.0), (1.0, 1.0), (1.04, 1.1)],
+                      [(1 / 40), (1 / 40), (1 / 50), (1 / 50)]],
+            'scale': [(0.1, 0.04), [(1, 1.5)], [(1 / 40)]],
+            'state': [(0.85, 0.94), [(1, 1)], [(1 / 40)]]
+        }
+        rel = pd.DataFrame.from_dict(rel_pos, columns=['pos2screen', 'text2pos', 'fontsize2screen'], orient='index')
+        rel['pos'] = rel['pos2screen'].apply(self.get_relative_pos)
+
+        def temp(alist):
+            return [self.get_relative_font_size(aa) for aa in alist]
+
+        rel['font_size'] = rel['fontsize2screen'].apply(temp)
+
+        def temp2(alist, p):
+            return [self.get_relative_pos(aa, reference=p) for aa in alist]
+
+        rel['text_center'] = rel[['text2pos', 'pos']].apply(temp2)
 
     def get_relative_font_size(self, font_size_scale):
         return int(self.w * font_size_scale)
@@ -175,6 +192,23 @@ class ScreenAreaZoomable(ScreenArea):
             self.center = np.clip(self.center - np.array(pos) * d_zoom, self.center_lim, -self.center_lim)
         if self.zoom == 1.0:
             self.center = np.array([0.0, 0.0])
+
+    @param.depends('self.zoom', watch=True)
+    def update_scale(self):
+        def closest(lst, k):
+            return lst[min(range(len(lst)), key=lambda i: abs(lst[i] - k))]
+
+        def compute_lines(x, y, scale):
+            return [[(x - scale / 2, y), (x + scale / 2, y)],
+                    [(x + scale / 2, y * 0.75), (x + scale / 2, y * 1.25)],
+                    [(x - scale / 2, y * 0.75), (x - scale / 2, y * 1.25)]]
+
+        w_in_mm = self.space.w * self.zoom * 1000
+        # Get 1/10 of max real dimension, transform it to mm and find the closest reasonable scale
+        scale_in_mm = closest(
+            lst=[0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10, 25, 50, 75, 100, 250, 500, 750, 1000], k=w_in_mm / 10)
+        self.text_font.set_text(f'{scale_in_mm} mm')
+        self.lines = compute_lines(self.x, self.y, scale_in_mm / w_in_mm * self.w)
 
 
 class ScreenAreaPygame(ScreenAreaZoomable):
@@ -608,16 +642,6 @@ class IDBox(ScreenTextFont, ViewableToggleable):
         ScreenTextFont.draw(self, v=v, **kwargs)
 
 
-class LabelledGroupedObject(Viewable, GroupedObject, Pos2D):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.id_box = IDBox(agent=self)
-
-    def _draw(self, v, **kwargs):
-        super()._draw(v, **kwargs)
-        self.id_box._draw(v, **kwargs)
-
 
 class PosPixelRel2AreaViewable(PosPixelRel2Area, Viewable): pass
 
@@ -729,17 +753,17 @@ class SimulationScale(Pos2DPixel, Viewable):
         self.lines = None
         self.update_scale()
 
-    #@param.depends('reference_area.zoom', watch=True)
-    def update_scale(self,v):
+    @param.depends('reference_area.zoom', watch=True)
+    def update_scale(self):
         def closest(lst, k):
             return lst[min(range(len(lst)), key=lambda i: abs(lst[i] - k))]
 
-        w_in_mm = v.space.w * v.zoom * 1000
+        w_in_mm = self.reference_area.space.w * self.reference_area.zoom * 1000
         # Get 1/10 of max real dimension, transform it to mm and find the closest reasonable scale
         self.scale_in_mm = closest(
             lst=[0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10, 25, 50, 75, 100, 250, 500, 750, 1000], k=w_in_mm / 10)
         self.text_font.set_text(f'{self.scale_in_mm} mm')
-        self.lines = self.compute_lines(self.x, self.y, self.scale_in_mm / w_in_mm * v.w)
+        self.lines = self.compute_lines(self.x, self.y, self.scale_in_mm / w_in_mm * self.reference_area.w)
 
     def compute_lines(self, x, y, scale):
         return [[(x - scale / 2, y), (x + scale / 2, y)],
@@ -747,7 +771,6 @@ class SimulationScale(Pos2DPixel, Viewable):
                 [(x - scale / 2, y * 0.75), (x - scale / 2, y * 1.25)]]
 
     def draw(self, v, **kwargs):
-        self.update_scale(v)
         for line in self.lines:
             pygame.draw.line(v._window, self.default_color, line[0], line[1], 1)
         # v.draw_text_box(self.text_font, self.text_font_r)
@@ -758,8 +781,8 @@ class SimulationScale(Pos2DPixel, Viewable):
         self.text_font.text_color = self.color
 
 
-class SimulationState(Pos2DPixel, Viewable):
-    # pos_scale = PositiveRange((0.85, 0.94))
+class SimulationState(PosPixelRel2AreaViewable):
+    pos_scale = PositiveRange((0.85, 0.94))
 
     def __init__(self, model, **kwargs):
         super().__init__(**kwargs)

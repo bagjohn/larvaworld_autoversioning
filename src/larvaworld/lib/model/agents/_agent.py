@@ -1,9 +1,9 @@
 import numpy as np
-#from larvaworld.lib import aux
-from larvaworld.lib.param import OrientedPoint, RadiallyExtended, ClassAttr, MobilePoint, MobileVector
-from larvaworld.lib.param.composition import Odor
-from larvaworld.lib.model.object import GroupedObject
-from larvaworld.lib.screen.rendering import LabelledGroupedObject
+# from larvaworld.lib import aux
+from ...param import OrientedPoint, RadiallyExtended, ClassAttr, MobilePoint, MobileVector, Viewable
+from ...param.composition import Odor
+from ..object import GroupedObject
+from ...screen.rendering import IDBox
 
 __all__ = [
     'NonSpatialAgent',
@@ -14,8 +14,6 @@ __all__ = [
 ]
 
 __displayname__ = 'Agent'
-
-
 
 
 class NonSpatialAgent(GroupedObject):
@@ -37,12 +35,17 @@ class NonSpatialAgent(GroupedObject):
     def step(self):
         pass
 
-class PointAgent(RadiallyExtended, NonSpatialAgent, LabelledGroupedObject):
+
+class PointAgent(RadiallyExtended, NonSpatialAgent, Viewable):
     """ Agent with a point spatial representation.
     This agent class extends the NonSpatialAgent class and represents agents as points.
     """
 
     __displayname__ = 'Point agent'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.id_box = IDBox(agent=self)
 
     def draw(self, v, filled=True):
         if self.odor.peak_value > 0:
@@ -61,6 +64,7 @@ class PointAgent(RadiallyExtended, NonSpatialAgent, LabelledGroupedObject):
         v.draw_circle(position=self.get_position(), radius=self.radius * 0.5,
                       color=v.manager.selection_color, filled=False, width=0.0002)
 
+
 class OrientedAgent(OrientedPoint, PointAgent):
     """ An agent represented as an oriented point in space.
     This agent class extends the PointAgent class and adds orientation to the agent.
@@ -71,6 +75,7 @@ class OrientedAgent(OrientedPoint, PointAgent):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+
 class MobilePointAgent(MobilePoint, PointAgent):
     """A mobile point agent.
     This agent class extends the PointAgent class and adds mobility with point representation.
@@ -80,6 +85,7 @@ class MobilePointAgent(MobilePoint, PointAgent):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
 
 class MobileAgent(MobileVector, PointAgent):
     """ An agent represented in space as a mobile oriented vector.
