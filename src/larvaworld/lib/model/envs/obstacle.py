@@ -7,8 +7,7 @@ from shapely import geometry
 from .. import Object
 from ... import aux
 from ...screen import LabelledGroupedObject
-from ...param import Contour, ViewableLine
-
+from ...param import ViewableLine, Pos2D
 
 __all__ = [
     'Obstacle',
@@ -21,7 +20,7 @@ __all__ = [
 
 class Obstacle(LabelledGroupedObject, ViewableLine):
 
-    def __init__(self,model,edges=None,**kwargs):
+    def __init__(self,model=None,edges=None,**kwargs):
         Object.__init__(self,model=model)
         ViewableLine.__init__(self,**kwargs)
 
@@ -33,12 +32,12 @@ class Obstacle(LabelledGroupedObject, ViewableLine):
 
 
 
-class Box(Obstacle):
+class Box(Obstacle, Pos2D):
     closed = param.Boolean(True)
 
-    def __init__(self, x, y, size, **kwargs):
-        self.x = x
-        self.y = y
+    def __init__(self, x=0, y=0, size=1, **kwargs):
+        # self.x = x
+        # self.y = y
         self.size = size
 
         vert1 = geometry.Point(x - size / 2, y - size / 2)
@@ -48,7 +47,7 @@ class Box(Obstacle):
 
         vertices = [(vert1.x, vert1.y), (vert2.x, vert2.y), (vert3.x, vert3.y), (vert4.x, vert4.y)]
         edges = [[vert1, vert2], [vert2, vert3], [vert3, vert4], [vert4, vert1]]
-        super().__init__(vertices=vertices, edges = edges, **kwargs)
+        super().__init__(vertices=vertices, edges = edges,pos=(x,y), **kwargs)
 
 
 
@@ -56,7 +55,7 @@ class Box(Obstacle):
 class Wall(Obstacle):
     closed = param.Boolean(False)
 
-    def __init__(self, point1, point2, **kwargs):
+    def __init__(self, point1=geometry.Point(0,0), point2=geometry.Point(-1,1), **kwargs):
         self.point1 = point1
         self.point2 = point2
 
@@ -69,7 +68,7 @@ class Wall(Obstacle):
 class Border(Obstacle):
     closed = param.Boolean(False)
 
-    def __init__(self, vertices,points=None, **kwargs):
+    def __init__(self, vertices=[],points=None, **kwargs):
         self.points = points
         self.border_xy, self.border_lines = self.define_lines(vertices)
         edges = []

@@ -1,8 +1,9 @@
 import numpy as np
-from larvaworld.lib import aux
+#from larvaworld.lib import aux
 from larvaworld.lib.param import OrientedPoint, RadiallyExtended, ClassAttr, MobilePoint, MobileVector
 from larvaworld.lib.param.composition import Odor
-from larvaworld.lib.screen import LabelledGroupedObject
+from larvaworld.lib.model.object import GroupedObject
+from larvaworld.lib.screen.rendering import Labelled
 
 __all__ = [
     'NonSpatialAgent',
@@ -14,7 +15,10 @@ __all__ = [
 
 __displayname__ = 'Agent'
 
-class NonSpatialAgent(LabelledGroupedObject):
+
+
+
+class NonSpatialAgent(GroupedObject):
     """An agent lacking spatial positioning in space.
 
     Args:
@@ -33,7 +37,7 @@ class NonSpatialAgent(LabelledGroupedObject):
     def step(self):
         pass
 
-class PointAgent(RadiallyExtended, NonSpatialAgent):
+class PointAgent(RadiallyExtended, NonSpatialAgent, Labelled):
     """ Agent with a point spatial representation.
     This agent class extends the NonSpatialAgent class and represents agents as points.
     """

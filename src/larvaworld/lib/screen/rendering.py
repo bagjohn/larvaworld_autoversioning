@@ -29,6 +29,7 @@ __all__ = [
     'Viewer',
     'ScreenBox',
     'IDBox',
+    'Labelled',
     'LabelledGroupedObject',
     'ScreenTextBoxRect',
     'ScreenMsgText',
@@ -595,7 +596,7 @@ class IDBox(ScreenTextFont, ViewableToggleable):
         ScreenTextFont.draw(self, v=v, **kwargs)
 
 
-class LabelledGroupedObject(Viewable, GroupedObject):
+class Labelled(Viewable, Pos2D):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -604,6 +605,16 @@ class LabelledGroupedObject(Viewable, GroupedObject):
     def _draw(self, v, **kwargs):
         super()._draw(v, **kwargs)
         self.id_box._draw(v, **kwargs)
+
+class LabelledGroupedObject(Labelled, GroupedObject):pass
+
+    # def __init__(self, **kwargs):
+    #     super().__init__(**kwargs)
+    #     self.id_box = IDBox(agent=self)
+    #
+    # def _draw(self, v, **kwargs):
+    #     super()._draw(v, **kwargs)
+    #     self.id_box._draw(v, **kwargs)
 
 
 class PosPixelRel2AreaViewable(PosPixelRel2Area, Viewable): pass
