@@ -115,9 +115,11 @@ def loadRefGroup(group_id, **kwargs):
 
 vprint(f"Registry configured!", 2)
 
-#print(conf.Ref.confIDs)
+if len(conf.Ref.confIDs) == 0:
+    TEST_DIR = f'{ROOT_DIR}/../../tests'
+    TEST_IMPORT_FILE = f'{TEST_DIR}/test_import.py'
+    import runpy
+    runpy.run_path(TEST_IMPORT_FILE, run_name='__main__')['test_import_Schleyer']()
+
 if len(conf.Ref.confIDs) > 0:
     default_refID = conf.Ref.confIDs[0]
-
-else:
-    default_refID = None

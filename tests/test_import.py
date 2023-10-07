@@ -1,6 +1,7 @@
 import larvaworld
 import pandas as pd
 from larvaworld.lib import reg
+from larvaworld.lib.process.dataset import LarvaDataset
 reg.VERBOSE=1
 
 def test_import_Schleyer():
@@ -24,7 +25,7 @@ def test_import_Schleyer():
     }
 
     # Single dish case
-    folder = 'dish01'
+    folder = 'dish02'
     kws2 = {
         'parent_dir': f'exploration/{folder}',
         'merged': False,
@@ -38,7 +39,7 @@ def test_import_Schleyer():
 
     for kws in [kws1, kws2]:
         d = g.import_dataset(**kws)
-        assert isinstance(d, larvaworld.lib.LarvaDataset)
+        assert isinstance(d,LarvaDataset)
         d.process()
         d.save()
         s = d.step_data
