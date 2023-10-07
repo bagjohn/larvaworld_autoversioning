@@ -115,10 +115,34 @@ class BaseRun(sim.ABModel):
         - Temperature landscape : thermoscape
         '''
 
-        self.odor_layers = envs.create_odor_layers(model=self, sources=self.sources,
-                                                   pars=p.odorscape) if p.odorscape else {}
+        self.odor_layers = self.create_odor_layers(**p.odorscape) if p.odorscape else {}
         self.windscape = envs.WindScape(model=self, **p.windscape) if p.windscape else None
         self.thermoscape = envs.ThermoScape(**p.thermoscape) if p.thermoscape else None
+
+    def create_odor_layers(self, odorscape, **kwargs):
+        odor_layers = {}
+        ids = aux.unique_list([s.odor.id for s in self.sources if s.odor.id is not None])
+        for id in ids:
+            od_sources = [f for f in self.sources if f.odor.id == id]
+            temp = aux.unique_list([s.default_color for s in od_sources])
+            if len(temp) == 1:
+                c0 = temp[0]
+            elif len(temp) == 3 and all([type(k) == float] for k in temp):
+                c0 = temp
+            else:
+                c0 = aux.random_colors(1)[0]
+            kwargs0 = {
+                'model': self,
+                'unique_id': id,
+                'sources': od_sources,
+                'default_color': c0,
+                **kwargs
+            }
+            if odorscape == 'Diffusion':
+                odor_layers[id] = envs.DiffusionValueLayer(**kwargs0)
+            elif odorscape == 'Gaussian':
+                odor_layers[id] = envs.GaussianValueLayer(**kwargs0)
+        return odor_layers
 
     @property
     def odor_ids(self):

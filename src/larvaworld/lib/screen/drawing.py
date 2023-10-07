@@ -25,7 +25,6 @@ __all__ = [
     'AgentDrawOps',
     'ColorDrawOps',
     'BaseScreenManager',
-    'BaseScreenManager',
     'GA_ScreenManager',
     'ScreenManager',
 ]
@@ -549,13 +548,13 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
             self.draw_arena_tank(v)
 
         kws = {
-            'reference_area': v,
-            'default_color': 'black',
+            # 'reference_area': v,
+            'default_color': self.sidepanel_color,
         }
 
-        self.screen_clock = SimulationClock(sim_step_in_sec=m.dt, **kws)
-        self.screen_scale = SimulationScale(**kws)
-        self.screen_state = SimulationState(model=m, **kws)
+        self.screen_clock = SimulationClock(sim_step_in_sec=m.dt,pos=v.item_pos('clock'), **kws)
+        self.screen_scale = SimulationScale(pos=v.item_pos('scale'),**kws)
+        self.screen_state = SimulationState(model=m,pos=v.item_pos('state'), **kws)
 
         self.screen_texts = aux.AttrDict({name: ScreenMsgText(text=name, **kws) for name in [
             'trail_dt',

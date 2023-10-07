@@ -290,23 +290,3 @@ class BoundedArea(Area, LineClosed):
 
     def in_area(self, p):
         return self.polygon.contains(geometry.Point(p))
-
-
-# class Grid(NestedConf):
-#     grid_dims = PositiveIntegerRange((51, 51), softmax=500, doc='The spatial resolution of the food grid.')
-#
-#     @property
-#     def X(self):
-#         return self.grid_dims[0]
-#
-#     @property
-#     def Y(self):
-#         return self.grid_dims[1]
-
-
-
-
-# class PositionedArea2DPixel(Pos2DPixel, Area2DPixel): pass
-
-
-# class PositionedArea2DPixelRel2Area(PosPixelRel2Area, Area2DPixel): pass

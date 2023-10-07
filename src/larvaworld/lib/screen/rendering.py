@@ -14,7 +14,7 @@ from shapely import geometry
 from ..model import GroupedObject
 from ..param import Viewable, PositiveRange, PositiveNumber, \
     ViewableToggleable, NestedConf, PositiveInteger, Area2DPixel, PosPixelRel2Area, \
-    NumericTuple2DRobust, Pos2D, Area
+    NumericTuple2DRobust, Pos2D, Area, Pos2DPixel
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
@@ -22,14 +22,11 @@ import pygame
 from .. import aux, reg
 
 __all__ = [
-    'ScreenWindowAreaBasic',
-    'ScreenWindowAreaZoomable',
-    'ScreenWindowAreaPygame',
-    'ScreenWindowAreaBackground',
+    'ScreenArea',
+    'ScreenAreaZoomable',
+    'ScreenAreaPygame',
     'Viewer',
-    'ScreenBox',
     'IDBox',
-    'Labelled',
     'LabelledGroupedObject',
     'ScreenTextBoxRect',
     'ScreenMsgText',
@@ -39,13 +36,60 @@ __all__ = [
     'SimulationState',
 ]
 
-class ScreenWindowAreaBasic(Area2DPixel):
-    scaling_factor = PositiveNumber(1., doc='Scaling factor')
-    space = param.ClassSelector(Area, default=Area(), doc='Arena')
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.dims = aux.get_window_dims(self.space.dims)
+# class ScreenWindowAreaBasic(Area2DPixel):
+#     # scaling_factor = PositiveNumber(1., doc='Scaling factor')
+#     # space = param.ClassSelector(Area, default=Area(), doc='Arena')
+#     #
+#     # def __init__(self, **kwargs):
+#     #     super().__init__(**kwargs)
+#     #     self.dims = aux.get_window_dims(self.space.dims)
+#
+#     def space2screen_pos(self, pos):
+#         if pos is None:
+#             return None
+#         if any(np.isnan(pos)):
+#             return (np.nan, np.nan)
+#         try:
+#             return self._transform(pos)
+#         except:
+#             s = self.scaling_factor
+#             rw, rh = self.w / self.space.w, self.h / self.space.h
+#             # X, Y = np.array(self.space.dims) * self.scaling_factor
+#
+#             # p = pos[0] * 2 / self.space.w/s, pos[1] * 2 / self.space.h/s
+#             pp = (pos[0] / s * rw + self.w / 2, -pos[1] * 2 / s * rh + self.h)
+#             return pp
+#
+#     def get_rect_at_pos(self, pos=(0, 0), convert2screen_pos=True):
+#         if convert2screen_pos:
+#             pos = self.space2screen_pos(pos)
+#         return super().get_rect_at_pos(pos)
+#
+#     def get_relative_pos(self, pos_scale):
+#         w, h = pos_scale
+#         x_pos = int(self.w * w)
+#         y_pos = int(self.h * h)
+#         return x_pos, y_pos
+#
+#     def get_relative_font_size(self, font_size_scale):
+#         return int(self.w * font_size_scale)
+
+class ScreenArea(Area2DPixel):
+    def __init__(self, manager, **kwargs):
+        self.manager = manager
+        # m = manager.model
+        super().__init__(dims=aux.get_window_dims(self.space.dims), **kwargs)
+
+
+
+    @property
+    def space(self):
+        return self.manager.model.space
+
+    @property
+    def scaling_factor(self):
+        return self.manager.model.scaling_factor
 
     def space2screen_pos(self, pos):
         if pos is None:
@@ -74,10 +118,20 @@ class ScreenWindowAreaBasic(Area2DPixel):
         y_pos = int(self.h * h)
         return x_pos, y_pos
 
+    def item_pos(self,item):
+        item_pos_scale = aux.AttrDict({
+            'clock': (0.85, 0.94),
+            'scale': (0.1, 0.04),
+            'state': (0.85, 0.94),
+        })
+        assert item in item_pos_scale.keys()
+        return self.get_relative_pos(item_pos_scale[item])
+
     def get_relative_font_size(self, font_size_scale):
         return int(self.w * font_size_scale)
 
-class ScreenWindowAreaZoomable(ScreenWindowAreaBasic):
+
+class ScreenAreaZoomable(ScreenArea):
     zoom = PositiveNumber(1., doc='Zoom factor')
     center = param.Parameter(np.array([0., 0.]), doc='Center xy')
     center_lim = param.Parameter(np.array([0., 0.]), doc='Center xy lim')
@@ -123,7 +177,7 @@ class ScreenWindowAreaZoomable(ScreenWindowAreaBasic):
             self.center = np.array([0.0, 0.0])
 
 
-class ScreenWindowAreaPygame(ScreenWindowAreaZoomable):
+class ScreenAreaPygame(ScreenAreaZoomable):
     caption = param.String('', doc='The caption of the screen window')
 
     def __init__(self, **kwargs):
@@ -131,6 +185,13 @@ class ScreenWindowAreaPygame(ScreenWindowAreaZoomable):
         pygame.init()
         os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (1550, 400)
         self._window = self.init_screen()
+        self._t = pygame.time.Clock()
+
+        if self.manager.bg is not None:
+            self.set_background()
+        else:
+            self.bgimage = None
+            self.bgimagerect = None
 
     @property
     def mouse_position(self):
@@ -235,16 +296,6 @@ class ScreenWindowAreaPygame(ScreenWindowAreaZoomable):
             pygame.draw.polygon(self._window, color, (p0, p1, p2))
             l += dl
 
-
-class ScreenWindowAreaBackground(ScreenWindowAreaPygame):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        if self.manager.bg is not None:
-            self.set_background()
-        else:
-            self.bgimage = None
-            self.bgimagerect = None
-
     def set_background(self):
         # if self.bg is not None:
         ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -257,7 +308,7 @@ class ScreenWindowAreaBackground(ScreenWindowAreaPygame):
         self.th_max = int(self._window.get_height() / self.th) + 2
         self.tw_max = int(self._window.get_width() / self.tw) + 2
 
-    def draw_background(self, bg = [0, 0, 0]):
+    def draw_background(self, bg=[0, 0, 0]):
         if self.bgimage is not None and self.bgimagerect is not None:
             # if self.manager.bg is not None:
             #     bg = self.manager.bg[:, tick - 1]
@@ -278,14 +329,12 @@ class ScreenWindowAreaBackground(ScreenWindowAreaPygame):
                 pass
 
 
-class Viewer(ScreenWindowAreaBackground):
-    def __init__(self, manager, **kwargs):
-        self.manager = manager
-        m = manager.model
-        super().__init__(scaling_factor=m.scaling_factor, space=m.space, **kwargs)
-        self._t = pygame.time.Clock()
-        self.vid_writer = manager.new_video_writer(fps=manager._fps)
-        self.img_writer = manager.new_image_writer()
+class Viewer(ScreenAreaPygame):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.vid_writer = self.manager.new_video_writer(fps=self.manager._fps)
+        self.img_writer = self.manager.new_image_writer()
 
     def render(self):
         if self.manager.show_display:
@@ -455,26 +504,6 @@ class ScreenTextFont(NestedConf):
         self.start_time = pygame.time.get_ticks() + int(0.1 * 1000)
 
 
-class ScreenTextFontRect(ScreenTextFont):
-    frame_rect = param.ClassSelector(pygame.Rect, doc='The frame rectangle')
-    linewidth = PositiveInteger(10, doc='The linewidth to draw the box')
-    show_frame = param.Boolean(True, doc='Draw the rectangular frame around the text')
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.text_centre = self.frame_rect.center
-
-    def draw(self, v, **kwargs):
-        if self.show_frame and self.frame_rect is not None:
-            pygame.draw.rect(v._window, color=self.text_color, rect=self.frame_rect, width=self.linewidth)
-
-        super().draw(v=v, **kwargs)
-
-
-class ScreenTextBoxRect(ScreenTextFontRect, Viewable):
-    visible = param.Boolean(False)
-
-
 # class ScreenTextBox2(ScreenTextFont, ViewableToggleable):
 #     visible = param.Boolean(False)
 #
@@ -515,8 +544,28 @@ class ScreenTextFontRel(ScreenTextFont):
         self.font_size = int(obj.reference_area.w * self.font_size_scale)
 
 
-class ScreenBoxBasic(Area2DPixel):
+class ScreenTextBoxRect(ScreenTextFont, Viewable):
+    visible = param.Boolean(False)
+    frame_rect = param.ClassSelector(pygame.Rect, doc='The frame rectangle')
+    linewidth = PositiveNumber(10.0, doc='The linewidth to draw the box')
+    show_frame = param.Boolean(True, doc='Draw the rectangular frame around the text')
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.text_centre = self.frame_rect.center
+
+    def draw(self, v, **kwargs):
+        if self.show_frame and self.frame_rect is not None:
+            pygame.draw.rect(v._window, color=self.text_color, rect=self.frame_rect, width=self.linewidth)
+
+        super().draw(v=v, **kwargs)
+
+
+class ScreenTextBox(ScreenTextFont, ViewableToggleable, Area2DPixel):
     dims = PositiveRange(default=(140, 32))
+    visible = param.Boolean(False)
+    linewidth = PositiveNumber(0.001, doc='The linewidth to draw the box')
+    show_frame = param.Boolean(True, doc='Draw the rectangular frame around the text')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -525,12 +574,6 @@ class ScreenBoxBasic(Area2DPixel):
     def set_frame_rect(self, pos=None, **kwargs):
         return self.get_rect_at_pos(pos, **kwargs)
 
-
-class ScreenBox(ScreenBoxBasic, ViewableToggleable):
-    visible = param.Boolean(False)
-    linewidth = PositiveNumber(0.001, doc='The linewidth to draw the box')
-    show_frame = param.Boolean(True, doc='Draw the rectangular frame around the text')
-
     def draw(self, v, **kwargs):
         if self.show_frame:
             if self.frame_rect is not None:
@@ -538,37 +581,6 @@ class ScreenBox(ScreenBoxBasic, ViewableToggleable):
                 # pygame.draw.rect(v._window, color=self.color, rect=self.shape)
                 pygame.draw.rect(v._window, color=self.color, rect=self.frame_rect,
                                  width=int(v._scale[0, 0] * self.linewidth))
-
-
-class ScreenTextBox(ScreenTextFont, ScreenBox):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    # def draw(self, v, **kwargs):
-    #
-    #     if self.shape is not None:
-    #         self.text_centre=self.shape.center
-    #         # self.text_centre=self.shape.x /2, self.shape.y + 5
-    #         ScreenTextFont.draw(self, v=v, **kwargs)
-    #         ScreenBox.draw(self,v=v, **kwargs)
-    #     else:
-    #         ScreenTextFont.draw(self,v=v, **kwargs)
-
-    def get_input(self, event):
-        if self.visible:
-            self.switch(event)
-            if event.type == pygame.KEYDOWN:
-                if self.active:
-                    if event.key == pygame.K_RETURN:
-                        self.submit()
-                    elif event.key == pygame.K_BACKSPACE:
-                        self.text = self.text[:-1]
-                    else:
-                        self.text += event.unicode
-
-    def submit(self):
-        print(self.text)
-        self.visible = False
 
 
 class IDBox(ScreenTextFont, ViewableToggleable):
@@ -596,7 +608,7 @@ class IDBox(ScreenTextFont, ViewableToggleable):
         ScreenTextFont.draw(self, v=v, **kwargs)
 
 
-class Labelled(Viewable, Pos2D):
+class LabelledGroupedObject(Viewable, GroupedObject, Pos2D):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -605,16 +617,6 @@ class Labelled(Viewable, Pos2D):
     def _draw(self, v, **kwargs):
         super()._draw(v, **kwargs)
         self.id_box._draw(v, **kwargs)
-
-class LabelledGroupedObject(Labelled, GroupedObject):pass
-
-    # def __init__(self, **kwargs):
-    #     super().__init__(**kwargs)
-    #     self.id_box = IDBox(agent=self)
-    #
-    # def _draw(self, v, **kwargs):
-    #     super()._draw(v, **kwargs)
-    #     self.id_box._draw(v, **kwargs)
 
 
 class PosPixelRel2AreaViewable(PosPixelRel2Area, Viewable): pass
@@ -660,8 +662,8 @@ class ScreenMsgText(ScreenTextFontRel, Viewable):
 #         self.text_font.draw(v, **kwargs)
 
 
-class SimulationClock(PosPixelRel2AreaViewable):
-    pos_scale = PositiveRange((0.94, 0.04))
+class SimulationClock(Pos2DPixel, Viewable):
+    # pos_scale = PositiveRange((0.94, 0.04))
 
     def __init__(self, sim_step_in_sec, **kwargs):
         super().__init__(**kwargs)
@@ -713,8 +715,8 @@ class SimulationClock(PosPixelRel2AreaViewable):
             v.text_color = self.color
 
 
-class SimulationScale(PosPixelRel2AreaViewable):
-    pos_scale = PositiveRange((0.1, 0.04))
+class SimulationScale(Pos2DPixel, Viewable):
+    # pos_scale = PositiveRange((0.1, 0.04))
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -727,17 +729,17 @@ class SimulationScale(PosPixelRel2AreaViewable):
         self.lines = None
         self.update_scale()
 
-    @param.depends('reference_area.zoom', watch=True)
-    def update_scale(self):
+    #@param.depends('reference_area.zoom', watch=True)
+    def update_scale(self,v):
         def closest(lst, k):
             return lst[min(range(len(lst)), key=lambda i: abs(lst[i] - k))]
 
-        w_in_mm = self.reference_area.space.w * self.reference_area.zoom * 1000
+        w_in_mm = v.space.w * v.zoom * 1000
         # Get 1/10 of max real dimension, transform it to mm and find the closest reasonable scale
         self.scale_in_mm = closest(
             lst=[0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10, 25, 50, 75, 100, 250, 500, 750, 1000], k=w_in_mm / 10)
         self.text_font.set_text(f'{self.scale_in_mm} mm')
-        self.lines = self.compute_lines(self.x, self.y, self.scale_in_mm / w_in_mm * self.reference_area.w)
+        self.lines = self.compute_lines(self.x, self.y, self.scale_in_mm / w_in_mm * v.w)
 
     def compute_lines(self, x, y, scale):
         return [[(x - scale / 2, y), (x + scale / 2, y)],
@@ -745,6 +747,7 @@ class SimulationScale(PosPixelRel2AreaViewable):
                 [(x - scale / 2, y * 0.75), (x - scale / 2, y * 1.25)]]
 
     def draw(self, v, **kwargs):
+        self.update_scale(v)
         for line in self.lines:
             pygame.draw.line(v._window, self.default_color, line[0], line[1], 1)
         # v.draw_text_box(self.text_font, self.text_font_r)
@@ -755,8 +758,8 @@ class SimulationScale(PosPixelRel2AreaViewable):
         self.text_font.text_color = self.color
 
 
-class SimulationState(PosPixelRel2AreaViewable):
-    pos_scale = PositiveRange((0.85, 0.94))
+class SimulationState(Pos2DPixel, Viewable):
+    # pos_scale = PositiveRange((0.85, 0.94))
 
     def __init__(self, model, **kwargs):
         super().__init__(**kwargs)

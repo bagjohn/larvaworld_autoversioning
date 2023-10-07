@@ -22,7 +22,6 @@ __all__ = [
     'DiffusionValueLayer',
     'WindScape',
     'ThermoScape',
-    'create_odor_layers',
 ]
 
 
@@ -545,30 +544,3 @@ class ThermoScape(ValueGrid):
                 text_box = ScreenTextBox(text=str(np.round(vv, 2)), default_color=self.default_color, visible=True)
                 text_box.draw(v)
 
-
-def create_odor_layers(model, sources, pars=None):
-    odor_layers = {}
-    ids = aux.unique_list([s.odor.id for s in sources if s.odor.id is not None])
-    for id in ids:
-        od_sources = [f for f in sources if f.odor.id == id]
-        temp = aux.unique_list([s.default_color for s in od_sources])
-        if len(temp) == 1:
-            c0 = temp[0]
-        elif len(temp) == 3 and all([type(k) == float] for k in temp):
-            c0 = temp
-        else:
-            c0 = aux.random_colors(1)[0]
-        kwargs = {
-            'model': model,
-            'unique_id': id,
-            'sources': od_sources,
-            'default_color': c0,
-        }
-        if pars.odorscape == 'Diffusion':
-            odor_layers[id] = DiffusionValueLayer(grid_dims=pars['grid_dims'],
-                                                  evap_const=pars['evap_const'],
-                                                  gaussian_sigma=pars['gaussian_sigma'],
-                                                  **kwargs)
-        elif pars.odorscape == 'Gaussian':
-            odor_layers[id] = GaussianValueLayer(**kwargs)
-    return odor_layers

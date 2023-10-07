@@ -27,8 +27,8 @@ class Larva(MobileAgent):
         **kwargs (dict) : Additional keyword arguments.
 
     """
-    def __init__(self, model,unique_id=None, **kwargs):
-        if unique_id is None:
+    def __init__(self, model=None,unique_id=None, **kwargs):
+        if unique_id is None and model:
             unique_id = model.next_id(type='Larva')
         super().__init__(unique_id=unique_id, model=model,**kwargs)
         self.trajectory = [self.initial_pos]
