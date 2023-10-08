@@ -626,7 +626,7 @@ class IDBox(ScreenTextFont, ViewableToggleable):
         self.update_font()
         self.update_agent()
 
-    @param.depends('agent', 'agent.default_color', watch=True)
+    # @param.depends('agent', 'agent.default_color', watch=True)
     def update_agent(self):
         self.text_color = self.agent.default_color
         self.set_text(self.agent.unique_id)
@@ -639,6 +639,7 @@ class IDBox(ScreenTextFont, ViewableToggleable):
 
     def draw(self, v, **kwargs):
         self.update_font_centre_pos(v)
+        self.update_agent()
         ScreenTextFont.draw(self, v=v, **kwargs)
 
 

@@ -6,8 +6,8 @@ from panel.template import DarkTheme
 
 pn.extension()
 
-from ...lib import reg, aux, model, sim, screen
-from ...lib.param import SimOps
+from larvaworld.lib import reg, aux, model, sim, screen
+# from larvaworld.lib.param import SimOps
 
 __all__ = [
     'ArenaViewer',
@@ -15,16 +15,10 @@ __all__ = [
 
 class ArenaViewer:
 
-    def __init__(self, size=600, experiment='dish',**kwargs):
-        # super().__init__(**kwargs)
-        self.size = size
-
-        self.launcher=sim.ExpRun(experiment=experiment,**kwargs)
+    def __init__(self, img_width=600, experiment='dish',duration=1,**kwargs):
+        self.size = img_width
+        self.launcher=sim.ExpRun(experiment=experiment,duration=duration,**kwargs)
         self.env=self.launcher.p.env_params
-        # self.conf=reg.conf.Exp.expand(experiment)
-        # self.conf.update(SimOps().nestedConf)
-        # self.xy_data = self.build_data()
-
         x, y = self.env.arena.dims
         self.image_kws = {
             'title': f'Arena viewer',
@@ -35,28 +29,38 @@ class ArenaViewer:
             'xlabel': 'X (m)',
             'ylabel': 'Y (m)',
         }
-        self.app=self.get_app()
+
+        self.draw_ops=screen.AgentDrawOps(draw_centroid=True, draw_segs=False)
+        self.Nfade=int(self.draw_ops.trail_dt / self.launcher.dt)
+
+        #self.app=self.get_app()
         # self.app.servable()
 
     def get_tank_plot(self):
         a = self.env.arena
         if a.geometry == 'circular':
             tank = hv.Ellipse(0, 0, a.dims[0]).opts(line_width=5, bgcolor='lightgrey')
-            # arena = plt.Circle((0, 0), x / 2, edgecolor='black', facecolor='lightgrey', lw=3)
         elif a.geometry == 'rectangular':
             tank = hv.Box(0, 0, spec=a.dims).opts(line_width=5, bgcolor='lightgrey')
         else:
             raise ValueError('Not implemented')
         return tank
 
+    def draw_imgs(self):
+        agents=self.launcher.agents
+        sources=self.launcher.sources
+        d=aux.AttrDict({
+            'draw_segs' : np.multiply([hv.Polygons([seg.vertices for seg in a.segs]).opts(color=a.color) for a in agents]),
+            'draw_centroid' : hv.Points(agents.get_position()).opts(size=5, color='black'),
+            'draw_head' : hv.Points(agents.head.front_end).opts(size=5, color='red'),
+            'draw_midline' : np.multiply([hv.Path(a.midline_xy).opts(color='blue',line_width=2)  for a in agents]),
+            'visible_trails' :  hv.Contours([a.trajectory[-self.Nfade:] for a in agents]).opts(color='black'),
+        })
+        source_img = np.multiply([hv.Ellipse(s.pos[0], s.pos[1], s.radius * 2).opts(line_width=5, color=s.color, bgcolor=s.color) for s in sources])
+        return np.multiply([self.tank_plot,source_img]+[img for k,img in d.items() if self.draw_ops[k]]).opts(responsive=False, **self.image_kws)
+
     def get_app(self):
-        draw_ops=screen.AgentDrawOps(draw_centroid=True, draw_segs=False)
-        # cb_vis = pn.widgets.CheckBoxGroup(value=['Positions', 'Disperal circle'],
-        #                                   options=['Positions', 'IDs', 'Tracks', 'Disperal circle'])
-        # cb_rnd_col = pn.widgets.Checkbox(name='Random colors', value=False, disabled=True)
-        # cb_dispersal = pn.widgets.Checkbox(name='Align tracks to origin', value=True)
-        #
-        self.launcher.sim_setup()
+        self.launcher.sim_setup(steps=self.launcher.p.steps)
         slider_kws = {
             'width': int(self.size/2),
             'start': 0,
@@ -69,13 +73,8 @@ class ArenaViewer:
         }
         progress_kws = {
             'width': int(self.size / 2),
-            # 'start': 0,
             'max': self.launcher.Nsteps - 1,
-            # 'interval': int(1000 * self.launcher.dt),
             'value': self.launcher.t,
-            # 'step': 5,
-            # 'loop_policy': 'loop',
-
         }
         self.progress_bar = pn.widgets.Progress(bar_color="primary",**progress_kws)
         time_slider = pn.widgets.Player(**slider_kws)
@@ -85,84 +84,52 @@ class ArenaViewer:
             while i>self.launcher.t :
                 self.launcher.sim_step()
                 self.progress_bar.value=self.launcher.t
-
-            # progress_bar=i
-            # pos_on = 'Positions' in vis_ops
-            # ids_on = 'IDs' in vis_ops
-            # paths_on = 'Tracks' in vis_ops
-            # circle_on = 'Disperal circle' in vis_ops
-            # mode = 'origin' if dispersal_on else 'default'
-
-            # goverlay = None
-
-            overlay = self.tank_plot
-            agents=self.launcher.agents
-            if draw_ops.draw_segs:
-                for a in agents:
-                    segpolys = hv.Polygons([seg.vertices for seg in a.segs]).opts(color=a.color)
-                    overlay *= segpolys
-            if draw_ops.draw_centroid:
-                # ps=agents.get_position()
-                # colors = agents.color
-                points = hv.Points(agents.get_position()).opts(size=5, color='black')
-                overlay*=points
-            if draw_ops.draw_head:
-                hpoints = hv.Points(agents.head.front_end).opts(size=5, color='red')
-                overlay *= hpoints
-            if draw_ops.draw_midline:
-                for a in agents:
-                    mid = hv.Path(a.midline_xy).opts(color='blue',line_width=2)
-                    overlay *= mid
-            if draw_ops.trails:
-                Nfade = int(draw_ops.trajectory_dt / self.launcher.dt)
-
-                _paths = [a.trajectory[-Nfade:] for a in agents]
-                paths = hv.Contours(_paths).opts(color='black')
-                overlay *= paths
-
-                # segpolys = hv.Polygons(aux.flatten_list([[seg.vertices for seg in a.segs]for a in agents])).opts(color='black')
-                # overlay *= segpolys
-
-            for s in self.launcher.sources:
-                source = hv.Ellipse(s.pos[0], s.pos[1], s.radius*2).opts(line_width=5,color=s.color, bgcolor=s.color)
-                overlay *= source
+                return self.draw_imgs()
 
 
-            overlay.opts(responsive=False, **self.image_kws)
+            # overlay = self.tank_plot
+            # agents=self.launcher.agents
+            # if draw_ops.draw_segs:
+            #     for a in agents:
+            #         segpolys = hv.Polygons([seg.vertices for seg in a.segs]).opts(color=a.color)
+            #         overlay *= segpolys
+            # if draw_ops.draw_centroid:
+            #     points = hv.Points(agents.get_position()).opts(size=5, color='black')
+            #     overlay*=points
+            # if draw_ops.draw_head:
+            #     hpoints = hv.Points(agents.head.front_end).opts(size=5, color='red')
+            #     overlay *= hpoints
+            # if draw_ops.draw_midline:
+            #     for a in agents:
+            #         mid = hv.Path(a.midline_xy).opts(color='blue',line_width=2)
+            #         overlay *= mid
+            # if draw_ops.trails:
+            #     Nfade = int(draw_ops.trajectory_dt / self.launcher.dt)
+            #
+            #     _paths = [a.trajectory[-Nfade:] for a in agents]
+            #     paths = hv.Contours(_paths).opts(color='black')
+            #     overlay *= paths
+            #
+            # for s in self.launcher.sources:
+            #     source = hv.Ellipse(s.pos[0], s.pos[1], s.radius*2).opts(line_width=5,color=s.color, bgcolor=s.color)
+            #     overlay *= source
 
-            return overlay
+
+            # overlay.opts(responsive=False, **self.image_kws)
+            #
+            # return overlay
 
         img_dmap = hv.DynamicMap(get_image)
         app = pn.Row(img_dmap, pn.Column(
-
-            #     pn.Column('Datasets', cb_IDs, sizing_mode='stretch_width'),
-            #     pn.Column('Visibility', cb_vis, sizing_mode='stretch_width'),
-            #     pn.Column('Settings', cb_rnd_col, cb_dispersal, sizing_mode='stretch_width'),
-            #     width=self.size),
             pn.Row(pn.Column('Tick', time_slider)),
             pn.Row(pn.Column('Simulation timestep', self.progress_bar)),
-            pn.Param(draw_ops),
+            pn.Param(self.draw_ops),
         ))
-        # from my_template import DarkTheme
-        # template = pn.template.MaterialTemplate(title='Material Dark', theme=DarkTheme)
-
-        # template.sidebar.append(A_in)
-        # template.sidebar.append(turner_conf)
-
-        # template.main.append(
-        #     app
-        # )
-        # template.servable();
-
         return app
 
 
-# if __name__ == "__main__":
-#     # from larvaworld.gui.tabs.larvaworld_gui import LarvaworldGui
-#     # larvaworld_gui = LarvaworldGui()
-#     v=ArenaViewer()
-#     app = v.get_app()
-#     # v.get_app()
-#     # app = v.get_app()
-#     app.servable()
+if __name__ == "__main__":
+    v=ArenaViewer()
+    app = v.get_app()
+    app.servable()
 

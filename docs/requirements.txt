@@ -2,6 +2,7 @@
 gendocs
 sphinx
 myst-nb
+myst-parser
 sphinx-autobuild
 sphinx-rtd-theme
 sphinx-autoapi

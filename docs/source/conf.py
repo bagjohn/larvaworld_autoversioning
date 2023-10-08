@@ -9,16 +9,19 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 import sys, os
+import importlib.metadata
+
 
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../../src'))  # or "../../src
 sys.path.append(os.path.abspath('sphinxext'))
 
 project = 'larvaworld'
-# copyright = '2023, Panagiotis Sakagiannis'
-# author = 'Panagiotis Sakagiannis'
+author = 'Panagiotis Sakagiannis'
+copyright = '2023, Panagiotis Sakagiannis'
+
 # The short X.Y version
-# version = ''
+version = importlib.metadata.version("larvaworld")
 # The full version, including alpha/beta/rc tags
 # release = ''
 
@@ -34,13 +37,23 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
+    'sphinx.ext.doctest',
+    'sphinx.ext.duration',
     'sphinx.ext.githubpages',
     'sphinx.ext.extlinks',
     'sphinx.ext.graphviz',
+    'sphinx.ext.autosummary',
     "myst_nb",
+    "myst_parser",
     "autoapi.extension",
+  - 'sphinx.ext.autodoc'
+  - 'sphinx.ext.autosummary'
+
     # "autodocsumm",  # to generate tables of functions, attributes, methods, etc.
 ]
+
+
+
 
 # Napoleon settings
 napoleon_google_docstring = True

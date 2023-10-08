@@ -35,4 +35,4 @@
    :caption: API Index:
 
 
-   content/larvaworld/index.rst
+   api

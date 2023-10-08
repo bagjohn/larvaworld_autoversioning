@@ -3,11 +3,13 @@
 
 [tool.poetry]
 name='larvaworld'
-version = "0.0.151"
+version = "0.0.153"
 description='Drosophila larva behavioral analysis and simulation platform'
 authors=['Panagiotis Sakagiannis']
 license = "GPL-3"
 readme = "README.md"
+
+[tool.poetry_bumpversion.file."larvaworld/__init__.py"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -90,3 +92,4 @@ version_variable = "pyproject.toml:version"
 
 # python -m build
 # python -m twine upload dist/* --verbose
+# poetry version patch ----indeed changes the pyproject.toml

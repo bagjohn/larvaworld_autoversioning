@@ -6,7 +6,16 @@ version: 2
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
+#  add_module_names: False
+#  autosummary_generate: True
   configuration: docs/source/conf.py
+#  extra_extensions:
+#    - 'sphinx.ext.autodoc'
+#    - 'sphinx.ext.autosummary'
+#  config:
+#    autosummary_generate: True
+#    add_module_names: False
+
 
 # Set the version of Python and other tools you might need
 build:
