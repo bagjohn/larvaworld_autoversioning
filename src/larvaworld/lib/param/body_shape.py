@@ -203,9 +203,6 @@ class SegmentedBody(BodyMobile):
         self.segs = aux.ItemList(objs=self.Nsegs, cls=self.param.segs.item_type, pos=self.seg_positions,orientation=self.orientation,
                         base_vertices=self.base_seg_vertices, length=(self.length*self.segment_ratio).tolist())
 
-        # self.segs=aux.ItemList ([self.param.segs.item_type(pos=self.seg_positions[i], orientation=self.orientation,
-        #                base_vertices=self.base_seg_vertices[i], length=self.length*self.segment_ratio[i]) for i in range(self.Nsegs)]   )
-
 
     def compute_body_bend(self):
         angles = [
@@ -290,8 +287,8 @@ class SegmentedBody(BodyMobile):
         return self.tail.get_orientation()%(2*np.pi)
 
     def draw_segs(self, v, **kwargs):
-        for seg in self.segs :
-            seg.draw(v, **kwargs)
+        self.segs.draw(v, **kwargs)
+
 
 
 class SegmentedBodySensored(SegmentedBody):

@@ -314,47 +314,14 @@ class ItemListParam(List):
     """
 
     __slots__ = ['bounds', 'item_type', 'class_', 'size']
-    # __slots__ = ['size']
 
     def __init__(self, default=aux.ItemList(), size=(0, None), **params):
-        # self.item_type = item_type or class_
-        # self.class_ = self.item_type
-        # self.bounds = bounds
         self.size = size
-        # print(default, default.__class__)
         if isinstance(default, list):
             default = aux.ItemList(default)
         List.__init__(self, default=default, **params)
         self._validate(default)
 
-    # def _validate_value(self, val, allow_None):
-    #     if allow_None and val is None:
-    #         return
-    #     if isinstance(val, list):
-    #         val = aux.ItemList(val)
-    #     else:
-    #         raise ValueError("List parameter %r must be a list, not an object of type %s."
-    #                          % (self.name, type(val)))
-
-    # def _validate_bounds(self, val, bounds):
-    #     "Checks that the list is of the right length and has the right contents."
-    #     if bounds is None or (val is None and self.allow_None):
-    #         #raise
-    #         return
-
-        # min_length, max_length = bounds
-        # l = len(val)
-        # if min_length is not None and max_length is not None:
-        #     if not (min_length <= l <= max_length):
-        #         raise ValueError("%s: list length must be between %s and %s (inclusive)"%(self.name,min_length,max_length))
-        # elif min_length is not None:
-        #     if not min_length <= l:
-        #         raise ValueError("%s: list length must be at least %s."
-        #                          % (self.name, min_length))
-        # elif max_length is not None:
-        #     if not l <= max_length:
-        #         raise ValueError("%s: list length must be at most %s."
-        #                          % (self.name, max_length))
 
 
 class ClassDict(ClassSelector):

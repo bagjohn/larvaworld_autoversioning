@@ -309,13 +309,12 @@ class LarvaBox2D(LarvaSim):
             'space': self.model.space,
         }
 
-        self.segs = [self.param.segs.item_type(
-            pos=self.seg_positions[i],
-            orientation=self.orientation,
-            base_vertices=self.base_seg_vertices[i],
-            length=self.length * self.segment_ratio[i],
-            **kws
-        ) for i in range(self.Nsegs)]
+        self.segs = aux.ItemList(objs=self.Nsegs, cls=self.param.segs.item_type, pos=self.seg_positions,
+                                 orientation=self.orientation,
+                                 base_vertices=self.base_seg_vertices,
+                                 length=(self.length * self.segment_ratio).tolist(), **kws)
+
+
 
         if self.model.larva_collisions:
             for seg in self.segs:

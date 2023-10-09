@@ -124,7 +124,8 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.set_default_color(self.default_color)
+        self.segs.default_color = self.default_color
+
 
     def draw(self, v, **kwargs):
         if v.manager.draw_sensors:
@@ -134,9 +135,8 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
         super().draw(v, **kwargs)
 
     def set_default_color(self, color):
-        super().set_default_color(color)
-        for seg in self.segs:
-            seg.default_color=color
+        self.default_color=color
+        self.segs.default_color=color
 
     def draw_selected(self, v, **kwargs):
         v.draw_polygon(vertices=self.get_shape(), color=v.manager.selection_color,
@@ -165,9 +165,6 @@ class LarvaMotile(LarvaSegmented):
         self.food_detected, self.feeder_motion = None, False
         self.cum_food_detected, self.amount_eaten = 0, 0
 
-    # @property
-    # def sim_length(self):
-    #     return self.real_length * self.model.scaling_factor
 
     def build_brain(self, conf):
         """Build the brain for the larva agent."""
@@ -216,7 +213,6 @@ class LarvaMotile(LarvaSegmented):
             self.real_length = self.deb.Lw * 10 / 1000
             self.real_mass = self.deb.Ww
             self.V = self.deb.V
-            # print(self.real_length)
             try:
                 self.deb.set_intermitter(self.brain.locomotor.intermitter)
             except:
@@ -350,8 +346,6 @@ class LarvaMotile(LarvaSegmented):
         self.cum_food_detected += int(self.on_food)
         self.run_energetics(V)
 
-        # for o in self.carried_objects:
-        #     o.pos = self.pos
 
         try:
             if self.model.screen_manager.color_behavior:
