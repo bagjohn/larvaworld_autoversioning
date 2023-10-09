@@ -31,15 +31,15 @@ def plot_vel_during_strides(dataset, use_component=False, save_to=None, return_f
         save_to = os.path.join(d.plot_dir, 'plot_vel_during_strides')
     if not os.path.exists(save_to):
         os.makedirs(save_to)
-    save_as_lin = f'linear_velocities_during_strides.{plot.suf}'
-    save_as_ang = f'angular_velocity_during_strides.{plot.suf}'
+    save_as_lin = f'linear_velocities_during_strides.pdf'
+    save_as_ang = f'angular_velocity_during_strides.pdf'
     filepath_lin = os.path.join(save_to, save_as_lin)
     filepath_ang = os.path.join(save_to, save_as_ang)
     filepaths = [filepath_lin, filepath_ang]
 
     svels = nam.scal(nam.vel(d.points))
     lvels = nam.scal(nam.lin(nam.vel(d.points[1:])))
-    ids = d.agent_ids
+    # ids = d.agent_ids
     hov = nam.vel(nam.orient('front'))
 
     if use_component:
@@ -50,18 +50,29 @@ def plot_vel_during_strides(dataset, use_component=False, save_to=None, return_f
     ang_vels = [hov]
     vels = [lin_vels, ang_vels]
     vels_list = lin_vels + ang_vels
-    Nvels = len(vels_list)
+    # Nvels = len(vels_list)
 
-    all_agents = [s.xs(id, level='AgentID', drop_level=True) for id in ids]
-    all_flag_starts = [ag[ag[nam.start(chunk)] == True].index.values.astype(int) for ag in all_agents]
-    all_flag_stops = [ag[ag[nam.stop(chunk)] == True].index.values.astype(int) for ag in all_agents]
+    # all_agents = [s.xs(id, level='AgentID', drop_level=True) for id in ids]
+    # all_flag_starts = [ag[ag[nam.start(chunk)] == True].index.values.astype(int) for ag in all_agents]
+    # all_flag_stops = [ag[ag[nam.stop(chunk)] == True].index.values.astype(int) for ag in all_agents]
 
-    all_vel_timeseries = [[] for i in range(Nvels)]
-    for agent_id, flag_starts, flag_stops in zip(ids, all_flag_starts, all_flag_stops):
+    all_vel_timeseries = [[] for i in range(len(vels_list))]
+
+    for id in d.config.agent_ids :
+        ss=s.xs(id, level='AgentID', drop_level=True)
+        flag_starts=ss[ss[nam.start(chunk)] == True].index.values.astype(int)
+        flag_stops=ss[ss[nam.stop(chunk)] == True].index.values.astype(int)
         for start, stop in zip(flag_starts, flag_stops):
             for i, vel in enumerate(vels_list):
-                vel_timeserie = s.loc[(slice(start, stop), agent_id), vel].values
+                vel_timeserie = s.loc[(slice(start, stop), id), vel].values
                 all_vel_timeseries[i].append(vel_timeserie)
+
+
+    # for agent_id, flag_starts, flag_stops in zip(ids, all_flag_starts, all_flag_stops):
+    #     for start, stop in zip(flag_starts, flag_stops):
+    #         for i, vel in enumerate(vels_list):
+    #             vel_timeserie = s.loc[(slice(start, stop), agent_id), vel].values
+    #             all_vel_timeseries[i].append(vel_timeserie)
 
     durations = [len(i) for i in all_vel_timeseries[0]]
     lin_vel_timeseries = all_vel_timeseries[:-1]
@@ -121,13 +132,11 @@ def stride_cycle(name=None, shorts=['sv', 'fov', 'rov', 'foa', 'b'], modes=None,
             c = d.config
             col = c.color if 'color' in c.keys() else d.color
             if individuals:
-                cycle_curves = aux.AttrDict(d.read('cycle_curves'))
-                if cycle_curves in [None, {}]:
-                    try:
-                        s, e = d.step_data, d.endpoint_data
-                    except:
-                        d.load()
-                        s, e = d.step_data, d.endpoint_data
+                try:
+                    cycle_curves = aux.AttrDict(d.read('cycle_curves'))
+                    assert cycle_curves not in [None, {}]
+                except:
+                    s,e,c=d.data
                     cycle_curves = compute_interference(s, e, c=c)
                 if cycle_curves not in [None, {}]:
                     df = cycle_curves[sh][mode]
@@ -139,14 +148,17 @@ def stride_cycle(name=None, shorts=['sv', 'fov', 'rov', 'foa', 'b'], modes=None,
                         P.axs[ii].plot(x, np.nanquantile(df, q=0.5, axis=0), label=d.id, color=col)
 
             else:
-                if 'pooled_cycle_curves' not in c.keys():
-                    try:
-                        c.pooled_cycle_curves=aux.AttrDict(d.read( 'pooled_cycle_curves'))
-                    except:
-                        s, e = d.step_data, d.endpoint_data
-                        compute_interference(s, e, c=c, d=d)
-                        c.pooled_cycle_curves = aux.AttrDict(d.read('pooled_cycle_curves'))
-                P.axs[ii].plot(x, np.array(c.pooled_cycle_curves[sh][mode]), label=d.id, color=col)
+                try:
+                    pooled_cycle_curves=c.pooled_cycle_curves
+                    assert pooled_cycle_curves not in [None, {}]
+                except:
+                    pooled_cycle_curves = aux.AttrDict(d.read('pooled_cycle_curves'))
+                    assert pooled_cycle_curves not in [None, {}]
+                finally:
+                    s,e,c=d.data
+                    compute_interference(s, e, c=c, d=d)
+                    pooled_cycle_curves = aux.AttrDict(d.read('pooled_cycle_curves'))
+                P.axs[ii].plot(x, np.array(pooled_cycle_curves[sh][mode]), label=d.id, color=col)
 
         P.conf_ax(ii, xticks=np.linspace(0, 2 * np.pi, 5), xlim=[0, 2 * np.pi],
                   xticklabels=[r'$0$', r'$\frac{\pi}{2}$', r'$\pi$', r'$\frac{3\pi}{2}$', r'$2\pi$'],

@@ -24,17 +24,16 @@ __all__ = [
 ]
 
 
-def traj_1group(xy, c, unit='mm', title=None, single_color=False, **kwargs):
-    ids = xy.index.unique('AgentID').values
+def traj_1group(d, unit='mm', title=None, single_color=False,time_range=None, **kwargs):
+    xy = d.timeseries_slice(time_range=time_range)[d.c.traj_xy]
+    c = d.config
     color = c.color if single_color else None
     scale = 1000 if unit == 'mm' else 1
     P = plot.AutoBasePlot(name=f'trajectories', **kwargs)
     ax = P.axs[0]
-    # tank = aux.get_tank_polygon(c, return_polygon=False) * scale
-    # tank=np.array(tank)
     tank = c.arena_vertices * scale
-    for id in ids:
-        xy0 = xy.xs(id, level="AgentID").values * scale
+    for id,xy0 in d.data_byID(xy).items():
+        xy0*=scale
         ax.plot(xy0[:, 0], xy0[:, 1], color=color)
 
     ax.fill(tank[:, 0], tank[:, 1], fill=True, color='lightgrey', edgecolor='black', linewidth=4)
@@ -56,14 +55,7 @@ def traj_grouped(unit='mm', name=None, subfolder='trajectories',
     P = plot.AutoPlot(name=name, subfolder=subfolder,  # subplot_kw=dict(projection='polar'),
                       build_kws={'Ncols': 'Ndatasets', 'wh': 5, 'sharex': True, 'sharey': True}, **kwargs)
     for ii, (l, d) in enumerate(P.data_dict.items()):
-        xy = d.load_traj(mode)
-        c = d.config
-        if range is not None:
-            t0, t1 = range
-            tick0, tick1 = int(t0 / c.dt), int(t1 / c.dt)
-            xy = xy.loc[tick0:tick1]
-
-        _ = traj_1group(xy, c, unit=unit, fig=P.fig, axs=P.axs[ii], title=l, single_color=single_color, save_to=None)
+        _ = traj_1group(d=d, unit=unit, fig=P.fig, axs=P.axs[ii], title=l, single_color=single_color, save_to=None, time_range=range)
         if ii != 0:
             P.axs[ii].yaxis.set_visible(False)
     P.adjust((0.1, 0.9), (0.2, 0.9), 0.1, 0.01)
@@ -327,21 +319,17 @@ def track_annotated_data(name=None, subfolder='tracks',
         return title
 
     for jj, (l, d) in enumerate(P.data_dict.items()):
-
         s, e, c = d.step_data, d.endpoint_data, d.config
         Nticks = int(dur * 60 / c.dt)
         kws0 = aux.AttrDict({
             'datasets': [d],
             'labels': [l],
-            # 'agent_idx': idx,
             'slice': (0, dur * 60),
             'dt': c.dt,
             'fig': P.fig,
             'show': False,
-            # 'a': a_dict[epoch],
             'epoch': epoch,
             'ylab': lab,
-            # 'a2plot': ss[par].values if par is not None else None,
         })
 
         for i, idx in enumerate(agent_idx):
@@ -356,7 +344,6 @@ def track_annotated_data(name=None, subfolder='tracks',
                 'a2plot': get_a2plot(ss),
                 **kws0
             })
-
             track_annotated(**kws1)
             P.conf_ax(ii, xvis=True if ii == P.Nrows - 1 else False, ylab=lab, title=title)
     P.adjust((0.1, 0.98), (0.05, 0.95), 0.001, 0.2)
@@ -401,7 +388,6 @@ def plot_marked_strides(agent_idx=0, agent_id=None, slice=[20, 40], subfolder='i
                 ax.axvspan(s0, s1, color=col, alpha=1.0)
                 ax.axvline(s0, color=f'{0.4 * (i + 1)}', alpha=0.6, linestyle='dashed', linewidth=1)
                 ax.axvline(s1, color=f'{0.4 * (i + 1)}', alpha=0.6, linestyle='dashed', linewidth=1)
-
         ax.plot(s[p].loc[s[nam.max(p)] == True], linestyle='None', lw=10, color='green', marker='v')
         ax.plot(s[p].loc[s[nam.min(p)] == True], linestyle='None', lw=10, color='red', marker='^')
     P.adjust((0.08, 0.95), (0.15, 0.95), H=0.1)
@@ -442,6 +428,8 @@ def plot_sample_tracks(mode=['strides', 'turns'], agent_idx=0, agent_id=None, sl
                 ho = nam.orient('front')
                 hov = nam.vel(ho)
                 p, ylab, ylim = reg.getPar('fov', to_return=['d', 'l', 'lim'])
+            else :
+                raise
 
             handles = [patches.Patch(color=col, label=n) for n, col in zip(chunks, chunk_cols)]
             P.conf_ax(kk, xlab=r'time $(sec)$' if jj == Nrows - 1 else None, ylab=ylab, ylim=ylim, xlim=slice,
@@ -458,7 +446,6 @@ def plot_sample_tracks(mode=['strides', 'turns'], agent_idx=0, agent_id=None, sl
                     ax.axvspan(s0, s1, color=col, alpha=1.0)
                     ax.axvline(s0, color=f'{0.4 * (i + 1)}', alpha=0.6, linestyle='dashed', linewidth=1)
                     ax.axvline(s1, color=f'{0.4 * (i + 1)}', alpha=0.6, linestyle='dashed', linewidth=1)
-
             ax.plot(s[p].loc[s[nam.max(p)] == True], linestyle='None', lw=10, color='green', marker='v')
             ax.plot(s[p].loc[s[nam.min(p)] == True], linestyle='None', lw=10, color='red', marker='^')
     P.adjust((0.08, 0.95), (0.12, 0.95), H=0.2)

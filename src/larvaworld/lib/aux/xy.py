@@ -221,6 +221,18 @@ def compute_dispersal_solo(xy, min_valid_proportion=0.2, max_start_proportion=0.
         return eudi5x(xy, xy[idx[0]])
 
 
+# def get_timeseries_slice(df, dt=0.1, time_range=None):
+#     if time_range is None :
+#         return df
+#     else :
+#         t0,t1=time_range
+#         s0 = int(t0 / dt)
+#         s1 = int(t1 / dt)
+#         df_slice = df.loc[(slice(s0, s1), slice(None)), :]
+#         return df_slice
+
+
+
 def compute_dispersal_multi(xy0, t0, t1, dt, **kwargs):
     """
     Compute dispersal values for multiple agents over a time range.
@@ -256,6 +268,9 @@ def compute_dispersal_multi(xy0, t0, t1, dt, **kwargs):
 
     # AA will contain dispersal values, and Nt will be the number of time steps.
     """
+
+    # xy=get_timeseries_slice(xy0, dt=dt, time_range=(t0,t1))
+
     s0 = int(t0 / dt)
     s1 = int(t1 / dt)
     xy = xy0.loc[(slice(s0, s1), slice(None)), ['x', 'y']]

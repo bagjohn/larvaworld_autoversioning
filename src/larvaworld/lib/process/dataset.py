@@ -109,6 +109,24 @@ class ParamLarvaDataset(param.Parameterized):
     def c(self):
         return self.config
 
+    @property
+    def min_tick(self):
+        return self.step_data.index.unique('Step').min()
+
+    def timeseries_slice(self, time_range=None, df=None):
+        if df is None :
+            df=self.step_data
+        if time_range is None:
+            return df
+        else :
+
+            t0, t1 = range
+            s0 = int(t0 / self.config.dt)
+            s1 = int(t1 / self.config.dt)
+            df_slice = df.loc[(slice(s0, s1), slice(None)), :]
+            return df_slice
+
+
     def interpolate_nan_values(self):
         s, e, c = self.data
         pars=c.all_xy.existing(s)
@@ -243,6 +261,8 @@ class ParamLarvaDataset(param.Parameterized):
 
     @property
     def data(self):
+        if self.step_data is None or self.endpoint_data is None :
+            self.load()
         return self.step_data, self.endpoint_data, self.config
 
     def path_to_file(self, file='data'):
@@ -359,8 +379,12 @@ class ParamLarvaDataset(param.Parameterized):
             assert xy0.exist_in(s)
             s[xy] = s[xy0]
         assert xy.exist_in(s)
-        grouped = s[xy].groupby('AgentID')
+        return self.data_by_ID(s[xy])
+
+    def data_by_ID(self, data):
+        grouped = data.groupby('AgentID')
         return aux.AttrDict({id: df.values for id, df in grouped})
+
 
     @property
     def midline_xy_data(self):
@@ -403,16 +427,9 @@ class ParamLarvaDataset(param.Parameterized):
         returns the results as a numpy array.
         """
         level = 'AgentID'
-        c = self.config
-        if time_range is not None:
-            s0 = int(time_range[0] / c.dt)
-            s1 = int(time_range[1] / c.dt)
-            Nt = s1 - s0
-            s = self.step_data.loc[(slice(s0, s1), slice(None)), pars]
-        else:
-            s0 = 0
-            Nt = c.Nticks
-            s = self.step_data[pars]
+        s = self.timeseries_slice(time_range)[pars]
+        Nt = s.index.unique('Step').size
+        s0 = s.index.unique('Step').min()-self.min_tick
 
         A = None
 
@@ -424,10 +441,6 @@ class ParamLarvaDataset(param.Parameterized):
                 A = self.empty_df(dim3=len(Ai.shape))
             A[s0:s0 + Nt, i] = Ai
         return A
-
-    # def centroid_xy_data(self):
-    #     xy=self.contour_xy_data
-    #     return np.sum(xy, axis=1) / self.config.Ncontour
 
     def midline_xy_1less(self, mid):
         mid2 = copy.deepcopy(mid[:, :-1, :])

@@ -222,8 +222,6 @@ class SegmentedBody(BodyMobile):
     def direction(self):
         return self.head.get_orientation()
 
-
-
     def get_shape(self, scale=1):
         ps=[geometry.Polygon(seg.vertices) for seg in self.segs]
         if scale!=1:

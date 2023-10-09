@@ -2,7 +2,6 @@
 Basic plotting classes
 """
 
-
 import itertools
 import os
 
@@ -14,7 +13,6 @@ from scipy.stats import ttest_ind
 
 from .. import reg, aux, plot
 from ..process.dataset import LarvaDatasetCollection
-
 
 __all__ = [
     'BasePlot',
@@ -36,14 +34,14 @@ plt.rcParams.update(plt_conf)
 
 
 class BasePlot:
-    def __init__(self, name='larvaworld_plot', save_as=None,pref=None,suf='pdf',
+    def __init__(self, name='larvaworld_plot', save_as=None, pref=None, suf='pdf',
                  save_to=None, subfolder=None,
                  return_fig=False, show=False,
                  subplot_kw={}, build_kws={}, **kwargs):
-        if save_as is None :
+        if save_as is None:
             if pref is not None:
                 name = f'{pref}_{name}'
-            save_as=name
+            save_as = name
         self.filename = f'{save_as}.{suf}'
         self.fit_filename = f'{save_as}_fits.csv'
         self.fit_ind = None
@@ -57,25 +55,8 @@ class BasePlot:
 
         self.return_fig = return_fig
         self.show = show
-
-        self.fig_kws=self.set_fig_kws(subplot_kw=subplot_kw, build_kws=build_kws)
-
-
-    def set_fig_kws(self,subplot_kw={}, build_kws={}):
-        for k,v in build_kws.items():
-            if v=='Ndatasets' :
-                if hasattr(self, 'Ndatasets'):
-                    build_kws[k]=self.Ndatasets
-                else :
-                    build_kws[k] = None
-            if v=='Nks' :
-                if hasattr(self, 'Nks'):
-                    build_kws[k]=self.Nks
-                else :
-                    build_kws[k] = None
-        build_kws['subplot_kw']=subplot_kw
-        return plot.configure_subplot_grid(**build_kws)
-
+        build_kws['subplot_kw'] = subplot_kw
+        self.build_kws = build_kws
 
     def build(self, fig=None, axs=None, dim3=False, azim=115, elev=15):
         '''
@@ -100,10 +81,11 @@ class BasePlot:
                 ax = Axes3D(self.fig, azim=azim, elev=elev)
                 self.axs = [ax]
             else:
-                self.fig, axs = plt.subplots(**self.fig_kws)
+                fig_kws = plot.configure_subplot_grid(**self.build_kws)
+                self.fig, axs = plt.subplots(**fig_kws)
                 self.axs = axs.ravel() if isinstance(axs, np.ndarray) else [axs]
 
-    @ property
+    @property
     def Naxs(self):
         return len(self.axs)
 
@@ -111,26 +93,26 @@ class BasePlot:
     def Ncols(self):
         return self.axs[0].get_gridspec().ncols
 
-
     @property
     def Nrows(self):
         return self.axs[0].get_gridspec().nrows
 
-
-    def conf_ax(self, idx=0,ax=None, xlab=None, ylab=None, zlab=None, xlim=None, ylim=None, zlim=None, xticks=None,
+    def conf_ax(self, idx=0, ax=None, xlab=None, ylab=None, zlab=None, xlim=None, ylim=None, zlim=None, xticks=None,
                 xticklabels=None, yticks=None, xticklabelrotation=None, yticklabelrotation=None,
                 yticklabels=None, zticks=None, zticklabels=None, xtickpos=None, xtickpad=None, ytickpad=None,
-                ztickpad=None, xlabelfontsize=None,ylabelfontsize=None, xticklabelsize=None, yticklabelsize=None, zticklabelsize=None,
-                major_ticklabelsize=None,minor_ticklabelsize=None,
+                ztickpad=None, xlabelfontsize=None, ylabelfontsize=None, xticklabelsize=None, yticklabelsize=None,
+                zticklabelsize=None,
+                major_ticklabelsize=None, minor_ticklabelsize=None,
                 xlabelpad=None, ylabelpad=None, zlabelpad=None, equal_aspect=None,
-                xMaxN=None, yMaxN=None, zMaxN=None,yStrN=None, xMath=None, yMath=None, tickMath=None, ytickMath=None, xMaxFix=False,leg_loc=None,
-                leg_handles=None, leg_labels=None,legfontsize=None,xvis=None, yvis=None, zvis=None,
+                xMaxN=None, yMaxN=None, zMaxN=None, yStrN=None, xMath=None, yMath=None, tickMath=None, ytickMath=None,
+                xMaxFix=False, leg_loc=None,
+                leg_handles=None, leg_labels=None, legfontsize=None, xvis=None, yvis=None, zvis=None,
                 title=None, title_y=None, titlefontsize=None):
         '''
         Helper method that configures an axis of the figure
 
         '''
-        if ax is None :
+        if ax is None:
             ax = self.axs[idx]
         if equal_aspect is not None:
             ax.set_aspect('equal', adjustable='box')
@@ -143,7 +125,7 @@ class BasePlot:
         if ylab is not None:
             if ylabelfontsize is not None:
                 ax.set_ylabel(ylab, labelpad=ylabelpad, fontsize=ylabelfontsize)
-            else :
+            else:
                 ax.set_ylabel(ylab, labelpad=ylabelpad)
         if xlab is not None:
             if xlabelfontsize is not None:
@@ -215,16 +197,15 @@ class BasePlot:
             ax.zaxis.set_tick_params(pad=ztickpad)
 
         if leg_loc is not None:
-            kws={
-                'loc' : leg_loc,
-                'fontsize' : legfontsize,
+            kws = {
+                'loc': leg_loc,
+                'fontsize': legfontsize,
             }
             if leg_handles is not None:
-                kws['handles']=leg_handles
+                kws['handles'] = leg_handles
             if leg_labels is not None:
-                kws['labels']=leg_labels
+                kws['labels'] = leg_labels
             ax.legend(**kws)
-
 
     def conf_ax_3d(self, vars, target, lims=None, title=None, maxN=3, labelpad=15, tickpad=5, idx=0):
         if lims is None:
@@ -259,28 +240,25 @@ class BasePlot:
             self.fit_df.to_csv(ff, index=True, header=True)
         return plot.process_plot(self.fig, self.save_to, self.filename, self.return_fig, self.show)
 
-
-    def conf_fig(self, adjust_kws=None,align=None,title=None, title_kws={}):
+    def conf_fig(self, adjust_kws=None, align=None, title=None, title_kws={}):
         if title is not None:
-            pairs={
+            pairs = {
                 # 't':'t',
-                'w':'fontweight',
-                's':'fontsize',
+                'w': 'fontweight',
+                's': 'fontsize',
                 # 't':title_kws.t,
             }
-            kws=aux.AttrDict(title_kws).replace_keys(pairs)
+            kws = aux.AttrDict(title_kws).replace_keys(pairs)
             # kws=aux.replace_in_dict(title_kws, pairs, replace_key=True)
-            self.fig.suptitle(t=title,**kws)
-        if adjust_kws is not None :
+            self.fig.suptitle(t=title, **kws)
+        if adjust_kws is not None:
             self.adjust(**adjust_kws)
-        if align is not None :
-            if type(align)==list :
-                ax_list=align
-            else :
-                ax_list=self.axs[:]
+        if align is not None:
+            if type(align) == list:
+                ax_list = align
+            else:
+                ax_list = self.axs[:]
             self.fig.align_ylabels(ax_list)
-
-
 
 
 class AutoBasePlot(BasePlot):
@@ -290,9 +268,9 @@ class AutoBasePlot(BasePlot):
         self.build(fig=fig, axs=axs, dim3=dim3, azim=azim, elev=elev)
 
 
-class AutoPlot(AutoBasePlot,LarvaDatasetCollection):
-    def __init__(self, ks=[],key='step',klabels={},datasets=[], labels=None, add_samples=False,
-                 ranges=None,absolute=False, rad2deg=False,space_unit='mm',**kwargs):
+class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
+    def __init__(self, ks=[], key='step', klabels={}, datasets=[], labels=None, add_samples=False,
+                 ranges=None, absolute=False, rad2deg=False, space_unit='mm', **kwargs):
         '''
         Extension of the basic plotting class that receives datasets of type larvaworld.LarvaDataset
         Args:
@@ -309,45 +287,50 @@ class AutoPlot(AutoBasePlot,LarvaDatasetCollection):
         self.pdict = aux.AttrDict()
         self.vdict = aux.AttrDict()
 
-        for k in ks :
-            try :
+        for k in ks:
+            try:
                 p = reg.par.kdict[k]
                 if p.u == reg.units.m and space_unit == 'mm':
                     p.u = reg.units.millimeter
                     coeff = 1000
                 else:
-                    coeff=1
+                    coeff = 1
                 if k in klabels.keys():
-                    p.disp=klabels[k]
+                    p.disp = klabels[k]
                 dfs = aux.AttrDict()
                 # dics = aux.AttrDict()
-                vs=[]
-                for l, d, col in self.data_palette :
-                    df = d.get_par(k=k, key=key)*coeff
+                vs = []
+                for l, d, col in self.data_palette:
+                    df = d.get_par(k=k, key=key) * coeff
                     assert df is not None
                     v = df.dropna().values
                     if absolute:
                         v = np.abs(v)
                     if rad2deg:
                         v = np.rad2deg(v)
-                    dfs[l]=df
+                    dfs[l] = df
                     # dics[l]=aux.AttrDict({'df': v, 'col': col})
                     vs.append(v)
-                self.kkdict[k]=dfs
+                self.kkdict[k] = dfs
                 # self.kdict[k] = dics
                 self.vdict[k] = vs
                 self.pdict[k] = p
                 self.ks.append(k)
-            except :
+            except:
                 reg.vprint(f'Failed to retrieve key {k}', 1)
                 pass
-        self.dkdict=aux.AttrDict({l:{k:self.kkdict[k][l] for k in self.ks} for l in self.labels})
+        self.dkdict = aux.AttrDict({l: {k: self.kkdict[k][l] for k in self.ks} for l in self.labels})
         self.pars = reg.getPar(self.ks)
-        self.Nks=len(self.ks)
+        self.Nks = len(self.ks)
         self.ranges = ranges
         self.absolute = absolute
         self.rad2deg = rad2deg
-        AutoBasePlot.__init__(self,**kwargs)
+        for k, v in self.build_kws.items():
+            if v == 'Ndatasets':
+                self.build_kws[k] = self.Ndatasets
+            elif v == 'Nks':
+                self.build_kws[k] = self.Nks
+        AutoBasePlot.__init__(self, **kwargs)
 
     def comp_all_pvalues(self):
         if self.Ndatasets < 2:
@@ -374,19 +357,17 @@ class AutoPlot(AutoBasePlot,LarvaDatasetCollection):
     def plot_all_half_circles(self):
         if self.fit_df is None:
             return
-        for i,k in enumerate(self.ks):
-            ax=self.axs[i]
-            df=self.fit_df[k]
+        for i, k in enumerate(self.ks):
+            df = self.fit_df[k]
             ii = 0
             for z, (l1, l2) in enumerate(df.index.values):
                 col1, col2 = self.colors[self.labels.index(l1)], self.colors[self.labels.index(l2)]
                 pv = df['pvalue'].loc[(l1, l2)]
                 v = df['significance'].loc[(l1, l2)]
-                res = self.plot_half_circle(ax, col1, col2, v=v, pv=pv, coef=z - ii)
+                res = self.plot_half_circle(self.axs[i], col1, col2, v=v, pv=pv, coef=z - ii)
                 if not res:
                     ii += 1
                     continue
-
 
     def plot_half_circle(self, ax, col1, col2, v, pv, coef=0):
         res = True
@@ -413,15 +394,15 @@ class AutoPlot(AutoBasePlot,LarvaDatasetCollection):
                     fontsize=15, transform=ax.transAxes)
         return res
 
-    def data_leg(self,idx=None, labels=None, colors=None, anchor=None,
-                 handlelength=0.5, handleheight=0.5,Nagents_in_label=True, **kwargs):
-        if labels is None :
+    def data_leg(self, idx=None, labels=None, colors=None, anchor=None,
+                 handlelength=0.5, handleheight=0.5, Nagents_in_label=True, **kwargs):
+        if labels is None:
             if not Nagents_in_label:
-                labels=self.labels
+                labels = self.labels
             else:
-                labels=self.labels_with_N
-        if colors is None :
-            colors=self.colors
+                labels = self.labels_with_N
+        if colors is None:
+            colors = self.colors
         kws = {
             'handles': [patches.Patch(facecolor=c, label=l, edgecolor='black') for c, l in zip(colors, labels)],
             'handlelength': handlelength,
@@ -438,36 +419,35 @@ class AutoPlot(AutoBasePlot,LarvaDatasetCollection):
             ax.add_artist(leg)
         return leg
 
-
-    def plot_quantiles(self, k=None, par=None, idx=0, ax=None,xlim=None, ylim=None, ylab=None,
-                       unit='sec', leg_loc='upper left',coeff=1,
-                       absolute=False, individuals=False,show_first=False,
+    def plot_quantiles(self, k=None, par=None, idx=0, ax=None, xlim=None, ylim=None, ylab=None,
+                       unit='sec', leg_loc='upper left', coeff=1,
+                       absolute=False, individuals=False, show_first=False,
                        Nagents_in_label=True, **kwargs):
-        x=self.trange(unit)
-        if ax is None :
+        x = self.trange(unit)
+        if ax is None:
             ax = self.axs[idx]
 
-        try :
-            if k is None :
+        try:
+            if k is None:
                 k = reg.getPar(d=par, to_return='k')
-            p=reg.par.kdict[k]
+            p = reg.par.kdict[k]
 
             if ylab is None:
                 ylab = p.l
             if ylim is None:
                 ylim = p.lim
-        except :
+        except:
             pass
         if xlim is None:
             xlim = [x[0], x[-1]]
 
-        if not Nagents_in_label :
-            data=self.data_palette
+        if not Nagents_in_label:
+            data = self.data_palette
         else:
             data = self.data_palette_with_N
 
         for l, d, c in data:
-            df=d.get_par(k=k, par=par)*coeff
+            df = d.get_par(k=k, par=par) * coeff
             if absolute:
                 df = df.abs()
             if individuals:
@@ -475,7 +455,7 @@ class AutoPlot(AutoBasePlot,LarvaDatasetCollection):
                 for id in df.index.get_level_values('AgentID'):
                     df_single = df.xs(id, level='AgentID')
                     ax.plot(x, df_single, color=c, linewidth=1)
-            else :
+            else:
                 # plot the shaded range between first and third quantile
                 df_u = df.groupby(level='Step').quantile(q=0.75)
                 df_b = df.groupby(level='Step').quantile(q=0.25)
@@ -492,36 +472,36 @@ class AutoPlot(AutoBasePlot,LarvaDatasetCollection):
             df_m = df.groupby(level='Step').quantile(q=0.5)
             ax.plot(x[:df_m.shape[0]], df_m, c, label=l, linewidth=2, alpha=1.0, zorder=10)
         self.conf_ax(ax=ax, xlab=f'time, ${unit}$', ylab=ylab,
-                  xlim=xlim, ylim=ylim, xMaxN=5, yMaxN=5, leg_loc=leg_loc, **kwargs)
+                     xlim=xlim, ylim=ylim, xMaxN=5, yMaxN=5, leg_loc=leg_loc, **kwargs)
 
-
-    def plot_hist(self,half_circles=True, use_title=False,par_legend=False,
-                  nbins=30,alpha=0.5,ylim=[0, 0.2],Nagents_in_label=True, **kwargs):
+    def plot_hist(self, half_circles=True, use_title=False, par_legend=False,
+                  nbins=30, alpha=0.5, ylim=[0, 0.2], Nagents_in_label=True, **kwargs):
         loc = 'upper left' if half_circles else 'upper right'
         for i, k in enumerate(self.ks):
             p = self.pdict[k]
             vs = self.vdict[k]
-            if self.ranges :
-                r=self.ranges[i]
-                r0, r1 = r,r
-            else :
-                r0,r1=np.min([np.min(v) for v in vs]), np.max([np.max(v) for v in vs])
-            if self.absolute :
-                r0=0
+            if self.ranges:
+                r = self.ranges[i]
+                r0, r1 = r, r
+            else:
+                r0, r1 = np.min([np.min(v) for v in vs]), np.max([np.max(v) for v in vs])
+            if self.absolute:
+                r0 = 0
             bins = np.linspace(r0, r1, nbins)
             xlim = (r0, r1)
-            plot.prob_hist(vs=vs, colors=self.colors, labels=self.labels, ax=self.axs[i], bins=bins, alpha=alpha, **kwargs)
+            plot.prob_hist(vs=vs, colors=self.colors, labels=self.labels, ax=self.axs[i], bins=bins, alpha=alpha,
+                           **kwargs)
             self.conf_ax(i, ylab='probability', yvis=True if i % self.Ncols == 0 else False,
-                         xlab=p.l, xlim=xlim,ylim=ylim,
-                      xMaxN=4, yMaxN=4, xMath=True, title=p.disp if use_title else None,
+                         xlab=p.l, xlim=xlim, ylim=ylim,
+                         xMaxN=4, yMaxN=4, xMath=True, title=p.disp if use_title else None,
                          leg_loc=loc if par_legend else None)
 
         self.comp_all_pvalues()
         if half_circles:
             self.plot_all_half_circles()
-        self.data_leg(0, loc=loc,Nagents_in_label=Nagents_in_label)
+        self.data_leg(0, loc=loc, Nagents_in_label=Nagents_in_label)
 
-    def boxplots(self,grouped=False,annotation=True, show_ns=False,target_only=None,
+    def boxplots(self, grouped=False, annotation=True, show_ns=False, target_only=None,
                  stripplot=False, ylims=None, **kwargs):
 
         if not grouped:
@@ -544,13 +524,11 @@ class AutoPlot(AutoBasePlot,LarvaDatasetCollection):
                 'ax': self.axs[ii],
                 **kws0
             }
-            plot.single_boxplot(stripplot=stripplot,annotation=annotation, show_ns=show_ns, target_only=target_only,**kws)
+            plot.single_boxplot(stripplot=stripplot, annotation=annotation, show_ns=show_ns, target_only=target_only,
+                                **kws)
             self.conf_ax(ii, xticklabelrotation=30, ylab=p.l, yMaxN=4,
-                          ylim=ylims[ii] if ylims is not None else None,
-                          xvis=False if ii < (self.Nrows - 1) * self.Ncols else True)
-
-
-
+                         ylim=ylims[ii] if ylims is not None else None,
+                         xvis=False if ii < (self.Nrows - 1) * self.Ncols else True)
 
 
 class GridPlot(BasePlot):
@@ -571,7 +549,6 @@ class GridPlot(BasePlot):
         self.letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
         self.letter_dict = {}
         self.x0s, self.y0s = [], []
-
 
     def add(self, N=1, w=None, h=None, w0=None, h0=None, dw=0, dh=0, share_w=False, share_h=False, letter=True,
             x0=False, y0=False, cols_first=False, annotate_all=False):
@@ -599,27 +576,27 @@ class GridPlot(BasePlot):
                 axs = [self.fig.add_subplot(self.grid[h0 + dh * i + hh * i:h0 + dh * i + hh * (i + 1), w0:w0 + w]) for i
                        in range(N)]
             elif share_w and share_h:
-                Nrows,Ncols=N,N
+                Nrows, Ncols = N, N
                 hh = int((h - (Nrows - 1) * dh) / Nrows)
                 ww = int((w - (Ncols - 1) * dw) / Ncols)
-                axs=[]
-                if not cols_first :
+                axs = []
+                if not cols_first:
                     for i in range(Nrows):
-                        for j in range(Ncols) :
-                            ax=self.fig.add_subplot(self.grid[
-                                                    h0 + dh * i + hh * i:h0 + dh * i + hh * (i + 1),
-                                                    w0 + dw * j + ww * j:w0 + dw * j + ww * (j + 1)])
+                        for j in range(Ncols):
+                            ax = self.fig.add_subplot(self.grid[
+                                                      h0 + dh * i + hh * i:h0 + dh * i + hh * (i + 1),
+                                                      w0 + dw * j + ww * j:w0 + dw * j + ww * (j + 1)])
                             axs.append(ax)
-                else :
-                    for j in range(Ncols) :
+                else:
+                    for j in range(Ncols):
                         for i in range(Nrows):
-                            ax=self.fig.add_subplot(self.grid[
-                                                    h0 + dh * i + hh * i:h0 + dh * i + hh * (i + 1),
-                                                    w0 + dw * j + ww * j:w0 + dw * j + ww * (j + 1)])
+                            ax = self.fig.add_subplot(self.grid[
+                                                      h0 + dh * i + hh * i:h0 + dh * i + hh * (i + 1),
+                                                      w0 + dw * j + ww * j:w0 + dw * j + ww * (j + 1)])
                             axs.append(ax)
-            if annotate_all :
-                for i,ax in enumerate(axs) :
-                    if i==0 :
+            if annotate_all:
+                for i, ax in enumerate(axs):
+                    if i == 0:
                         self.add_letter(ax, letter, x0=x0, y0=y0)
                     else:
                         self.add_letter(ax, letter)
@@ -652,4 +629,4 @@ class GridPlot(BasePlot):
     def plot(self, func, kws, axs=None, **kwargs):
         if axs is None:
             axs = self.add(**kwargs)
-        _ = reg.graphs.run(ID = func,fig=self.fig, axs=axs, **kws)
+        _ = reg.graphs.run(ID=func, fig=self.fig, axs=axs, **kws)

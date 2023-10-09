@@ -65,7 +65,8 @@ def calibration_plot(save_to=None, files=None):
         ax.axis('off')
         ax.imshow(im, cmap=None, aspect=None)
     filepath = os.path.join(save_to, filename)
-    plot.save_plot(fig, filepath, filename)
+    fig.savefig(filepath, dpi=300, facecolor=None)
+
     return fig
 
 @reg.funcs.graph('model summary', required={'graphIDs':['configuration','module hists','stride cycle', 'epochs', 'sample track']})

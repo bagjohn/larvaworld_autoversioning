@@ -64,8 +64,7 @@ def plot_stride_variability(component_vels=True, subfolder='metric_definition', 
 
         except :
             from ..process.calibration import vel_definition
-            dic = vel_definition(d)
-            stvar = dic['/stride_variability']
+            stvar = vel_definition(d)['/stride_variability']
         stvar.sort_values(by='idx', inplace=True)
         ps = stvar.index if component_vels else [p for p in stvar.index if 'lin' not in p]
         for p in ps:
@@ -77,7 +76,7 @@ def plot_stride_variability(component_vels=True, subfolder='metric_definition', 
     return P.get()
 
 @reg.funcs.graph('correlated metrics', required={'pars':[]})
-def plot_correlated_pars(pars, labels, refID=None,dataset=None, save_to=None, save_as=f'correlated_pars.{plot.suf}', return_fig=False, show=False):
+def plot_correlated_pars(pars, labels, refID=None,dataset=None, save_to=None, save_as=f'correlated_pars.pdf', return_fig=False, show=False):
     if len(pars) != 3:
         raise ValueError('Currently implemented only for 3 parameters')
     if dataset is None :
@@ -103,4 +102,5 @@ def plot_correlated_pars(pars, labels, refID=None,dataset=None, save_to=None, sa
         for std, a in zip([0.5, 1, 2, 3], [0.4, 0.3, 0.2, 0.1]):
             plot.confidence_ellipse(x=e[pars[i]].values, y=e[pars[j]].values,
                                ax=ax, n_std=std, facecolor='red', alpha=a)
+
     return plot.process_plot(g, save_to=save_to, filename=save_as, return_fig=return_fig,show=show)

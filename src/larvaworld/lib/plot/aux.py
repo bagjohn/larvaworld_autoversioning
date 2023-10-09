@@ -19,7 +19,6 @@ from .. import aux, reg
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 __all__ = [
-    'suf',
     'plot_quantiles',
     'plot_mean_and_range',
     'circular_hist',
@@ -39,7 +38,6 @@ __all__ = [
     'get_vs',
 ]
 
-suf = 'pdf'
 
 
 def plot_quantiles(df, x=None, **kwargs):
