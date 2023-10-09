@@ -595,7 +595,7 @@ class Chemotaxis_Essay(Essay):
             'lgs': {
                 mID: reg.get_null('LarvaGroup',
                                    distribution=reg.get_null('larva_distro', N=self.N, mode='uniform'),
-                                   default_color=dic['color'], model=dic['model'], **lg_kws) for mID, dic in
+                                   color=dic['color'], model=dic['model'], **lg_kws) for mID, dic in
                 models.items()},
             'id': f'{exp1}_exp',
             'dur': self.dur,
@@ -621,7 +621,7 @@ class Chemotaxis_Essay(Essay):
                                    distribution=reg.get_null('larva_distro', N=self.N, mode='uniform',
                                                               loc=(-0.04, 0.0),
                                                               orientation_range=(-30.0, 30.0), scale=(0.005, 0.02)),
-                                   default_color=dic['color'], model=dic['model'], **lg_kws) for mID, dic in
+                                   color=dic['color'], model=dic['model'], **lg_kws) for mID, dic in
                 models.items()},
             'id': f'{exp2}_exp',
             'dur': self.dur,

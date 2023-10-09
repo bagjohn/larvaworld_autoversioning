@@ -85,8 +85,8 @@ class Food(Source):
 
     Attributes:
     ----------
-    default_color : str
-        Default color of the food source.
+    color : str
+        Color of the food source.
     initial_amount : float
         Initial amount of food in the source.
 
@@ -102,7 +102,7 @@ class Food(Source):
     This class extends the `Source` class to represent food sources specifically.
     """
 
-    default_color = param.Color(default='green')
+    color = param.Color(default='green')
     amount = PositiveNumber(softmax=10.0, step=0.01, doc='The food amount in the source')
     substrate = ClassAttr(Substrate, doc='The substrate where the agent feeds')
 

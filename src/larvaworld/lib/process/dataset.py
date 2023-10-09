@@ -1406,7 +1406,7 @@ class LarvaDatasetCollection:
                     # 'refID': None,
                     # 'refID': f'{config0.id}/{gID}',
                     'dir': f'{config0.dir}/data/{gID}',
-                    'color': gConf.default_color,
+                    'color': gConf.color,
                     # 'sample': gConf.sample,
                     # 'life_history': gConf.life_history,
                     # 'model': gConf.model,

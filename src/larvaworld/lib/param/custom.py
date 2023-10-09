@@ -33,6 +33,7 @@ __all__ = [
     'IntegerTuple2DRobust',
     'ListXYcoordinates',
     'XYLine',
+    'ItemListParam',
     'ClassDict',
     'ClassAttr',
     'DataFrameIndexed',
@@ -165,12 +166,13 @@ class RandomizedPhase(Phase):
 class RandomizedColor(param.Color):
     """Phase number within (0,2pi)"""
 
-    def __init__(self, default=None, instantiate=True, allow_None=True, per_instance=True,**kwargs):
+    def __init__(self, default=None, instantiate=True, allow_None=True, per_instance=True, **kwargs):
         if default in [None, np.nan, '']:
             default = random.choice(super()._named_colors)
         # if isinstance(default, tuple):
         #     default = aux.colortuple2str(default)
-        super().__init__(default=default,instantiate=instantiate, allow_None=allow_None, per_instance=per_instance, **kwargs)
+        super().__init__(default=default, instantiate=instantiate, allow_None=allow_None, per_instance=per_instance,
+                         **kwargs)
 
     def _validate_value(self, val, allow_None):
         if val in [None, np.nan, '']:
@@ -300,6 +302,59 @@ class XYLine(ListXYcoordinates):
 
     def __init__(self, minlen=0, **kwargs):
         super().__init__(minlen=minlen, **kwargs)
+
+
+class ItemListParam(List):
+    """
+    Parameter whose value is a list of objects, usually of a specified type.
+
+    Extends param.List to enable list management functionality provided by the
+     lib.aux.ItemList class, which inherits from a custom-made SuperList class
+     as well as from the agentpy.AgentSequence
+    """
+
+    __slots__ = ['bounds', 'item_type', 'class_', 'size']
+    # __slots__ = ['size']
+
+    def __init__(self, default=aux.ItemList(), size=(0, None), **params):
+        # self.item_type = item_type or class_
+        # self.class_ = self.item_type
+        # self.bounds = bounds
+        self.size = size
+        # print(default, default.__class__)
+        if isinstance(default, list):
+            default = aux.ItemList(default)
+        List.__init__(self, default=default, **params)
+        self._validate(default)
+
+    # def _validate_value(self, val, allow_None):
+    #     if allow_None and val is None:
+    #         return
+    #     if isinstance(val, list):
+    #         val = aux.ItemList(val)
+    #     else:
+    #         raise ValueError("List parameter %r must be a list, not an object of type %s."
+    #                          % (self.name, type(val)))
+
+    # def _validate_bounds(self, val, bounds):
+    #     "Checks that the list is of the right length and has the right contents."
+    #     if bounds is None or (val is None and self.allow_None):
+    #         #raise
+    #         return
+
+        # min_length, max_length = bounds
+        # l = len(val)
+        # if min_length is not None and max_length is not None:
+        #     if not (min_length <= l <= max_length):
+        #         raise ValueError("%s: list length must be between %s and %s (inclusive)"%(self.name,min_length,max_length))
+        # elif min_length is not None:
+        #     if not min_length <= l:
+        #         raise ValueError("%s: list length must be at least %s."
+        #                          % (self.name, min_length))
+        # elif max_length is not None:
+        #     if not l <= max_length:
+        #         raise ValueError("%s: list length must be at most %s."
+        #                          % (self.name, max_length))
 
 
 class ClassDict(ClassSelector):

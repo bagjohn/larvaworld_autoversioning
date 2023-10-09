@@ -52,7 +52,7 @@ class SimTab(gui_aux.GuiTab):
     def build_conf(self):
         kws = {'background_color': 'lightgreen'}
         s1 = gui_aux.PadTable('larva_groups', buttons=['add', 'remove'], index='Group ID', col_widths=[10, 3, 7, 10],
-                              heading_dict={'N': 'distribution.N', 'color': 'default_color', 'model': 'model'},
+                              heading_dict={'N': 'distribution.N', 'color': 'color', 'model': 'model'},
                               dict_name='LarvaGroup')
         self.envtab = EnvTab(name='environment', gui=self.gui, conftype='Env')
         tab1_l, tab1_c, tab1_g, tab1_d = self.envtab.build()

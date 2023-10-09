@@ -344,10 +344,6 @@ class ScreenAreaPygame(ScreenAreaZoomable):
 
     def draw_background(self, bg=[0, 0, 0]):
         if self.bgimage is not None and self.bgimagerect is not None:
-            # if self.manager.bg is not None:
-            #     bg = self.manager.bg[:, tick - 1]
-            # else:
-            #     bg = [0, 0, 0]
             x, y, a = bg
             try:
                 min_x = int(np.floor(x))
@@ -437,7 +433,7 @@ class Viewer(ScreenAreaPygame):
                     x = int(words[1])
                     y = int(words[2])
                     size = int(words[3])
-                    box = Box(x, y, size, model=m, default_color='lightgreen')
+                    box = Box(x, y, size, model=m, color='lightgreen')
                     box.label = line_number
                     # viewer.put(box)
                     objects.append(box)
@@ -449,7 +445,7 @@ class Viewer(ScreenAreaPygame):
 
                     point1 = geometry.Point(x1, y1)
                     point2 = geometry.Point(x2, y2)
-                    wall = Wall(point1, point2, model=m, default_color='lightgreen')
+                    wall = Wall(point1, point2, model=m, color='lightgreen')
                     wall.label = line_number
                     # viewer.put(wall)
                     objects.append(wall)
@@ -628,7 +624,7 @@ class IDBox(ScreenTextFont, ViewableToggleable):
 
     # @param.depends('agent', 'agent.default_color', watch=True)
     def update_agent(self):
-        self.text_color = self.agent.default_color
+        self.text_color = self.agent.color
         self.set_text(self.agent.unique_id)
 
     # @param.depends('agent.pos', watch=True)
@@ -702,7 +698,7 @@ class SimulationClock(PosPixelRel2AreaViewable):
 
         kws = {
             'reference_object': self,
-            'text_color': self.default_color,
+            'text_color': self.color,
         }
 
         self.text_fonts = {
@@ -747,7 +743,7 @@ class SimulationScale(PosPixelRel2AreaViewable):
         super().__init__(**kwargs)
         kws = {
             'reference_object': self,
-            'text_color': self.default_color,
+            'text_color': self.color,
         }
         self.text_font = ScreenTextFontRel(font_size_scale=(1 / 40), text_centre_scale=(1, 1.5), **kws)
 
@@ -773,7 +769,7 @@ class SimulationScale(PosPixelRel2AreaViewable):
 
     def draw(self, v, **kwargs):
         for line in self.lines:
-            pygame.draw.line(v._window, self.default_color, line[0], line[1], 1)
+            pygame.draw.line(v._window, self.color, line[0], line[1], 1)
         # v.draw_text_box(self.text_font, self.text_font_r)
         self.text_font.draw(v, **kwargs)
 
@@ -790,7 +786,7 @@ class SimulationState(PosPixelRel2AreaViewable):
         self.model = model
         kws = {
             'reference_object': self,
-            'text_color': self.default_color,
+            'text_color': self.color,
         }
         self.text_font = ScreenTextFontRel(font_size_scale=(1 / 40), text_centre_scale=(1, 1), **kws)
 

@@ -589,7 +589,7 @@ def update_larva_groups(lgs, N=None, mIDs=None, dIDs=None, sample=None):
         if len(lgs) != Nm:
             gConfs = [gConfs[0]] * Nm
             for gConf, col in zip(gConfs, aux.N_colors(Nm)):
-                gConf.default_color = col
+                gConf.color = col
         lgs = aux.AttrDict({dID: {} for dID in dIDs})
         for dID, mID, gConf in zip(dIDs, mIDs, gConfs):
             lgs[dID] = gConf

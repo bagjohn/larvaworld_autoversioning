@@ -205,7 +205,7 @@ def generate_agentConfs(larva_groups, parameter_dict={}):
             conf = {
                 'pos': p,
                 'orientation': o,
-                'default_color': gConf.default_color,
+                'color': gConf.color,
                 'unique_id': id,
                 # 'larva_pars': pars,
                 'group': gID,

@@ -26,7 +26,7 @@ __all__ = [
 
 
 class SpatialEntity(Viewable, Object):
-    default_color = param.Color(default='white')
+    color = param.Color(default='white')
     visible = param.Boolean(default=False)
 
     def record_positions(self, label='p'):
@@ -56,7 +56,7 @@ class Grid(SpatialEntity):
 
 class GridOverSpace(Grid, agentpy.Grid):
     unique_id = param.String('GridOverArena')
-    default_color = param.Color(default='white')
+    color = param.Color(default='white')
     visible = param.Boolean(default=False)
 
     # initial_value = param.Number(0.0, doc='initial value over the grid')
@@ -185,10 +185,10 @@ class ValueGrid(Grid):
         idx = np.unravel_index(self.grid.argmax(), self.grid.shape)
         p = self.cel_pos(*idx)
 
-        v.draw_circle(p, self.cell_radius / 2, self.default_color, filled=True, width=0.0005)
+        v.draw_circle(p, self.cell_radius / 2, self.color, filled=True, width=0.0005)
         p_text = (p[0] + self.x, p[1] - self.y)
         text_box = ScreenTextBox(text=str(np.round(self.grid.max(), 2)),
-                                 default_color=self.default_color, visible=True,
+                                 color=self.color, visible=True,
                                  text_centre=tuple(v.space2screen_pos(p_text)))
         text_box.draw(v)
 
@@ -209,7 +209,7 @@ class ValueGrid(Grid):
         N = 6
         k = 4
         g = self.grid
-        c = self.default_color
+        c = self.color
         vmax = np.max(g)
         for i in range(N):
             vv = vmax * k ** -i
@@ -222,7 +222,7 @@ class ValueGrid(Grid):
                     ps = np.array(points)
                     pxy = ps[np.argmax(ps[:, 0]), :] + np.array([self.x, -self.y])
                     v.draw_convex(points, color=c, filled=False, width=0.0005)
-                    text_box = ScreenTextBox(text=str(np.round(vv, 2)), default_color=c, visible=True,
+                    text_box = ScreenTextBox(text=str(np.round(vv, 2)), color=c, visible=True,
                                              text_centre=tuple(v.space2screen_pos(pxy)))
                     text_box.draw(v)
                 except:
@@ -236,12 +236,12 @@ class ValueGrid(Grid):
         m = (1 - np.exp(-k)) ** -1
         q = m * (1 - np.exp(-k * gg))
         q = np.clip(q, a_min=0, a_max=1)
-        return aux.col_range(q, low=(255, 255, 255), high=self.default_color, mul255=True)
+        return aux.col_range(q, low=(255, 255, 255), high=self.color, mul255=True)
 
 
 class FoodGrid(ValueGrid):
     unique_id = param.String('FoodGrid')
-    default_color = param.Color(default='green')
+    color = param.Color(default='green')
     fixed_max = param.Boolean(default=True)
     initial_value = param.Number(10 ** -6)
     substrate = ClassAttr(Substrate, default=Substrate(type='standard'), doc='The substrate where the agent feeds')
@@ -252,7 +252,7 @@ class FoodGrid(ValueGrid):
     def get_color(self, v):
         v0, v1 = self.min_value, self.max_value
         q = (v - v0) / (v1 - v0)
-        return aux.col_range(q, low=(255, 255, 255), high=self.default_color, mul255=True)
+        return aux.col_range(q, low=(255, 255, 255), high=self.color, mul255=True)
 
     def draw(self, v, **kwargs):
         v.draw_polygon(self.model.space.vertices, self.get_color(v=self.initial_value), filled=True)
@@ -324,7 +324,7 @@ class GaussianValueLayer(OdorScape):
                 pX = (p[0] + r0 * rsign, p[1])
                 vv = s.odor.gaussian_value((r0 * rsign, 0))
                 v.draw_circle(p, r0, self.color, filled=False, width=w)
-                text_box = ScreenTextBox(text=str(np.round(vv, 2)), default_color=self.color, visible=True,
+                text_box = ScreenTextBox(text=str(np.round(vv, 2)), color=self.color, visible=True,
                                          text_centre=tuple(v.space2screen_pos((p[0] + r0 * rsign + 5 * w, p[1]))))
                 text_box.draw(v)
 
@@ -378,7 +378,7 @@ class DiffusionValueLayer(OdorScape):
 
 class WindScape(SpatialEntity):
     unique_id = param.String('WindScape')
-    default_color = param.Color(default='red')
+    color = param.Color(default='red')
     wind_direction = Phase(np.pi, doc='The absolute polar direction of the wind/air puff.')
     wind_speed = PositiveNumber(softmax=100.0, doc='The speed of the wind/air puff.')
     puffs = param.Parameter({}, label='air-puffs', doc='Repetitive or single air-puff stimuli.')
@@ -418,7 +418,7 @@ class WindScape(SpatialEntity):
                 if len(ps) != 0:
                     p1 = ps[np.argmin([geometry.Point(p0).distance(p2) for p2 in ps])].coords[0]
                     # print(p1)
-                v.draw_arrow_line(p0, p1, self.default_color, width=0.001,
+                v.draw_arrow_line(p0, p1, self.color, width=0.001,
                                   phi=(self.draw_phi % 1000) / 1000)
         self.draw_phi += self.wind_speed
 
@@ -541,6 +541,6 @@ class ThermoScape(ValueGrid):
                 else:
                     color2use = 'red'
                 v.draw_circle(p, r, color2use, filled=False, width=0.0005)
-                text_box = ScreenTextBox(text=str(np.round(vv, 2)), default_color=self.default_color, visible=True)
+                text_box = ScreenTextBox(text=str(np.round(vv, 2)), color=self.color, visible=True)
                 text_box.draw(v)
 

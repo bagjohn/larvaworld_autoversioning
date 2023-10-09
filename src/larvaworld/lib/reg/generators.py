@@ -423,7 +423,7 @@ class EnvConf(NestedConf):
 
 class LarvaGroup(NestedConf):
     model = conf.Model.confID_selector()
-    default_color = param.Color('black', doc='The default color of the group')
+    color = param.Color('black', doc='The default color of the group')
     odor = ClassAttr(Odor, doc='The odor of the agent')
     distribution = ClassAttr(Larva_Distro, doc='The spatial distribution of the group agents')
     life_history = ClassAttr(Life, doc='The life history of the group agents')
@@ -473,7 +473,7 @@ class LarvaGroup(NestedConf):
             conf = {
                 'pos': p,
                 'orientation': o,
-                'default_color': self.default_color,
+                'color': self.color,
                 'unique_id': id,
                 'group': self.id,
                 'odor': self.odor,

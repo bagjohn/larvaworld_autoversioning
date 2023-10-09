@@ -6,6 +6,8 @@ import copy
 import json
 import os
 import pickle
+
+import agentpy.sequences
 import numpy as np
 import typing
 import pandas as pd
@@ -21,6 +23,7 @@ __all__ = [
     'group_epoch_dicts',
     'bidict',
     'SuperList',
+    'ItemList',
     'existing_cols',
     'nonexisting_cols',
     'cols_exist',
@@ -198,18 +201,11 @@ def save_dict(d, file):
         try:
             with open(file, 'wb') as fp:
                 pickle.dump(d, fp, protocol=pickle.HIGHEST_PROTOCOL)
-                # print('pickle save')
         except:
-            try:
-                with open(file, "w") as fp:
-                    json.dump(d, fp)
-                    # print('json save')
-            except:
-
-                raise
-        return True
-    else:
-        return False
+            with open(file, "w") as fp:
+                json.dump(d, fp)
+        finally:
+            print('Failed to save dict')
 
 
 def merge_dicts(dict_list):
@@ -331,6 +327,36 @@ class SuperList(list):
 
     def contains(self, l=''):
         return SuperList([i for i in self if l in i])
+
+
+class ItemList(agentpy.sequences.AgentSequence, list):
+
+    def __init__(self, objs=(), cls=None, *args, **kwargs):
+        if isinstance(objs, int):
+            objs = self._obj_gen(objs, cls, *args, **kwargs)
+        super().__init__(objs)
+
+    @staticmethod
+    def _obj_gen(n, cls, *args, **kwargs):
+        """ Generate objects for sequence. """
+
+
+        for i in range(n):
+            # AttrIter values get broadcasted among agents
+            i_kwargs = {k: arg[i] if isinstance(arg, list) else arg
+                        for k, arg in kwargs.items()}
+            yield cls(**i_kwargs)
+
+    def __setattr__(self, name, value):
+        if isinstance(value, list):
+            # Apply each value to each agent
+            for obj, v in zip(self, value):
+                setattr(obj, name, v)
+        else:
+            # Apply single value to all agents
+            for obj in self:
+                setattr(obj, name, value)
+
 
 def existing_cols(cols, df):
     if isinstance(df, pd.DataFrame):

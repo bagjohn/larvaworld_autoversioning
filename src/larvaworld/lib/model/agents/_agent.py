@@ -28,6 +28,9 @@ class NonSpatialAgent(GroupedObject):
 
     odor = ClassAttr(Odor, doc='The odor of the agent')
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     @property
     def dt(self):
         return self.model.dt

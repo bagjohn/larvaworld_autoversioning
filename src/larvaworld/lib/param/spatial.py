@@ -64,10 +64,11 @@ class Pos2DPixel(Pos2D):
     pos = IntegerTuple2DRobust(doc='The xy spatial position coordinates')
 
 
-
-
 class RadiallyExtended(Pos2D):
     radius = PositiveNumber(0.003, softmax=0.1, step=0.001, doc='The spatial radius of the source in meters')
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def get_shape(self, scale=1):
         p = self.get_position()
@@ -185,7 +186,6 @@ class LineClosed(LineExtended):
     closed = param.Boolean(True)
 
 
-
 class Area2D(NestedConf):
     dims = PositiveRange(doc='The arena dimensions')
     centered = param.Boolean(True, doc='Whether area is centered to (0,0)')
@@ -224,8 +224,6 @@ class Area(Area2D):
     torus = param.Boolean(False, doc='Whether to allow a toroidal space')
 
 
-
-
 class PosPixelRel2Point(Pos2DPixel):
     reference_point = param.ClassSelector(Pos2DPixel, doc='The reference position instance', is_instance=False)
     pos_scale = PositiveRange((0.5, 0.5), softmax=1.0, step=0.01,
@@ -258,11 +256,6 @@ class PosPixelRel2Area(Pos2DPixel):
         x_pos = int(self.reference_area.w * w)
         y_pos = int(self.reference_area.h * h)
         self.pos = (x_pos, y_pos)
-
-
-
-
-
 
 
 class BoundedArea(Area, LineClosed):

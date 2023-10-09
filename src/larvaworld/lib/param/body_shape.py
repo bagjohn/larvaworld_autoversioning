@@ -9,10 +9,11 @@ from shapely import geometry, ops, affinity
 
 from .. import aux
 from ..param import LineClosed, XYLine, PositiveInteger, PositiveNumber, MobilePoint, Viewable, \
-    MobileVector
+    MobileVector, ItemListParam
 
 __all__ = [
     'BodyContour',
+    'ShapeViewable',
     'SegmentedBody',
     'SegmentedBodySensored',
 ]
@@ -112,7 +113,7 @@ class BodyMobile(ShapeMobile, BodyContour):
 class SegmentedBody(BodyMobile):
     Nsegs = PositiveInteger(2, softmax=20, doc='The number of segments comprising the segmented larva body.')
     segment_ratio = param.Parameter(None, doc='The number of segments comprising the segmented larva body.')
-    segs=param.List(item_type=ShapeViewable, doc='The body segments.')
+    segs=ItemListParam(item_type=ShapeViewable, doc='The body segments.')
 
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
@@ -199,8 +200,11 @@ class SegmentedBody(BodyMobile):
 
     def generate_segs(self):
 
-        self.segs= [self.param.segs.item_type(pos=self.seg_positions[i], orientation=self.orientation,
-                       base_vertices=self.base_seg_vertices[i], length=self.length*self.segment_ratio[i]) for i in range(self.Nsegs)]
+        self.segs = aux.ItemList(objs=self.Nsegs, cls=self.param.segs.item_type, pos=self.seg_positions,orientation=self.orientation,
+                        base_vertices=self.base_seg_vertices, length=(self.length*self.segment_ratio).tolist())
+
+        # self.segs=aux.ItemList ([self.param.segs.item_type(pos=self.seg_positions[i], orientation=self.orientation,
+        #                base_vertices=self.base_seg_vertices[i], length=self.length*self.segment_ratio[i]) for i in range(self.Nsegs)]   )
 
 
     def compute_body_bend(self):

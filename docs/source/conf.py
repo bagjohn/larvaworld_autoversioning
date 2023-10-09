@@ -11,7 +11,6 @@
 import sys, os
 import importlib.metadata
 
-
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../../src'))  # or "../../src
 sys.path.append(os.path.abspath('sphinxext'))
@@ -46,14 +45,12 @@ extensions = [
     "myst_nb",
     "myst_parser",
     "autoapi.extension",
-  - 'sphinx.ext.autodoc'
-  - 'sphinx.ext.autosummary'
-
+    - 'sphinx.ext.autodoc'
+    - 'sphinx.ext.autosummary'
+      "nbsphinx",
+    "sphinx_gallery.load_style",
     # "autodocsumm",  # to generate tables of functions, attributes, methods, etc.
 ]
-
-
-
 
 # Napoleon settings
 napoleon_google_docstring = True

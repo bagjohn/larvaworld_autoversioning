@@ -23,7 +23,7 @@ def Env_dict() :
         return gen.Odor(id=id, intensity=300.0 * c, spread=0.1 * np.sqrt(c)).nestedConf
 
     def border(ps, c='black', w=0.01, id=None):
-        b = gen.Border(vertices=ps, default_color=c, width=w)
+        b = gen.Border(vertices=ps, color=c, width=w)
         if id is not None:
             return {id: b}
         else:

@@ -284,29 +284,6 @@ def boxplot_double_patch(ks=None, xlabel='substrate', show_ns=False, stripplot=F
             'color': 'black',
         }
         plot.single_boxplot(stripplot=stripplot, show_ns=show_ns,width=0.5, **kws)
-        #
-        # with sns.plotting_context('notebook', font_scale=1.4):
-        #     kws = {
-        #         'x': "Substrate",
-        #         'y': "value",
-        #         'hue': hue,
-        #         'data': data,
-        #         'ax': ax,
-        #         'width': 0.5,
-        #     }
-        #     g1 = sns.boxplot(**kws)
-        #     g1.get_legend().remove()
-        #
-        #     try:
-        #         plot.annotate_plot(show_ns=show_ns, **kws)
-        #     except:
-        #         pass
-        #     g1.set(xlabel=None)
-        #     if stripplot:
-        #         g2 = sns.stripplot(x="Substrate", y="value", hue=hue, data=data, color='black', ax=ax)
-        #         g2.get_legend().remove()
-        #         g2.set(xlabel=None)
-
         cols = []
         if not agar:
             for subID, RvSdic in DataDic.items():

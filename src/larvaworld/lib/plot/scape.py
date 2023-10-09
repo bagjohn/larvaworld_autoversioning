@@ -57,7 +57,7 @@ def odorscape_from_config(c, mode='2D', fig=None, axs=None, show=True, grid_dims
     oD = multivariate_normal([0, 0], [[oS, 0], [0, oS]])
     oM = oP / oD.pdf([0, 0])
     if col_max is None:
-        col_max = source.default_color if source.default_color is not None else (0, 0, 0)
+        col_max = source.color if source.color is not None else (0, 0, 0)
     if grid_dims is not None:
         X, Y = grid_dims
     else:

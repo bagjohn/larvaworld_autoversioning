@@ -136,7 +136,7 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
     def set_default_color(self, color):
         super().set_default_color(color)
         for seg in self.segs:
-            seg.set_default_color(color)
+            seg.default_color=color
 
     def draw_selected(self, v, **kwargs):
         v.draw_polygon(vertices=self.get_shape(), color=v.manager.selection_color,

@@ -530,14 +530,14 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
         """
 
         m = self.model
-        self.input_box = ScreenTextBoxRect(text_color='lightgreen', default_color='white',
+        self.input_box = ScreenTextBoxRect(text_color='lightgreen', color='white',
                                            frame_rect=v.get_rect_at_pos(),
                                            font_type="comicsansms", font_size=40,
                                            )
         if self.intro_text:
             box = ScreenTextBoxRect(
                 text=m.configuration_text,
-                text_color='lightgreen', default_color='white',
+                text_color='lightgreen', color='white',
                 visible=True, frame_rect=v.get_rect_at_pos(),
                 font_type="comicsansms", font_size=30)
             box.draw(v)

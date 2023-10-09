@@ -257,7 +257,8 @@ class DrawEnvTab(gui_aux.DrawTab):
                                                                     line_color=color, fill_color=fill_color)
                                 temp = np.max(np.abs(np.array(p2) - np.array(p1)))
                                 w[f'{fo}_radius'].update(value=temp / self.s)
-                                dic['sample_pars'] = {'default_color': color,
+                                dic['sample_pars'] = {''
+                                                      'color': color,
                                                       **c[fo].get_dict(v, w),
                                                       'odor': c[od].get_dict(v, w),
                                                       }
@@ -287,7 +288,8 @@ class DrawEnvTab(gui_aux.DrawTab):
                             od, D = f'{o}_odor', f'{o}_distro'
                             # sh, fo = f'{o}_shape', f'{o}_food'
                             color = v[f'{o}_color']
-                            sample_larva_pars = {'default_color': color,
+                            sample_larva_pars = {''
+                                                 'color': color,
                                                  'odor': c[od].get_dict(v, w),
                                                  }
                             if v[G]:
@@ -309,7 +311,8 @@ class DrawEnvTab(gui_aux.DrawTab):
                             if id in list(db[self.Bg]['items'].keys()) or id == '':
                                 info.update(value=f"{B} id {id} already exists or is empty")
                             else:
-                                dic['current'] = {id:reg.get_null('Border', points=[P1, P2], default_color=v[f'{B}_color'], width=float(v[f'{B}_width']))}
+                                dic['current'] = {id:reg.get_null('Border', points=[P1, P2],
+                                                                  color=v[f'{B}_color'], width=float(v[f'{B}_width']))}
                                 # dic['current'] = border(ps=[P1, P2], c=v[f'{B}_color'],w=float(v[f'{B}_width']), id=id)
                                 dic['prior_rect'] = self.graph.draw_line(p1, p2, color=v[f'{B}_color'],
                                                                          width=int(float(v[f'{B}_width']) * self.s))
@@ -469,7 +472,8 @@ class DrawEnvTab(gui_aux.DrawTab):
                 db[self.Lg]['figs'][f] = id
         for id, ps in db[self.Bg]['items'].items():
             points = [self.scale_xy(p) for p in ps['points']]
-            f = self.graph.draw_lines(points=points, color=ps['default_color'],
+            f = self.graph.draw_lines(points=points, color=ps[''
+                                                              'color'],
                                       width=int(ps['width'] * self.s))
             db[self.Bg]['figs'][f] = id
         w['out'].update(value='Arena has been reset.')
@@ -497,7 +501,8 @@ class DrawEnvTab(gui_aux.DrawTab):
         else:
             g.delete_figure(fig)
 
-    def inspect_distro(self, item, default_color, mode=None, shape=None, N=None, loc=None, scale=None,
+    def inspect_distro(self, item,
+                       color, mode=None, shape=None, N=None, loc=None, scale=None,
                        orientation_range=None, distribution=None, **kwargs):
         if distribution is not None:
             mode = distribution['mode']
@@ -511,17 +516,22 @@ class DrawEnvTab(gui_aux.DrawTab):
         group_figs = []
         for i, P0 in enumerate(Ps):
             if item == self.S0:
-                temp = self.draw_source(P0, default_color, **kwargs)
+                temp = self.draw_source(P0,
+                                        color, **kwargs)
             elif item == self.L0:
                 if distribution is not None:
                     orientation_range = distribution['orientation_range']
-                temp = self.draw_larva(P0, default_color, orientation_range, **kwargs)
+                temp = self.draw_larva(P0,
+                                       color, orientation_range, **kwargs)
             group_figs.append(temp)
         return group_figs
 
-    def draw_source(self, P0, default_color, amount, radius, **kwargs):
-        fill_color = default_color if amount > 0 else None
-        temp = self.graph.draw_circle(P0, radius * self.s, line_width=3, line_color=default_color,
+    def draw_source(self, P0,
+                    color, amount, radius, **kwargs):
+        fill_color = (
+            color) if amount > 0 else None
+        temp = self.graph.draw_circle(P0, radius * self.s, line_width=3, line_color=
+        color,
                                       fill_color=fill_color)
         return temp
 

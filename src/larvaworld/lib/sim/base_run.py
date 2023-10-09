@@ -124,7 +124,7 @@ class BaseRun(sim.ABModel):
         ids = aux.unique_list([s.odor.id for s in self.sources if s.odor.id is not None])
         for id in ids:
             od_sources = [f for f in self.sources if f.odor.id == id]
-            temp = aux.unique_list([s.default_color for s in od_sources])
+            temp = aux.unique_list([s.color for s in od_sources])
             if len(temp) == 1:
                 c0 = temp[0]
             elif len(temp) == 3 and all([type(k) == float] for k in temp):
