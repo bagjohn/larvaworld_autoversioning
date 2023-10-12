@@ -155,7 +155,7 @@ def define_default_refID():
                     arena=gen.Arena(dims=(0.15, 0.15), geometry='circular')),
                 'preprocess': PreprocessConf(filter_f=2.0, rescale_by=0.001, drop_collisions=True)
             }
-            g = gen.LabFormat(labID='Schleyer', **kws).nestedConf
+            g = gen.LabFormat(labID='Schleyer', **kws)
 
         # Merged case
         N = 30
