@@ -38,7 +38,6 @@ w_kws = {
     'text_justification': 'left',
     'element_justification': 'center',
     'debugger_enabled': True,
-    # 'border_depth': 4,
 }
 
 def get_disp_name(name) -> str:
@@ -197,16 +196,9 @@ def gui_rowNcol(element_list, x_fracs, y_fracs, as_pane=False):
 
 
 col_kws = {'vertical_alignment': 't', 'expand_x': False, 'expand_y': False}
-# b_kws = {'font': ('size', 6)}
-# b3_kws = {'font': ('size', 6),
-#           'size': (3, 1)}
 b6_kws = {'font': ('size', 6),
           'size': (6, 1)}
-# b12_kws = {'font': ('size', 6),
-#            'size': (12, 1)}
-# spin_size = {'size': (4, 1)}
-#tab_kws = {'font': ("Helvetica", 14, "normal"), 'selected_title_color': 'darkblue', 'title_color': 'grey',
- #          'tab_background_color': 'lightgrey'}
+
 
 
 

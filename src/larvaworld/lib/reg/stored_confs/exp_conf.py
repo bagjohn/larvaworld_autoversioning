@@ -9,6 +9,7 @@ __all__ = [
 
 
 def grouped_exp_dic():
+    from ...param.composition import Odor
     from ...reg import gen
     from ...reg.generators import GTRvsS
 
@@ -75,14 +76,14 @@ def grouped_exp_dic():
         x = np.round(x * dim, 3)
         y = np.round(y * dim, 3)
         if mode == 'king':
-            l = {**lg(id='Left', N=N, loc=(-x, y), mID='gamer-5x', c='darkblue', odor=oG(id='Left_odor')),
-                 **lg(id='Right', N=N, loc=(+x, y), mID='gamer-5x', c='darkred', odor=oG(id='Right_odor'))}
+            l = {**lg(id='Left', N=N, loc=(-x, y), mID='gamer-5x', c='darkblue', odor=Odor.oG(id='Left_odor')),
+                 **lg(id='Right', N=N, loc=(+x, y), mID='gamer-5x', c='darkred', odor=Odor.oG(id='Right_odor'))}
         elif mode == 'flag':
             l = {**lg(id='Left', N=N, loc=(-x, y), mID='gamer', c='darkblue'),
                  **lg(id='Right', N=N, loc=(+x, y), mID='gamer', c='darkred')}
         elif mode == 'catch_me':
-            l = {**lg(id='Left', N=1, loc=(-0.01, 0.0), mID='follower-L', c='darkblue', odor=oD(id='Left_odor')),
-                 **lg(id='Right', N=1, loc=(+0.01, 0.0), mID='follower-R', c='darkred', odor=oD(id='Right_odor'))}
+            l = {**lg(id='Left', N=1, loc=(-0.01, 0.0), mID='follower-L', c='darkblue', odor=Odor.oD(id='Left_odor')),
+                 **lg(id='Right', N=1, loc=(+0.01, 0.0), mID='follower-R', c='darkred', odor=Odor.oD(id='Right_odor'))}
         return l
 
     def lgs_x4(N=5):

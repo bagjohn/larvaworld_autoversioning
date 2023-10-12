@@ -12,47 +12,6 @@ __all__ = [
     'plot_fft_multi',
 ]
 
-#
-#
-# @reg.funcs.graph('fft', required={'ks':['v', 'fov']})
-# def plot_fft(dkdict, c, name=f'fft_powerspectrum',palette=None, axx=None,**kwargs):
-#     if palette is None:
-#         palette = {'v': 'red', 'fov': 'blue'}
-#     P = plot.AutoBasePlot(name=name,build_kws={'w': 15, 'h': 12}, **kwargs)
-#     if axx is None:
-#         axx = P.axs[0].inset_axes([0.64, 0.65, 0.35, 0.34])
-#     xf = fftfreq(c.Nticks, c.dt)[:c.Nticks // 2]
-#
-#     # fvs = np.zeros(c.N) * np.nan
-#     # ffovs = np.zeros(c.N) * np.nan
-#     # v_ys = np.zeros([c.N, c.Nticks // 2])
-#     # fov_ys = np.zeros([c.N, c.Nticks // 2])
-#
-#     res_v=dkdict['v'].groupby('AgentID').apply(aux.fft_max,dt=c.dt, fr_range=(1.0, 2.5), return_amps=True)
-#     res_fov=dkdict['fov'].groupby('AgentID').apply(aux.fft_max,dt=c.dt, fr_range=(0.1, 0.8), return_amps=True)
-#
-#     fvs = [r[0] for r in res_v.values]
-#     ffovs = [r[0] for r in res_fov.values]
-#     v_ys = np.array([r[1] for r in res_v.values])
-#     fov_ys = np.array([r[1] for r in res_fov.values])
-#
-#
-#     plot.plot_quantiles(v_ys, x=xf, axis=P.axs[0], label='forward speed', color_shading=palette['v'])
-#     plot.plot_quantiles(fov_ys, x=xf, axis=P.axs[0], label='angular speed', color_shading=palette['fov'])
-#     P.conf_ax(0, ylim=(0, 8), xlim=(0, 3.5), ylab='Amplitude (a.u.)', xlab='Frequency (Hz)',
-#               title='Fourier analysis',titlefontsize=25, leg_loc='lower left', yMaxN=5)
-#
-#     bins = np.linspace(0, 2, 40)
-#
-#     v_weights = np.ones_like(fvs) / float(len(fvs))
-#     fov_weights = np.ones_like(ffovs) / float(len(ffovs))
-#     axx.hist(fvs, color=palette['v'], bins=bins, weights=v_weights)
-#     axx.hist(ffovs, color=palette['fov'], bins=bins, weights=fov_weights)
-#     P.conf_ax(ax=axx, ylab='Probability', xlab='Dominant frequency (Hz)',yMaxN=2,
-#               major_ticklabelsize=10,minor_ticklabelsize=10)
-#
-#     return P.get()
-
 @reg.funcs.graph('fft multi', required={'ks':[ 'v', 'fov']})
 def plot_fft_multi(ks=['v', 'fov'],name=f'fft_powerspectrum',axx=None, dataset_colors=False, **kwargs):
     P = plot.AutoPlot(ks=ks,name=name, build_kws={'w': 15, 'h': 12},**kwargs)
