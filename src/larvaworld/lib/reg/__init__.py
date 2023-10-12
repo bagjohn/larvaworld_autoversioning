@@ -98,7 +98,7 @@ def loadRef(id, **kwargs):
     return conf.Ref.loadRef(id=id, **kwargs)
 
 
-vprint(f"Registry configured!", 2)
+
 
 
 def define_default_refID_by_running_test():
@@ -161,3 +161,5 @@ def define_default_refID():
 
 
 default_refID = define_default_refID()
+
+vprint(f"Registry configured!", 2)
