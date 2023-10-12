@@ -127,7 +127,7 @@ def imitation_exp(refID, model='explorer', **kwargs):
         'expand': True,
         'sample': refID,
         'model': model,
-        'default_color': 'blue',
+        'color': 'blue',
         'distribution': {'N': c.N},
         'imitation': True,
 

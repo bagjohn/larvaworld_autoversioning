@@ -825,7 +825,7 @@ def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, sample=None, substrate_type='sta
 
         kws = {
             'id': id,
-            'default_color': mcol,
+            'color': mcol,
             'model': mID0,
             **kws0
         }
@@ -835,7 +835,6 @@ def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, sample=None, substrate_type='sta
 
 
 class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
-    # duration = OptionalPositiveNumber(default=None)
     Nticks = OptionalPositiveInteger(default=None)
     refID = param.String(None, doc='The unique ID of the reference dataset')
     group_id = param.String(None, doc='The unique ID of the group')
