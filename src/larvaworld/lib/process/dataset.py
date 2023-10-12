@@ -120,7 +120,7 @@ class ParamLarvaDataset(param.Parameterized):
             return df
         else :
 
-            t0, t1 = range
+            t0, t1 = time_range
             s0 = int(t0 / self.config.dt)
             s1 = int(t1 / self.config.dt)
             df_slice = df.loc[(slice(s0, s1), slice(None)), :]
