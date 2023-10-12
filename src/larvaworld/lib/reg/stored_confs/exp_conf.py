@@ -145,7 +145,7 @@ def grouped_exp_dic():
 
     d3 = {
         'single_puff': {'env': 'single_puff', 'dur': 2.5,
-                        'l': lg(mID='nengo_explorer', N=20, sample='Coaster.Starved')}
+                        'l': lg(mID='nengo_explorer', N=20)}
     }
 
     d33 = {id: exp(id=id, c0=['wind', 'olfactor', 'pose'],

@@ -556,7 +556,7 @@ class LabFormat(NestedConf):
             'dir': dir,
             'id': id,
             'color': color,
-            'larva_groups': gen.LarvaGroup(c=color, sample=sample, mID=None, N=N, epochs=epochs, age=age).entry(id=group_id),
+            'larva_groups': gen.LarvaGroup(c=color, sample=sample, mID=None, N=N, life=[age,epochs]).entry(id=group_id),
             'env_params': self.env_params.nestedConf,
             **self.tracker.nestedConf,
             'step': step,
