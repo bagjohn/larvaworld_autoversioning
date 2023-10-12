@@ -11,7 +11,21 @@ __all__ = [
 def grouped_exp_dic():
     from ...reg import gen
     from ...reg.generators import GTRvsS
-    from ...reg.config import lg, lgs
+
+    def lg(**kwargs):
+        return reg.gen.LarvaGroup(**kwargs).entry()
+        # return reg.config.lg(**kwargs)
+
+    # def lgs(**kwargs):
+    #     return reg.config.lgs(**kwargs)
+
+    def lgs(mIDs, ids=None, cs=None, **kwargs):
+        if ids is None:
+            ids = mIDs
+        N = len(mIDs)
+        if cs is None:
+            cs = aux.N_colors(N)
+        return aux.AttrDict(aux.merge_dicts([lg(id=id, c=c, mID=mID, **kwargs) for mID, c, id in zip(mIDs, cs, ids)]))
 
     def oG(c=1, id='Odor'):
         return gen.Odor(id=id, intensity=2.0 * c, spread=0.0002 * np.sqrt(c)).nestedConf
@@ -62,14 +76,14 @@ def grouped_exp_dic():
         x = np.round(x * dim, 3)
         y = np.round(y * dim, 3)
         if mode == 'king':
-            l = {**lg('Left', N=N, loc=(-x, y), mID='gamer-5x', c='darkblue', o=oG(id='Left_odor')),
-                 **lg('Right', N=N, loc=(+x, y), mID='gamer-5x', c='darkred', o=oG(id='Right_odor'))}
+            l = {**lg(id='Left', N=N, loc=(-x, y), mID='gamer-5x', c='darkblue', o=oG(id='Left_odor')),
+                 **lg(id='Right', N=N, loc=(+x, y), mID='gamer-5x', c='darkred', o=oG(id='Right_odor'))}
         elif mode == 'flag':
-            l = {**lg('Left', N=N, loc=(-x, y), mID='gamer', c='darkblue'),
-                 **lg('Right', N=N, loc=(+x, y), mID='gamer', c='darkred')}
+            l = {**lg(id='Left', N=N, loc=(-x, y), mID='gamer', c='darkblue'),
+                 **lg(id='Right', N=N, loc=(+x, y), mID='gamer', c='darkred')}
         elif mode == 'catch_me':
-            l = {**lg('Left', N=1, loc=(-0.01, 0.0), mID='follower-L', c='darkblue', o=oD(id='Left_odor')),
-                 **lg('Right', N=1, loc=(+0.01, 0.0), mID='follower-R', c='darkred', o=oD(id='Right_odor'))}
+            l = {**lg(id='Left', N=1, loc=(-0.01, 0.0), mID='follower-L', c='darkblue', o=oD(id='Left_odor')),
+                 **lg(id='Right', N=1, loc=(+0.01, 0.0), mID='follower-R', c='darkred', o=oD(id='Right_odor'))}
         return l
 
     def lgs_x4(N=5):
@@ -190,7 +204,6 @@ def grouped_exp_dic():
             'tactile_detection': food_exp('tactile_detection', env='single_patch', dur=5.0, c=['toucher'],
                                           l=lg(mID='toucher', N=15, mode='periphery', s=0.03), en=False),
             'tactile_detection_x3': food_exp('tactile_detection_x3', env='single_patch', dur=600.0, c=['toucher'],
-                                             # l=lgs(mIDs=['toucher', 'toucher_brute'],
                                              l=lgs(mIDs=['RL_toucher_2', 'RL_toucher_0', 'toucher', 'toucher_brute',
                                                          'gRL_toucher_0'],
                                                    # ids=['control', 'brute'], N=10), en=False),

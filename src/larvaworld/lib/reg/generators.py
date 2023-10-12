@@ -556,7 +556,7 @@ class LabFormat(NestedConf):
             'dir': dir,
             'id': id,
             'color': color,
-            'larva_groups': reg.config.lg(id=group_id, c=color, sample=sample, mID=None, N=N, epochs=epochs, age=age),
+            'larva_groups': gen.LarvaGroup(id=group_id, c=color, sample=sample, mID=None, N=N, epochs=epochs, age=age).entry(),
             'env_params': self.env_params.nestedConf,
             **self.tracker.nestedConf,
             'step': step,
@@ -787,8 +787,7 @@ gen.Replay = class_generator(ReplayConf)
 
 def full_lg(id=None, expand=False, as_entry=True, **conf):
     try:
-        lg = LarvaGroup(id=id, **conf)
-        return lg.entry(expand=expand, as_entry=as_entry)
+        return LarvaGroup(id=id, **conf).entry(expand=expand, as_entry=as_entry)
     except:
         raise
 

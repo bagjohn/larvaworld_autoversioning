@@ -8,8 +8,8 @@ from .. import reg, aux, util
 __all__ = [
     'Path',
     'BaseType',
-    'lgs',
-    'lg',
+    # 'lgs',
+    # 'lg',
     'next_idx',
     'StoredConfRegistry',
     'imitation_exp',
@@ -55,39 +55,38 @@ class BaseType:
 
 
 
-def lgs(mIDs, ids=None, cs=None,**kwargs):
-
-    if ids is None:
-        ids = mIDs
-    N = len(mIDs)
-    if cs is None :
-        cs = aux.N_colors(N)
-    return aux.AttrDict(aux.merge_dicts([lg(id, c=c, mID=mID, **kwargs) for mID, c, id in zip(mIDs, cs, ids)]))
-
-
-def lg(id=None, c='black', N=1, mode='uniform', sh='circle', loc=(0.0, 0.0), ors=(0.0, 360.0),
-       s=(0.0, 0.0), mID='explorer',age=0.0, epochs={},  o=None,sample = None, expand=False, **kwargs):
-
-    if mID is not None :
-        m = mID if not expand else reg.conf.Model.getID(mID)
-        if id is None:
-            id=mID
-    else :
-        m=None
-    if id is None:
-        id='LarvaGroup'
-
-    if type(s) == float:
-        s = (s, s)
-    kws = {'kwdic': {
-        'distribution': {'N': N, 'scale': s, 'orientation_range': ors, 'loc': loc, 'shape': sh, 'mode': mode},
-        'life_history': {'age': age,'epochs': epochs}
-    },
-           'color': c, 'model': m,'sample':sample,  **kwargs}
-    if o is not None:
-        kws['odor'] = o
-
-    return reg.stored.group.LarvaGroup.entry(id=id, **kws)
+# def lgs(mIDs, ids=None, cs=None,**kwargs):
+#     if ids is None:
+#         ids = mIDs
+#     N = len(mIDs)
+#     if cs is None :
+#         cs = aux.N_colors(N)
+#     return aux.AttrDict(aux.merge_dicts([lg(id, c=c, mID=mID, **kwargs) for mID, c, id in zip(mIDs, cs, ids)]))
+#
+#
+# def lg(id=None, c='black', N=1, mode='uniform', sh='circle', loc=(0.0, 0.0), ors=(0.0, 360.0),
+#        s=(0.0, 0.0), mID='explorer',age=0.0, epochs={},  o=None,sample = None, expand=False, **kwargs):
+#
+#     if mID is not None :
+#         m = mID if not expand else reg.conf.Model.getID(mID)
+#         if id is None:
+#             id=mID
+#     else :
+#         m=None
+#     if id is None:
+#         id='LarvaGroup'
+#
+#     if type(s) == float:
+#         s = (s, s)
+#     kws = {'kwdic': {
+#         'distribution': {'N': N, 'scale': s, 'orientation_range': ors, 'loc': loc, 'shape': sh, 'mode': mode},
+#         'life_history': {'age': age,'epochs': epochs}
+#     },
+#            'color': c, 'model': m,'sample':sample,  **kwargs}
+#     if o is not None:
+#         kws['odor'] = o
+#
+#     return reg.stored.group.LarvaGroup.entry(id=id, **kws)
 
 
 
