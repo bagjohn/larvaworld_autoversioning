@@ -6,7 +6,7 @@ import param
 from .. import reg, aux, util
 
 __all__ = [
-    'Path',
+    # 'Path',
     'BaseType',
     # 'lgs',
     # 'lg',
@@ -15,7 +15,7 @@ __all__ = [
     'imitation_exp',
 ]
 
-Path = aux.AttrDict({k: f'{reg.CONF_DIR}/{k}.txt' for k in reg.CONFTYPES})
+# Path = aux.AttrDict({k: f'{reg.CONF_DIR}/{k}.txt' for k in reg.CONFTYPES})
 
 
 class BaseType:

@@ -79,7 +79,7 @@ from . import parDB, parFunc, stored_confs
 par = parDB.ParamRegistry()
 
 vprint("Initializing configuration registry")
-from .config import Path, StoredConfRegistry
+from .config import StoredConfRegistry
 
 stored = StoredConfRegistry()
 from .generators import gen, conf, resetConfs

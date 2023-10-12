@@ -27,10 +27,10 @@ def grouped_exp_dic():
         return aux.AttrDict(aux.merge_dicts([lg(id=id, c=c, mID=mID, **kwargs) for mID, c, id in zip(mIDs, cs, ids)]))
 
     def oG(c=1, id='Odor'):
-        return gen.Odor(id=id, intensity=2.0 * c, spread=0.0002 * np.sqrt(c)).nestedConf
+        return gen.Odor(id=id, intensity=2.0 * c, spread=0.0002 * np.sqrt(c))
 
     def oD(c=1, id='Odor'):
-        return gen.Odor(id=id, intensity=300.0 * c, spread=0.1 * np.sqrt(c)).nestedConf
+        return gen.Odor(id=id, intensity=300.0 * c, spread=0.1 * np.sqrt(c))
 
     def exp(id, env=None, l={}, enrichment=reg.gen.EnrichConf().nestedConf, dur=10.0,
             c=[], c0=['pose'], as_entry=False, **kwargs):
