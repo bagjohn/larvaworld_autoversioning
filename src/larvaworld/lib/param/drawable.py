@@ -13,59 +13,6 @@ __all__ = [
 __displayname__ = 'Viewable elements'
 
 
-# class Viewable2(NestedConf):
-#     '''
-#         Basic Parameterized Class for all visible Objects in simulation
-#
-#             Args:
-#             - default_color: optional str or tuple representing the default color of the agent.
-#             - visible: optional boolean indicating whether the agent is visible or not.
-#
-#
-#     '''
-#
-#     default_color = RandomizedColor(default='black', doc='The default color of the entity')
-#     visible = param.Boolean(True, doc='Whether the entity is visible or not')
-#     selected = param.Boolean(False, doc='Whether the entity is selected or not')
-#
-#     def __init__(self, **kwargs):
-#         if 'default_color' in kwargs:
-#             if isinstance(kwargs['default_color'], tuple):
-#                 kwargs['default_color'] = aux.colortuple2str(kwargs['default_color'])
-#         super().__init__(**kwargs)
-#         self.color = self.default_color
-#
-#     def set_color(self, color):
-#         self.color = color
-#
-#     def set_default_color(self, color):
-#         self.default_color = color
-#         self.color = color
-#
-#     def invert_default_color(self):
-#         c00, c01 = aux.invert_color(self.default_color)
-#         self.set_default_color(c01)
-#
-#     def _draw(self, v, **kwargs):
-#         if self.visible:
-#             self.draw(v, **kwargs)
-#             if self.selected:
-#                 # raise
-#                 self.draw_selected(v, **kwargs)
-#             if hasattr(self, 'id_box'):
-#                 self.id_box._draw(v, **kwargs)
-#
-#     def draw_selected(self, v, **kwargs):
-#         pass
-#
-#     def draw(self, v, **kwargs):
-#         pass
-#
-#     # @property
-#     def toggle_vis(self):
-#         self.visible = not self.visible
-#         return self.visible
-
 
 class Viewable(NestedConf):
     '''
@@ -162,13 +109,5 @@ class ViewableLine(Viewable, LineExtended):
 class Contour(Viewable, LineClosed):
 
     def draw(self, v, **kwargs):
-        # print(self.default_color, self.color, 'c')
         v.draw_polygon(self.vertices, filled=True, color=self.color)
 
-# class ViewableCircle(Viewable, RadiallyExtended):
-#
-#     def draw(self, v, filled=True, radius_coeff=1, color=None, width_as_radius_fraction=5):
-#         if color is None:
-#             color = self.color
-#         v.draw_circle(position=self.get_position(), radius=self.radius * radius_coeff, color=color, filled=filled,
-#                       width=self.radius / width_as_radius_fraction)

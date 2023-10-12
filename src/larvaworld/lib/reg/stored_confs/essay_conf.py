@@ -366,20 +366,6 @@ class DoublePatch_Essay(Essay):
 
         return reg.config.lgs(mIDs=self.mIDs,ids=['rover', 'sitter'],  cs=['blue', 'red'],**kws0)
 
-    # def get_sources(self, type='standard', q=1.0, Cpeak=2.0, Cscale=0.0002):
-    #
-    #     kws0 = {'radius': self.patch_radius, 'default_color': 'green', 'amount': 0.1,
-    #             'type': type, 'quality': q, 'group': 'Patch',
-    #             'odor': {'id': 'Odor', 'intensity': Cpeak, 'spread': Cscale}
-    #
-    #             }
-    #
-    #     return aux.AttrDict({
-    #         'Left_patch': reg.stored.conf.Food.gConf(pos=(-self.patch_x, 0.0), **kws0),
-    #         'Right_patch': reg.stored.conf.Food.gConf(pos=(self.patch_x, 0.0), **kws0),
-    #
-    #     })
-
     def get_sources(self, type='standard', q=1.0, Cpeak=2.0, Cscale=0.0002):
 
         kws0 = {'r': self.patch_radius, 'c': 'green', 'a': 0.1,

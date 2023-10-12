@@ -223,7 +223,6 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
         Draw the display and evaluate user-input
         """
 
-
         if self.active:
             self.check(**kwargs)
             if not self.overlap_mode:
@@ -429,10 +428,6 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
         if k == 'visible_ids':
             for a in m.agents + m.sources:
                 temp = a.id_box.toggle_vis()
-            # elif name == 'color_behavior':
-            # if not self.color_behavior:
-            #     for f in self.model.agents:
-            #         f.set_color(f.default_color)
             self.toggle(k, 'ON' if temp else 'OFF', disp='IDs')
         elif k == 'visible_clock':
             vis = self.screen_clock.toggle_vis()
@@ -499,8 +494,8 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
                     from larvaworld.gui.gui_aux.windows import set_kwargs
                     sel.brain.olfactor.gain = set_kwargs(sel.brain.olfactor.gain, title='Odor gains')
         elif k == 'larva_collisions':
-            m.larva_collisions=not m.larva_collisions
-            #m.eliminate_overlap()
+            m.larva_collisions = not m.larva_collisions
+            # m.eliminate_overlap()
         else:
             self.toggle(k)
 
@@ -552,9 +547,9 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
             'color': self.sidepanel_color,
         }
 
-        self.screen_clock = SimulationClock(sim_step_in_sec=m.dt,pos=v.item_pos('clock'), **kws)
-        self.screen_scale = SimulationScale(pos=v.item_pos('scale'),**kws)
-        self.screen_state = SimulationState(model=m,pos=v.item_pos('state'), **kws)
+        self.screen_clock = SimulationClock(sim_step_in_sec=m.dt, pos=v.item_pos('clock'), **kws)
+        self.screen_scale = SimulationScale(pos=v.item_pos('scale'), **kws)
+        self.screen_state = SimulationState(model=m, pos=v.item_pos('state'), **kws)
 
         self.screen_texts = aux.AttrDict({name: ScreenMsgText(text=name, **kws) for name in [
             'trail_dt',
@@ -584,7 +579,6 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
             'is_paused',
         ] + list(m.odor_layers.keys())
                                           })
-
 
     def capture_snapshot(self):
         """
@@ -626,6 +620,7 @@ class GA_ScreenManager(BaseScreenManager):
     """
     Screen manager for the Genetic Algorithm simulations.
     """
+
     def __init__(self, panel_width=600, scene='no_boxes', **kwargs):
         super().__init__(black_background=True, panel_width=panel_width, **kwargs)
         self.screen_kws.caption = f'GA {self.model.experiment} : {self.model.id}'
@@ -648,7 +643,6 @@ class GA_ScreenManager(BaseScreenManager):
     #
     #     v._window.fill(self.screen_color)
     #     self.draw_arena_tank(v)
-
 
     def draw_aux(self, v, **kwargs):
         self.side_panel.draw(v)
@@ -678,76 +672,6 @@ class ScreenManager(BaseScreenManager):
         self.draw_arena(v)
         return v
 
-    # def build_aux(self, v):
-    #     """
-    #     Generate additional items on screen
-    #     """
-    #
-    #     m = self.model
-    #     self.input_box = ScreenTextBoxRect(text_color='lightgreen', default_color='white',
-    #                                        frame_rect=v.get_rect_at_pos(),
-    #                                        font_type="comicsansms", font_size=40,
-    #                                        )
-    #     if self.intro_text:
-    #         box = ScreenTextBoxRect(
-    #             text=m.configuration_text,
-    #             text_color='lightgreen', default_color='white',
-    #             visible=True, frame_rect=v.get_rect_at_pos(),
-    #             font_type="comicsansms", font_size=30)
-    #         box.draw(v)
-    #         v.render()
-    #         pygame.time.wait(2000)
-    #         box.visible = False
-    #
-    #         self.draw_arena_tank(v)
-    #
-    #     kws = {
-    #         'reference_area': v,
-    #         'default_color': 'black',
-    #     }
-    #
-    #     self.screen_clock = SimulationClock(sim_step_in_sec=m.dt, **kws)
-    #     self.screen_scale = SimulationScale(**kws)
-    #     self.screen_state = SimulationState(model=m, **kws)
-    #
-    #     self.screen_texts = aux.AttrDict({name: ScreenMsgText(text=name, **kws) for name in [
-    #         'trail_dt',
-    #         'trail_color',
-    #         'visible_trails',
-    #         'focus_mode',
-    #         'draw_centroid',
-    #         'draw_head',
-    #         'draw_midline',
-    #         'draw_contour',
-    #         'draw_sensors',
-    #         'draw_orientations',
-    #         'draw_segs',
-    #         'visible_clock',
-    #         'visible_ids',
-    #         'visible_state',
-    #         'visible_scale',
-    #         'odor_aura',
-    #         'color_behavior',
-    #         'random_colors',
-    #         'black_background',
-    #         'larva_collisions',
-    #         'zoom',
-    #         'snapshot #',
-    #         'odorscape #',
-    #         'windscape',
-    #         'is_paused',
-    #     ] + list(m.odor_layers.keys())
-    #                                       })
-
-    # def step(self):
-    #     self.check()
-    #     if self.active:
-    #         self.screen_clock.tick_clock()
-    #         if self.render_valid:
-    #             self.render()
-    #         if self.snapshot_valid:
-    #             self.capture_snapshot()
-
     def finalize(self):
         """
         Apply final actions before closing the screen manager
@@ -757,250 +681,18 @@ class ScreenManager(BaseScreenManager):
             if self.overlap_mode:
                 self.v.render()
                 pygame.time.wait(5000)
-                # raise
             elif self.image_mode == 'final':
                 self.capture_snapshot()
             if self.v:
                 self.v.close()
-
-
 
     def draw_aux(self, v, **kwargs):
         """
         Draw additional items on screen
         """
 
-
         for t in [self.screen_clock, self.screen_scale, self.screen_state]:
             t._draw(v)
         for t in list(self.screen_texts.values()) + [self.input_box]:
             t.visible = t.start_time < pygame.time.get_ticks() < t.end_time
             t._draw(v)
-
-
-
-    # def draw_arena(self, v):
-    #     """
-    #     Draw the arena and sensory landscapes
-    #     """
-    #     self.draw_arena_tank(v)
-    #     m = self.model
-    #     arena_drawn = False
-    #     for id, layer in m.odor_layers.items():
-    #         if layer.visible:
-    #             layer.draw(v)
-    #             arena_drawn = True
-    #             break
-    #
-    #     if not arena_drawn and m.food_grid is not None:
-    #         m.food_grid._draw(v=v)
-    #         arena_drawn = True
-    #
-    #     # if not arena_drawn:
-    #     #     self.draw_arena_tank(v)
-    #
-    #     if m.windscape is not None:
-    #         m.windscape._draw(v=v)
-    #
-    #     for b in m.borders:
-    #         b._draw(v=v)
-
-    # def toggle(self, name, value=None, show=False, minus=False, plus=False, disp=None):
-    #     """
-    #     Presentation of user-input-induced changes on screen
-    #     """
-    #     m = self.model
-    #     if disp is None:
-    #         disp = name
-    #     if name == 'snapshot #':
-    #         self.v.img_writer = self.new_image_writer(
-    #             image_filepath=f'{self.v.caption}_at_{int(m.Nticks * m.dt)}_sec.png')
-    #         value = self.snapshot_counter
-    #         self.snapshot_counter += 1
-    #     elif name == 'odorscape #':
-    #         reg.graphs.dict['odorscape'](odor_layers=m.odor_layers, save_to=m.plot_dir,
-    #                                      show=show, scale=m.scaling_factor, idx=self.odorscape_counter)
-    #         value = self.odorscape_counter
-    #         self.odorscape_counter += 1
-    #     elif name == 'trail_dt':
-    #         if minus:
-    #             dt = -1
-    #         elif plus:
-    #             dt = +1
-    #         self.trail_dt = np.clip(self.trail_dt + 5 * dt, a_min=0, a_max=np.inf)
-    #         value = self.trail_dt
-    #     elif name == 'trail_color':
-    #         obs = self.param.trail_color.objects
-    #         self.trail_color = obs[(obs.index(self.trail_color) + 1) % len(obs)]
-    #         value = self.trail_color
-    #
-    #     if value is None:
-    #         setattr(self, name, not getattr(self, name))
-    #         value = 'ON' if getattr(self, name) else 'OFF'
-    #
-    #     self.screen_texts[name].flash_text(f'{disp} {value}')
-    #
-    #     if name == 'random_colors':
-    #         for f in m.agents:
-    #             color = aux.random_colors(1)[0] if self.random_colors else f.default_color
-    #             f.set_default_color(color)
-    #     elif name == 'black_background':
-    #         for a in m.get_all_objects() + [self.screen_clock, self.screen_scale, self.screen_state] + list(
-    #                 self.screen_texts.values()):
-    #             a.invert_default_color()
-    #     # elif name == 'larva_collisions':
-    #     #
-    #     #     m.eliminate_overlap()
-    #
-    # def evaluate_input(self):
-    #     """
-    #     Evaluation of user input through keyboard and mouse.
-    #     """
-    #
-    #     if self.pygame_keys is None:
-    #         self.pygame_keys = reg.controls.load()['pygame_keys']
-    #
-    #     ev = pygame.event.get()
-    #     for e in ev:
-    #         if e.type == pygame.QUIT:
-    #             self.close()
-    #             sys.exit()
-    #         if e.type == pygame.KEYDOWN:
-    #             for k, v in self.pygame_keys.items():
-    #                 if e.key == getattr(pygame, v):
-    #                     self.eval_keypress(k)
-    #
-    #         if self.allow_clicks:
-    #             if e.type == pygame.MOUSEWHEEL:
-    #                 self.v.zoom_screen(e.y, pos=self.v.mouse_position)
-    #                 self.toggle(name='zoom', value=self.v.zoom)
-    #             elif e.type == pygame.MOUSEBUTTONUP:
-    #                 if e.button == 1:
-    #                     if not self.eval_selection(p=self.v.mouse_position,
-    #                                                ctrl=pygame.key.get_mods() & pygame.KMOD_CTRL):
-    #                         #     self.model.add_agent(agent_class=self.selected_type, p0=tuple(p),
-    #                         #                 p1=tuple(self.mousebuttondown_pos))
-    #                         pass
-    #
-    #                 elif e.button == 3:
-    #                     from larvaworld.gui.gui_aux.windows import set_agent_kwargs, object_menu
-    #                     loc = tuple(
-    #                         np.array([int(x) for x in os.environ['SDL_VIDEO_WINDOW_POS'].split(',')]) + np.array(
-    #                             pygame.mouse.get_pos()))
-    #                     if len(self.selected_agents) > 0:
-    #                         for sel in self.selected_agents:
-    #                             sel = set_agent_kwargs(sel, location=loc)
-    #                     else:
-    #                         self.selected_type = object_menu(self.selected_type, location=loc)
-    #
-    #     if self.focus_mode and len(self.selected_agents) > 0:
-    #         try:
-    #             sel = self.selected_agents[0]
-    #             self.v.move_center(pos=sel.get_position())
-    #         except:
-    #             pass
-    #     # print(self.selected_agents)
-    #
-    # def eval_keypress(self, k):
-    #     """
-    #     Evaluation of keyboard input.
-    #     """
-    #
-    #     m = self.model
-    #     if k == 'visible_ids':
-    #         for a in m.agents + m.sources:
-    #             temp = a.id_box.toggle_vis()
-    #         # elif name == 'color_behavior':
-    #         # if not self.color_behavior:
-    #         #     for f in self.model.agents:
-    #         #         f.set_color(f.default_color)
-    #         self.toggle(k, 'ON' if temp else 'OFF', disp='IDs')
-    #     elif k == 'visible_clock':
-    #         vis = self.screen_clock.toggle_vis()
-    #         self.toggle(k, 'ON' if vis else 'OFF', disp='clock')
-    #     elif k == 'visible_scale':
-    #         vis = self.screen_scale.toggle_vis()
-    #         self.toggle(k, 'ON' if vis else 'OFF', disp='scale')
-    #     elif k == 'visible_state':
-    #         vis = self.screen_state.toggle_vis()
-    #         self.toggle(k, 'ON' if vis else 'OFF', disp='state')
-    #     elif k == '▲ trail duration':
-    #         self.toggle('trail_dt', plus=True, disp='trail duration')
-    #     elif k == '▼ trail duration':
-    #         self.toggle('trail_dt', minus=True, disp='trail duration')
-    #     elif k == 'visible_trails':
-    #         self.toggle(k, disp='trails')
-    #     elif k == 'pause':
-    #         self.toggle('is_paused')
-    #     elif k == 'move left':
-    #         self.v.move_center(-0.05, 0)
-    #     elif k == 'move right':
-    #         self.v.move_center(+0.05, 0)
-    #     elif k == 'move up':
-    #         self.v.move_center(0, +0.05)
-    #     elif k == 'move down':
-    #         self.v.move_center(0, -0.05)
-    #     elif k == 'plot odorscapes':
-    #         self.toggle('odorscape #', show=pygame.key.get_mods() & pygame.KMOD_CTRL)
-    #     elif 'odorscape' in k:
-    #         idx = int(k.split(' ')[-1])
-    #         try:
-    #             layer_id = list(m.odor_layers.keys())[idx]
-    #             layer = m.odor_layers[layer_id]
-    #             vis = layer.toggle_vis()
-    #             self.toggle(layer_id, 'ON' if vis else 'OFF')
-    #         except:
-    #             pass
-    #     elif k == 'snapshot':
-    #         self.toggle('snapshot #')
-    #     elif k == 'windscape':
-    #         try:
-    #             vis = m.windscape.toggle_vis()
-    #             self.toggle('windscape', 'ON' if vis else 'OFF')
-    #         except:
-    #             pass
-    #     elif k == 'delete item':
-    #         from larvaworld.gui.gui_aux.windows import delete_objects_window
-    #         if delete_objects_window(self.selected_agents):
-    #             for f in self.selected_agents:
-    #                 self.selected_agents.remove(f)
-    #                 m.delete_agent(f)
-    #     elif k == 'dynamic graph':
-    #         from larvaworld.lib.model.agents._larva import Larva
-    #         if len(self.selected_agents) > 0:
-    #             sel = self.selected_agents[0]
-    #             if isinstance(sel, Larva):
-    #                 from larvaworld.gui.gui_aux import DynamicGraph
-    #                 self.dynamic_graphs.append(DynamicGraph(agent=sel))
-    #     elif k == 'odor gains':
-    #         if len(self.selected_agents) > 0:
-    #             sel = self.selected_agents[0]
-    #             from larvaworld.lib.model.agents._larva_sim import LarvaSim
-    #             if isinstance(sel, LarvaSim) and sel.brain.olfactor is not None:
-    #                 from larvaworld.gui.gui_aux.windows import set_kwargs
-    #                 sel.brain.olfactor.gain = set_kwargs(sel.brain.olfactor.gain, title='Odor gains')
-    #     elif k == 'larva_collisions':
-    #         m.larva_collisions=not m.larva_collisions
-    #         #m.eliminate_overlap()
-    #     else:
-    #         self.toggle(k)
-    #
-    # def eval_selection(self, p, ctrl):
-    #     """
-    #     Selection of items on the screen by mouse-clicks.
-    #     """
-    #
-    #     res = False if len(self.selected_agents) == 0 else True
-    #     for f in self.model.get_all_objects():
-    #         if f.contained(p):
-    #             if not f.selected:
-    #                 f.selected = True
-    #                 self.selected_agents.append(f)
-    #             elif ctrl:
-    #                 f.selected = False
-    #                 self.selected_agents.remove(f)
-    #             res = True
-    #         elif f.selected and not ctrl:
-    #             f.selected = False
-    #             self.selected_agents.remove(f)
-    #     return res

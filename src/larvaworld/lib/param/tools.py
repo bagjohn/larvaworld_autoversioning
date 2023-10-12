@@ -29,7 +29,7 @@ def class_generator(A0, mode='Unit') :
                     kwargs['distribution']=D(**d)
             kwargs = self.shortcut(kdict={
                 'mID': 'model',
-                'c': 'default_color',
+                'c': 'color',
                 'or': 'orientation',
                 'r': 'radius',
                 'a': 'amount',

@@ -391,27 +391,6 @@ class LarvaBox2D(LarvaSim):
         self.cum_dst += self.dst
         self.compute_body_bend()
 
-    # def generate_segs(self):
-    #     # segs = []
-    #     kws= {
-    #         'physics_pars' : {'density': self.density,
-    #                           'lin_damping': self.lin_damping,
-    #                           'ang_damping': self.ang_damping,
-    #                           'inertia': 0.0},
-    #         'space' : self.model.space,
-    #     }
-    #
-    #     segs=aux.generate_segs(self.Nsegs, self.pos, self.orientation,
-    #                             self.sim_length, self.seg_ratio,self.default_color,self.body_plan,
-    #                             segment_class=Box2DSegment, **kws)
-    #
-    #
-    #     # put all agents into same group (negative so that no collisions are detected)
-    #     if self.model.larva_collisions:
-    #         for seg in segs :
-    #             for fixture in seg._fixtures:
-    #                 fixture.filterData.groupIndex = -1
-    #     return segs
 
     # To make peristalsis visible we try to leave some space between the segments.
     # We define an interval proportional to the length : int*l.
