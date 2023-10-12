@@ -26,7 +26,6 @@ __all__ = [
     'controls',
     'distro_database',
     'par',
-    'stored',
     'model',
     'graphs',
     'getPar',
@@ -79,8 +78,7 @@ from . import parDB, parFunc, stored_confs
 par = parDB.ParamRegistry()
 
 vprint("Initializing configuration registry")
-from .config import StoredConfRegistry, conf, resetConfs
-stored = StoredConfRegistry()
+from .config import conf, resetConfs
 
 from .generators import gen
 

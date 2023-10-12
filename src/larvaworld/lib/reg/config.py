@@ -9,53 +9,12 @@ from ..param import ClassDict,OptionalSelector, ClassAttr
 
 __all__ = [
     'next_idx',
-    'StoredConfRegistry',
     'imitation_exp',
     'ConfType',
     'RefType',
     'conf',
     'resetConfs',
 ]
-
-
-
-class BaseType:
-    def __init__(self, k):
-        self.k = k
-        if k in reg.par.PI.keys():
-            self.dict0 = reg.par.PI[k]
-            self.mdict = util.init2mdict(self.dict0)
-            self.ks = util.get_ks(self.mdict)
-        else:
-            self.dict0 = None
-            self.mdict = None
-            self.ks = None
-
-    def gConf_kws(self, dic):
-        kws0 = {}
-        for k, kws in dic.items():
-            m0 = self.mdict[k]
-            kws0[k] = self.gConf(m0, **kws)
-        return aux.AttrDict(kws0)
-
-    def gConf(self, m0=None, kwdic=None, **kwargs):
-        if m0 is None:
-            if self.mdict is None:
-                return None
-            else:
-                m0 = self.mdict
-        if kwdic is not None:
-            kws0 = self.gConf_kws(kwdic)
-            kwargs.update(kws0)
-
-        return aux.AttrDict(util.gConf(m0, **kwargs))
-
-    def entry(self, id, **kwargs):
-        return aux.AttrDict({id: self.gConf(**kwargs)})
-
-
-
-
 def next_idx(id, conftype='Exp'):
     f = f'{reg.CONF_DIR}/SimIdx.txt'
     if not os.path.isfile(f):
@@ -71,11 +30,6 @@ def next_idx(id, conftype='Exp'):
     aux.save_dict(d, f)
     return d[conftype][id]
 
-
-class StoredConfRegistry:
-    def __init__(self):
-        self.group = aux.AttrDict({k: BaseType(k=k) for k in reg.GROUPTYPES})
-        self.conf = aux.AttrDict({k: BaseType(k=k) for k in reg.CONFTYPES})
 
 
 def imitation_exp(refID, model='explorer', **kwargs):
