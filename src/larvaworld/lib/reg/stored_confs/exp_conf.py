@@ -27,41 +27,41 @@ def grouped_exp_dic():
             cs = aux.N_colors(N)
         return aux.AttrDict(aux.merge_dicts([lg(id=id, c=c, mID=mID, **kwargs) for mID, c, id in zip(mIDs, cs, ids)]))
 
-    def exp(id, env=None, l={}, enrichment=reg.gen.EnrichConf().nestedConf, dur=10.0,
-            c=[], c0=['pose'], **kwargs):
+    def exp(id, env=None, l={}, enrichment=reg.gen.EnrichConf(), dur=10.0,c=[], c0=['pose'], **kwargs):
         if env is None:
             env = id
-        sim = {'duration': dur}
-        kw = {'kwdic': {'sim_params': sim},
-              'larva_groups': l,
-              'env_params': env,
-              'experiment': id,
-              'enrichment': enrichment,
-              'collections': c0 + c,
-              }
-
-        kw.update(kwargs)
-
-        return reg.stored.conf.Exp.gConf(**kw)
+        # sim = {'duration': dur}
+        # kw = {'kwdic': {'sim_params': sim},
+        #       'larva_groups': l,
+        #       'env_params': env,
+        #       'experiment': id,
+        #       'enrichment': enrichment,
+        #       'collections': c0 + c,
+        #       }
+        #
+        # kw.update(kwargs)
+        env_p=reg.conf.Env.get(env)
+        return gen.Exp(larva_groups=l, env_params=env_p, experiment=id, enrichment=enrichment, collections=c0 + c,duration=dur, **kwargs).nestedConf
+        # return reg.stored.conf.Exp.gConf(**kw)
 
     def food_exp(id, c=['feeder'], dur=10.0,
                  enrichment=gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],
-                                           proc_keys=['spatial', 'angular', 'source']).nestedConf, **kwargs):
-        return exp(id, sim={'duration': dur}, c=c, enrichment=enrichment,
+                                           proc_keys=['spatial', 'angular', 'source']), **kwargs):
+        return exp(id, c=c,dur=dur, enrichment=enrichment,
                    **kwargs)
 
     def game_exp(id, dur=20.0, **kwargs):
-        return exp(id, sim={'duration': dur}, **kwargs)
+        return exp(id, dur=dur, **kwargs)
 
     def deb_exp(id, dur=5.0, **kwargs):
-        return exp(id, sim={'duration': dur}, c=['feeder', 'gut'],
-                   enrichment=gen.EnrichConf(proc_keys=['spatial']).nestedConf, **kwargs)
+        return exp(id, dur=dur, c=['feeder', 'gut'],
+                   enrichment=gen.EnrichConf(proc_keys=['spatial']), **kwargs)
 
     def thermo_exp(id, dur=10.0, **kwargs):
-        return exp(id, sim={'duration': dur}, c=['thermo'], enrichment=None, **kwargs)
+        return exp(id, dur=dur, c=['thermo'], **kwargs)
 
     def pref_exp(id, dur=5.0, c=[], **kwargs):
-        return exp(id, sim={'duration': dur}, c=c, enrichment=gen.EnrichConf(proc_keys=['PI']).nestedConf, **kwargs)
+        return exp(id,dur=dur, c=c, enrichment=gen.EnrichConf(proc_keys=['PI']), **kwargs)
 
     def game_groups(dim=0.1, N=10, x=0.4, y=0.0, mode='king'):
         x = np.round(x * dim, 3)
@@ -122,7 +122,7 @@ def grouped_exp_dic():
 
     d11 = {id: exp(id=id, c0=['olfactor', 'pose'],
                    enrichment=gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],
-                                             proc_keys=['spatial', 'angular', 'source']).nestedConf,
+                                             proc_keys=['spatial', 'angular', 'source']),
                    **kws) for id, kws in d1.items()}
 
     d2 = {
@@ -132,7 +132,7 @@ def grouped_exp_dic():
     }
 
     d22 = {id: exp(id=id, c0=['wind', 'pose'],
-                   enrichment=gen.EnrichConf(proc_keys=['spatial', 'angular', 'wind']).nestedConf,
+                   enrichment=gen.EnrichConf(proc_keys=['spatial', 'angular', 'wind']),
                    **kws) for id, kws in d2.items()}
 
     d3 = {
@@ -142,7 +142,7 @@ def grouped_exp_dic():
 
     d33 = {id: exp(id=id, c0=['wind', 'olfactor', 'pose'],
                    enrichment=gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],
-                                             proc_keys=['spatial', 'angular', 'source', 'wind']).nestedConf,
+                                             proc_keys=['spatial', 'angular', 'source', 'wind']),
                    **kws) for id, kws in d3.items()}
 
     d = {
@@ -178,7 +178,7 @@ def grouped_exp_dic():
                                           ids=['Orco', 'RL'], N=5,
                                           mode='uniform',
                                           shape='rectangular', s=(0.04,0.04)),
-                                    enrichment=gen.EnrichConf(proc_keys=['spatial']).nestedConf, en=False),
+                                    enrichment=gen.EnrichConf(proc_keys=['spatial'])),
             'uniform_food': food_exp('uniform_food', env='uniform_food',
                                      l=lg(mID='RE_NEU_PHI_DEF_feeder', N=5, s=(0.005,0.005))),
             'food_grid': food_exp('food_grid', env='food_grid', l=lg(mID='RE_NEU_PHI_DEF_feeder', N=25)),
@@ -191,22 +191,21 @@ def grouped_exp_dic():
                                      enrichment=reg.gen.EnrichConf(
                                          anot_keys=['bout_detection', 'bout_distribution', 'interference',
                                                     'patch_residency'],
-                                         proc_keys=['spatial', 'angular', 'source']).nestedConf, en=False),
+                                         proc_keys=['spatial', 'angular', 'source']),),
             'tactile_detection': food_exp('tactile_detection', env='single_patch', dur=5.0, c=['toucher'],
-                                          l=lg(mID='toucher', N=15, mode='periphery', s=(0.03,0.03)), en=False),
+                                          l=lg(mID='toucher', N=15, mode='periphery', s=(0.03,0.03))),
             'tactile_detection_x3': food_exp('tactile_detection_x3', env='single_patch', dur=600.0, c=['toucher'],
                                              l=lgs(mIDs=['RL_toucher_2', 'RL_toucher_0', 'toucher', 'toucher_brute',
                                                          'gRL_toucher_0'],
-                                                   # ids=['control', 'brute'], N=10), en=False),
                                                    ids=['RL_3sensors', 'RL_1sensor', 'control', 'brute',
                                                         'RL global best'],
-                                                   N=10), en=False),
+                                                   N=10)),
             'tactile_detection_g': food_exp('tactile_detection_g', env='single_patch', dur=600.0, c=['toucher'],
                                             l=lgs(mIDs=['RL_toucher_0', 'gRL_toucher_0'],
-                                                  ids=['RL state-specific best', 'RL global best'], N=10), en=False),
+                                                  ids=['RL state-specific best', 'RL global best'], N=10)),
             'multi_tactile_detection': food_exp('multi_tactile_detection', env='multi_patch', dur=600.0, c=['toucher'],
                                                 l=lgs(mIDs=['RL_toucher_2', 'RL_toucher_0', 'toucher'],
-                                                      ids=['RL_3sensors', 'RL_1sensor', 'control'], N=4), en=False),
+                                                      ids=['RL_3sensors', 'RL_1sensor', 'control'], N=4)),
             '4corners': exp('4corners', env='4corners', c=['memory'], l=lg(mID='RL_forager', N=10, s=(0.04,0.04)))
         },
 
@@ -236,12 +235,12 @@ def grouped_exp_dic():
         'zebrafish': {
             'prey_detection': exp('prey_detection', env='windy_blob_arena',
                                   l=lg(mID='zebrafish', N=4, s=(0.002, 0.005)),
-                                  sim={'duration': 20.0})
+                                  dur=20.0)
         },
 
         'other': {
             'realistic_imitation': exp('realistic_imitation', env='dish', l=lg(mID='imitator', N=25),
-                                       sim={'Box2D': True}, c=['midline', 'contour'])
+                                       Box2D=True, c=['midline', 'contour'])
             # 'imitation': imitation_exp('None.150controls', model='explorer'),
         }
     }

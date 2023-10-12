@@ -744,7 +744,7 @@ class ExpConf(SimOps):
     trials = reg.conf.Trial.confID_selector('default')
     collections = param.ListSelector(default=['pose'], objects=reg.parDB.output_keys,
                                      doc='The data to collect as output')
-    larva_groups = ClassDict(item_type=LarvaGroup, doc='The larva groups')
+    larva_groups = ClassDict(item_type=gen.LarvaGroup, doc='The larva groups')
     parameter_dict = param.Dict(default={}, doc='Dictionary of parameters to pass to the agents')
     enrichment = ClassAttr(gen.EnrichConf, doc='The post-simulation processing')
 
@@ -760,7 +760,6 @@ class ReplayConfGroup(NestedConf):
                                      doc='Whether to transpose the dataset spatial coordinates.')
     track_point = param.Integer(default=-1, softbounds=(-1, 12),
                                 doc='The midline point to use for defining the larva position.')
-    # dynamic_color = OptionalSelector(objects=['lin_color', 'ang_color'], doc='Whether to display larva tracks according to the instantaneous forward or angular velocity.')
     env_params = reg.conf.Env.confID_selector()
 
 
