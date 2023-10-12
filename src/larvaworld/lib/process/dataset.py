@@ -550,6 +550,9 @@ class ParamLarvaDataset(param.Parameterized):
     def comp_xy_moments(self, point=''):
         s, e, c = self.data
         xy = nam.xy(point)
+        if not xy.exist_in(s) :
+            return
+
         dst = nam.dst(point)
         vel = nam.vel(point)
         acc = nam.acc(point)
@@ -558,6 +561,7 @@ class ParamLarvaDataset(param.Parameterized):
         sdst = nam.scal(dst)
         svel = nam.scal(vel)
         csdst = nam.cum(sdst)
+
 
         s[dst] = self.apply_per_agent(pars=xy, func=aux.eudist).flatten()
         s[vel] = s[dst] / c.dt
@@ -607,7 +611,8 @@ class ParamLarvaDataset(param.Parameterized):
 
     def comp_centroid(self):
         c = self.config
-        self.step_data[c.centroid_xy] = np.sum(self.contour_xy_data, axis=1) / c.Ncontour
+        if c.Ncontour>0 :
+            self.step_data[c.centroid_xy] = np.sum(self.contour_xy_data, axis=1) / c.Ncontour
 
     def comp_length(self):
         self.step_data['length'] = np.sum(np.sum(np.diff(self.midline_xy_data, axis=1) ** 2, axis=2) ** (1 / 2), axis=1)
