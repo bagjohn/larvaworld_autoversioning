@@ -586,7 +586,7 @@ class ScreenTextBoxRect(ScreenTextFont, Viewable):
 
     def draw(self, v, **kwargs):
         if self.show_frame and self.frame_rect is not None:
-            pygame.draw.rect(v._window, color=self.text_color, rect=self.frame_rect, width=self.linewidth)
+            pygame.draw.rect(v._window, color=self.text_color, rect=self.frame_rect, width=int(self.linewidth))
 
         super().draw(v=v, **kwargs)
 
