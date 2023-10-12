@@ -2,6 +2,7 @@ import os
 import shutil
 
 import numpy as np
+import pandas as pd
 import param
 
 from .. import reg, aux, util
@@ -282,9 +283,7 @@ def resetConfs(conftypes=None, **kwargs):
         conftypes = reg.CONFTYPES
 
     for conftype in conftypes:
-
         conf[conftype].reset(**kwargs)
-
 
 
 from ..model import Food, Border, WindScape, ThermoScape, FoodGrid, OdorScape, DiffusionValueLayer, GaussianValueLayer
@@ -378,7 +377,7 @@ class SimConfigurationParams(SimConfiguration):
         if parameters is not None:
             for k in set(parameters).intersection(set(SimOps().nestedConf)):
                 if k in kwargs.keys():
-                    parameters[k]=kwargs[k]
+                    parameters[k] = kwargs[k]
                 else:
                     kwargs[k] = parameters[k]
         super().__init__(runtype=runtype, experiment=experiment, parameters=parameters, **kwargs)
@@ -405,12 +404,12 @@ class EnvConf(NestedConf):
 
     def __init__(self, odorscape=None, **kwargs):
         if odorscape is not None and isinstance(odorscape, aux.AttrDict):
-            mode=odorscape.odorscape
-            odorscape_classes=list(EnvConf.param.odorscape.class_)
-            odorscape_modes=dict(zip(['Gaussian', 'Diffusion'], odorscape_classes))
-            odorscape=odorscape_modes[mode](**odorscape)
+            mode = odorscape.odorscape
+            odorscape_classes = list(EnvConf.param.odorscape.class_)
+            odorscape_modes = dict(zip(['Gaussian', 'Diffusion'], odorscape_classes))
+            odorscape = odorscape_modes[mode](**odorscape)
 
-        super().__init__(odorscape=odorscape,**kwargs)
+        super().__init__(odorscape=odorscape, **kwargs)
 
     def visualize(self, **kwargs):
         """
@@ -515,6 +514,20 @@ class LabFormat(NestedConf):
             source_dir = [f'{source_dir}/{f}' for f in os.listdir(source_dir)]
         return source_dir
 
+    def get_store_sequence(self, mode='semifull'):
+        if mode == 'full':
+            return self.filesystem.read_sequence[1:]
+        elif mode == 'minimal':
+            return aux.nam.xy(self.tracker.point)
+        elif mode == 'semifull':
+            return aux.nam.midline_xy(self.tracker.Npoints, flat=True) + aux.nam.contour_xy(self.tracker.Ncontour,
+                                                                                            flat=True) + [
+                'collision_flag']
+        elif mode == 'points':
+            return aux.nam.xy(self.tracker.points, flat=True) + ['collision_flag']
+        else:
+            raise
+
     @property
     def import_func(self):
         from ..process.importing import lab_specific_import_functions as d
@@ -522,7 +535,7 @@ class LabFormat(NestedConf):
 
     def import_data_to_dfs(self, parent_dir, raw_folder=None, merged=False, **kwargs):
         source_dir = self.get_source_dir(parent_dir, raw_folder, merged)
-        return self.import_func(source_dir=source_dir,tracker=self.tracker,filesystem=self.filesystem, **kwargs)
+        return self.import_func(source_dir=source_dir, tracker=self.tracker, filesystem=self.filesystem, **kwargs)
 
     def build_dataset(self, step, end, parent_dir, proc_folder=None, group_id=None, N=None, id=None, sample=None,
                       color='black', epochs={}, age=0.0, ):
@@ -555,7 +568,7 @@ class LabFormat(NestedConf):
         d.preprocess(**self.preprocess.nestedConf)
         if conf is None:
             conf = reg.gen.EnrichConf(proc_keys=[], anot_keys=[]).nestedConf
-        #conf.pre_kws = self.preprocess.nestedConf
+        # conf.pre_kws = self.preprocess.nestedConf
         # d = d.enrich(**conf, is_last=False)
         reg.vprint(f'****- Processed dataset {d.id} to derive secondary metrics -----', 1)
         return d
@@ -679,6 +692,46 @@ class LabFormat(NestedConf):
                 i in
                 range(Nds)]
 
+    def read_timeseries_from_raw_files_per_larva(self, files, save_mode='full', inv_x=False):
+        """
+        Reads timeseries data stored in txt files of the lab-specific Jovanic format and returns them as a pd.Dataframe.
+
+        Parameters
+        ----------
+        files : list
+            List of the absolute filepaths of the data files.
+        save_mode : string
+            The mode defining the columns to store
+            Used if store_sequence is not provided
+        inv_x : boolean
+            Whether to invert x axis.
+            Defaults to False
+
+        Returns
+        -------
+        list of pandas.DataFrame
+        """
+
+        read_sequence=self.filesystem.read_sequence
+        store_sequence=self.get_store_sequence(save_mode)
+
+
+        dfs = []
+        for f in files:
+            df = pd.read_csv(f, header=None, index_col=0, names=read_sequence)
+
+            # If indexing is in strings replace with ascending floats
+            if all([type(ii) == str for ii in df.index.values]):
+                df.reset_index(inplace=True, drop=True)
+            df = df.apply(pd.to_numeric, errors='coerce')
+            if inv_x:
+                for x_par in [p for p in read_sequence if p.endswith('x')]:
+                    df[x_par] *= -1
+            df = df[store_sequence]
+            dfs.append(df)
+
+        return dfs
+
 
 class ExpConf(SimOps):
     env_params = ClassAttr(gen.Env, doc='The environment configuration')
@@ -730,8 +783,6 @@ gen.LarvaGroup = class_generator(LarvaGroup)
 gen.Exp = ExpConf
 gen.LabFormat = LabFormat
 gen.Replay = class_generator(ReplayConf)
-
-
 
 
 def full_lg(id=None, expand=False, as_entry=True, **conf):

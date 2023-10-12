@@ -110,10 +110,6 @@ def getRef(id, **kwargs):
     return conf.Ref.getRef(id=id, **kwargs)
 
 
-# def loadRefGroup(group_id, **kwargs):
-#     return conf.Ref.loadRefGroup(group_id=group_id, **kwargs)
-
-
 vprint(f"Registry configured!", 2)
 
 

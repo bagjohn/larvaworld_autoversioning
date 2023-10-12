@@ -61,7 +61,7 @@ def init_endpoint_dataframe_from_timeseries(df, dt):
     return e
 
 
-def read_timeseries_from_raw_files_per_parameter(pref, labID='Jovanic', dt=None, Npoints=None, Ncontour=None):
+def read_timeseries_from_raw_files_per_parameter(pref, tracker=None, dt=None, Npoints=None, Ncontour=None):
     """
     Reads timeseries data stored in txt files of the lab-specific Jovanic format and returns them as a pd.Dataframe.
 
@@ -86,15 +86,12 @@ def read_timeseries_from_raw_files_per_parameter(pref, labID='Jovanic', dt=None,
     """
 
     # Retrieve lab-specific default number of midline and contour points if not provided
-    if Npoints is None and labID is not None:
-        g = reg.conf.LabFormat.getID(labID)
-        Npoints = g.tracker.Npoints
-    if Ncontour is None and labID is not None:
-        g = reg.conf.LabFormat.getID(labID)
-        Ncontour = g.tracker.Ncontour
-    if dt is None and labID is not None:
-        g = reg.conf.LabFormat.getID(labID)
-        dt = g.tracker.dt
+    if Npoints is None and tracker is not None:
+        Npoints = tracker.Npoints
+    if Ncontour is None and tracker is not None:
+        Ncontour = tracker.Ncontour
+    if dt is None and tracker is not None:
+        dt = tracker.dt
 
     t = 't'
     aID = 'AgentID'
