@@ -130,7 +130,6 @@ class ModelTab(gui_aux.GuiTab):
 
     def build_architecture_tab(self):
         fdir = f'{reg.ROOT_DIR}/gui/media/model_figures'
-        # fdir = reg.Path["model"]
         fig_dict = {f: f'{fdir}/{f}' for f in sorted(os.listdir(fdir))}
         g2 = gui_aux.GraphList(self.name, tab=self, list_header='Model', fig_dict=fig_dict, subsample=3,
                                canvas_size=self.canvas_size)

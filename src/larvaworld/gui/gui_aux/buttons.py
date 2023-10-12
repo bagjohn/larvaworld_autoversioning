@@ -62,7 +62,6 @@ def button_row(name, buttons, button_args={}):
     but_kws = {
         'browse': {'initial_folder': reg.DATA_DIR, 'enable_events': True,
                    'target': (0, -1), 'button_type': sg.BUTTON_TYPE_BROWSE_FOLDER},
-        # 'browse_figs': {'initial_folder': reg.Path["exp_figs"], 'enable_events': True,
         'browse_figs': {'initial_folder': f'{reg.ROOT_DIR}/gui/media/exp_figures', 'enable_events': True,
                         'target': (0, -1), 'button_type': sg.BUTTON_TYPE_BROWSE_FILES,
                         'file_types': (("png Files", "*.png"),)},

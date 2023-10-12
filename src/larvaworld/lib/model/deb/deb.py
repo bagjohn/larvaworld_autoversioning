@@ -57,7 +57,6 @@ class DEB(NestedConf):
 
         # Drosophila model by default
 
-        # with open(reg.Path["DEB_MODS"][species]) as tfp:
         with open(f'{reg.ROOT_DIR}/lib/model/deb/models/deb_{self.species}.csv') as tfp:
             self.species_dict = json.load(tfp)
         self.__dict__.update(self.species_dict)
@@ -691,7 +690,7 @@ def get_best_EEB(deb, cRef):
 
 def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=False, model_id=None, save_dict=True,
             **kwargs):
-    from larvaworld.lib.model.modules.intermitter import OfflineIntermitter
+    from ..modules.intermitter import OfflineIntermitter
     cRef = reg.conf.Ref.getRef(refID)
     kws2 = cRef['intermitter']
     if dt is None:

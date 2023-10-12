@@ -364,7 +364,7 @@ class SelectionList(GuiElement):
         if self.with_dict:
             # print(self.tab.gui.tab_dict[n][2])
             self.collapsible = CollapsibleDict(name= self.tab.gui.tab_dict[n][2], default=True,
-                                               header_list_width=self.width, header_dict=aux.load_dict(reg.Path[self.conftype]),
+                                               header_list_width=self.width, header_dict=reg.conf[self.conftype].dict,
                                                # header_list_width=self.width, header_dict=reg.conf0.dict[self.conftype].loadDict(),
                                                next_to_header=bs, header_key=self.k, disp_name=gui_aux.get_disp_name(n),
                                                header_list_kws={'tooltip': f'The currently loaded {n}.'}, **kwargs)

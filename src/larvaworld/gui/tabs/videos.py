@@ -14,7 +14,6 @@ class VideoTab(gui_aux.GuiTab):
 
         link0 = "http://computational-systems-neuroscience.de/wp-content/uploads/2021/04/"
         f0 = f'{reg.ROOT_DIR}/gui/media/video'
-        # f0 = reg.Path["videos"]
         fs = [f for f in os.listdir(f0) if f.endswith('png')]
         ns=[f.split(".")[0] for f in fs]
         ffs=[os.path.join(f0, f) for f in fs]

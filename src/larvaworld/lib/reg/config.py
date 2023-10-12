@@ -15,7 +15,7 @@ __all__ = [
     'imitation_exp',
 ]
 
-Path = aux.AttrDict({k : f'{reg.CONF_DIR}/{k}.txt' for k in reg.CONFTYPES})
+Path = aux.AttrDict({k: f'{reg.CONF_DIR}/{k}.txt' for k in reg.CONFTYPES})
 
 
 class BaseType:
@@ -29,7 +29,6 @@ class BaseType:
             self.dict0 = None
             self.mdict = None
             self.ks = None
-
 
     def gConf_kws(self, dic):
         kws0 = {}
@@ -52,7 +51,6 @@ class BaseType:
 
     def entry(self, id, **kwargs):
         return aux.AttrDict({id: self.gConf(**kwargs)})
-
 
 
 # def lgs(mIDs, ids=None, cs=None,**kwargs):
@@ -89,11 +87,6 @@ class BaseType:
 #     return reg.stored.group.LarvaGroup.entry(id=id, **kws)
 
 
-
-
-
-
-
 def next_idx(id, conftype='Exp'):
     f = f'{reg.CONF_DIR}/SimIdx.txt'
     if not os.path.isfile(f):
@@ -110,17 +103,14 @@ def next_idx(id, conftype='Exp'):
     return d[conftype][id]
 
 
-
-class StoredConfRegistry :
+class StoredConfRegistry:
     def __init__(self):
-        self.group=aux.AttrDict({k: BaseType(k=k) for k in reg.GROUPTYPES})
-        self.conf=aux.AttrDict({k: BaseType(k=k) for k in reg.CONFTYPES})
-
+        self.group = aux.AttrDict({k: BaseType(k=k) for k in reg.GROUPTYPES})
+        self.conf = aux.AttrDict({k: BaseType(k=k) for k in reg.CONFTYPES})
 
 
 def imitation_exp(refID, model='explorer', **kwargs):
     c = reg.conf.Ref.getRef(refID)
-
     kws = {
         'id': 'ImitationGroup',
         'expand': True,
@@ -131,14 +121,9 @@ def imitation_exp(refID, model='explorer', **kwargs):
         'imitation': True,
 
     }
-
-
     exp_conf = reg.par.get_null('Exp', sim_params=reg.par.get_null('sim_params', dt=c.dt, duration=c.duration),
-                            env_params=c.env_params, larva_groups=reg.generators.full_lg(**kws),experiment='imitation',
-                            trials={}, enrichment=reg.gen.EnrichConf().nestedConf)
+                                env_params=c.env_params, larva_groups=reg.generators.full_lg(**kws),
+                                experiment='imitation',
+                                trials={}, enrichment=reg.gen.EnrichConf().nestedConf)
     exp_conf.update(**kwargs)
     return exp_conf
-
-
-# stored=StoredConfRegistry()
-

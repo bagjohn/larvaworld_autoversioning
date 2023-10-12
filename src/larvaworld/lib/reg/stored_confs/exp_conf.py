@@ -98,7 +98,7 @@ def grouped_exp_dic():
             'l': lg(mID='Levy', N=1, ors=(90.0, 90.0))
         },
         'dish': {
-            'l': lg(mID='loco_default', N=25, s=0.02)
+            'l': lg(mID='loco_default', N=25, s=(0.02,0.02))
         },
         'dispersion': {'env': 'arena_200mm',
                        'l': lg(mID='loco_default', N=25)
@@ -121,8 +121,8 @@ def grouped_exp_dic():
         'chemorbit_x4': {'env': 'odor_gaussian_square', 'dur': 3.0, 'l': lgs_x4()},
         'chemotaxis_diffusion': {'env': 'mid_odor_diffusion', 'l': lg(mID='RE_NEU_PHI_DEF_nav', N=30)},
         'chemotaxis_RL': {'env': 'mid_odor_diffusion', 'c': ['memory'],
-                          'l': lg(mID='RL_navigator', N=10, mode='periphery', s=0.04)},
-        'reorientation': {'env': 'mid_odor_diffusion', 'l': lg(mID='immobile', N=200, s=0.05)},
+                          'l': lg(mID='RL_navigator', N=10, mode='periphery', s=(0.04,0.04))},
+        'reorientation': {'env': 'mid_odor_diffusion', 'l': lg(mID='immobile', N=200, s=(0.05,0.05))},
         'food_at_bottom': {'dur': 1.0,
                            'l': lgs(mIDs=['RE_NEU_PHI_DEF_max_feeder', 'RE_NEU_PHI_DEF_max_forager'],
                                     ids=['Orco', 'control'], N=5, sh='oval', loc=(0.0, 0.04), s=(0.04, 0.01))}
@@ -185,14 +185,14 @@ def grouped_exp_dic():
                                     l=lgs(mIDs=['RE_NEU_PHI_DEF_feeder', 'RL_forager'],
                                           ids=['Orco', 'RL'], N=5,
                                           mode='uniform',
-                                          shape='rectangular', s=0.04),
+                                          shape='rectangular', s=(0.04,0.04)),
                                     enrichment=gen.EnrichConf(proc_keys=['spatial']).nestedConf, en=False),
             'uniform_food': food_exp('uniform_food', env='uniform_food',
-                                     l=lg(mID='RE_NEU_PHI_DEF_feeder', N=5, s=0.005)),
+                                     l=lg(mID='RE_NEU_PHI_DEF_feeder', N=5, s=(0.005,0.005))),
             'food_grid': food_exp('food_grid', env='food_grid', l=lg(mID='RE_NEU_PHI_DEF_feeder', N=25)),
             'single_odor_patch': food_exp('single_odor_patch', env='single_odor_patch',
                                           l=lgs(mIDs=['RE_NEU_PHI_DEF_feeder', 'forager'],
-                                                ids=['Orco', 'control'], N=5, mode='periphery', s=0.01)),
+                                                ids=['Orco', 'control'], N=5, mode='periphery', s=(0.01,0.01))),
             'single_odor_patch_x4': food_exp('single_odor_patch_x4', env='single_odor_patch', l=lgs_x4()),
             'double_patch': food_exp('double_patch', env='double_patch', l=GTRvsS(N=5),
                                      c=['toucher', 'feeder', 'olfactor'],
@@ -201,7 +201,7 @@ def grouped_exp_dic():
                                                     'patch_residency'],
                                          proc_keys=['spatial', 'angular', 'source']).nestedConf, en=False),
             'tactile_detection': food_exp('tactile_detection', env='single_patch', dur=5.0, c=['toucher'],
-                                          l=lg(mID='toucher', N=15, mode='periphery', s=0.03), en=False),
+                                          l=lg(mID='toucher', N=15, mode='periphery', s=(0.03,0.03)), en=False),
             'tactile_detection_x3': food_exp('tactile_detection_x3', env='single_patch', dur=600.0, c=['toucher'],
                                              l=lgs(mIDs=['RL_toucher_2', 'RL_toucher_0', 'toucher', 'toucher_brute',
                                                          'gRL_toucher_0'],
@@ -215,7 +215,7 @@ def grouped_exp_dic():
             'multi_tactile_detection': food_exp('multi_tactile_detection', env='multi_patch', dur=600.0, c=['toucher'],
                                                 l=lgs(mIDs=['RL_toucher_2', 'RL_toucher_0', 'toucher'],
                                                       ids=['RL_3sensors', 'RL_1sensor', 'control'], N=4), en=False),
-            '4corners': exp('4corners', env='4corners', c=['memory'], l=lg(mID='RL_forager', N=10, s=0.04))
+            '4corners': exp('4corners', env='4corners', c=['memory'], l=lg(mID='RL_forager', N=10, s=(0.04,0.04)))
         },
 
         'growth': {'growth': deb_exp('growth', env='food_grid', dur=24 * 60.0, l=GTRvsS(age=0.0)),

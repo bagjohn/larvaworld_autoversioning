@@ -637,47 +637,6 @@ class Chemotaxis_Essay(Essay):
 
 @reg.funcs.stored_conf("Essay")
 def Essay_dict():
-    # rover_sitter_essay = {
-    #     'experiments': {
-    #         'pathlength': {
-    #             'exp_types': ['RvsS_off', 'RvsS_on'],
-    #             'durations': [20, 20]
-    #         },
-    #         'intake': {
-    #             'exp_types': ['RvsS_on'] * 3,
-    #             'durations': [10, 15, 20]
-    #         },
-    #         'starvation': {
-    #             'exp_types': [
-    #                 'RvsS_on',
-    #                 'RvsS_on_1h_prestarved',
-    #                 'RvsS_on_2h_prestarved',
-    #                 'RvsS_on_3h_prestarved',
-    #                 'RvsS_on_4h_prestarved',
-    #             ],
-    #             'durations': [5] * 5
-    #         },
-    #         'quality': {
-    #             'exp_types': [
-    #                 'RvsS_on',
-    #                 'RvsS_on_q75',
-    #                 'RvsS_on_q50',
-    #                 'RvsS_on_q25',
-    #                 'RvsS_on_q15',
-    #             ],
-    #             'durations': [5] * 5
-    #         },
-    #         'refeeding': {
-    #             'exp_types': [
-    #                 'RvsS_on_3h_prestarved'
-    #             ],
-    #             'durations': [120]
-    #         }
-    #     },
-    #     'exp_fig_folder': f'{reg.ROOT_DIR}/lib/model/DEB/models/deb_{species}'}
-    #     # 'exp_fig_folder': reg.Path["RvsS"]}
-
-
     d = {
         # 'roversVSsitters': rover_sitter_essay,
         # 'RvsS_essay': {}
