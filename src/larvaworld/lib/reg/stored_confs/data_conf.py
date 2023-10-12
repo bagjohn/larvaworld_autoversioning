@@ -22,6 +22,7 @@ def LabFormat_dict():
                                  ['blob_orientation', 'area', 'grey_value', 'raw_spinelength', 'width', 'perimeter',
                                   'collision_flag'],
                 'read_metadata': True,
+                'structure': 'per_larva',
                 'folder_pref': 'box'}),
             'env_params': reg.gen.Env(
                 arena=reg.gen.Arena(dims=(0.15, 0.15), geometry='circular')),
@@ -32,6 +33,7 @@ def LabFormat_dict():
             'tracker': TrackerOps(XY_unit='mm',fr=1 / 0.07, constant_framerate=False,
                                   Npoints=11,Ncontour=0, front_vector=(2, 6), rear_vector=(6, 10), point_idx=9),
             'filesystem': Filesystem(**{
+                'structure': 'per_parameter',
                 'file_suf': 'larvaid.txt',
                 'file_sep': '_'}),
             'env_params': reg.gen.Env(arena=reg.gen.Arena(dims=(0.193, 0.193), geometry='rectangular')),
@@ -41,6 +43,7 @@ def LabFormat_dict():
             'tracker': TrackerOps(fr=2.0,Npoints=1, front_vector=(1, 1), rear_vector=(1, 1), point_idx=1),
             'filesystem': Filesystem(**{
                 'read_sequence': ['Date'] + nam.traj_xy,
+                'structure': 'per_larva',
                 'file_sep': '_-_'}),
             'env_params': reg.gen.Env(arena=reg.gen.Arena(dims=(0.24, 0.24), geometry='rectangular')),
             'preprocess': PreprocessConf(filter_f=0.1, transposition='arena')
@@ -48,6 +51,7 @@ def LabFormat_dict():
         'Arguello': {'tracker': TrackerOps(fr=10.0,Npoints=5, front_vector=(1, 3), rear_vector=(3, 5), point_idx=-1),
                      'filesystem': Filesystem(**{
                          'read_sequence': ['Date'] + nam.midline_xy(5, flat=True) + nam.centroid_xy,
+                         'structure': 'per_larva',
                          'file_sep': '_-_'}),
                      'env_params': reg.gen.Env(arena=reg.gen.Arena(dims=(0.17, 0.17), geometry='rectangular')),
                      'preprocess': PreprocessConf(filter_f=0.1, transposition='arena')

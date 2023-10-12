@@ -212,6 +212,8 @@ class Filesystem(NestedConf):
     file_pref = String(doc='A prefix for detecting a raw-data file.')
     file_suf = String(doc='A suffix for detecting a raw-data file.')
     file_sep = String(doc='A separator for detecting a raw-data file.')
+    structure = Selector(objects=['per_larva', 'per_parameter'],
+                    doc='Whether each raw file corresponds to all parameters of a single larva or to a single parameter over all larvae.')
 
 
 class TrackedPointIdx(XYops):

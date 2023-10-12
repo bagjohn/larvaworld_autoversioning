@@ -533,8 +533,11 @@ class LabFormat(NestedConf):
         from ..process.importing import lab_specific_import_functions as d
         return d[self.labID]
 
-    def import_data_to_dfs(self, parent_dir, raw_folder=None, merged=False, **kwargs):
+    def import_data_to_dfs(self, parent_dir, raw_folder=None, merged=False, save_mode='semifull', **kwargs):
         source_dir = self.get_source_dir(parent_dir, raw_folder, merged)
+        if self.filesystem.structure == 'per_larva':
+            read_sequence = self.filesystem.read_sequence
+            store_sequence = self.get_store_sequence(save_mode)
         return self.import_func(source_dir=source_dir, tracker=self.tracker, filesystem=self.filesystem, **kwargs)
 
     def build_dataset(self, step, end, parent_dir, proc_folder=None, group_id=None, N=None, id=None, sample=None,
@@ -712,9 +715,8 @@ class LabFormat(NestedConf):
         list of pandas.DataFrame
         """
 
-        read_sequence=self.filesystem.read_sequence
-        store_sequence=self.get_store_sequence(save_mode)
-
+        read_sequence = self.filesystem.read_sequence
+        store_sequence = self.get_store_sequence(save_mode)
 
         dfs = []
         for f in files:

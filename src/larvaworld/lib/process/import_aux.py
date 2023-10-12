@@ -100,7 +100,7 @@ def read_timeseries_from_raw_files_per_parameter(pref, tracker=None, dt=None, Np
     kws = {'header': None, 'sep': '\t'}
     par_list = [pd.read_csv(f'{pref}_{suf}.txt', **kws) for suf in ['larvaid', 't', 'x_spine', 'y_spine']]
 
-    columns = [aID, t] + aux.nam.xy(aux.nam.midline(Npoints, type='point'), xsNys=True, flat=True)
+    columns = [aID, t] + aux.nam.midline_xy(Npoints, xsNys=True, flat=True)
     try:
         states = pd.read_csv(f'{pref}_state.txt', **kws)
         par_list.append(states)
@@ -116,7 +116,7 @@ def read_timeseries_from_raw_files_per_parameter(pref, tracker=None, dt=None, Np
             xcs = pd.DataFrame(xcs, index=None)
             ycs = pd.DataFrame(ycs, index=None)
             par_list += [xcs, ycs]
-            columns += aux.nam.xy(aux.nam.contour(Ncontour), xsNys=True, flat=True)
+            columns += aux.nam.contour_xy(Ncontour, xsNys=True, flat=True)
         except:
             pass
 

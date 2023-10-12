@@ -111,11 +111,11 @@ class NamingRegistry(AttrDict):
             points = []
         return points
 
-    def contour_xy(self, Nc, flat=False):
-        return self.xy(self.contour(Nc), flat=flat)
+    def contour_xy(self, Nc, flat=False, xsNys=False):
+        return self.xy(self.contour(Nc), flat=flat, xsNys=xsNys)
 
-    def midline_xy(self, N, flat=False):
-        return self.xy(self.midline(N), flat=flat)
+    def midline_xy(self, N, flat=False, xsNys=False):
+        return self.xy(self.midline(N), flat=flat, xsNys=xsNys)
 
     @ property
     def centroid_xy(self):

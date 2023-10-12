@@ -145,6 +145,7 @@ def define_default_refID():
                                                                                                flat=True) + nam.centroid_xy + \
                                      ['blob_orientation', 'area', 'grey_value', 'raw_spinelength', 'width', 'perimeter',
                                       'collision_flag'],
+                    'structure': 'per_larva',
                     'read_metadata': True,
                     'folder_pref': 'box'}),
                 'env_params': gen.Env(

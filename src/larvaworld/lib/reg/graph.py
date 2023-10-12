@@ -113,7 +113,7 @@ class GraphRegistry:
             except:
                 print('TABLE FAIL', mID)
         if save_to is not None and len(ds)>1 :
-            aux.combine_pdfs(file_dir=save_to, save_as="_MODEL_TABLES_.pdf", deep=False)
+            aux.combine_pdfs(file_dir=save_to, save_as="_MODEL_TABLES_.pdf", include_subdirs=False)
         return aux.AttrDict(ds)
 
     def model_summaries(self, mIDs, save_to=None, **kwargs):
@@ -124,7 +124,7 @@ class GraphRegistry:
             except:
                 print('SUMMARY FAIL', mID)
         if save_to is not None and len(ds)>0 :
-            aux.combine_pdfs(file_dir=save_to, save_as="_MODEL_SUMMARIES_.pdf", deep=False)
+            aux.combine_pdfs(file_dir=save_to, save_as="_MODEL_SUMMARIES_.pdf", include_subdirs=False)
         return ds
 
     def store_model_graphs(self, mIDs, dir):
