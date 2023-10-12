@@ -12,8 +12,11 @@ def grouped_exp_dic():
     from ...reg import gen
     from ...reg.generators import GTRvsS
 
-    def lg(**kwargs):
-        return reg.gen.LarvaGroup(**kwargs).entry()
+    def lg(id=None,**kwargs):
+        l=reg.gen.LarvaGroup(**kwargs)
+        if id is None:
+            id=l.model
+        return l.entry(id)
         # return reg.config.lg(**kwargs)
 
     # def lgs(**kwargs):

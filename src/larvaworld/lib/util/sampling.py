@@ -2,7 +2,6 @@ import random
 import numpy as np
 import pandas as pd
 
-
 from .. import reg, aux
 from ..aux import nam
 
@@ -17,7 +16,6 @@ __all__ = [
     'sim_model',
     'sim_models',
 ]
-
 
 SAMPLING_PARS = aux.bidict(
     aux.AttrDict(
@@ -37,9 +35,6 @@ SAMPLING_PARS = aux.bidict(
         }
     )
 )
-
-
-
 
 
 def get_sample_bout_distros(model, sample):
@@ -72,7 +67,7 @@ def generate_larvae(N, sample_dict, base_model):
     if len(sample_dict) > 0:
         all_pars = []
         for i in range(N):
-            dic= aux.AttrDict({p: vs[i] for p, vs in sample_dict.items()})
+            dic = aux.AttrDict({p: vs[i] for p, vs in sample_dict.items()})
             all_pars.append(base_model.get_copy().update_nestdict(dic))
     else:
         all_pars = [base_model] * N
@@ -115,23 +110,23 @@ def sampleRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=None, Nid
         if refDataset is not None:
             m = get_sample_bout_distros(m, refDataset.config)
             e = refDataset.endpoint_data if hasattr(refDataset, 'endpoint_data') else refDataset.read('end')
-            Sinv=SAMPLING_PARS.inverse
-            sample_ps=[]
+            Sinv = SAMPLING_PARS.inverse
+            sample_ps = []
             for k in ks:
                 if k in Sinv.keys():
-                    p=Sinv[k]
-                    if p in e.columns :
+                    p = Sinv[k]
+                    if p in e.columns:
                         sample_ps.append(p)
 
             if len(sample_ps) > 0:
                 sample_dict_p = sample_group(N=Nids, ps=sample_ps, e=e)
-                sample_dict={SAMPLING_PARS[p]:vs for p,vs in sample_dict_p.items()}
+                sample_dict = {SAMPLING_PARS[p]: vs for p, vs in sample_dict_p.items()}
                 refID = refDataset.refID
     sample_dict.update(parameter_dict)
     return generate_larvae(Nids, sample_dict, m), refID
 
 
-def imitateRef(mID=None, m=None, refID=None, refDataset=None,sample_ks=None, Nids=1, parameter_dict={}):
+def imitateRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=None, Nids=1, parameter_dict={}):
     if refDataset is None:
         if refID is not None:
             refDataset = reg.conf.Ref.loadRef(refID, load=True, step=False)
@@ -145,7 +140,7 @@ def imitateRef(mID=None, m=None, refID=None, refDataset=None,sample_ks=None, Nid
     e = refDataset.endpoint_data if hasattr(refDataset, 'endpoint_data') else refDataset.read(key='end')
     ids = random.sample(e.index.values.tolist(), Nids)
     sample_dict = {}
-    for p,k in SAMPLING_PARS.items():
+    for p, k in SAMPLING_PARS.items():
         if p in e.columns:
             pmu = e[p].mean()
             vs = []
@@ -155,7 +150,6 @@ def imitateRef(mID=None, m=None, refID=None, refDataset=None,sample_ks=None, Nid
                     v = pmu
                 vs.append(v)
             sample_dict[k] = vs
-
 
     sample_dict.update(parameter_dict)
 
@@ -171,14 +165,14 @@ def imitateRef(mID=None, m=None, refID=None, refDataset=None,sample_ks=None, Nid
     return ids, ps, ors, ms
 
 
-def generate_agentGroup(gID, Nids,imitation=False, distribution=None, **kwargs):
+def generate_agentGroup(gID, Nids, imitation=False, distribution=None, **kwargs):
     from ..param import generate_xyNor_distro
 
     if not imitation:
 
-        if distribution is not None :
+        if distribution is not None:
             ps, ors = generate_xyNor_distro(distribution)
-        else :
+        else:
             ps = [(0.0, 0.0) for j in range(Nids)]
             ors = [0.0 for j in range(Nids)]
         ids = [f'{gID}_{i}' for i in range(Nids)]
@@ -188,8 +182,6 @@ def generate_agentGroup(gID, Nids,imitation=False, distribution=None, **kwargs):
     return ids, ps, ors, all_pars
 
 
-
-
 def generate_agentConfs(larva_groups, parameter_dict={}):
     agent_confs = []
     for gID, gConf in larva_groups.items():
@@ -197,7 +189,7 @@ def generate_agentConfs(larva_groups, parameter_dict={}):
         ids, ps, ors, all_pars = generate_agentGroup(gID=gID, Nids=d.N,
                                                      m=gConf.model, refID=gConf.sample,
                                                      imitation=gConf.imitation,
-                                                     distribution = d,
+                                                     distribution=d,
                                                      parameter_dict=parameter_dict)
 
         gConf.ids = ids
@@ -207,7 +199,6 @@ def generate_agentConfs(larva_groups, parameter_dict={}):
                 'orientation': o,
                 'color': gConf.color,
                 'unique_id': id,
-                # 'larva_pars': pars,
                 'group': gID,
                 'odor': gConf.odor,
 
@@ -219,26 +210,9 @@ def generate_agentConfs(larva_groups, parameter_dict={}):
     return agent_confs
 
 
-# def generate_sourceConfs(groups={}, units={}) :
-#     from larvaworld.lib.param import generate_xy_distro
-#
-#     confs = []
-#     for gID, gConf in groups.items():
-#         ps = generate_xy_distro(**gConf.distribution)
-#         gConf.pop('distribution')
-#         for i, p in enumerate(ps):
-#             conf = {'unique_id': f'{gID}_{i}', 'pos': p, 'group': gID, **gConf}
-#             confs.append(conf)
-#     for uID, uConf in units.items():
-#         conf = {'unique_id': uID, **uConf}
-#         confs.append(conf)
-#     return confs
-
-
-def sim_models(mIDs, colors=None, dataset_ids=None,lgs=None, data_dir=None, **kwargs):
+def sim_models(mIDs, colors=None, dataset_ids=None, lgs=None, data_dir=None, **kwargs):
     N = len(mIDs)
     if colors is None:
-
         colors = aux.N_colors(N)
     if dataset_ids is None:
         dataset_ids = mIDs
@@ -248,13 +222,14 @@ def sim_models(mIDs, colors=None, dataset_ids=None,lgs=None, data_dir=None, **kw
         dirs = [None] * N
     else:
         dirs = [f'{data_dir}/{dID}' for dID in dataset_ids]
-    ds = [sim_model(mID=mIDs[i], color=colors[i], dataset_id=dataset_ids[i],lg=lgs[i], dir=dirs[i], **kwargs) for i in range(N)]
+    ds = [sim_model(mID=mIDs[i], color=colors[i], dataset_id=dataset_ids[i], lg=lgs[i], dir=dirs[i], **kwargs) for i in
+          range(N)]
     return ds
 
 
 def sim_model(mID, Nids=1, refID=None, refDataset=None, sample_ks=None, use_LarvaConfDict=False, imitation=False,
-tor_durs=[],dsp_starts=[0], dsp_stops=[40], enrichment=True,
-lg=None,env_params={}, dir=None, duration=3, dt=1 / 16, color='blue', dataset_id=None,
+              tor_durs=[], dsp_starts=[0], dsp_stops=[40], enrichment=True,
+              lg=None, env_params={}, dir=None, duration=3, dt=1 / 16, color='blue', dataset_id=None,
               **kwargs):
     if use_LarvaConfDict:
         pass
@@ -262,73 +237,44 @@ lg=None,env_params={}, dir=None, duration=3, dt=1 / 16, color='blue', dataset_id
         refID = refDataset.refID
     if dataset_id is None:
         dataset_id = mID
-    if lg is None :
-
-        lg=reg.gen.LarvaGroup(id=dataset_id, c=color, sample=refID, mID=mID, N=Nids, expand=True, **kwargs).entry()
-    # confs=generate_agentConfs(lg)
-
+    if lg is None:
+        lg = reg.gen.LarvaGroup(c=color, sample=refID, mID=mID, N=Nids, expand=True, **kwargs).entry(id=dataset_id)
 
     Nticks = int(duration * 60 / dt)
     ids, p0s, fo0s, ms = generate_agentGroup(gID=mID, mID=mID, refID=refID, Nids=Nids,
-                                                 refDataset=refDataset, sample_ks=sample_ks,
-                                                 imitation=imitation)
-    # ids, p0s, fo0s, ms = generate_agentGroup(gID=mID, mID=mID, Nids=d.N,
-    #                                              m=gConf.model, refID=gConf.sample,
-    #                                              imitation=gConf.imitation,
-    #                                              distribution=d,
-    #                                              parameter_dict=parameter_dict)
-
-
+                                             refDataset=refDataset, sample_ks=sample_ks,
+                                             imitation=imitation)
     s, e = sim_multi_agents(Nticks, Nids, ms, dataset_id, dt=dt, ids=ids, p0s=p0s, fo0s=fo0s)
-    # d = sim_model_dataset(ms, mID=mID, Nids=Nids, refID=refID, ids=ids, p0s=p0s, fo0s=fo0s, **kwargs)
-    # return d
-
-
-
-
-
-# def sim_model_dataset(ms, mID=None, env_params={}, dir=None, duration=3, dt=1 / 16, color='blue', dataset_id=None,
-#                       tor_durs=[],dsp_starts=[0], dsp_stops=[40], enrichment=True,
-#                       refID=None,Nids=1,lg=None,  ids=None, p0s=None, fo0s=None,
-#                       **kwargs):
-
 
 
     c_kws = {
-        # 'load_data': False,
         'dir': dir,
         'id': dataset_id,
-        # 'metric_definition': g.enrichment.metric_definition,
         'larva_groups': lg,
         'env_params': env_params,
         'Npoints': 3,
         'Ncontour': 0,
         'fr': 1 / dt,
-        # 'mID': mID,
     }
     from ..process.dataset import LarvaDataset
-
     d = LarvaDataset(**c_kws, load_data=False)
-
-
     d.set_data(step=s, end=e)
     if enrichment:
         d = d.enrich(proc_keys=['spatial', 'angular', 'dispersion', 'tortuosity'],
-                      anot_keys=['bout_detection', 'bout_distribution', 'interference'],
-                      dsp_starts=dsp_starts, dsp_stops=dsp_stops, tor_durs=tor_durs)
+                     anot_keys=['bout_detection', 'bout_distribution', 'interference'],
+                     dsp_starts=dsp_starts, dsp_stops=dsp_stops, tor_durs=tor_durs)
 
     return d
-
 
 
 def sim_single_agent(m, Nticks=1000, dt=0.1, df_columns=None, p0=None, fo0=None):
     from ..model.modules.locomotor import DefaultLocomotor
     from ..model.agents._larva_sim import BaseController
-    if fo0 is None :
-        fo0=0.0
-    if p0 is None :
-        p0=(0.0,0.0)
-    x0,y0=p0
+    if fo0 is None:
+        fo0 = 0.0
+    if p0 is None:
+        p0 = (0.0, 0.0)
+    x0, y0 = p0
     if df_columns is None:
         df_columns = reg.getPar(['b', 'fo', 'ro', 'fov', 'I_T', 'x', 'y', 'd', 'v', 'A_T'])
     AA = np.ones([Nticks, len(df_columns)]) * np.nan

@@ -359,8 +359,11 @@ class DoublePatch_Essay(Essay):
 
 
     def get_larvagroups(self,age=120.0):
-        def lg(**kwargs):
-            return reg.gen.LarvaGroup(**kwargs).entry()
+        def lg(id=None, **kwargs):
+            l = reg.gen.LarvaGroup(**kwargs)
+            if id is None:
+                id = l.model
+            return l.entry(id)
 
         kws0 = {'N': self.N, 's': (0.005, 0.005),'sample': reg.default_refID,
                 'age': age,'epochs': {'0': reg.gen.Epoch(age_range=(0.0, age)).nestedConf}}
