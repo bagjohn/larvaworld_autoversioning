@@ -178,11 +178,21 @@ def read_timeseries_from_raw_files_per_larva(files, labID=None, save_mode='full'
     return dfs
 
 
-def read_Schleyer_timeseries_from_raw_files_per_larva(dir, save_mode='semifull'):
-    labID = 'Schleyer'
-    read_sequence, store_sequence = get_column_sequences(labID, save_mode)
-    g = reg.conf.LabFormat.getID(labID)
-    if g.filesystem.read_metadata:
+def read_Schleyer_timeseries_from_raw_files_per_larva(dir,tracker,filesystem, save_mode='semifull'):
+    read_sequence=filesystem.read_sequence
+    if save_mode == 'full':
+        store_sequence = read_sequence[1:]
+    elif save_mode == 'minimal':
+        store_sequence = nam.xy(tracker.point)
+    elif save_mode == 'semifull':
+        store_sequence = nam.midline_xy(tracker.Npoints, flat=True) + nam.contour_xy(tracker.Ncontour, flat=True) + [
+            'collision_flag']
+    elif save_mode == 'points':
+        store_sequence = nam.xy(tracker.points, flat=True) + ['collision_flag']
+    else:
+        raise
+
+    try:
 
         def read_Schleyer_metadata(dir):
             d = {}
@@ -236,7 +246,7 @@ def read_Schleyer_timeseries_from_raw_files_per_larva(dir, save_mode='semifull')
                 raise ValueError(f'Odor side found in metadata is not consistent : {odor_side}')
         except:
             inv_x = False
-    else:
+    except:
         inv_x = False
     fs = [os.path.join(dir, n) for n in os.listdir(dir) if n.endswith('.csv')]
     return read_timeseries_from_raw_files_per_larva(files=fs, read_sequence=read_sequence,

@@ -522,7 +522,7 @@ class LabFormat(NestedConf):
 
     def import_data_to_dfs(self, parent_dir, raw_folder=None, merged=False, **kwargs):
         source_dir = self.get_source_dir(parent_dir, raw_folder, merged)
-        return self.import_func(source_dir=source_dir, **kwargs)
+        return self.import_func(source_dir=source_dir,tracker=self.tracker,filesystem=self.filesystem, **kwargs)
 
     def build_dataset(self, step, end, parent_dir, proc_folder=None, group_id=None, N=None, id=None, sample=None,
                       color='black', epochs={}, age=0.0, ):

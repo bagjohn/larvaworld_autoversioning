@@ -31,7 +31,7 @@ __all__ = [
 #     return g.import_dataset(**kwargs)
 
 
-def import_Jovanic(source_id, source_dir, match_ids=True, matchID_kws={}, interpolate_ticks=True, **kwargs):
+def import_Jovanic(source_id, source_dir,tracker,filesystem, match_ids=True, matchID_kws={}, interpolate_ticks=True, **kwargs):
     """
     Builds a larvaworld dataset from Jovanic-lab-specific raw data
 
@@ -62,7 +62,7 @@ def import_Jovanic(source_id, source_dir, match_ids=True, matchID_kws={}, interp
     """
 
     g = reg.conf.LabFormat.get('Jovanic')
-    dt = g.tracker.dt
+    dt = tracker.dt
 
     df = read_timeseries_from_raw_files_per_parameter(pref=f'{source_dir}/{source_id}')
 
@@ -76,7 +76,7 @@ def import_Jovanic(source_id, source_dir, match_ids=True, matchID_kws={}, interp
     return s, e
 
 
-def import_Schleyer(source_dir, save_mode='semifull', **kwargs):
+def import_Schleyer(source_dir,tracker,filesystem, save_mode='semifull', **kwargs):
     """
     Builds a larvaworld dataset from Schleyer-lab-specific raw data
 
@@ -99,20 +99,20 @@ def import_Schleyer(source_dir, save_mode='semifull', **kwargs):
         The endpoint dataframe
     """
 
-    g = reg.conf.LabFormat.get('Schleyer')
-    dt = g.tracker.dt
+    # g = reg.conf.LabFormat.get('Schleyer')
+    dt = tracker.dt
 
     if type(source_dir) == str:
         source_dir = [source_dir]
 
     dfs = []
     for f in source_dir:
-        dfs += read_Schleyer_timeseries_from_raw_files_per_larva(dir=f, save_mode=save_mode)
+        dfs += read_Schleyer_timeseries_from_raw_files_per_larva(dir=f, tracker=tracker,filesystem=filesystem, save_mode=save_mode)
 
     return generate_dataframes(dfs, dt, **kwargs)
 
 
-def import_Berni(source_files, **kwargs):
+def import_Berni(source_files,tracker,filesystem, **kwargs):
     """
     Builds a larvaworld dataset from Berni-lab-specific raw data
 
@@ -133,13 +133,13 @@ def import_Berni(source_files, **kwargs):
     """
     labID = 'Berni'
 
-    g = reg.conf.LabFormat.get(labID)
-    dt = g.tracker.dt
+    # g = reg.conf.LabFormat.get(labID)
+    dt = tracker.dt
     dfs = read_timeseries_from_raw_files_per_larva(files=source_files, labID=labID)
     return generate_dataframes(dfs, dt, **kwargs)
 
 
-def import_Arguello(source_files, **kwargs):
+def import_Arguello(source_files,tracker,filesystem, **kwargs):
     """
     Builds a larvaworld dataset from Arguello-lab-specific raw data
 
@@ -161,8 +161,8 @@ def import_Arguello(source_files, **kwargs):
 
     labID = 'Arguello'
 
-    g = reg.conf.LabFormat.get(labID)
-    dt = g.tracker.dt
+    # g = reg.conf.LabFormat.get(labID)
+    dt = tracker.dt
     dfs = read_timeseries_from_raw_files_per_larva(files=source_files, labID=labID)
     return generate_dataframes(dfs, dt, **kwargs)
 

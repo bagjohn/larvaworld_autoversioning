@@ -7,7 +7,7 @@ from larvaworld.lib import reg, aux, plot
 def xx_test_plots():
     gIDs = reg.conf.Ref.RefGroupIDs
     gID = gIDs[0]
-    dcol = reg.loadRefGroup(gID)
+    dcol = reg.conf.Ref.loadRefGroup(gID)
     assert dcol.dir is not None
     assert os.path.exists(dcol.dir)
     kws = {'save_to': f'{reg.ROOT_DIR}/../../tests/plots', 'show': True}
