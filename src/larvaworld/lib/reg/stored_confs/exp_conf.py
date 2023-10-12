@@ -17,10 +17,6 @@ def grouped_exp_dic():
         if id is None:
             id=l.model
         return l.entry(id)
-        # return reg.config.lg(**kwargs)
-
-    # def lgs(**kwargs):
-    #     return reg.config.lgs(**kwargs)
 
     def lgs(mIDs, ids=None, cs=None, **kwargs):
         if ids is None:

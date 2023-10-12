@@ -416,7 +416,7 @@ class EnvConf(NestedConf):
         Visualize the environment by launching a simulation without agents
         """
 
-        from larvaworld.lib.sim.base_run import BaseRun
+        from ..sim.base_run import BaseRun
         BaseRun.visualize_Env(envConf=self.nestedConf, envID=self.name, **kwargs)
 
 
@@ -556,7 +556,7 @@ class LabFormat(NestedConf):
             'dir': dir,
             'id': id,
             'color': color,
-            'larva_groups': gen.LarvaGroup(id=group_id, c=color, sample=sample, mID=None, N=N, epochs=epochs, age=age).entry(),
+            'larva_groups': gen.LarvaGroup(c=color, sample=sample, mID=None, N=N, epochs=epochs, age=age).entry(id=group_id),
             'env_params': self.env_params.nestedConf,
             **self.tracker.nestedConf,
             'step': step,
