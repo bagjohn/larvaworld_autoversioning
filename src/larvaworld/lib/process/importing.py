@@ -1,10 +1,12 @@
 """
 Methods for importing data in lab-specific formats
 """
+import os
 
+from .. import aux, reg
 from ..process.import_aux import constrain_selected_tracks, finalize_timeseries_dataframe, \
     read_timeseries_from_raw_files_per_parameter, match_larva_ids, init_endpoint_dataframe_from_timeseries, \
-    read_timeseries_from_raw_files_per_larva, read_Schleyer_timeseries_from_raw_files_per_larva, generate_dataframes
+    read_timeseries_from_raw_files_per_larva, generate_dataframes, get_Schleyer_metadata_inv_x
 
 __all__ = [
     'import_Jovanic',
@@ -15,7 +17,8 @@ __all__ = [
 ]
 
 
-def import_Jovanic(source_id, source_dir,tracker,filesystem, match_ids=True, matchID_kws={}, interpolate_ticks=True, **kwargs):
+def import_Jovanic(source_id, source_dir, tracker, filesystem, match_ids=True, matchID_kws={}, interpolate_ticks=True,
+                   **kwargs):
     """
     Builds a larvaworld dataset from Jovanic-lab-specific raw data
 
@@ -56,7 +59,7 @@ def import_Jovanic(source_id, source_dir,tracker,filesystem, match_ids=True, mat
     return s, e
 
 
-def import_Schleyer(source_dir,tracker,filesystem, save_mode='semifull', **kwargs):
+def import_Schleyer(source_dir, tracker, filesystem, save_mode='semifull', **kwargs):
     """
     Builds a larvaworld dataset from Schleyer-lab-specific raw data
 
@@ -84,12 +87,15 @@ def import_Schleyer(source_dir,tracker,filesystem, save_mode='semifull', **kwarg
 
     dfs = []
     for f in source_dir:
-        dfs += read_Schleyer_timeseries_from_raw_files_per_larva(dir=f, tracker=tracker,filesystem=filesystem, save_mode=save_mode)
+        inv_x = get_Schleyer_metadata_inv_x(dir=f)
+        files = [os.path.join(f, n) for n in os.listdir(f) if n.endswith('.csv')]
+        dfs += read_timeseries_from_raw_files_per_larva(files=files, inv_x=inv_x,read_sequence=filesystem.read_sequence,
+                                                        save_mode=save_mode,tracker=tracker)
 
     return generate_dataframes(dfs, tracker.dt, **kwargs)
 
 
-def import_Berni(source_files,tracker,filesystem, **kwargs):
+def import_Berni(source_files, tracker, filesystem, **kwargs):
     """
     Builds a larvaworld dataset from Berni-lab-specific raw data
 
@@ -108,13 +114,12 @@ def import_Berni(source_files,tracker,filesystem, **kwargs):
     e : pandas.DataFrame
         The endpoint dataframe
     """
-    labID = 'Berni'
 
-    dfs = read_timeseries_from_raw_files_per_larva(files=source_files, labID=labID)
+    dfs = read_timeseries_from_raw_files_per_larva(files=source_files, read_sequence=filesystem.read_sequence,tracker=tracker)
     return generate_dataframes(dfs, tracker.dt, **kwargs)
 
 
-def import_Arguello(source_files,tracker,filesystem, **kwargs):
+def import_Arguello(source_files, tracker, filesystem, **kwargs):
     """
     Builds a larvaworld dataset from Arguello-lab-specific raw data
 
@@ -134,9 +139,7 @@ def import_Arguello(source_files,tracker,filesystem, **kwargs):
         The endpoint dataframe
     """
 
-    labID = 'Arguello'
-
-    dfs = read_timeseries_from_raw_files_per_larva(files=source_files, labID=labID)
+    dfs = read_timeseries_from_raw_files_per_larva(files=source_files, read_sequence=filesystem.read_sequence,tracker=tracker)
     return generate_dataframes(dfs, tracker.dt, **kwargs)
 
 

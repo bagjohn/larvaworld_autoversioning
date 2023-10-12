@@ -695,7 +695,8 @@ class LabFormat(NestedConf):
                 i in
                 range(Nds)]
 
-    def read_timeseries_from_raw_files_per_larva(self, files, save_mode='full', inv_x=False):
+
+    def read_timeseries_from_raw_files_per_larva(self, files, read_sequence,store_sequence, inv_x=False):
         """
         Reads timeseries data stored in txt files of the lab-specific Jovanic format and returns them as a pd.Dataframe.
 
@@ -703,9 +704,10 @@ class LabFormat(NestedConf):
         ----------
         files : list
             List of the absolute filepaths of the data files.
-        save_mode : string
-            The mode defining the columns to store
-            Used if store_sequence is not provided
+        read_sequence : list of strings
+            The sequence of parameters found in each file
+        store_sequence : list of strings
+            The sequence of parameters to store
         inv_x : boolean
             Whether to invert x axis.
             Defaults to False
@@ -714,9 +716,6 @@ class LabFormat(NestedConf):
         -------
         list of pandas.DataFrame
         """
-
-        read_sequence = self.filesystem.read_sequence
-        store_sequence = self.get_store_sequence(save_mode)
 
         dfs = []
         for f in files:
@@ -731,7 +730,6 @@ class LabFormat(NestedConf):
                     df[x_par] *= -1
             df = df[store_sequence]
             dfs.append(df)
-
         return dfs
 
 

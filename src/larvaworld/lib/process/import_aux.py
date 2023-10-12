@@ -15,11 +15,10 @@ __all__ = [
     'init_endpoint_dataframe_from_timeseries',
     'read_timeseries_from_raw_files_per_parameter',
     'read_timeseries_from_raw_files_per_larva',
-    'read_Schleyer_timeseries_from_raw_files_per_larva',
+    'get_Schleyer_metadata_inv_x',
     'constrain_selected_tracks',
     'match_larva_ids',
     'match_larva_ids_including_by_length',
-    'get_column_sequences',
     'concatenate_larva_tracks',
     'complete_timeseries_with_nans',
     'empty_2index_timeseries_df',
@@ -127,7 +126,8 @@ def read_timeseries_from_raw_files_per_parameter(pref, tracker=None, dt=None, Np
     return df
 
 
-def read_timeseries_from_raw_files_per_larva(files, labID=None, save_mode='full', read_sequence=None,store_sequence=None, inv_x=False):
+def read_timeseries_from_raw_files_per_larva(files, read_sequence, save_mode='semifull',store_sequence=None,
+                                             tracker=None,inv_x=False):
     """
     Reads timeseries data stored in txt files of the lab-specific Jovanic format and returns them as a pd.Dataframe.
 
@@ -154,8 +154,22 @@ def read_timeseries_from_raw_files_per_larva(files, labID=None, save_mode='full'
     -------
     list of pandas.DataFrame
     """
-    if (read_sequence is None or store_sequence is None) and labID is not None:
-        read_sequence, store_sequence = get_column_sequences(labID, save_mode)
+
+    if store_sequence is None :
+        if save_mode == 'full':
+            store_sequence = read_sequence[1:]
+        elif save_mode == 'minimal':
+            store_sequence = aux.nam.xy(tracker.point)
+        elif save_mode == 'semifull':
+            store_sequence = aux.nam.midline_xy(tracker.Npoints, flat=True) + aux.nam.contour_xy(tracker.Ncontour, flat=True) + [
+                'collision_flag']
+        elif save_mode == 'points':
+            store_sequence = aux.nam.xy(tracker.points, flat=True) + ['collision_flag']
+        else:
+            raise
+
+
+
 
     dfs = []
     for f in files:
@@ -174,20 +188,7 @@ def read_timeseries_from_raw_files_per_larva(files, labID=None, save_mode='full'
     return dfs
 
 
-def read_Schleyer_timeseries_from_raw_files_per_larva(dir,tracker,filesystem, save_mode='semifull'):
-    read_sequence=filesystem.read_sequence
-    if save_mode == 'full':
-        store_sequence = read_sequence[1:]
-    elif save_mode == 'minimal':
-        store_sequence = nam.xy(tracker.point)
-    elif save_mode == 'semifull':
-        store_sequence = nam.midline_xy(tracker.Npoints, flat=True) + nam.contour_xy(tracker.Ncontour, flat=True) + [
-            'collision_flag']
-    elif save_mode == 'points':
-        store_sequence = nam.xy(tracker.points, flat=True) + ['collision_flag']
-    else:
-        raise
-
+def get_Schleyer_metadata_inv_x(dir):
     try:
 
         def read_Schleyer_metadata(dir):
@@ -244,9 +245,7 @@ def read_Schleyer_timeseries_from_raw_files_per_larva(dir,tracker,filesystem, sa
             inv_x = False
     except:
         inv_x = False
-    fs = [os.path.join(dir, n) for n in os.listdir(dir) if n.endswith('.csv')]
-    return read_timeseries_from_raw_files_per_larva(files=fs, read_sequence=read_sequence,
-                                                    store_sequence=store_sequence, inv_x=inv_x)
+    return inv_x
 
 
 def constrain_selected_tracks(df, max_Nagents=None, time_slice=None, min_duration_in_sec=0.0, **kwargs):
@@ -444,40 +443,6 @@ def match_larva_ids(df, Npoints, dt, e=None, **kwargs):
     comp_length(df, e, Npoints=Npoints)
     df = match_larva_ids_including_by_length(s=df, e=e, **kwargs)
     return df
-
-
-def get_column_sequences(labID, save_mode='semifull'):
-    """
-    Define the column sequence in the raw data to be imported and the imported data to be stored
-
-    Parameters
-    ----------
-    labID : string
-        The ID of the lab-specific format to use
-    save_mode : string
-        The mode defining the columns to store
-
-    Returns
-    -------
-    c1 : list of strings
-        The sequence of parameters found in each file
-    c2 : list of strings
-        The sequence of parameters to store
-    """
-    g = reg.conf.LabFormat.getID(labID)
-    c1 = g.filesystem.read_sequence
-    if save_mode == 'full':
-        c2 = c1[1:]
-    elif save_mode == 'minimal':
-        c2 = nam.xy(g.tracker.point)
-    elif save_mode == 'semifull':
-        c2 = nam.midline_xy(g.tracker.Npoints, flat=True) + nam.contour_xy(g.tracker.Ncontour, flat=True) + [
-            'collision_flag']
-    elif save_mode == 'points':
-        c2 = nam.xy(g.tracker.points, flat=True) + ['collision_flag']
-    else:
-        raise
-    return c1, c2
 
 
 def concatenate_larva_tracks(dfs, dt):
