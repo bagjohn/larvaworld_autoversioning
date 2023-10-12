@@ -129,13 +129,34 @@ def define_default_refID_by_running_test():
         assert len(conf.Ref.confIDs) > 0
     return conf.Ref.confIDs[0]
 
+
 def define_default_refID():
     if len(conf.Ref.confIDs) == 0:
 
         vprint('No reference datasets are available.', 2)
         vprint(f'Automatically importing one from the raw experimental data folder.', 2)
 
-        g = conf.LabFormat.get('Schleyer')
+        try:
+            g = conf.LabFormat.get('Schleyer')
+        except:
+            from ..aux import nam
+            from ..param import Filesystem, TrackerOps, PreprocessConf
+            kws = {
+                'tracker': TrackerOps(XY_unit='mm', fr=16.0, Npoints=12, Ncontour=22,
+                                      front_vector=(2, 6), rear_vector=(7, 11), point_idx=9),
+                'filesystem': Filesystem(**{
+                    'read_sequence': ['Step'] + nam.midline_xy(12, flat=True) + nam.contour_xy(22,
+                                                                                               flat=True) + nam.centroid_xy + \
+                                     ['blob_orientation', 'area', 'grey_value', 'raw_spinelength', 'width', 'perimeter',
+                                      'collision_flag'],
+                    'read_metadata': True,
+                    'folder_pref': 'box'}),
+                'env_params': gen.Env(
+                    arena=gen.Arena(dims=(0.15, 0.15), geometry='circular')),
+                'preprocess': PreprocessConf(filter_f=2.0, rescale_by=0.001, drop_collisions=True)
+            }
+            g = gen.LabFormat(labID='Schleyer', **kws).nestedConf
+
         # Merged case
         N = 30
         kws = {
@@ -150,7 +171,8 @@ def define_default_refID():
         }
         d = g.import_dataset(**kws)
         d.process(is_last=True)
-        assert len(conf.Ref.confIDs) ==1
+        assert len(conf.Ref.confIDs) == 1
     return conf.Ref.confIDs[0]
+
 
 default_refID = define_default_refID()

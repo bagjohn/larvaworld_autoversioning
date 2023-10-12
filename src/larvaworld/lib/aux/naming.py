@@ -117,6 +117,14 @@ class NamingRegistry(AttrDict):
     def midline_xy(self, N, flat=False):
         return self.xy(self.midline(N), flat=flat)
 
+    @ property
+    def centroid_xy(self):
+        return self.xy('centroid')
+
+    @property
+    def traj_xy(self):
+        return self.xy('')
+
     def at(self, p, t):
         return self[f'{p}_at'](t, loc='pref')
         # return f'{p}_at_{t}'
