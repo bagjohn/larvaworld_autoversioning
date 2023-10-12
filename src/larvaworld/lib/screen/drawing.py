@@ -549,7 +549,7 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
 
         kws = {
             'reference_area': v,
-            'default_color': self.sidepanel_color,
+            'color': self.sidepanel_color,
         }
 
         self.screen_clock = SimulationClock(sim_step_in_sec=m.dt,pos=v.item_pos('clock'), **kws)

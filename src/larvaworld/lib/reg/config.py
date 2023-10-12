@@ -83,7 +83,7 @@ def lg(id=None, c='black', N=1, mode='uniform', sh='circle', loc=(0.0, 0.0), ors
         'distribution': {'N': N, 'scale': s, 'orientation_range': ors, 'loc': loc, 'shape': sh, 'mode': mode},
         'life_history': {'age': age,'epochs': epochs}
     },
-           'default_color': c, 'model': m,'sample':sample,  **kwargs}
+           'color': c, 'model': m,'sample':sample,  **kwargs}
     if o is not None:
         kws['odor'] = o
 

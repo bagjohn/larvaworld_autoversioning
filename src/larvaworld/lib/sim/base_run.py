@@ -135,7 +135,7 @@ class BaseRun(sim.ABModel):
                 'model': self,
                 'unique_id': id,
                 'sources': od_sources,
-                'default_color': c0,
+                'color': c0,
                 **kwargs
             }
             if odorscape == 'Diffusion':

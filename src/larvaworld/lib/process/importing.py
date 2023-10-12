@@ -3,7 +3,6 @@ Methods for importing data in lab-specific formats
 """
 import os
 
-from .. import aux, reg
 from ..process.import_aux import constrain_selected_tracks, finalize_timeseries_dataframe, \
     read_timeseries_from_raw_files_per_parameter, match_larva_ids, init_endpoint_dataframe_from_timeseries, \
     read_timeseries_from_raw_files_per_larva, generate_dataframes, get_Schleyer_metadata_inv_x

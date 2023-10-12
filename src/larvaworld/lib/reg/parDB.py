@@ -304,7 +304,7 @@ def buildInitDict():
                               'h': 'The initial amount of food in each cell of the grid.'},
             # 'distribution': {'dtype': str, 'v': 'uniform', 'vs': ['uniform'],
             #                  'h': 'The distribution of food in the grid.'},
-            'default_color': pCol('green', 'food grid'),
+            'color': pCol('green', 'food grid'),
             'substrate' : d['substrate']
         }
 
@@ -312,7 +312,7 @@ def buildInitDict():
             'group': pID('agent group', disp=' group ID', k='gID'),
             'odor': d['odor'],
             'pos': d['xy'],
-            'default_color': pCol('green', 'agent'),
+            'color': pCol('green', 'agent'),
             'radius': {'v': 0.003, 'lim': (0.0, 0.1), 'dv': 0.001,
                        'h': 'The spatial radius of the source in meters.'},
             'regeneration': {**bF, 'h': 'Whether to regenerate a source when depleted.'},
@@ -495,13 +495,13 @@ def buildInitDict():
 
         })
         d['Border'] = {
-            'default_color': pCol('black', 'border'),
+            'color': pCol('black', 'border'),
             'width': {'v': 0.001, 'lim': (0.0, 10.0), 'h': 'The width of the border.'},
             'points': pXYs('border segments', lim=(-1.0, 10.10)),
         }
 
         d['border_list'] = {
-            'default_color': pCol('black', 'border'),
+            'color': pCol('black', 'border'),
             'points': pXYs('border segments', lim=(-1.0, 10.10)),
         }
         return d
@@ -1406,7 +1406,7 @@ def buildInitDict():
         d['LarvaGroup'] = {
              'model': ConfID_entry('Model', default='explorer'),
             'sample': {'dtype': str, 'v': 'None.150controls', 'h': 'The reference dataset to sample from.'},
-            'default_color': pCol('black', 'larva group'),
+            'color': pCol('black', 'larva group'),
             'imitation': {**bF, 'h': 'Whether to imitate the reference dataset.'},
             'distribution': d['larva_distro'],
             'life_history': d['Life'],

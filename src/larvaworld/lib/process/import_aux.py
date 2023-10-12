@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 
 from .. import aux, reg
-from ..aux import nam
 
 __all__ = [
     'init_endpoint_dataframe_from_timeseries',
