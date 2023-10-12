@@ -209,11 +209,15 @@ class Filesystem(NestedConf):
     read_metadata = Boolean(False, doc='Whether metadata files are available for the tracker-exported files/folders.')
     folder_pref = String(doc='A prefix for detecting a raw-data folder.')
     folder_suff = String(doc='A suffix for detecting a raw-data folder.')
-    file_pref = String(doc='A prefix for detecting a raw-data file.')
-    file_suf = String(doc='A suffix for detecting a raw-data file.')
+    file_pref = String(default='',doc='A prefix for detecting a raw-data file.')
+    file_suf = String(default='',doc='A suffix for detecting a raw-data file.')
     file_sep = String(doc='A separator for detecting a raw-data file.')
     structure = Selector(objects=['per_larva', 'per_parameter'],
                     doc='Whether each raw file corresponds to all parameters of a single larva or to a single parameter over all larvae.')
+
+    def valid_files_in_folder(self,dir):
+        return [os.path.join(dir, n) for n in os.listdir(dir) if (n.endswith(self.file_suf) and n.startswith(self.file_pref))]
+
 
 
 class TrackedPointIdx(XYops):

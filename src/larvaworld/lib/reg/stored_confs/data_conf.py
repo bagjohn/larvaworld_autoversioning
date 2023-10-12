@@ -23,6 +23,7 @@ def LabFormat_dict():
                                   'collision_flag'],
                 'read_metadata': True,
                 'structure': 'per_larva',
+                'file_suf': '.csv',
                 'folder_pref': 'box'}),
             'env_params': reg.gen.Env(
                 arena=reg.gen.Arena(dims=(0.15, 0.15), geometry='circular')),
