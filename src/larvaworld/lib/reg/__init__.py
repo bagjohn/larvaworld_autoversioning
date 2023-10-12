@@ -117,8 +117,7 @@ def define_default_refID_by_running_test():
 def define_default_refID():
     if len(conf.Ref.confIDs) == 0:
 
-        vprint('No reference datasets are available.', 2)
-        vprint(f'Automatically importing one from the raw experimental data folder.', 2)
+        vprint('No reference datasets are available.Automatically importing one from the raw experimental data folder.', 2)
 
         try:
             g = conf.LabFormat.get('Schleyer')

@@ -154,42 +154,14 @@ class AttrDict(dict):
     def keylist(self):
         return SuperList(self.keys())
 
-
-# class StoreDict(AttrDict):
-#
-#
-#     def __new__(cls,path=None):
-#         cls.path = path
-#         if path is not None :
-#             return cls.retrieve(path)
-#         else :
-#             return super().__new__(cls)
-#
-#
-#
-#
-#     # def __init__(self,*args, **kwargs):
-#     #     super().__init__(*args, **kwargs)
-#
-#     def store(self):
-#         super().save(self.path)
-#
-#     @classmethod
-#     def retrieve(cls,path):
-#         d=super().load(path)
-#         return super().__new__(cls,**d)
-
-
 def load_dict(file):
     try:
         with open(file, 'rb') as tfp:
             d = pickle.load(tfp)
-            # print('pickle load')
     except:
         try:
             with open(file) as tfp:
                 d = json.load(tfp)
-                # print('json load')
         except:
 
             d = {}

@@ -322,7 +322,6 @@ def match_larva_ids_including_by_length(s, e, pars=['head_x', 'head_y'], wl=100,
 
     t = 't'
     aID = 'AgentID'
-    # s.reset_index(level=t, drop=False, inplace=True)
     s[t] = s[t].values.astype(float)
 
     pairs = {}
@@ -338,7 +337,6 @@ def match_larva_ids_including_by_length(s, e, pars=['head_x', 'head_y'], wl=100,
             return max_error * 2
         ll = np.abs(l1 - l0)
         dd = np.sqrt(np.sum((xy1 - xy0) ** 2))
-        # print(tt,ll,dd)
         return wt * tt + wl * ll + ws * dd
 
     def get_extrema(ss, pars):
@@ -385,23 +383,15 @@ def match_larva_ids_including_by_length(s, e, pars=['head_x', 'head_y'], wl=100,
             del durs[id0]
             ls.drop([id0], inplace=True)
             ids, mins, maxs, first_xy, last_xy = update_extrema(id0, id1, ids, mins, maxs, first_xy, last_xy)
-            if verbose >= 2:
-                print(len(ids), int(cur_er))
         else:
             Nidx += 1
-    Nids1 = len(ids)
-    if verbose >= 2:
-        print('Finalizing dataset')
     while len(common_member(list(pairs.keys()), list(pairs.values()))) > 0:
         for id0, id1 in pairs.items():
             if id1 in pairs.keys():
                 pairs[id0] = pairs[id1]
                 break
     s.rename(index=pairs, inplace=True)
-    # s.reset_index(drop=False, inplace=True)
-    # s.set_index(keys=[t, aID], inplace=True, drop=True)
-    if verbose >= 1:
-        print(f'**--- Track IDs reduced from {Nids0} to {Nids1} by the matchIDs algorithm -----')
+    reg.vprint(f'**--- Track IDs reduced from {Nids0} to {len(ids)} by the matchIDs algorithm -----',1)
     return s
 
 
@@ -634,7 +624,6 @@ def interpolate_timeseries_dataframe(s0):
             if y.shape[0] >= 2 and idx.shape[0] >= 2:
                 f = interpolate.interp1d(x=idx, y=y, fill_value='extrapolate', assume_sorted=True)
                 A[ts - tick0, i, j] = f(ts)
-                # s[p].loc[(ts, id)] = f(ts)
     A = A.reshape(-1, Nps)
     s = pd.DataFrame(A, index=s.index, columns=s.columns)
     reg.vprint(f'**--- Timeseries dataframe interpolated -----', 1)

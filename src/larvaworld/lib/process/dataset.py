@@ -678,44 +678,39 @@ class ParamLarvaDataset(param.Parameterized):
             reg.vprint('Bearing and distance to source computed')
 
     def comp_wind(self):
-        try:
-            self.comp_wind_metrics()
-        except:
-            self.comp_final_anemotaxis()
-
-    def comp_wind_metrics(self):
-        s, e, c = self.data
-        w = c.env_params.windscape
+        w = self.config.env_params.windscape
         if w is not None:
-            wo, wv = w.wind_direction, w.wind_speed
+            wo=w.wind_direction
             woo = np.deg2rad(wo)
+            try:
+                self.comp_wind_metrics(woo,wo)
+            except:
+                self.comp_final_anemotaxis(woo)
 
-            for id in c.agent_ids:
-                xy = s[c.traj_xy].xs(id, level='AgentID', drop_level=True).values
-                origin = e[[nam.initial('x'), nam.initial('y')]].loc[id]
-                d = aux.eudi5x(xy, origin)
-                dx = xy[:, 0] - origin[0]
-                dy = xy[:, 1] - origin[1]
-                angs = np.arctan2(dy, dx)
-                a = np.array([aux.angle_dif(ang, woo) for ang in angs])
-                s.loc[(slice(None), id), 'anemotaxis'] = d * np.cos(a)
-            s[nam.bearing_to('wind')] = s.apply(lambda r: aux.angle_dif(r[nam.orient('front')], wo), axis=1)
-            e['anemotaxis'] = s['anemotaxis'].groupby('AgentID').last()
-
-    def comp_final_anemotaxis(self):
+    def comp_wind_metrics(self,woo,wo):
         s, e, c = self.data
-        w = c.env_params.windscape
-        if w is not None:
-            wo, wv = w.wind_direction, w.wind_speed
-            woo = np.deg2rad(wo)
-            xy0 = s[c.traj_xy].groupby('AgentID').first()
-            xy1 = s[c.traj_xy].groupby('AgentID').last()
-            dx = xy1.values[:, 0] - xy0.values[:, 0]
-            dy = xy1.values[:, 1] - xy0.values[:, 1]
-            d = np.sqrt(dx ** 2 + dy ** 2)
+        for id in c.agent_ids:
+            xy = s[c.traj_xy].xs(id, level='AgentID', drop_level=True).values
+            origin = e[[nam.initial('x'), nam.initial('y')]].loc[id]
+            d = aux.eudi5x(xy, origin)
+            dx = xy[:, 0] - origin[0]
+            dy = xy[:, 1] - origin[1]
             angs = np.arctan2(dy, dx)
             a = np.array([aux.angle_dif(ang, woo) for ang in angs])
-            e['anemotaxis'] = d * np.cos(a)
+            s.loc[(slice(None), id), 'anemotaxis'] = d * np.cos(a)
+        s[nam.bearing_to('wind')] = s.apply(lambda r: aux.angle_dif(r[nam.orient('front')], wo), axis=1)
+        e['anemotaxis'] = s['anemotaxis'].groupby('AgentID').last()
+
+    def comp_final_anemotaxis(self,woo):
+        s, e, c = self.data
+        xy0 = s[c.traj_xy].groupby('AgentID').first()
+        xy1 = s[c.traj_xy].groupby('AgentID').last()
+        dx = xy1.values[:, 0] - xy0.values[:, 0]
+        dy = xy1.values[:, 1] - xy0.values[:, 1]
+        d = np.sqrt(dx ** 2 + dy ** 2)
+        angs = np.arctan2(dy, dx)
+        a = np.array([aux.angle_dif(ang, woo) for ang in angs])
+        e['anemotaxis'] = d * np.cos(a)
 
     def comp_PI2(self, xys, x=0.04):
         Nticks = xys.index.unique('Step').size
@@ -747,17 +742,13 @@ class ParamLarvaDataset(param.Parameterized):
     def comp_dataPI(self):
         s, e, c = self.data
         if 'x' in e.keys():
-            px = 'x'
-            xs = e[px].values
+            xs = e['x'].values
         elif nam.final('x') in e.keys():
-            px = nam.final('x')
-            xs = e[px].values
+            xs = e[nam.final('x')].values
         elif 'x' in s.keys():
-            px = 'x'
-            xs = s[px].dropna().groupby('AgentID').last().values
+            xs = s['x'].dropna().groupby('AgentID').last().values
         elif 'centroid_x' in s.keys():
-            px = 'centroid_x'
-            xs = s[px].dropna().groupby('AgentID').last().values
+            xs = s['centroid_x'].dropna().groupby('AgentID').last().values
         else:
             raise ValueError('No x coordinate found')
         PI, N = self.comp_PI(xs=xs, arena_xdim=c.env_params.arena.dims[0], return_num=True)
