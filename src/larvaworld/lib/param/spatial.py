@@ -5,8 +5,10 @@ from shapely import geometry, Polygon
 
 from .. import aux
 
-from ..param import NestedConf, PositiveNumber, RandomizedPhase, XYLine, \
-    PositiveIntegerRange, PositiveRange, NumericTuple2DRobust, IntegerTuple2DRobust, RangeRobust
+from .nested_parameter_group import NestedConf
+from .custom import PositiveNumber, RandomizedPhase, XYLine, \
+    PositiveIntegerRange, PositiveRange, NumericTuple2DRobust, IntegerTuple2DRobust
+
 
 __all__ = [
     'Pos2D',

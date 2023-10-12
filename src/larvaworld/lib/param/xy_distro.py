@@ -1,8 +1,8 @@
 import numpy as np
 import param
 
-from ..param import NestedConf, PositiveInteger
-
+from .custom import PositiveInteger
+from .nested_parameter_group import NestedConf
 
 
 __all__ = [

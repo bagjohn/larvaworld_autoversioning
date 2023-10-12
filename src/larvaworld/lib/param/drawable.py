@@ -1,7 +1,9 @@
 import param
 
 from .. import aux
-from ..param import NestedConf, LineExtended, LineClosed, RandomizedColor
+from .nested_parameter_group import NestedConf
+from .custom import RandomizedColor
+from .spatial import LineExtended, LineClosed
 
 __all__ = [
     'Viewable',

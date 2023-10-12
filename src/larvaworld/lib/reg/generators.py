@@ -10,12 +10,15 @@ from ..param import Area, BoundedArea, NestedConf, Larva_Distro, ClassAttr, SimT
     SimMetricOps, ClassDict, EnrichConf, OptionalPositiveRange, OptionalSelector, OptionalPositiveInteger, \
     generate_xyNor_distro, Odor, Life, class_generator, SimOps, RuntimeOps, Epoch, RuntimeDataOps, RandomizedColor, \
     OptionalPositiveNumber, Filesystem, TrackerOps, PreprocessConf, Substrate, AirPuff
+from ..model import Food, Border, WindScape, ThermoScape, FoodGrid, OdorScape, DiffusionValueLayer, GaussianValueLayer
+
+
 
 __all__ = [
-    'ConfType',
-    'RefType',
-    'conf',
-    'resetConfs',
+    # 'ConfType',
+    # 'RefType',
+    # 'conf',
+    # 'resetConfs',
     'gen',
     'SimConfiguration',
     'SimConfigurationParams',
@@ -29,264 +32,263 @@ __all__ = [
     'DatasetConfig',
 ]
 
+#
+# def build_GroupTypeSubkeys():
+#     d0 = {k: {} for k in reg.GROUPTYPES}
+#     d1 = {
+#         'LarvaGroup': {'Model'}
+#     }
+#     d0.update(d1)
+#     return aux.AttrDict(d0)
+#
+#
+# class ConfType(param.Parameterized):
+#     """Select among available configuration types"""
+#     conftype = param.Selector(objects=reg.CONFTYPES, doc='The configuration type')
+#     dict = ClassDict(default=aux.AttrDict(), item_type=None, doc='The configuration dictionary')
+#
+#     def __init__(self, **kwargs):
+#         super().__init__(**kwargs)
+#         self.CONFTYPE_SUBKEYS = self.build_ConfTypeSubkeys()
+#         self.update_dict()
+#
+#     def build_ConfTypeSubkeys(self):
+#         d0 = {k: {} for k in reg.CONFTYPES}
+#         d1 = {
+#             'Batch': {'exp': 'Exp'},
+#             'Ga': {'env_params': 'Env'},
+#             'Exp': {'env_params': 'Env',
+#                     'trials': 'Trial',
+#                     'larva_groups': 'Model',
+#                     }
+#         }
+#         d0.update(d1)
+#         return aux.AttrDict(d0)
+#
+#     @property
+#     def path_to_dict(self):
+#         return f'{reg.CONF_DIR}/{self.conftype}.txt'
+#
+#     @param.depends('conftype', watch=True)
+#     def update_dict(self):
+#         self.param.params('dict').item_type = self.dict_entry_type
+#         self.load()
+#
+#     def getID(self, id):
+#         if id in self.dict.keys():
+#             return self.dict[id]
+#         else:
+#             reg.vprint(f'{self.conftype} Configuration {id} does not exist', 1)
+#             raise ValueError()
+#
+#     def get(self, id):
+#         entry = self.getID(id)
+#         return self.conf_class(**entry, name=id)
+#
+#     def load(self):
+#         self.dict = aux.load_dict(self.path_to_dict)
+#
+#     def save(self):
+#         return aux.save_dict(self.dict, self.path_to_dict)
+#
+#     def reset(self, init=False):
+#
+#         dd = reg.funcs.stored_confs[self.conftype]()
+#
+#         if os.path.isfile(self.path_to_dict):
+#             if init:
+#                 return
+#             else:
+#                 d = self.dict
+#         else:
+#             d = {}
+#
+#         N0, N1 = len(d), len(dd)
+#
+#         d.update(dd)
+#
+#         Ncur = len(d)
+#         Nnew = Ncur - N0
+#         Nup = N1 - Nnew
+#
+#         self.param.params('dict').item_type = self.dict_entry_type
+#         self.dict = d
+#         self.save()
+#
+#         reg.vprint(f'{self.conftype}  configurations : {Nnew} added , {Nup} updated,{Ncur} now existing', 1)
+#
+#     def setID(self, id, conf, mode='overwrite'):
+#         if id in self.dict.keys() and mode == 'update':
+#             self.dict[id] = self.dict[id].update_nestdict(conf.flatten())
+#         else:
+#             self.dict[id] = conf
+#         self.save()
+#         reg.vprint(f'{self.conftype} Configuration saved under the id : {id}', 1)
+#
+#     def delete(self, id=None):
+#         if id is not None:
+#             if id in self.dict.keys():
+#                 self.dict.pop(id, None)
+#                 self.save()
+#                 reg.vprint(f'Deleted {self.conftype} configuration under the id : {id}', 1)
+#
+#     def expand(self, id=None, conf=None):
+#         if conf is None:
+#             if id in self.dict.keys():
+#                 conf = self.dict[id]
+#             else:
+#                 return None
+#         subks = self.CONFTYPE_SUBKEYS[self.conftype]
+#         if len(subks) > 0:
+#             for subID, subk in subks.items():
+#                 ids = reg.conf[subk].confIDs
+#                 if subID == 'larva_groups' and subk == 'Model':
+#                     for k, v in conf['larva_groups'].items():
+#                         if v.model in ids:
+#                             v.model = reg.conf[subk].getID(v.model)
+#                 else:
+#                     if conf[subID] in ids:
+#                         conf[subID] = reg.conf[subk].getID(conf[subID])
+#
+#         return conf
+#
+#     def confID_selector(self, default=None, single=True):
+#         kws = {
+#             'default': default,
+#             'objects': self.confIDs,
+#             'label': f'{self.conftype} configuration ID',
+#             'doc': f'Selection among stored {self.conftype} configurations by ID'
+#
+#         }
+#         if single:
+#             return OptionalSelector(**kws)
+#         else:
+#             return param.ListSelector(**kws)
+#
+#     def confIDorNew(self):
+#         return ClassAttr(class_=(self.confID_selector(), self.conf_class()), default=None,
+#                          doc='Accepts either an existing ID or a new configuration')
+#
+#     @property
+#     def confIDs(self):
+#         return sorted(list(self.dict.keys()))
+#
+#     @property
+#     def conf_class(self):
+#         c = self.conftype
+#         if c is None:
+#             return None
+#         elif c in gen.keys():
+#             return gen[c]
+#         else:
+#             return aux.AttrDict
+#
+#     @property
+#     def dict_entry_type(self):
+#         return aux.AttrDict
+#
+#
+# class RefType(ConfType):
+#     """Select a reference dataset by ID"""
+#
+#     def __init__(self, **kwargs):
+#         super().__init__(conftype='Ref', **kwargs)
+#
+#     def getRefDir(self, id):
+#         assert id is not None
+#         return self.getID(id)
+#
+#     def getRef(self, id=None, dir=None):
+#         path = self.path_to_Ref(id=id, dir=dir)
+#         assert os.path.isfile(path)
+#         c = aux.load_dict(path)
+#         assert 'id' in c.keys()
+#         reg.vprint(f'Loaded existing conf {c.id}', 1)
+#         return c
+#
+#     def setRef(self, c, id=None, dir=None):
+#         path = self.path_to_Ref(id=id, dir=dir)
+#         aux.save_dict(c, path)
+#         assert 'id' in c.keys()
+#         reg.vprint(f'Saved conf under ID {c.id}', 1)
+#
+#     def path_to_Ref(self, id=None, dir=None):
+#         if dir is None:
+#             dir = self.getRefDir(id)
+#         return f'{dir}/data/conf.txt'
+#
+#     def loadRef(self, id=None, dir=None, load=False, **kwargs):
+#         from ..process.dataset import LarvaDataset
+#         c = self.getRef(id=id, dir=dir)
+#         assert c is not None
+#         d = LarvaDataset(config=c, load_data=False)
+#         if load:
+#             d.load(**kwargs)
+#         reg.vprint(f'Loaded stored reference dataset : {id}', 1)
+#         return d
+#
+#     def retrieve_dataset(self, dataset=None, load=True, **kwargs):
+#         if dataset is None:
+#             dataset = self.loadRef(load=load, **kwargs)
+#         return dataset
+#
+#     @property
+#     def cleanRefIDs(self):
+#         ids = self.confIDs
+#         for id in ids:
+#             try:
+#                 self.loadRef(id)
+#             except:
+#                 self.delete(id)
+#
+#     @property
+#     def dict_entry_type(self):
+#         return str
+#
+#     def getRefGroups(self):
+#         d = self.Refdict
+#         gd = aux.AttrDict({c.group_id: c for id, c in d.items()})
+#         gIDs = aux.unique_list(list(gd.keys()))
+#         return aux.AttrDict({gID: {c.id: c.dir for id, c in d.items() if c.group_id == gID} for gID in gIDs})
+#
+#     @property
+#     def RefGroupIDs(self):
+#         d = self.Refdict
+#         gd = aux.AttrDict({c.group_id: c for id, c in d.items()})
+#         return aux.unique_list(list(gd.keys()))
+#
+#     @property
+#     def Refdict(self):
+#         return aux.AttrDict({id: self.getRef(id) for id in self.confIDs})
+#
+#     def getRefGroup(self, group_id):
+#         d = self.getRefGroups()[group_id]
+#         return aux.AttrDict({id: self.getRef(dir=dir) for id, dir in d.items()})
+#
+#     def loadRefGroup(self, group_id, to_return='collection', **kwargs):
+#         d = self.getRefGroups()[group_id]
+#         if to_return == 'dict':
+#             return aux.AttrDict({id: self.loadRef(dir=dir, **kwargs) for id, dir in d.items()})
+#         elif to_return == 'list':
+#             return [self.loadRef(dir=dir, **kwargs) for id, dir in d.items()]
+#         elif to_return == 'collection':
+#             from ..process.dataset import LarvaDatasetCollection
+#             return LarvaDatasetCollection(datasets=[self.loadRef(dir=dir, **kwargs) for id, dir in d.items()])
+#
+#
+# conf = aux.AttrDict({k: ConfType(conftype=k) for k in reg.CONFTYPES if k != 'Ref'})
+#
+# conf.Ref = RefType()
+#
+#
+# def resetConfs(conftypes=None, **kwargs):
+#     if conftypes is None:
+#         conftypes = reg.CONFTYPES
+#
+#     for conftype in conftypes:
+#         conf[conftype].reset(**kwargs)
 
-def build_GroupTypeSubkeys():
-    d0 = {k: {} for k in reg.GROUPTYPES}
-    d1 = {
-        'LarvaGroup': {'Model'}
-    }
-    d0.update(d1)
-    return aux.AttrDict(d0)
 
-
-class ConfType(param.Parameterized):
-    """Select among available configuration types"""
-    conftype = param.Selector(objects=reg.CONFTYPES, doc='The configuration type')
-    dict = ClassDict(default=aux.AttrDict(), item_type=None, doc='The configuration dictionary')
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.CONFTYPE_SUBKEYS = self.build_ConfTypeSubkeys()
-        self.update_dict()
-
-    def build_ConfTypeSubkeys(self):
-        d0 = {k: {} for k in reg.CONFTYPES}
-        d1 = {
-            'Batch': {'exp': 'Exp'},
-            'Ga': {'env_params': 'Env'},
-            'Exp': {'env_params': 'Env',
-                    'trials': 'Trial',
-                    'larva_groups': 'Model',
-                    }
-        }
-        d0.update(d1)
-        return aux.AttrDict(d0)
-
-    @property
-    def path_to_dict(self):
-        return f'{reg.CONF_DIR}/{self.conftype}.txt'
-
-    @param.depends('conftype', watch=True)
-    def update_dict(self):
-        self.param.params('dict').item_type = self.dict_entry_type
-        self.load()
-
-    def getID(self, id):
-        if id in self.dict.keys():
-            return self.dict[id]
-        else:
-            reg.vprint(f'{self.conftype} Configuration {id} does not exist', 1)
-            raise ValueError()
-
-    def get(self, id):
-        entry = self.getID(id)
-        return self.conf_class(**entry, name=id)
-
-    def load(self):
-        self.dict = aux.load_dict(self.path_to_dict)
-
-    def save(self):
-        return aux.save_dict(self.dict, self.path_to_dict)
-
-    def reset(self, init=False):
-
-        dd = reg.funcs.stored_confs[self.conftype]()
-
-        if os.path.isfile(self.path_to_dict):
-            if init:
-                return
-            else:
-                d = self.dict
-        else:
-            d = {}
-
-        N0, N1 = len(d), len(dd)
-
-        d.update(dd)
-
-        Ncur = len(d)
-        Nnew = Ncur - N0
-        Nup = N1 - Nnew
-
-        self.param.params('dict').item_type = self.dict_entry_type
-        self.dict = d
-        self.save()
-
-        reg.vprint(f'{self.conftype}  configurations : {Nnew} added , {Nup} updated,{Ncur} now existing', 1)
-
-    def setID(self, id, conf, mode='overwrite'):
-        if id in self.dict.keys() and mode == 'update':
-            self.dict[id] = self.dict[id].update_nestdict(conf.flatten())
-        else:
-            self.dict[id] = conf
-        self.save()
-        reg.vprint(f'{self.conftype} Configuration saved under the id : {id}', 1)
-
-    def delete(self, id=None):
-        if id is not None:
-            if id in self.dict.keys():
-                self.dict.pop(id, None)
-                self.save()
-                reg.vprint(f'Deleted {self.conftype} configuration under the id : {id}', 1)
-
-    def expand(self, id=None, conf=None):
-        if conf is None:
-            if id in self.dict.keys():
-                conf = self.dict[id]
-            else:
-                return None
-        subks = self.CONFTYPE_SUBKEYS[self.conftype]
-        if len(subks) > 0:
-            for subID, subk in subks.items():
-                ids = reg.conf[subk].confIDs
-                if subID == 'larva_groups' and subk == 'Model':
-                    for k, v in conf['larva_groups'].items():
-                        if v.model in ids:
-                            v.model = reg.conf[subk].getID(v.model)
-                else:
-                    if conf[subID] in ids:
-                        conf[subID] = reg.conf[subk].getID(conf[subID])
-
-        return conf
-
-    def confID_selector(self, default=None, single=True):
-        kws = {
-            'default': default,
-            'objects': self.confIDs,
-            'label': f'{self.conftype} configuration ID',
-            'doc': f'Selection among stored {self.conftype} configurations by ID'
-
-        }
-        if single:
-            return OptionalSelector(**kws)
-        else:
-            return param.ListSelector(**kws)
-
-    def confIDorNew(self):
-        return ClassAttr(class_=(self.confID_selector(), self.conf_class()), default=None,
-                         doc='Accepts either an existing ID or a new configuration')
-
-    @property
-    def confIDs(self):
-        return sorted(list(self.dict.keys()))
-
-    @property
-    def conf_class(self):
-        c = self.conftype
-        if c is None:
-            return None
-        elif c in gen.keys():
-            return gen[c]
-        else:
-            return aux.AttrDict
-
-    @property
-    def dict_entry_type(self):
-        return aux.AttrDict
-
-
-class RefType(ConfType):
-    """Select a reference dataset by ID"""
-
-    def __init__(self, **kwargs):
-        super().__init__(conftype='Ref', **kwargs)
-
-    def getRefDir(self, id):
-        assert id is not None
-        return self.getID(id)
-
-    def getRef(self, id=None, dir=None):
-        path = self.path_to_Ref(id=id, dir=dir)
-        assert os.path.isfile(path)
-        c = aux.load_dict(path)
-        assert 'id' in c.keys()
-        reg.vprint(f'Loaded existing conf {c.id}', 1)
-        return c
-
-    def setRef(self, c, id=None, dir=None):
-        path = self.path_to_Ref(id=id, dir=dir)
-        aux.save_dict(c, path)
-        assert 'id' in c.keys()
-        reg.vprint(f'Saved conf under ID {c.id}', 1)
-
-    def path_to_Ref(self, id=None, dir=None):
-        if dir is None:
-            dir = self.getRefDir(id)
-        return f'{dir}/data/conf.txt'
-
-    def loadRef(self, id=None, dir=None, load=False, **kwargs):
-        from ..process.dataset import LarvaDataset
-        c = self.getRef(id=id, dir=dir)
-        assert c is not None
-        d = LarvaDataset(config=c, load_data=False)
-        if load:
-            d.load(**kwargs)
-        reg.vprint(f'Loaded stored reference dataset : {id}', 1)
-        return d
-
-    def retrieve_dataset(self, dataset=None, load=True, **kwargs):
-        if dataset is None:
-            dataset = self.loadRef(load=load, **kwargs)
-        return dataset
-
-    @property
-    def cleanRefIDs(self):
-        ids = self.confIDs
-        for id in ids:
-            try:
-                self.loadRef(id)
-            except:
-                self.delete(id)
-
-    @property
-    def dict_entry_type(self):
-        return str
-
-    def getRefGroups(self):
-        d = self.Refdict
-        gd = aux.AttrDict({c.group_id: c for id, c in d.items()})
-        gIDs = aux.unique_list(list(gd.keys()))
-        return aux.AttrDict({gID: {c.id: c.dir for id, c in d.items() if c.group_id == gID} for gID in gIDs})
-
-    @property
-    def RefGroupIDs(self):
-        d = self.Refdict
-        gd = aux.AttrDict({c.group_id: c for id, c in d.items()})
-        return aux.unique_list(list(gd.keys()))
-
-    @property
-    def Refdict(self):
-        return aux.AttrDict({id: self.getRef(id) for id in self.confIDs})
-
-    def getRefGroup(self, group_id):
-        d = self.getRefGroups()[group_id]
-        return aux.AttrDict({id: self.getRef(dir=dir) for id, dir in d.items()})
-
-    def loadRefGroup(self, group_id, to_return='collection', **kwargs):
-        d = self.getRefGroups()[group_id]
-        if to_return == 'dict':
-            return aux.AttrDict({id: self.loadRef(dir=dir, **kwargs) for id, dir in d.items()})
-        elif to_return == 'list':
-            return [self.loadRef(dir=dir, **kwargs) for id, dir in d.items()]
-        elif to_return == 'collection':
-            from ..process.dataset import LarvaDatasetCollection
-            return LarvaDatasetCollection(datasets=[self.loadRef(dir=dir, **kwargs) for id, dir in d.items()])
-
-
-conf = aux.AttrDict({k: ConfType(conftype=k) for k in reg.CONFTYPES if k != 'Ref'})
-
-conf.Ref = RefType()
-
-
-def resetConfs(conftypes=None, **kwargs):
-    if conftypes is None:
-        conftypes = reg.CONFTYPES
-
-    for conftype in conftypes:
-        conf[conftype].reset(**kwargs)
-
-
-from ..model import Food, Border, WindScape, ThermoScape, FoodGrid, OdorScape, DiffusionValueLayer, GaussianValueLayer
 
 gen = aux.AttrDict({
     'FoodGroup': class_generator(Food, mode='Group'),
@@ -333,9 +335,7 @@ class SimConfiguration(RuntimeOps, SimMetricOps, SimOps):
         idx = reg.config.next_idx(exp, conftype=runtype)
         return f'{exp}_{idx}'
 
-    # @ staticmethod
     def exp_selector_param(self, runtype):
-        # runtype = self.runtype
         defaults = {
             'Exp': 'dish',
             'Batch': 'PItest_off',
@@ -348,7 +348,7 @@ class SimConfiguration(RuntimeOps, SimMetricOps, SimOps):
             'doc': 'The experiment simulated'
         }
         if runtype in reg.CONFTYPES:
-            return param.Selector(objects=conf[runtype].confIDs, **kws)
+            return param.Selector(objects=reg.conf[runtype].confIDs, **kws)
         else:
             return param.Parameter(**kws)
 
@@ -388,6 +388,11 @@ class FoodConf(NestedConf):
     source_units = ClassDict(item_type=gen.Food, doc='The individual sources  of odor or food in the arena')
     food_grid = ClassAttr(gen.FoodGrid, default=None, doc='The food grid in the arena')
 
+# class FoodConf(NestedConf):
+#     source_groups = ClassDict(item_type=Food.generator(mode='Group'), doc='The groups of odor or food sources available in the arena')
+#     source_units = ClassDict(item_type=Food.generator(), doc='The individual sources  of odor or food in the arena')
+#     food_grid = ClassAttr(FoodGrid.generator(), default=None, doc='The food grid in the arena')
+
 
 gen.FoodConf = class_generator(FoodConf)
 gen.EnrichConf = class_generator(EnrichConf)
@@ -421,12 +426,12 @@ class EnvConf(NestedConf):
 
 
 class LarvaGroup(NestedConf):
-    model = conf.Model.confID_selector()
+    model = reg.conf.Model.confID_selector()
     color = param.Color('black', doc='The default color of the group')
     odor = ClassAttr(Odor, doc='The odor of the agent')
     distribution = ClassAttr(Larva_Distro, doc='The spatial distribution of the group agents')
     life_history = ClassAttr(Life, doc='The life history of the group agents')
-    sample = conf.Ref.confID_selector()
+    sample = reg.conf.Ref.confID_selector()
     imitation = param.Boolean(default=False, doc='Whether to imitate the reference dataset.')
 
     def __init__(self, id=None, **kwargs):
@@ -482,7 +487,7 @@ class LarvaGroup(NestedConf):
             confs.append(conf)
         return confs
 
-
+gen.LarvaGroup = class_generator(LarvaGroup)
 # gen.Env = class_generator(EnvConf)
 gen.Env = EnvConf
 
@@ -491,7 +496,7 @@ class LabFormat(NestedConf):
     labID = param.String(doc='The identifier ID of the lab')
     tracker = ClassAttr(TrackerOps, doc='The dataset metadata')
     filesystem = ClassAttr(Filesystem, doc='The import-relevant lab-format filesystem')
-    env_params = ClassAttr(gen.Env, doc='The environment configuration')
+    env_params = ClassAttr(EnvConf, doc='The environment configuration')
     preprocess = ClassAttr(PreprocessConf, doc='The environment configuration')
 
     @property
@@ -735,20 +740,18 @@ class LabFormat(NestedConf):
 
 class ExpConf(SimOps):
     env_params = ClassAttr(gen.Env, doc='The environment configuration')
-    # env_params = conf.Env.confIDorNew()
-    # env_params = conf.Env.confID_selector()
-    experiment = conf.Exp.confID_selector()
-    trials = conf.Trial.confID_selector('default')
+    experiment = reg.conf.Exp.confID_selector()
+    trials = reg.conf.Trial.confID_selector('default')
     collections = param.ListSelector(default=['pose'], objects=reg.parDB.output_keys,
                                      doc='The data to collect as output')
     larva_groups = ClassDict(item_type=LarvaGroup, doc='The larva groups')
     parameter_dict = param.Dict(default={}, doc='Dictionary of parameters to pass to the agents')
-    # sim_params = aux.ClassAttr(SimOps,doc='The simulation configuration')
     enrichment = ClassAttr(gen.EnrichConf, doc='The post-simulation processing')
 
     def __init__(self, id=None, **kwargs):
         super().__init__(**kwargs)
 
+gen.Exp = ExpConf
 
 class ReplayConfGroup(NestedConf):
     agent_ids = param.List(item_type=int,
@@ -758,7 +761,7 @@ class ReplayConfGroup(NestedConf):
     track_point = param.Integer(default=-1, softbounds=(-1, 12),
                                 doc='The midline point to use for defining the larva position.')
     # dynamic_color = OptionalSelector(objects=['lin_color', 'ang_color'], doc='Whether to display larva tracks according to the instantaneous forward or angular velocity.')
-    env_params = conf.Env.confID_selector()
+    env_params = reg.conf.Env.confID_selector()
 
 
 class ReplayConfUnit(NestedConf):
@@ -770,7 +773,7 @@ class ReplayConfUnit(NestedConf):
 
 
 class ReplayConf(ReplayConfGroup, ReplayConfUnit):
-    refID = conf.Ref.confID_selector()
+    refID = reg.conf.Ref.confID_selector()
     refDir = param.String(None)
     time_range = OptionalPositiveRange(default=None,
                                        doc='Whether to only replay a defined temporal slice of the dataset.')
@@ -779,8 +782,8 @@ class ReplayConf(ReplayConfGroup, ReplayConfUnit):
                                          doc='Whether to artificially simplify the experimentally tracked larva body to a segmented virtual body of the given number of segments.')
 
 
-gen.LarvaGroup = class_generator(LarvaGroup)
-gen.Exp = ExpConf
+
+
 gen.LabFormat = LabFormat
 gen.Replay = class_generator(ReplayConf)
 
@@ -842,7 +845,7 @@ class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
     env_params = ClassAttr(gen.Env, doc='The environment configuration')
     agent_ids = param.List(item_type=None, doc='The unique IDs of the agents in the dataset')
     N = OptionalPositiveInteger(default=None, softmax=500, doc='The number of agents in the group')
-    sample = conf.Ref.confID_selector()
+    sample = reg.conf.Ref.confID_selector()
     filtered_at = OptionalPositiveNumber(default=None)
     rescaled_by = OptionalPositiveNumber(default=None)
 

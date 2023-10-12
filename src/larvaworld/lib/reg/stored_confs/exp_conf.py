@@ -27,14 +27,8 @@ def grouped_exp_dic():
             cs = aux.N_colors(N)
         return aux.AttrDict(aux.merge_dicts([lg(id=id, c=c, mID=mID, **kwargs) for mID, c, id in zip(mIDs, cs, ids)]))
 
-    def oG(c=1, id='Odor'):
-        return gen.Odor(id=id, intensity=2.0 * c, spread=0.0002 * np.sqrt(c))
-
-    def oD(c=1, id='Odor'):
-        return gen.Odor(id=id, intensity=300.0 * c, spread=0.1 * np.sqrt(c))
-
     def exp(id, env=None, l={}, enrichment=reg.gen.EnrichConf().nestedConf, dur=10.0,
-            c=[], c0=['pose'], as_entry=False, **kwargs):
+            c=[], c0=['pose'], **kwargs):
         if env is None:
             env = id
         sim = {'duration': dur}
@@ -48,10 +42,7 @@ def grouped_exp_dic():
 
         kw.update(kwargs)
 
-        if not as_entry:
-            return reg.stored.conf.Exp.gConf(**kw)
-        else:
-            return reg.stored.conf.Exp.entry(id=id, **kw)
+        return reg.stored.conf.Exp.gConf(**kw)
 
     def food_exp(id, c=['feeder'], dur=10.0,
                  enrichment=gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],

@@ -1,4 +1,3 @@
-import random
 from types import FunctionType
 import typing
 import param
@@ -7,9 +6,6 @@ if sys.version_info >= (3, 8):
     from typing import TypedDict  # pylint: disable=no-name-in-module
 else:
     from typing_extensions import TypedDict
-
-import numpy as np
-from param import Parameterized, Number,NumericTuple,Integer,Selector,String, ListSelector, Range, Magnitude, Boolean,ClassSelector,Parameter, List, Dict
 
 from .. import aux
 
@@ -26,13 +22,13 @@ __displayname__ = 'Parameterization helper methods'
 def param_dtype(parclass):
     func_dic = {
 
-        Number : float,
-        Integer : int,
-        String : str,
-        Boolean : bool,
-        Dict : dict,
-        List : list,
-        ClassSelector : type,
+        param.Number : float,
+        param.Integer : int,
+        param.String : str,
+        param.Boolean : bool,
+        param.Dict : dict,
+        param.List : list,
+        param.ClassSelector : type,
 
         # typing.List[int]: List,
         # typing.List[str]: List,
@@ -48,30 +44,30 @@ def param_dtype(parclass):
 
 def get_vfunc(dtype, lim, vs):
     func_dic = {
-        float: Number,
-        int: Integer,
-        str: String,
-        bool: Boolean,
-        dict: Dict,
-        list: List,
-        type: ClassSelector,
-        typing.List[int]: List,
-        typing.List[str]: List,
-        typing.List[float]: List,
-        typing.List[typing.Tuple[float]]: List,
+        float: param.Number,
+        int: param.Integer,
+        str: param.String,
+        bool: param.Boolean,
+        dict: param.Dict,
+        list: param.List,
+        type: param.ClassSelector,
+        typing.List[int]: param.List,
+        typing.List[str]: param.List,
+        typing.List[float]: param.List,
+        typing.List[typing.Tuple[float]]: param.List,
         FunctionType: param.Callable,
-        typing.Tuple[float]: Range,
-        typing.Tuple[int]: NumericTuple,
-        TypedDict: Dict
+        typing.Tuple[float]: param.Range,
+        typing.Tuple[int]: param.NumericTuple,
+        TypedDict: param.Dict
     }
     if dtype == float and lim == (0.0, 1.0):
-        return Magnitude
+        return param.Magnitude
     if type(vs) == list and dtype in [str, int]:
-        return Selector
+        return param.Selector
     elif dtype in func_dic.keys():
         return func_dic[dtype]
     else:
-        return Parameter
+        return param.Parameter
 
 def vpar(vfunc, v0, h, lab, lim, dv, vs):
     f_kws = {
@@ -80,13 +76,13 @@ def vpar(vfunc, v0, h, lab, lim, dv, vs):
         'label': lab,
         'allow_None': True
     }
-    if vfunc in [List, Number, Range]:
+    if vfunc in [param.List, param.Number, param.Range]:
         if lim is not None:
             f_kws['bounds'] = lim
-    if vfunc in [Range, Number]:
+    if vfunc in [param.Range, param.Number]:
         if dv is not None:
             f_kws['step'] = dv
-    if vfunc in [Selector]:
+    if vfunc in [param.Selector]:
         f_kws['objects'] = vs
     func = vfunc(**f_kws, instantiate=True)
     return func

@@ -2,12 +2,11 @@ import os
 
 import numpy as np
 import param
-from param import Selector, String, ListSelector, Magnitude, Boolean, List
 
 from .. import aux
-
-from ..param import OptionalPositiveNumber, OptionalSelector, PositiveInteger, \
-    OptionalPositiveInteger, ClassAttr, NestedConf, PositiveNumber, IntegerRangeOrdered, PositiveIntegerRangeOrdered
+from .nested_parameter_group import NestedConf
+from .custom import OptionalPositiveNumber, PositiveInteger, \
+    OptionalPositiveInteger, PositiveNumber, IntegerRangeOrdered, PositiveIntegerRangeOrdered
 
 __all__ = [
     'FramerateOps',
@@ -21,11 +20,7 @@ __all__ = [
     'Filesystem',
     'TrackedPointIdx',
     'SimMetricOps',
-    'TrackerOps',
-    'PreprocessConf',
-    'ProcessConf',
-    'EnrichConf',
-    'AirPuff',
+    'TrackerOps'
 ]
 
 __displayname__ = 'Configuration parameter groups'
@@ -57,7 +52,7 @@ class FramerateOps(NestedConf):
 
 
 class XYops(NestedConf):
-    XY_unit = Selector(default='m', objects=['m', 'mm'], doc='The spatial unit of the XY coordinate data')
+    XY_unit = param.Selector(default='m', objects=['m', 'mm'], doc='The spatial unit of the XY coordinate data')
     Npoints = PositiveInteger(3, softmax=20, label='# midline 2D points',
                               doc='The number of points tracked along the larva midline.')
     Ncontour = PositiveInteger(0, softmax=100, label='# contour 2D points',
@@ -205,14 +200,14 @@ class RuntimeOps(RuntimeGeneralOps, RuntimeDataOps): pass
 
 
 class Filesystem(NestedConf):
-    read_sequence = List(label='data columns', doc='The sequence of columns in the tracker-exported files.')
-    read_metadata = Boolean(False, doc='Whether metadata files are available for the tracker-exported files/folders.')
-    folder_pref = String(doc='A prefix for detecting a raw-data folder.')
-    folder_suff = String(doc='A suffix for detecting a raw-data folder.')
-    file_pref = String(default='',doc='A prefix for detecting a raw-data file.')
-    file_suf = String(default='',doc='A suffix for detecting a raw-data file.')
-    file_sep = String(doc='A separator for detecting a raw-data file.')
-    structure = Selector(objects=['per_larva', 'per_parameter'],
+    read_sequence = param.List(label='data columns', doc='The sequence of columns in the tracker-exported files.')
+    read_metadata = param.Boolean(False, doc='Whether metadata files are available for the tracker-exported files/folders.')
+    folder_pref = param.String(doc='A prefix for detecting a raw-data folder.')
+    folder_suff = param.String(doc='A suffix for detecting a raw-data folder.')
+    file_pref = param.String(default='',doc='A prefix for detecting a raw-data file.')
+    file_suf = param.String(default='',doc='A suffix for detecting a raw-data file.')
+    file_sep = param.String(doc='A separator for detecting a raw-data file.')
+    structure = param.Selector(objects=['per_larva', 'per_parameter'],
                     doc='Whether each raw file corresponds to all parameters of a single larva or to a single parameter over all larvae.')
 
     def valid_files_in_folder(self,dir):
@@ -241,16 +236,16 @@ class TrackedPointIdx(XYops):
 
 
 class SimMetricOps(TrackedPointIdx):
-    bend = Selector(objects=['from_vectors', 'from_angles'],
+    bend = param.Selector(objects=['from_vectors', 'from_angles'],
                     doc='Whether bending angle is computed as a sum of sequential segmental angles or as the angle between front and rear body vectors.')
     front_vector = PositiveIntegerRangeOrdered((1, 2), softmax=12,
                                                doc='The initial & final segment of the front body vector.')
     rear_vector = IntegerRangeOrdered((-2, -1), softbounds=(-12, 12),
                                       doc='The initial & final segment of the rear body vector.')
-    front_body_ratio = Magnitude(0.5,
+    front_body_ratio = param.Magnitude(0.5,
                                  doc='The fraction of the body considered front, relevant for bend computation from angles.')
 
-    use_component_vel = Boolean(False,
+    use_component_vel = param.Boolean(False,
                                 doc='Whether to use the component velocity ralative to the axis of forward motion.')
 
     @param.depends('Npoints', watch=True)
@@ -283,44 +278,4 @@ class SimMetricOps(TrackedPointIdx):
 class TrackerOps(SimMetricOps, FramerateOps): pass
 
 
-class PreprocessConf(NestedConf):
-    rescale_by = OptionalPositiveNumber(softmax=1000.0, step=0.001,
-                                        doc='Whether to rescale spatial coordinates by a scalar in meters.')
-    filter_f = OptionalPositiveNumber(softmax=5.0, step=0.01,
-                                      doc='Whether to filter spatial coordinates by a grade-1 low-pass filter of the given cut-off frequency.')
-    transposition = OptionalSelector(['origin', 'arena', 'center'], doc='Whether to transpose spatial coordinates.')
-    interpolate_nans = Boolean(False, doc='Whether to interpolate missing values.')
-    drop_collisions = Boolean(False, doc='Whether to drop timepoints where larva collisions are detected.')
 
-
-class ProcessConf(NestedConf):
-    proc_keys = ListSelector(default=['angular', 'spatial'],
-                             objects=['angular', 'spatial', 'source', 'PI', 'wind'],
-                             doc='The processing pipelines')
-    dsp_starts = param.List(default=[0.0], item_type=float, doc='The starting times for dispersal computation.')
-    dsp_stops = param.List(default=[40.0, 60.0], item_type=float, doc='The stopping times for dispersal computation.')
-    tor_durs = param.List(default=[5, 10, 20], item_type=int, doc='The time windows for tortuosity computation.')
-
-
-class EnrichConf(NestedConf):
-    pre_kws = ClassAttr(PreprocessConf, doc='The preprocessing pipelines')
-    proc_keys = ListSelector(default=['angular', 'spatial', 'dispersion', 'tortuosity'],
-                             objects=['angular', 'spatial', 'source', 'dispersion', 'tortuosity', 'PI', 'wind'],
-                             doc='The processing pipelines')
-    anot_keys = ListSelector(default=['bout_detection', 'bout_distribution', 'interference'],
-                             objects=['bout_detection', 'bout_distribution', 'interference', 'source_attraction',
-                                      'patch_residency'], doc='The annotation pipelines')
-    recompute = Boolean(False, doc='Whether to recompute')
-    mode = Selector(objects=['minimal', 'full'], doc='The processing mode')
-
-
-class AirPuff(NestedConf):
-    duration = PositiveNumber(default=1.0, softmax=100.0, step=0.1, doc='The duration of the air-puff in seconds.')
-    speed = PositiveNumber(default=10.0, softmax=1000.0, step=0.1, doc='The wind speed of the air-puff.')
-    direction = PositiveNumber(default=0.0, softmax=100.0, step=0.1, doc='The directions of the air puff in radians.')
-    start_time = PositiveNumber(default=0.0, softmax=10000.0, step=1.0,
-                                doc='The starting time of the air-puff in seconds.')
-    N = OptionalPositiveInteger(default=None, softmax=10000,
-                                doc='The number of repetitions of the puff. If N>1 an interval must be provided.')
-    interval = PositiveNumber(default=5.0, softmax=10000.0, step=0.1,
-                              doc='Whether the puff will reoccur at constant time intervals in seconds. Ignored if N=1.')

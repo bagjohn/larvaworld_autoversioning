@@ -1,15 +1,11 @@
-
-
-import math
-from typing import Optional
-
 import numpy as np
 import param
 from shapely import geometry, ops, affinity
 
 from .. import aux
-from ..param import LineClosed, XYLine, PositiveInteger, PositiveNumber, MobilePoint, Viewable, \
-    MobileVector, ItemListParam
+from .custom import XYLine, PositiveInteger, PositiveNumber, ItemListParam
+from .spatial import LineClosed,MobileVector
+from .drawable import Viewable
 
 __all__ = [
     'BodyContour',

@@ -1,11 +1,12 @@
 import numpy as np
-import pandas as pd
 import param
 from scipy.stats import multivariate_normal
 
 from .. import aux
-from ..param import PositiveNumber, PositiveInteger, NestedConf, StringRobust, OptionalPositiveNumber, \
-    OptionalPositiveRange, ClassAttr, ClassDict
+from .custom import PositiveNumber, PositiveInteger, StringRobust, OptionalPositiveNumber, \
+    OptionalPositiveRange, ClassAttr, ClassDict, OptionalPositiveInteger
+from .nested_parameter_group import NestedConf
+
 
 __all__ = [
     'Compound',
@@ -14,6 +15,7 @@ __all__ = [
     'Odor',
     'Epoch',
     'Life',
+    'AirPuff',
 ]
 
 __displayname__ = 'Nutrition & Olfaction'
@@ -235,3 +237,16 @@ class Life3(NestedConf):
     @property
     def Nmismatch(self):
         return self.Ncorrect - self.Ncurrent
+
+
+
+class AirPuff(NestedConf):
+    duration = PositiveNumber(default=1.0, softmax=100.0, step=0.1, doc='The duration of the air-puff in seconds.')
+    speed = PositiveNumber(default=10.0, softmax=1000.0, step=0.1, doc='The wind speed of the air-puff.')
+    direction = PositiveNumber(default=0.0, softmax=100.0, step=0.1, doc='The directions of the air puff in radians.')
+    start_time = PositiveNumber(default=0.0, softmax=10000.0, step=1.0,
+                                doc='The starting time of the air-puff in seconds.')
+    N = OptionalPositiveInteger(default=None, softmax=10000,
+                                doc='The number of repetitions of the puff. If N>1 an interval must be provided.')
+    interval = PositiveNumber(default=5.0, softmax=10000.0, step=0.1,
+                              doc='Whether the puff will reoccur at constant time intervals in seconds. Ignored if N=1.')

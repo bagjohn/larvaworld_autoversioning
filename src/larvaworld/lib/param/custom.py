@@ -1,9 +1,6 @@
 import random
-
-import numpy as np
 import param
-from param import Parameterized, Number, NumericTuple, Integer, Selector, Range, Magnitude, Boolean, ClassSelector, \
-    List, Dict, String, DataFrame
+import numpy as np
 
 from .. import aux
 
@@ -39,13 +36,12 @@ __all__ = [
     'DataFrameIndexed',
     'StepDataFrame',
     'EndpointDataFrame',
-    'NestedConf',
 ]
 
 __displayname__ = 'Custom parameters'
 
 
-class StringRobust(String):
+class StringRobust(param.String):
     """Any input turned to string"""
 
     def __init__(self, default='', **kwargs):
@@ -54,7 +50,7 @@ class StringRobust(String):
         super().__init__(default=default, **kwargs)
 
 
-class PositiveNumber(Number):
+class PositiveNumber(param.Number):
     """Number that must be positive"""
 
     def __init__(self, default=0.0, softmin=0.0, softmax=None, hardmin=0.0, hardmax=None, bounds=None, **kwargs):
@@ -63,21 +59,21 @@ class PositiveNumber(Number):
         super().__init__(default=default, softbounds=(softmin, softmax), bounds=bounds, **kwargs)
 
 
-class PositiveInteger(Integer):
+class PositiveInteger(param.Integer):
     """Integer that must be positive"""
 
     def __init__(self, default=0, softmin=0, softmax=None, hardmin=0, hardmax=None, **kwargs):
         super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), **kwargs)
 
 
-class Phase(Number):
+class Phase(param.Number):
     """Phase number within (0,2pi)"""
 
     def __init__(self, default=0.0, softmin=0.0, softmax=2 * np.pi, hardmin=0.0, hardmax=2 * np.pi, **kwargs):
         super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), **kwargs)
 
 
-class RangeRobust(Range):
+class RangeRobust(param.Range):
     """Range can be passed as list"""
 
     def __init__(self, default=(0.0, 0.0), **kwargs):
@@ -95,7 +91,7 @@ class RangeInf(RangeRobust):
     """Allow None inside tuple"""
 
     def _validate_value(self, val, allow_None):
-        super(NumericTuple, self)._validate_value(val, allow_None)
+        super(param.NumericTuple, self)._validate_value(val, allow_None)
         if allow_None and val is None:
             return
         for n in val:
@@ -133,7 +129,7 @@ class PhaseRange(RangeRobust):
         super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), **kwargs)
 
 
-class OptionalPositiveNumber(Number):
+class OptionalPositiveNumber(param.Number):
     """Number that must be positive"""
 
     def __init__(self, default=None, softmin=0.0, softmax=None, hardmin=0.0, hardmax=None, **kwargs):
@@ -141,7 +137,7 @@ class OptionalPositiveNumber(Number):
                          **kwargs)
 
 
-class OptionalPositiveInteger(Integer):
+class OptionalPositiveInteger(param.Integer):
     """Integer that must be positive"""
 
     def __init__(self, default=None, softmin=0, softmax=None, hardmin=0, hardmax=None, **kwargs):
@@ -197,7 +193,7 @@ class OptionalPhaseRange(RangeRobust):
         super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), **kwargs)
 
 
-class OptionalSelector(Selector):
+class OptionalSelector(param.Selector):
     """Select among objects. Default is None even if None not in objects"""
 
     def __init__(self, objects, default=None, **kwargs):
@@ -213,11 +209,11 @@ class OptionalSelector(Selector):
         super().__init__(**kws)
 
 
-class IntegerTuple(NumericTuple):
+class IntegerTuple(param.NumericTuple):
     """Tuple of integers"""
 
     def _validate_value(self, val, allow_None):
-        super(NumericTuple, self)._validate_value(val, allow_None)
+        super(param.NumericTuple, self)._validate_value(val, allow_None)
         for n in val:
             if isinstance(n, int):
                 continue
@@ -272,7 +268,7 @@ class NegativeIntegerRangeOrdered(IntegerRangeOrdered):
         super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), **kwargs)
 
 
-class NumericTuple2DRobust(NumericTuple):
+class NumericTuple2DRobust(param.NumericTuple):
     """XY point coordinates can be passed as list"""
 
     def __init__(self, default=(0.0, 0.0), **kwargs):
@@ -290,7 +286,7 @@ class IntegerTuple2DRobust(IntegerTuple):
         super().__init__(default=default, length=2, **kwargs)
 
 
-class ListXYcoordinates(List):
+class ListXYcoordinates(param.List):
     """List of XY point coordinates"""
 
     def __init__(self, default=[], minlen=0, maxlen=None, **kwargs):
@@ -304,7 +300,7 @@ class XYLine(ListXYcoordinates):
         super().__init__(minlen=minlen, **kwargs)
 
 
-class ItemListParam(List):
+class ItemListParam(param.List):
     """
     Parameter whose value is a list of objects, usually of a specified type.
 
@@ -319,22 +315,21 @@ class ItemListParam(List):
         self.size = size
         if isinstance(default, list):
             default = aux.ItemList(default)
-        List.__init__(self, default=default, **params)
+        param.List.__init__(self, default=default, **params)
         self._validate(default)
 
 
-
-class ClassDict(ClassSelector):
+class ClassDict(param.ClassSelector):
     """Dict of objects of specified class"""
 
     __slots__ = ['class_', 'is_instance', 'item_type']
 
     def __init__(self, default=aux.AttrDict(), item_type=None, **params):
         self.item_type = item_type
-        ClassSelector.__init__(self, aux.AttrDict, default=default, **params)
+        param.ClassSelector.__init__(self, aux.AttrDict, default=default, **params)
 
     def _validate(self, val):
-        super(ClassSelector, self)._validate(val)
+        super(param.ClassSelector, self)._validate(val)
         self._validate_item_type(val, self.item_type)
 
     def _validate_item_type(self, val, item_type):
@@ -347,7 +342,7 @@ class ClassDict(ClassSelector):
                             "of type %r, not %r." % (self.name, item_type, val))
 
 
-class ClassAttr(ClassSelector):
+class ClassAttr(param.ClassSelector):
     """An attribute og a given class"""
 
     def __init__(self, class_, **kwargs):
@@ -364,17 +359,17 @@ class ClassAttr(ClassSelector):
         super().__init__(class_=class_, **kwargs)
 
 
-class DataFrameIndexed(DataFrame):
+class DataFrameIndexed(param.DataFrame):
     __slots__ = ['rows', 'columns', 'ordered', 'levels']
 
     """A dataframe of specified index levels"""
 
     def __init__(self, levels=None, **params):
         self.levels = levels
-        DataFrame.__init__(self, **params)
+        param.DataFrame.__init__(self, **params)
 
     def _validate(self, val):
-        super(DataFrame, self)._validate(val)
+        super(param.DataFrame, self)._validate(val)
         self._validate_levels(val, self.levels)
 
     def _validate_levels(self, val, levels):
@@ -400,88 +395,4 @@ class EndpointDataFrame(DataFrameIndexed):
         DataFrameIndexed.__init__(self, levels=['AgentID'], **params)
 
 
-class NestedConf(Parameterized):
-    """
-    A class for managing nested configuration parameters.
-    """
 
-    def __init__(self, **kwargs):
-        """
-        Initializes a NestedConf instance.
-
-        :param kwargs: Keyword arguments for configuring the instance.
-        """
-
-        param_classes = self.param.objects()
-        for k, p in param_classes.items():
-            # print(k)
-            try:
-                if k in kwargs.keys():
-                    if type(p) == ClassAttr and not isinstance(kwargs[k], p.class_):
-                        kwargs[k] = p.class_(**kwargs[k])
-                    elif type(p) == ClassDict and not all(isinstance(vv, p.item_type) for kk, vv in kwargs[k].items()):
-                        kwargs[k] = p.class_({kk: p.item_type(**vv) for kk, vv in kwargs[k].items()})
-            except:
-                pass
-        super().__init__(**kwargs)
-
-    @property
-    def nestedConf(self):
-        """
-        Generates a nested configuration dictionary.
-
-        :return: A nested configuration dictionary.
-        """
-        d = aux.AttrDict(self.param.values())
-        d.pop('name')
-        for k, p in self.param.objects().items():
-            if k in d and d[k] is not None:
-                if type(p) == ClassAttr:
-                    d[k] = d[k].nestedConf
-                elif type(p) == ClassDict:
-                    d[k] = aux.AttrDict({kk: vv.nestedConf for kk, vv in d[k].items()})
-        return d
-
-    def entry(self, id=None):
-        """
-        Creates an entry in the configuration.
-
-        :param id: The identifier for the entry.
-        :return: A dictionary containing the configuration entry.
-        """
-        d = self.nestedConf
-        if 'distribution' in d.keys():
-            if 'group' in d.keys():
-                if id is not None:
-                    d.group = id
-                elif d.group is not None:
-                    id = d.group
-            if 'model' in d.keys():
-                if id is None:
-                    id = d.model
-        elif 'unique_id' in d.keys():
-            if id is None and d.unique_id is not None:
-                id = d.unique_id
-                d.pop('unique_id')
-        assert id is not None
-        return {id: d}
-
-    @property
-    def param_keys(self):
-        """
-        Retrieves a list of parameter keys.
-
-        :return: A list of parameter keys excluding 'name'.
-        """
-        ks = list(self.param.objects().keys())
-        return aux.SuperList([k for k in ks if k not in ['name']])
-
-    def params_missing(self, d):
-        """
-        Checks for missing parameters in the configuration.
-
-        :param d: The configuration dictionary to compare against.
-        :return: A list of missing parameter keys.
-        """
-        ks = self.param_keys
-        return aux.SuperList([k for k in ks if k not in d.keys()])
