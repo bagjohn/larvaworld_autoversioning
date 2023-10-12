@@ -383,7 +383,7 @@ class BoutGenerator:
 
 def test_boutGens(mID, refID=None, refDataset=None, **kwargs):
     if refDataset is None:
-        refDataset = reg.loadRef(refID, load=True)
+        refDataset = reg.conf.Ref.loadRef(refID, load=True)
     c = refDataset.config
 
     chunk_dicts = refDataset.chunk_dicts

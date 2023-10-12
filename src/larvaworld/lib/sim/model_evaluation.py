@@ -265,7 +265,7 @@ def eval_model_graphs(refID, mIDs, dIDs=None, id=None, dir=None, N=10,
 
 def add_var_mIDs(refID, e=None, c=None, mID0s=None, mIDs=None, sample_ks=None):
     if e is None or c is None:
-        d = reg.loadRef(refID)
+        d = reg.conf.Ref.loadRef(refID)
         d.load(step=False)
         e, c = d.endpoint_data, d.config
 
@@ -292,7 +292,7 @@ def add_var_mIDs(refID, e=None, c=None, mID0s=None, mIDs=None, sample_ks=None):
     return entries
 
 def adapt_6mIDs(refID, e=None, c=None):
-    d = reg.loadRef(refID)
+    d = reg.conf.Ref.loadRef(refID)
     if e is None or c is None:
         d.load(step=False)
         e, c = d.endpoint_data, d.config
@@ -322,7 +322,7 @@ def adapt_6mIDs(refID, e=None, c=None):
     return entries, mIDs
 
 def adapt_3modules(refID, e=None, c=None):
-    d = reg.loadRef(refID)
+    d = reg.conf.Ref.loadRef(refID)
     if e is None or c is None:
         d.load(step=False)
         e, c = d.endpoint_data, d.config

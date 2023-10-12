@@ -120,7 +120,7 @@ class StoredConfRegistry :
 
 
 def imitation_exp(refID, model='explorer', **kwargs):
-    c = reg.getRef(refID)
+    c = reg.conf.Ref.getRef(refID)
 
     kws = {
         'id': 'ImitationGroup',
@@ -134,7 +134,7 @@ def imitation_exp(refID, model='explorer', **kwargs):
     }
 
 
-    exp_conf = reg.get_null('Exp', sim_params=reg.get_null('sim_params', dt=c.dt, duration=c.duration),
+    exp_conf = reg.par.get_null('Exp', sim_params=reg.par.get_null('sim_params', dt=c.dt, duration=c.duration),
                             env_params=c.env_params, larva_groups=reg.generators.full_lg(**kws),experiment='imitation',
                             trials={}, enrichment=reg.gen.EnrichConf().nestedConf)
     exp_conf.update(**kwargs)

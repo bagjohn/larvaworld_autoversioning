@@ -193,7 +193,7 @@ def set_agent_kwargs(agent, **kwargs):
         k='Model'
     else:
         return agent
-    type_dict = reg.get_null(k)
+    type_dict = reg.par.get_null(k)
     title = f'{class_name} args'
     dic = {}
     for p in list(type_dict.keys()):
@@ -252,7 +252,7 @@ def add_ref_window():
         [sg.Ok(), sg.Cancel()]]
     e, v = sg.Window('Load reference datasets', l).read(close=True)
     if e == 'Ok':
-        return {id: reg.loadRef(id=id) for id in v[k]}
+        return {id: reg.conf.Ref.loadRef(id=id) for id in v[k]}
     elif e == 'Cancel':
         return None
 
@@ -332,8 +332,6 @@ def import_window(labID, raw_dic):
             if e == 'Ok':
                 conf = s1.get_dict(v, w)
                 kws = {
-                    #'labID': labID,
-                    # 'larva_groups': {gID: preg.get_null('LarvaGroup', sample=None)},
                     **conf}
                 w.close()
                 targets = [f.replace(raw_folder, proc_folder) for f in raw_dirs]

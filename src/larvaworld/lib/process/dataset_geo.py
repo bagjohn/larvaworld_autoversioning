@@ -374,14 +374,7 @@ class GeoLarvaDataset(BaseLarvaDataset,mpd.TrajectoryCollection):
 
     @classmethod
     def from_ID(cls, refID, **kwargs):
-        # c = reg.getRef(refID)
-
-        # cc=d.config.get_copy()
-        # c.update(**kwargs)
-
-        # inst = cls(load_data=False, config=reg.getRef(refID))
-
-        d = reg.loadRef(refID)
+        d = reg.conf.Ref.loadRef(refID)
         d.load(h5_ks=['midline', 'contour'])
         step = d.step_data
 

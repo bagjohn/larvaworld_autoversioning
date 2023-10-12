@@ -14,7 +14,7 @@ def batch(exp, proc=[], ss=None, ssbool=None, o=None, o_kws={}, as_entry=True, *
     # else:
     #     bm_kws = bm
     if ss is not None:
-        ss = {p: reg.get_null('space_search_par', range=r, Ngrid=N) for p, (r, N) in ss.items()}
+        ss = {p: reg.par.get_null('space_search_par', range=r, Ngrid=N) for p, (r, N) in ss.items()}
     else:
         ss = {}
     if ssbool is not None:
@@ -25,15 +25,12 @@ def batch(exp, proc=[], ss=None, ssbool=None, o=None, o_kws={}, as_entry=True, *
     if len(ss0) == 0:
         ss0 = None
 
-    # enr=reg.get_null('enrichment',processing=reg.get_null('processing', **{pr : True for pr in proc}))
-    conf = reg.get_null('Batch',
+    conf = reg.par.get_null('Batch',
                          exp=exp,
                          exp_kws={'enrichment': reg.gen.EnrichConf(proc_keys=proc).nestedConf, 'experiment': exp},
-                         optimization=reg.get_null("optimization", fit_par=o, **o_kws) if o is not None else None,
+                         optimization=reg.par.get_null("optimization", fit_par=o, **o_kws) if o is not None else None,
                          space_search=ss0,
-                         # batch_methods=reg.get_null('batch_methods', **bm_kws),
                          **kwargs)
-    # print(conf)
     if as_entry:
         return {exp: conf}
     else:

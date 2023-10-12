@@ -107,7 +107,7 @@ class DEB(NestedConf):
 
         self.dt = 1 / self.steps_per_day
         if gut_params is None:
-            gut_params = reg.get_null('gut')
+            gut_params = reg.par.get_null('gut')
             # gut_params=null_dict('gut_params')
 
         self.gut = deb.Gut(deb=self, save_dict=save_dict, **gut_params) if self.use_gut else None
@@ -692,7 +692,7 @@ def get_best_EEB(deb, cRef):
 def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=False, model_id=None, save_dict=True,
             **kwargs):
     from larvaworld.lib.model.modules.intermitter import OfflineIntermitter
-    cRef = reg.getRef(refID)
+    cRef = reg.conf.Ref.getRef(refID)
     kws2 = cRef['intermitter']
     if dt is None:
         dt = kws2['dt']

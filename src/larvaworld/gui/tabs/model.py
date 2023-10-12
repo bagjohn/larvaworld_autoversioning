@@ -15,8 +15,8 @@ class ModelTab(gui_aux.GuiTab):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.fields = ['physics', 'body']
-        self.module_keys = list(reg.get_null('modules').keys())
-        self.energetics_keys = list(reg.get_null('energetics').keys())
+        self.module_keys = list(reg.par.get_null('modules').keys())
+        self.energetics_keys = list(reg.par.get_null('energetics').keys())
         self.canvas_size = (1200, 1000)
 
 

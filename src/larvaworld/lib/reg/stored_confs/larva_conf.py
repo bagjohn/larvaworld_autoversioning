@@ -17,7 +17,7 @@ OD2 = {'CS': {'mean': 150.0, 'std': 0.0}, 'UCS': {'mean': 0.0, 'std': 0.0}}
 
 
 def Im(EEB, **kwargs):
-    conf = reg.get_null('intermitter', feed_bouts=EEB > 0, EEB=EEB, **kwargs)
+    conf = reg.par.get_null('intermitter', feed_bouts=EEB > 0, EEB=EEB, **kwargs)
 
     return conf
 
@@ -26,11 +26,11 @@ def Im(EEB, **kwargs):
 
 
 def brain(ks, nengo=False, OD=None, **kwargs):
-    base_coupling = reg.get_null('interference', mode='square', crawler_phi_range=(np.pi / 2, np.pi),
+    base_coupling = reg.par.get_null('interference', mode='square', crawler_phi_range=(np.pi / 2, np.pi),
                                   feeder_phi_range=(0.0, 0.0),
                                   attenuation=0.1, attenuation_max=0.6)
 
-    RL_olf_memory = reg.get_null('memory', Delta=0.1, state_spacePerSide=1, modality='olfaction',
+    RL_olf_memory = reg.par.get_null('memory', Delta=0.1, state_spacePerSide=1, modality='olfaction',
                                   gain_space=np.arange(-200.0, 200.0, 50.0).tolist())
 
     module_dict = {
@@ -53,7 +53,7 @@ def brain(ks, nengo=False, OD=None, **kwargs):
         ks += ['T', 'C', 'If', 'Im', 'O', 'F']
     modules = [module_dict[k] for k in ks]
 
-    modules = reg.get_null('modules', **{m: True for m in modules})
+    modules = reg.par.get_null('modules', **{m: True for m in modules})
     d = {'modules': modules}
     for k, v in modules.items():
         p = f'{k}_params'
@@ -66,7 +66,7 @@ def brain(ks, nengo=False, OD=None, **kwargs):
         elif k == 'memory':
             d[p] = RL_olf_memory
         else:
-            d[p] = reg.get_null(k)
+            d[p] = reg.par.get_null(k)
         if k == 'olfactor' and d[p] is not None:
             d[p]['odor_dict'] = OD
     d['nengo'] = nengo
@@ -79,31 +79,17 @@ def nengo_brain(module_shorts, EEB, OD=None):
     else:
         f_fr0, f_fr_r = 0.0, (0.0, 0.0)
     return brain(module_shorts,
-                 turner=reg.get_null('turner', initial_amp=30.0, output_noise=0.1, input_noise=0.8),
-                 crawler=reg.get_null('crawler', freq=1.5, initial_amp=0.6, freq_range=(1.2, 1.8),
+                 turner=reg.par.get_null('turner', initial_amp=30.0, output_noise=0.1, input_noise=0.8),
+                 crawler=reg.par.get_null('crawler', freq=1.5, initial_amp=0.6, freq_range=(1.2, 1.8),
                                        mode='realistic', stride_dst_mean=0.25, stride_dst_std=0.01),
-                 feeder=reg.get_null('feeder', freq=f_fr0, freq_range=f_fr_r),
-                 intermitter=reg.get_null('intermitter', feed_bouts=EEB > 0, EEB=EEB, mode='nengo'),
+                 feeder=reg.par.get_null('feeder', freq=f_fr0, freq_range=f_fr_r),
+                 intermitter=reg.par.get_null('intermitter', feed_bouts=EEB > 0, EEB=EEB, mode='nengo'),
                  nengo=True,
                  OD=OD
                  )
 
 
 def build_RvsS(b):
-    # RvsS = {}
-    # for species, k_abs, EEB in zip(['rover', 'sitter'], [0.8, 0.4], [0.67, 0.37]):
-    #     kws0 = {'energetics': {
-    #         'DEB': preg.get_null('DEB', hunger_as_EEB=True, hunger_gain=1.0, DEB_dt=10.0, species=species),
-    #         'gut': preg.get_null('gut', k_abs=k_abs)},
-    #             'body': preg.get_null('body', initial_length=0.001, Nsegs=2)},
-    #     brain_kws = {
-    #         'intermitter_params': preg.get_null('intermitter', feed_bouts=True, EEB=EEB),
-    #         'feeder_params': preg.get_null('feeder'),
-    #         'nengo': False
-    #     }
-    #     mods = ['intermitter', 'feeder']
-    #     RvsS[f'mock_{species}']
-
 
     def RvsS_larva(species, mock=False, OD=None, l0=0.001):
         if species == 'rover':
@@ -116,8 +102,8 @@ def build_RvsS(b):
             raise
 
         mods = ['intermitter', 'feeder']
-        kws = {'intermitter_params': reg.get_null('intermitter', feed_bouts=True, EEB=EEB),
-               'feeder_params': reg.get_null('feeder'),
+        kws = {'intermitter_params': reg.par.get_null('intermitter', feed_bouts=True, EEB=EEB),
+               'feeder_params': reg.par.get_null('feeder'),
                'nengo': False}
         if mock:
             Nsegs = 1
@@ -137,8 +123,8 @@ def build_RvsS(b):
 
             mods += mods2
 
-        kws['modules'] = reg.get_null('modules', **{m: True for m in mods})
-        bb = reg.get_null('brain', **kws)
+        kws['modules'] = reg.par.get_null('modules', **{m: True for m in mods})
+        bb = reg.par.get_null('brain', **kws)
         #
 
         # if not mock :
@@ -146,8 +132,8 @@ def build_RvsS(b):
         # else :
         #     b =brain(['Im', 'F'], intermitter=Im)
 
-        gut = reg.get_null('gut', **gut_kws)
-        deb = reg.get_null('DEB', hunger_as_EEB=True, hunger_gain=1.0, DEB_dt=10.0, species=species)
+        gut = reg.par.get_null('gut', **gut_kws)
+        deb = reg.par.get_null('DEB', hunger_as_EEB=True, hunger_gain=1.0, DEB_dt=10.0, species=species)
 
         null_Box2D_params = {
             'joint_types': {
@@ -157,7 +143,7 @@ def build_RvsS(b):
             }
         }
 
-        return reg.get_null('Model', brain=bb, body=reg.get_null('body', length=l0, Nsegs=Nsegs),
+        return reg.par.get_null('Model', brain=bb, body=reg.par.get_null('body', length=l0, Nsegs=Nsegs),
                              energetics={'DEB': deb, 'gut': gut}, Box2D_params=null_Box2D_params)
 
     RvsS = {
@@ -182,11 +168,11 @@ def mod(brain=None, bod={}, energetics=None, phys={}, Box2D={}):
         }
         Box2D_params = null_Box2D_params
     else:
-        Box2D_params = reg.get_null('Box2D_params', **Box2D)
-    return reg.get_null('Model', brain=brain,
+        Box2D_params = reg.par.get_null('Box2D_params', **Box2D)
+    return reg.par.get_null('Model', brain=brain,
                          energetics=energetics,
-                         body=reg.get_null('body', **bod),
-                         physics=reg.get_null('physics', **phys),
+                         body=reg.par.get_null('body', **bod),
+                         physics=reg.par.get_null('physics', **phys),
                          Box2D_params=Box2D_params
                          )
 
@@ -203,11 +189,11 @@ def OD(ids: list, means: list, stds=None) -> dict:
 
 def create_mod_dict(b):
 
-    RL_touch_memory = reg.get_null('memory', Delta=0.5, state_spacePerSide=1, modality='touch', train_dur=30,
+    RL_touch_memory = reg.par.get_null('memory', Delta=0.5, state_spacePerSide=1, modality='touch', train_dur=30,
                                     update_dt=0.5,
                                     gain_space=np.round(np.arange(-10, 11, 5), 1).tolist(), state_specific_best=True)
 
-    gRL_touch_memory = reg.get_null('memory', Delta=0.5, state_spacePerSide=1, modality='touch', train_dur=30,
+    gRL_touch_memory = reg.par.get_null('memory', Delta=0.5, state_spacePerSide=1, modality='touch', train_dur=30,
                                      update_dt=0.5,
                                      gain_space=np.round(np.arange(-10, 11, 5), 1).tolist(), state_specific_best=False)
 
@@ -225,16 +211,16 @@ def create_mod_dict(b):
     LOFM = brain(['LOF', 'M'])
     LW = brain(['L', 'W'])
     L = brain(['L'])
-    LTo = brain(['L', 'To'], toucher=reg.get_null('toucher', touch_sensors=[]))
-    LToM = brain(['L', 'To', 'M'], toucher=reg.get_null('toucher', touch_sensors=[]),
+    LTo = brain(['L', 'To'], toucher=reg.par.get_null('toucher', touch_sensors=[]))
+    LToM = brain(['L', 'To', 'M'], toucher=reg.par.get_null('toucher', touch_sensors=[]),
                  memory=RL_touch_memory)
-    LToMg = brain(['L', 'To', 'M'], toucher=reg.get_null('toucher', touch_sensors=[]),
+    LToMg = brain(['L', 'To', 'M'], toucher=reg.par.get_null('toucher', touch_sensors=[]),
                   memory=gRL_touch_memory)
-    LTo2M = brain(['L', 'To', 'M'], toucher=reg.get_null('toucher', touch_sensors=[0, 2]),
+    LTo2M = brain(['L', 'To', 'M'], toucher=reg.par.get_null('toucher', touch_sensors=[0, 2]),
                   memory=RL_touch_memory)
-    LTo2Mg = brain(['L', 'To', 'M'], toucher=reg.get_null('toucher', touch_sensors=[0, 2]),
+    LTo2Mg = brain(['L', 'To', 'M'], toucher=reg.par.get_null('toucher', touch_sensors=[0, 2]),
                    memory=gRL_touch_memory)
-    LTo_brute = brain(['L', 'To'], toucher=reg.get_null('toucher', touch_sensors=[], brute_force=True))
+    LTo_brute = brain(['L', 'To'], toucher=reg.par.get_null('toucher', touch_sensors=[], brute_force=True))
     nLO = nengo_brain(['L', 'O'], EEB=0.0)
     LTh = brain(['L', 'Th'])
 
@@ -250,7 +236,7 @@ def create_mod_dict(b):
 
     explorers = {
         'explorer': add_brain(LW),
-        'branch_explorer': add_brain(add_Im(reg.get_null('intermitter', feed_bouts=False, EEB=0, mode='branch'), LW)),
+        'branch_explorer': add_brain(add_Im(reg.par.get_null('intermitter', feed_bouts=False, EEB=0, mode='branch'), LW)),
         'nengo_explorer': add_brain(nengo_brain(['L', 'W'], EEB=0.0)),
         'imitator': add_brain(L, bod={'Nsegs': 11}),
 

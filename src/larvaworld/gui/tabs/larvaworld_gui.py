@@ -103,13 +103,13 @@ class LarvaworldGui:
     def get_vis_kwargs(self, v, **kwargs):
         c = self.collapsibles
         w = self.window
-        return c['visualization'].get_dict(v, w) if 'visualization' in c.keys() else reg.get_null('visualization',
+        return c['visualization'].get_dict(v, w) if 'visualization' in c.keys() else reg.par.get_null('visualization',
                                                                                                      **kwargs)
 
     def get_replay_kwargs(self, v):
         c = self.collapsibles
         w = self.window
-        return c['Replay'].get_dict(v, w) if 'Replay' in c.keys() else reg.get_null('Replay')
+        return c['Replay'].get_dict(v, w) if 'Replay' in c.keys() else reg.par.get_null('Replay')
 
     def run0(self, e, v):
         w = self.window

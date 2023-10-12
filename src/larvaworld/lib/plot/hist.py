@@ -31,7 +31,7 @@ __all__ = [
 def module_endpoint_hists(mkey='crawler', mode='realistic',e=None, refID=None, Nbins=None, show_median=True, **kwargs):
 
     if e is None and refID is not None:
-        d = reg.loadRef(refID)
+        d = reg.conf.Ref.loadRef(refID)
         d.load(step=False)
         e = d.endpoint_data
     if Nbins is None:

@@ -456,7 +456,7 @@ class LarvaBox2D(LarvaSim):
         """
 
         if joint_types is None:
-            joint_types = reg.get_null('Box2D_params').joint_types
+            joint_types = reg.par.get_null('Box2D_params').joint_types
         space = self.model.space
         l0 = self.sim_length / self.Nsegs
 

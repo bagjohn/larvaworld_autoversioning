@@ -849,7 +849,6 @@ class BaseLarvaDataset(ParamLarvaDataset):
         -   getRef(id=None, dir=None) returns the config dictionary stored at the "root" directory. Accepts either the "dir" path or the "refID" id
         -   loadRef(id) first retrieves the config dictionary and then initializes the dataset.
             By setting load_data=True there is an attempt to load the data from the disc if found at the provided root directory.
-            This last method can be accessed directly via "reg.loadRef(id)"
 
         In the case that none of the above attempts yielded a config dictionary, a novel one is generated using any additional keyword arguments are provided.
         This is the default way that a new dataset is initialized. The data content is set after initialization via the "set_data(step, end)"
@@ -880,7 +879,7 @@ class BaseLarvaDataset(ParamLarvaDataset):
         else:
             if config is None:
                 try:
-                    config = reg.getRef(dir=dir, id=refID)
+                    config = reg.conf.Ref.getRef(dir=dir, id=refID)
                     config.update(**kwargs)
                 except:
                     config = self.generate_config(dir=dir, refID=refID, **kwargs)
@@ -925,7 +924,7 @@ class BaseLarvaDataset(ParamLarvaDataset):
         if c0.fr is not None:
             c0.dt = 1 / c0.fr
         if c0.metric_definition is None:
-            c0.metric_definition = reg.get_null('metric_definition')
+            c0.metric_definition = reg.par.get_null('metric_definition')
 
         points = aux.nam.midline(c0.Npoints, type='point')
 
@@ -1249,7 +1248,7 @@ class LarvaDatasetCollection:
 
         if add_samples:
             targetIDs = aux.unique_list([d.config.sample for d in datasets])
-            targets = [reg.loadRef(id) for id in targetIDs if id in reg.conf.Ref.confIDs]
+            targets = [reg.conf.Ref.loadRef(id) for id in targetIDs if id in reg.conf.Ref.confIDs]
             datasets += targets
             if labels is not None:
                 labels += targetIDs
@@ -1299,7 +1298,7 @@ class LarvaDatasetCollection:
         if datasets:
             pass
         elif refIDs:
-            datasets = [reg.loadRef(refID) for refID in refIDs]
+            datasets = [reg.conf.Ref.loadRef(refID) for refID in refIDs]
         elif dirs:
             datasets = [LarvaDataset(dir=f'{reg.DATA_DIR}/{dir}', load_data=False) for dir in dirs]
         elif group_id:

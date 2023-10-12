@@ -127,8 +127,7 @@ def read_timeseries_from_raw_files_per_parameter(pref, tracker=None, dt=None, Np
     return df
 
 
-def read_timeseries_from_raw_files_per_larva(files, labID=None, save_mode='full', read_sequence=None,
-                                             store_sequence=None, inv_x=False):
+def read_timeseries_from_raw_files_per_larva(files, labID=None, save_mode='full', read_sequence=None,store_sequence=None, inv_x=False):
     """
     Reads timeseries data stored in txt files of the lab-specific Jovanic format and returns them as a pd.Dataframe.
 

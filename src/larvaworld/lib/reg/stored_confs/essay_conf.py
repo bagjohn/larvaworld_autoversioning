@@ -12,9 +12,9 @@ class Essay:
         if enrichment is None:
             enrichment = reg.gen.EnrichConf().nestedConf
         if video:
-            self.vis_kwargs = reg.get_null('visualization', mode='video', video_speed=60)
+            self.vis_kwargs = reg.par.get_null('visualization', mode='video', video_speed=60)
         else:
-            self.vis_kwargs = reg.get_null('visualization', mode=None)
+            self.vis_kwargs = reg.par.get_null('visualization', mode=None)
         self.N = N
         self.show = show
         self.type = type
@@ -33,8 +33,8 @@ class Essay:
         self.results = {}
 
     def conf(self, exp, id, dur, lgs, env, **kwargs):
-        sim = reg.get_null('sim_params', duration=dur)
-        return reg.get_null('Exp', sim_params=sim, env_params=env, trials={},
+        sim = reg.par.get_null('sim_params', duration=dur)
+        return reg.par.get_null('Exp', sim_params=sim, env_params=env, trials={},
                              larva_groups=lgs, experiment=exp, enrichment=self.enrichment,
                              collections=self.collections, **kwargs)
 
@@ -566,11 +566,11 @@ class Chemotaxis_Essay(Essay):
 
     def chemo_exps(self, models):
         lg_kws = {
-            'odor': reg.get_null('odor'),
+            'odor': reg.par.get_null('odor'),
             'sample': 'None.150controls'
         }
         kws = {
-            'arena': reg.get_null('arena', shape='rectangular', dims=(0.1, 0.06)),
+            'arena': reg.par.get_null('arena', shape='rectangular', dims=(0.1, 0.06)),
             'odorscape': {'odorscape': 'Gaussian'},
             'windscape': None,
             'thermoscape': None,
@@ -579,13 +579,13 @@ class Chemotaxis_Essay(Essay):
 
         exp1 = 'Orbiting behavior'
         kws1 = {
-            'env': reg.get_null('Env',
+            'env': reg.par.get_null('Env',
                                  food_params={'source_groups': {},
                                               'food_grid': None,
                                               'source_units': {
-                                                  'Source': reg.get_null('source', pos=(0.0, 0.0),
+                                                  'Source': reg.par.get_null('source', pos=(0.0, 0.0),
                                                                           group='Source',
-                                                                          odor=reg.get_null('odor',
+                                                                          odor=reg.par.get_null('odor',
                                                                                              id='Odor',
                                                                                              intensity=2.0,
                                                                                              spread=0.0002)
@@ -593,8 +593,8 @@ class Chemotaxis_Essay(Essay):
                                               }
                                               }, **kws),
             'lgs': {
-                mID: reg.get_null('LarvaGroup',
-                                   distribution=reg.get_null('larva_distro', N=self.N, mode='uniform'),
+                mID: reg.par.get_null('LarvaGroup',
+                                   distribution=reg.par.get_null('larva_distro', N=self.N, mode='uniform'),
                                    color=dic['color'], model=dic['model'], **lg_kws) for mID, dic in
                 models.items()},
             'id': f'{exp1}_exp',
@@ -604,21 +604,21 @@ class Chemotaxis_Essay(Essay):
 
         exp2 = 'Up-gradient navigation'
         kws2 = {
-            'env': reg.get_null('Env',
+            'env': reg.par.get_null('Env',
                                  food_params={'source_groups': {},
                                               'food_grid': None,
                                               'source_units': {
-                                                  'Source': reg.get_null('source', pos=(0.04, 0.0),
+                                                  'Source': reg.par.get_null('source', pos=(0.04, 0.0),
                                                                           group='Source',
-                                                                          odor=reg.get_null('odor',
+                                                                          odor=reg.par.get_null('odor',
                                                                                              id='Odor',
                                                                                              intensity=8.0,
                                                                                              spread=0.0004)),
                                               }
                                               }, **kws),
             'lgs': {
-                mID: reg.get_null('LarvaGroup',
-                                   distribution=reg.get_null('larva_distro', N=self.N, mode='uniform',
+                mID: reg.par.get_null('LarvaGroup',
+                                   distribution=reg.par.get_null('larva_distro', N=self.N, mode='uniform',
                                                               loc=(-0.04, 0.0),
                                                               orientation_range=(-30.0, 30.0), scale=(0.005, 0.02)),
                                    color=dic['color'], model=dic['model'], **lg_kws) for mID, dic in

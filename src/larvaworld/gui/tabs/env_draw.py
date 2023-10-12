@@ -278,7 +278,7 @@ class DrawEnvTab(gui_aux.DrawTab):
                                     'distribution': c[D].get_dict(v, w),
                                     **dic['sample_pars']
                                 }
-                                dic['current'] = {v[Gid]: reg.get_null('FoodGroup', **temp_dic)}
+                                dic['current'] = {v[Gid]: reg.par.get_null('FoodGroup', **temp_dic)}
                                 dic['prior_rect'] = self.draw_shape(shape=v[f'{D}_shape'], p1=p1,
                                                                     p2=p2, line_color=color)
                         elif v[L0] and not self.check_abort(L0, w, v, db[self.Lu]['items'], db[self.Lg]['items']):
@@ -302,7 +302,7 @@ class DrawEnvTab(gui_aux.DrawTab):
                                     'distribution': temp,
                                     **sample_larva_pars
                                 }
-                                dic['current'] = {v[Gid]: reg.get_null('LarvaGroup', **temp_dic)}
+                                dic['current'] = {v[Gid]: reg.par.get_null('LarvaGroup', **temp_dic)}
                                 dic['prior_rect'] = self.draw_shape(shape=v[f'{D}_shape'], p1=p1,
                                                                     p2=p2, line_color=color)
 
@@ -311,7 +311,7 @@ class DrawEnvTab(gui_aux.DrawTab):
                             if id in list(db[self.Bg]['items'].keys()) or id == '':
                                 info.update(value=f"{B} id {id} already exists or is empty")
                             else:
-                                dic['current'] = {id:reg.get_null('Border', points=[P1, P2],
+                                dic['current'] = {id:reg.par.get_null('Border', points=[P1, P2],
                                                                   color=v[f'{B}_color'], width=float(v[f'{B}_width']))}
                                 # dic['current'] = border(ps=[P1, P2], c=v[f'{B}_color'],w=float(v[f'{B}_width']), id=id)
                                 dic['prior_rect'] = self.graph.draw_line(p1, p2, color=v[f'{B}_color'],
@@ -612,7 +612,7 @@ class DrawEnvTab(gui_aux.DrawTab):
         if env is None:
 
             env = {self.Bg: {},
-                   'arena': reg.get_null('arena'),
+                   'arena': reg.par.get_null('arena'),
                    'food_params': {self.Su: {}, self.Sg: {}, 'food_grid': None},
                    }
         items = [env[self.Bg],

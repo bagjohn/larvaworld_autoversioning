@@ -30,10 +30,7 @@ __all__ = [
     'model',
     'graphs',
     'getPar',
-    'get_null',
     'loadRef',
-    'getRef',
-    'loadRefGroup',
 ]
 
 __displayname__ = 'Registry'
@@ -48,7 +45,6 @@ def vprint(text='', verbose=0):
 
 vprint("Initializing larvaworld registry", 2)
 
-# default_refID = 'exploration.40controls'
 ROOT_DIR = dirname(dirname(dirname(abspath(__file__))))
 DATA_DIR = f'{ROOT_DIR}/data'
 SIM_DIR = f'{DATA_DIR}/SimGroup'
@@ -98,16 +94,8 @@ def getPar(k=None, p=None, d=None, to_return='d'):
     return par.getPar(k=k, d=d, p=p, to_return=to_return)
 
 
-def get_null(name, **kwargs):
-    return par.get_null(name=name, **kwargs)
-
-
 def loadRef(id, **kwargs):
     return conf.Ref.loadRef(id=id, **kwargs)
-
-
-def getRef(id, **kwargs):
-    return conf.Ref.getRef(id=id, **kwargs)
 
 
 vprint(f"Registry configured!", 2)

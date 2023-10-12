@@ -111,7 +111,7 @@ def sampleRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=None, Nid
     if len(ks) > 0:
         if refDataset is None:
             if refID is not None:
-                refDataset = reg.loadRef(refID, load=True, step=False)
+                refDataset = reg.conf.Ref.loadRef(refID, load=True, step=False)
         if refDataset is not None:
             m = get_sample_bout_distros(m, refDataset.config)
             e = refDataset.endpoint_data if hasattr(refDataset, 'endpoint_data') else refDataset.read('end')
@@ -134,7 +134,7 @@ def sampleRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=None, Nid
 def imitateRef(mID=None, m=None, refID=None, refDataset=None,sample_ks=None, Nids=1, parameter_dict={}):
     if refDataset is None:
         if refID is not None:
-            refDataset = reg.loadRef(refID, load=True, step=False)
+            refDataset = reg.conf.Ref.loadRef(refID, load=True, step=False)
         else:
             raise
     else:

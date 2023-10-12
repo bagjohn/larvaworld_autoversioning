@@ -41,7 +41,7 @@ class BatchTab(gui_aux.GuiTab):
             enrichment = self.current_conf(v)['exp_kws']['enrichment']
         except:
             enrichment =reg.conf.Exp.getID(v[self.selectionlists['Exp'].k]).enrichment
-        conf = reg.get_null('Batch',
+        conf = reg.par.get_null('Batch',
                          exp_kws={'enrichment': enrichment, 'experiment': self.current_conf(v)['exp_kws']['experiment']},
                          optimization=c['optimization'].get_dict(v, w),
                          space_search=c['space_search'].get_dict(v, w),

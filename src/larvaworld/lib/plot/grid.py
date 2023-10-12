@@ -72,7 +72,7 @@ def calibration_plot(save_to=None, files=None):
 @reg.funcs.graph('model summary', required={'graphIDs':['configuration','module hists','stride cycle', 'epochs', 'sample track']})
 def model_summary(mID, refID=None, refDataset=None, Nids=1, model_table=False, **kwargs):
     if refDataset is None:
-        d = reg.loadRef(refID)
+        d = reg.conf.Ref.loadRef(refID)
         d.load(step=False)
         refDataset = d
     refDataset.color = 'red'

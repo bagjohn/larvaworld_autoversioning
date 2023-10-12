@@ -810,7 +810,7 @@ class CollapsibleTable(Collapsible):
         self.dict_name = dict_name
         self.key = f'TABLE {name}'
 
-        self.null_dict = reg.get_null(dict_name)
+        self.null_dict = reg.par.get_null(dict_name)
         if heading_dict is None:
             heading_dict = {k: k for k in self.null_dict.keys()}
         self.heading_dict = heading_dict
@@ -1253,7 +1253,7 @@ class PadTable(PadElement):
         self.key = f'TABLE {self.name}'
         if heading_dict is None:
 
-            heading_dict = {k: k for k in reg.get_null(self.dict_name).keys()}
+            heading_dict = {k: k for k in reg.par.get_null(self.dict_name).keys()}
         self.heading_dict = heading_dict
         self.headings = list(heading_dict.keys())
         self.dict = dict

@@ -1,11 +1,10 @@
 from larvaworld.lib import reg, sim, aux
-from larvaworld.lib.process.dataset import LarvaDataset
 reg.VERBOSE=1
 
 def xx_test_replay():
     refIDs = reg.conf.Ref.confIDs
     refID = refIDs[-1]
-    d = reg.loadRef(refID)
+    d = reg.conf.Ref.loadRef(refID)
     replay_kws = {
         'normal': {
             'time_range': (10, 80)
@@ -92,7 +91,7 @@ def test_exp_run():
 def test_evaluation() :
     # refID = 'exploration.merged_dishes'
     # mIDs = ['RE_NEU_PHI_DEF', 'RE_SIN_PHI_DEF']
-    parameters = reg.get_null('Eval', **{
+    parameters = reg.par.get_null('Eval', **{
         'refID': 'exploration.merged_dishes',
         'modelIDs': ['RE_NEU_PHI_DEF', 'RE_SIN_PHI_DEF'],
         # 'dataset_ids': dIDs,

@@ -10,13 +10,10 @@ __all__ = [
 @reg.funcs.stored_conf("Env")
 def Env_dict() :
     from ...reg import gen
-    from ...reg.generators import EnvConf as EC
-    #EC.param.arena.class_
 
 
     def oG(c=1, id='Odor'):
         return gen.Odor(id=id, intensity=2.0 * c, spread=0.0002 * np.sqrt(c)).nestedConf
-        # return reg.get_null('odor', id=id, intensity=2.0 * c, spread=0.0002 * np.sqrt(c))
 
 
     def oD(c=1, id='Odor'):
@@ -88,10 +85,8 @@ def Env_dict() :
     def env(arenaXY, f=f_pars(), o=None, bl={}, w=None, th=None, torus=False):
         if type(arenaXY) == float:
             arena = gen.Arena(geometry='circular', dims=(arenaXY, arenaXY), torus=torus)
-            # arena = reg.get_null('arena', geometry='circular', dims=(arenaXY, arenaXY), torus=torus)
         elif type(arenaXY) == tuple:
             arena = gen.Arena(geometry='rectangular', dims=arenaXY, torus=torus)
-            # arena = reg.get_null('arena', geometry='rectangular', dims=arenaXY, torus=torus)
         else:
             raise
         if o == 'D':
@@ -101,7 +96,7 @@ def Env_dict() :
         if w is not None:
             if 'puffs' in w.keys():
                 for id, args in w['puffs'].items():
-                    w['puffs'][id] = reg.get_null('air_puff', **args)
+                    w['puffs'][id] = reg.par.get_null('air_puff', **args)
             else:
                 w['puffs'] = {}
             w = gen.WindScape(**w)

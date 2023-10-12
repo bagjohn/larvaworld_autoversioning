@@ -1016,14 +1016,13 @@ class ModelRegistry:
 
     def adapt_crawler(self, refID=None, e=None, mode='realistic', average=True):
         if e is None:
-            d = reg.loadRef(refID)
+            d = reg.conf.Ref.loadRef(refID)
             d.load(step=False)
             e = d.endpoint_data
 
         mdict = self.dict.model.m['crawler'].mode[mode].args
         crawler_conf = aux.AttrDict({'mode': mode})
         for d, p in mdict.items():
-            # print(d, p.codename)
             if isinstance(p, param.Parameterized):
                 try:
                     crawler_conf[d] = epar(e, par=p.codename, average=average)
@@ -1035,7 +1034,7 @@ class ModelRegistry:
 
     def adapt_intermitter(self, refID=None, e=None, c=None, mode='default', conf=None):
         if e is None or c is None:
-            d = reg.loadRef(refID)
+            d = reg.conf.Ref.loadRef(refID)
             d.load(step=False)
             e, c = d.endpoint_data, d.config
 
@@ -1071,7 +1070,7 @@ class ModelRegistry:
             mID = f'{mID0}_fitted'
         print(f'Adapting {mID0} on {refID} as {mID} fitting {space_mkeys} modules')
         if e is None or c is None:
-            d = reg.loadRef(refID)
+            d = reg.conf.Ref.loadRef(refID)
             d.load(step=False)
             e, c = d.endpoint_data, d.config
         if dir is None:

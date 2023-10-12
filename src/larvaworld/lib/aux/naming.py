@@ -127,7 +127,6 @@ class NamingRegistry(AttrDict):
 
     def at(self, p, t):
         return self[f'{p}_at'](t, loc='pref')
-        # return f'{p}_at_{t}'
 
     def atStartStopChunk(self, p, chunk):
         return [
