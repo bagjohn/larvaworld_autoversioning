@@ -4,19 +4,18 @@ import agentpy
 import numpy as np
 import pandas as pd
 
-
 from .. import reg, aux, util, plot
 from ..model.envs.conditions import get_exp_condition
 from ..sim.base_run import BaseRun
 from ..process.dataset import LarvaDatasetCollection
 
-
 __all__ = [
     'ExpRun',
 ]
 
+
 class ExpRun(BaseRun):
-    def __init__(self,experiment=None,parameters=None, parameter_dict={}, **kwargs):
+    def __init__(self, experiment=None, parameters=None, parameter_dict={}, **kwargs):
         '''
         Simulation mode 'Exp' launches a single simulation of a specified experiment type.
 
@@ -25,7 +24,7 @@ class ExpRun(BaseRun):
 
         '''
 
-        super().__init__(runtype = 'Exp',experiment=experiment,parameters=parameters, **kwargs)
+        super().__init__(runtype='Exp', experiment=experiment, parameters=parameters, **kwargs)
         self.parameter_dict = parameter_dict
 
     def setup(self):
@@ -46,14 +45,12 @@ class ExpRun(BaseRun):
         """ Defines the models' events per simulation step. """
         if not self.larva_collisions:
             self.larva_bodies = self.get_larva_bodies()
-        if len(self.sources)>10 :
+        if len(self.sources) > 10:
             self.space.accessible_sources_multi(self.agents)
         self.agents.step()
         if self.Box2D:
             self.space.Step(self.dt, 6, 2)
             self.agents.updated_by_Box2D()
-
-
 
     def update(self):
         """ Record a dynamic variable. """
@@ -69,7 +66,7 @@ class ExpRun(BaseRun):
         start = time.time()
         self.run(**kwargs)
         self.data_collection = LarvaDatasetCollection.from_agentpy_output(self.output)
-        self.datasets=self.data_collection.datasets
+        self.datasets = self.data_collection.datasets
         end = time.time()
         dur = np.round(end - start).astype(int)
         reg.vprint(f'--- Simulation {self.id} completed in {dur} seconds!--- ', 1)
@@ -114,7 +111,7 @@ class ExpRun(BaseRun):
     def detect_collisions(self, id):
         ids = []
         for id0, body0 in self.larva_bodies.items():
-            if id0==id :
+            if id0 == id:
                 continue
             if self.larva_bodies[id].intersects(body0):
                 ids.append(id0)
@@ -154,8 +151,7 @@ class ExpRun(BaseRun):
                 aux.storeSoloDics(vs, path=f'{d.dir}/data/individuals/{type}.txt')
 
     def load_agentpy_output(self):
-        df=agentpy.DataDict.load(**self.p.agentpy_output_kws)
+        df = agentpy.DataDict.load(**self.p.agentpy_output_kws)
         df1 = pd.concat(df.variables, axis=0).droplevel(1, axis=0)
         df1.index.rename('Model', inplace=True)
         return df1
-
