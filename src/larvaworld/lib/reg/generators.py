@@ -484,7 +484,8 @@ class LabFormat(NestedConf):
 class ExpConf(SimOps):
     env_params = ClassAttr(gen.Env, doc='The environment configuration')
     experiment = reg.conf.Exp.confID_selector()
-    trials = reg.conf.Trial.confID_selector('default')
+    trials = param.Dict(default={}, doc='Dictionary of temporal epochs of the experiment')
+    # trials = reg.conf.Trial.confID_selector('default')
     collections = param.ListSelector(default=['pose'], objects=reg.parDB.output_keys,
                                      doc='The data to collect as output')
     larva_groups = ClassDict(item_type=gen.LarvaGroup, doc='The larva groups')
@@ -500,15 +501,16 @@ class ExpConf(SimOps):
         kws = {
             # 'id': f'Imitation {refID}',
             'sample': refID,
-            'model': reg.conf.Model.getID(mID),
+            'model': mID,
+            # 'model': reg.conf.Model.getID(mID),
             'color': c.color,
             'distribution': {'N': c.N},
             'imitation': True,
 
         }
         return cls(dt=c.dt, duration=c.duration,env_params=gen.Env(**c.env_params),
-                   larva_groups=aux.AttrDict({f'Imitation {refID}': LarvaGroup(**kws)}),
-                   experiment='imitation', **kwargs)
+                   larva_groups=aux.AttrDict({f'Imitation {refID}': gen.LarvaGroup(**kws)}),
+                   experiment='dish', **kwargs)
 
 
 gen.Exp = ExpConf

@@ -149,9 +149,9 @@ def grouped_exp_dic():
                                    l=lg(N=25, s=(0.005, 0.02), mID='RE_NEU_PHI_DEF_nav_x2')),
             'PItest_on': pref_exp('PItest_on', env='CS_UCS_on_food', l=lg(N=25, s=(0.005, 0.02), mID='forager_x2')),
             'PItrain_mini': pref_exp('PItrain_mini', env='CS_UCS_on_food_x2', dur=1.0, c=['olfactor', 'memory'],
-                                     trials='odor_preference_short', l=lg(N=25, s=(0.005, 0.02), mID='RL_forager')),
+                                     trials=reg.conf.Trial.getID('odor_preference_short'), l=lg(N=25, s=(0.005, 0.02), mID='RL_forager')),
             'PItrain': pref_exp('PItrain', env='CS_UCS_on_food_x2', dur=41.0, c=['olfactor', 'memory'],
-                                trials='odor_preference', l=lg(N=25, s=(0.005, 0.02), mID='RL_forager')),
+                                trials=reg.conf.Trial.getID('odor_preference'), l=lg(N=25, s=(0.005, 0.02), mID='RL_forager')),
             'PItest_off_RL': pref_exp('PItest_off_RL', env='CS_UCS_off_food', dur=105.0, c=['olfactor', 'memory'],
                                       l=lg(N=25, s=(0.005, 0.02), mID='RL_navigator'))},
         'foraging': {

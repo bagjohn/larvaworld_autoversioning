@@ -15,8 +15,6 @@ def trial_conf(durs=[], qs=[]):
 
 @reg.funcs.stored_conf("Trial")
 def Trial_dict() :
-
-
     d = aux.AttrDict({
         'default': trial_conf(),
         'odor_preference': trial_conf(

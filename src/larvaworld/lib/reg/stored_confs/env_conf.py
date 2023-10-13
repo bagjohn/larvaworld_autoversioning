@@ -26,16 +26,6 @@ def Env_dict() :
         else:
             return b
 
-
-    def hborder(y, xs, **kwargs):
-        ps = [(x, y) for x in xs]
-        return border(ps, **kwargs)
-
-
-    def vborder(x, ys, **kwargs):
-        ps = [(x, y) for y in ys]
-        return border(ps, **kwargs)
-
     def su2(id='Source',**kwargs):
         return gen.Food(**kwargs).entry(id)
 
@@ -181,15 +171,15 @@ def Env_dict() :
                                           regeneration_pos={'loc': (0.005, 0.0), 'scale': (0.0, 0.0)})),
                                                                         w={'wind_speed': 100.0},o= 'D'),
     'windy_arena_bordered': env((0.3, 0.3), w={'wind_speed': 10.0},
-                                bl={'Border': vborder(-0.03, [-0.01, -0.06], w=0.005)}),
+                                bl={'Border': border(ps=[(-0.03,-0.01), (-0.03,-0.06)], w=0.005)}),
     'puff_arena_bordered':  env((0.3, 0.3), w={'puffs': {'PuffGroup': {'N': 100, 'duration': 300.0, 'start_time': 0, 'speed': 100}}},
-                               bl={'Border': vborder(-0.03, [-0.01, -0.06], w=0.005)}),
+                               bl={'Border': border(ps=[(-0.03,-0.01), (-0.03,-0.06)], w=0.005)}),
     'single_puff':          env((0.3, 0.3),
                        w={'puffs': {'Puff': {'N': 1, 'duration': 30.0, 'start_time': 55, 'speed': 100}}}),
 
-    'CS_UCS_on_food':       env(0.1,        f_pars(grid=gen.FoodGrid(), su=CS_UCS(1)), 'G'),
-    'CS_UCS_on_food_x2':    env(0.1,        f_pars(grid=gen.FoodGrid(), su=CS_UCS(2)), 'G'),
-    'CS_UCS_off_food':      env(0.1,        f_pars(su=CS_UCS(1)), 'G'),
+    'CS_UCS_on_food':       env(0.1,        f_pars(grid=gen.FoodGrid(), su=CS_UCS(1)),          'G'),
+    'CS_UCS_on_food_x2':    env(0.1,        f_pars(grid=gen.FoodGrid(), su=CS_UCS(2)),          'G'),
+    'CS_UCS_off_food':      env(0.1,        f_pars(su=CS_UCS(1)),                               'G'),
 
     'patchy_food':          env((0.2, 0.2), f_pars(sg=sg2(N=8, scale=(0.07,0.07), mode='periphery', a=0.001, odor=oG(2))), 'G'),
     'random_food':          env((0.1, 0.1), f_pars(sg=sgs(4, N=1, scale=(0.04,0.04), mode='uniform', shape='rect'))),
@@ -200,8 +190,7 @@ def Env_dict() :
     'single_odor_patch':    env((0.1, 0.1),  f_pars(su=su2('Patch', a=0.1, r=0.01, odor=oG())), 'G'),
     'single_patch':         env((0.05, 0.05),f_pars(su=su2('Patch', a=0.1, r=0.01))),
     'multi_patch':          env((0.02, 0.02),f_pars(sg=sg2(N=8, scale=(0.007,0.007), mode='periphery', a=0.1, r=0.0015))),
-    'double_patch':         env((0.24, 0.24),f_pars(su=double_patches()),
-                        'G'),
+    'double_patch':         env((0.24, 0.24),f_pars(su=double_patches()),                       'G'),
 
     'maze': maze_conf(15, 0.1),
     'game': game_env(),
