@@ -9,7 +9,6 @@ from ..param import ClassDict,OptionalSelector, ClassAttr
 
 __all__ = [
     'next_idx',
-    'imitation_exp',
     'ConfType',
     'RefType',
     'conf',
@@ -29,28 +28,6 @@ def next_idx(id, conftype='Exp'):
     d[conftype][id] += 1
     aux.save_dict(d, f)
     return d[conftype][id]
-
-
-
-def imitation_exp(refID, model='explorer', **kwargs):
-    c = reg.conf.Ref.getRef(refID)
-    kws = {
-        'id': 'ImitationGroup',
-        'expand': True,
-        'sample': refID,
-        'model': model,
-        'color': 'blue',
-        'distribution': {'N': c.N},
-        'imitation': True,
-
-    }
-    exp_conf = reg.par.get_null('Exp', sim_params=reg.par.get_null('sim_params', dt=c.dt, duration=c.duration),
-                                env_params=c.env_params, larva_groups=reg.generators.full_lg(**kws),
-                                experiment='imitation',
-                                trials={}, enrichment=reg.gen.EnrichConf().nestedConf)
-    exp_conf.update(**kwargs)
-    return exp_conf
-
 
 
 def build_GroupTypeSubkeys():

@@ -30,8 +30,7 @@ def grouped_exp_dic():
     def exp(id, env=None, l={}, en=reg.gen.EnrichConf(), dur=10.0,c=[], c0=['pose'], **kwargs):
         if env is None:
             env = id
-        env_p=reg.conf.Env.get(env)
-        return gen.Exp(larva_groups=l, env_params=env_p, experiment=id, enrichment=en, collections=c0 + c,duration=dur, **kwargs).nestedConf
+        return gen.Exp(larva_groups=l, env_params=reg.conf.Env.get(env), experiment=id, enrichment=en, collections=c0 + c,duration=dur, **kwargs).nestedConf
 
     def food_exp(id, c=['feeder'], dur=10.0,
                  en=gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],
