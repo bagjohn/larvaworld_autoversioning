@@ -1,16 +1,15 @@
-import copy
 import os
 import time
 import agentpy
 import numpy as np
 import pandas as pd
-from pandas import to_datetime
 
-from larvaworld.lib import reg, aux, util, plot
 
-from larvaworld.lib.model.envs.conditions import get_exp_condition
-from larvaworld.lib.sim.base_run import BaseRun
-import larvaworld
+from .. import reg, aux, util, plot
+from ..model.envs.conditions import get_exp_condition
+from ..sim.base_run import BaseRun
+from ..process.dataset import LarvaDatasetCollection
+
 
 __all__ = [
     'ExpRun',
@@ -27,50 +26,26 @@ class ExpRun(BaseRun):
         '''
 
         super().__init__(runtype = 'Exp',experiment=experiment,parameters=parameters, **kwargs)
-
-
         self.parameter_dict = parameter_dict
 
-
-
     def setup(self):
-
         self.sim_epochs = self.p.trials
         for idx, ep in self.sim_epochs.items():
             ep['start'] = int(ep['start'] * 60 / self.dt)
             ep['stop'] = int(ep['stop'] * 60 / self.dt)
-
         self.build_env(self.p.env_params)
-
         self.build_agents(self.p.larva_groups, self.parameter_dict)
         self.set_collectors(self.p.collections)
         self.accessible_sources = None
-
-
-
-
         if not self.larva_collisions:
             self.eliminate_overlap()
-
         k = get_exp_condition(self.experiment)
         self.exp_condition = k(self) if k is not None else None
 
-        # self.report(['source_xy'])
-
-
-
-
-
-
-    # @profile
     def step(self):
         """ Defines the models' events per simulation step. """
         if not self.larva_collisions:
             self.larva_bodies = self.get_larva_bodies()
-        # for id, layer in self.odor_layers.items():
-        #     layer.update_values()  # Currently doing something only for the DiffusionValueLayer
-        # if self.windscape is not None:
-        #     self.windscape.update()
         if len(self.sources)>10 :
             self.space.accessible_sources_multi(self.agents)
         self.agents.step()
@@ -83,7 +58,6 @@ class ExpRun(BaseRun):
     def update(self):
         """ Record a dynamic variable. """
         self.agents.nest_record(self.collectors['step'])
-        # print(self.t)
 
     def end(self):
         """ Repord an evaluation measure. """
@@ -94,16 +68,13 @@ class ExpRun(BaseRun):
         reg.vprint(f'--- Simulation {self.id} initialized!--- ', 1)
         start = time.time()
         self.run(**kwargs)
-        self.data_collection = larvaworld.lib.LarvaDatasetCollection.from_agentpy_output(self.output)
+        self.data_collection = LarvaDatasetCollection.from_agentpy_output(self.output)
         self.datasets=self.data_collection.datasets
-        # self.datasets = self.retrieve()
         end = time.time()
         dur = np.round(end - start).astype(int)
         reg.vprint(f'--- Simulation {self.id} completed in {dur} seconds!--- ', 1)
         if self.p.enrichment:
             for d in self.datasets:
-                # print(d.step_data)
-                # raise
                 reg.vprint(f'--- Enriching dataset {d.id} ---', 1)
                 d.enrich(**self.p.enrichment, is_last=False)
                 reg.vprint(f'--- Dataset {d.id} enriched ---', 1)
@@ -112,35 +83,10 @@ class ExpRun(BaseRun):
             self.store()
         return self.datasets
 
-
-
-    # def retrieve(self):
-    #     ds = []
-    #     for gID, df in self.output.variables.items():
-    #         # print(df)
-    #         # raise
-    #         assert 'sample_id' not in df.index.names
-    #         kws = {
-    #             'larva_groups': {gID: self.p.larva_groups[gID]},
-    #             # 'df': df,
-    #             'id': gID,
-    #             'dir': f'{self.data_dir}/{gID}'
-    #         }
-    #         d = self.convert_output_to_dataset(df, **kws)
-    #
-    #         ds.append(d)
-    #
-    #
-    #     return ds
-
-
-
     def build_agents(self, larva_groups, parameter_dict={}):
         reg.vprint(f'--- Simulation {self.id} : Generating agent groups!--- ', 1)
         confs = util.generate_agentConfs(larva_groups=larva_groups, parameter_dict=parameter_dict)
-
         self.place_agents(confs)
-
 
     def eliminate_overlap(self):
         scale = 3.0

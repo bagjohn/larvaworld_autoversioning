@@ -29,8 +29,6 @@ __all__ = [
     'DatasetConfig',
 ]
 
-
-
 gen = aux.AttrDict({
     'FoodGroup': class_generator(Food, mode='Group'),
     'Food': class_generator(Food),
@@ -508,9 +506,17 @@ class ExpConf(SimOps):
             'imitation': True,
 
         }
-        return cls(dt=c.dt, duration=c.duration,env_params=gen.Env(**c.env_params),
+        return cls(dt=c.dt, duration=c.duration, env_params=gen.Env(**c.env_params),
                    larva_groups=aux.AttrDict({f'Imitation {refID}': gen.LarvaGroup(**kws)}),
                    experiment='dish', **kwargs)
+
+    @property
+    def agent_confs(self):
+        confs = []
+        for gID, gConf in self.larva_groups.items():
+            lg = LarvaGroup(**gConf, id=gID)
+            confs += lg(parameter_dict=self.parameter_dict)
+        return confs
 
 
 gen.Exp = ExpConf
@@ -548,9 +554,8 @@ gen.LabFormat = LabFormat
 gen.Replay = class_generator(ReplayConf)
 
 
-
-def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, sample=None, substrate_type='standard', pref='',
-           navigator=False, expand=False):
+def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, sample=None, substrate_type='standard', pref='', navigator=False,
+           expand=False):
     if age == 0.0:
         epochs = {}
     else:
