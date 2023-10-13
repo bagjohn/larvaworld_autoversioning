@@ -24,8 +24,6 @@ Larvae were reared from egg-hatch to mid- third-instar (96±2h post-hatch) in 25
 --> 0.35 ml medium per larva for the 4 days
 '''
 
-
-
 __all__ = [
     'DEB',
     'deb_default',
@@ -33,21 +31,22 @@ __all__ = [
     'deb_sim',
 ]
 
+
 class DEB(NestedConf):
-    species = param.Selector(objects=['default', 'rover', 'sitter'],label='phenotype',
-                             doc='The phenotype/species-specific fitted DEB model to use.') # Drosophila model by default
-    assimilation_mode = param.Selector(objects=['gut','sim', 'deb'], label='assimilation mode',
-                             doc='The method used to calculate the DEB assimilation energy flow.')
+    species = param.Selector(objects=['default', 'rover', 'sitter'], label='phenotype',
+                             doc='The phenotype/species-specific fitted DEB model to use.')  # Drosophila model by default
+    assimilation_mode = param.Selector(objects=['gut', 'sim', 'deb'], label='assimilation mode',
+                                       doc='The method used to calculate the DEB assimilation energy flow.')
     starvation_strategy = param.Boolean(False, doc='Whether starvation strategy is active')
     aging = param.Boolean(False, doc='Whether aging is active')
-    hunger_as_EEB = param.Boolean(False, doc='Whether the DEB-generated hunger drive informs the exploration-exploitation balance.')
+    hunger_as_EEB = param.Boolean(False,
+                                  doc='Whether the DEB-generated hunger drive informs the exploration-exploitation balance.')
     use_gut = param.Boolean(True, doc='Whether to use the gut module.')
-    hunger_gain = param.Magnitude(0.0,label='hunger sensitivity to reserve reduction',
+    hunger_gain = param.Magnitude(0.0, label='hunger sensitivity to reserve reduction',
                                   doc='The sensitivy of the hunger drive in deviations of the DEB reserve density.')
     hours_as_larva = PositiveNumber(0.0, doc='The age since eclosion')
     steps_per_day = PositiveInteger(24 * 60, doc='How many iterations of the model per day')
     substrate = ClassAttr(Substrate, doc='The substrate where the agent feeds')
-
 
     def __init__(self, id='DEB model', cv=0, T=298.15, eb=1.0,
                  print_output=False, save_dict=True,
@@ -60,8 +59,6 @@ class DEB(NestedConf):
         with open(f'{reg.ROOT_DIR}/lib/model/deb/models/deb_{self.species}.csv') as tfp:
             self.species_dict = json.load(tfp)
         self.__dict__.update(self.species_dict)
-
-
 
         self.set_intermitter(intermitter, base_hunger)
 
@@ -98,7 +95,6 @@ class DEB(NestedConf):
         self.V = self.L0 ** 3
         self.deb_p_A = 0
         self.sim_p_A = 0
-
 
         self.base_f = self.substrate.get_f(K=self.K)
         self.f = self.base_f
@@ -177,7 +173,7 @@ class DEB(NestedConf):
         self.T_factor = np.exp(self.T_A / self.T_ref - self.T_A / self.T);  # Arrhenius factor
         # v**-1*L=e*E_G/(g*pM)
         lb = self.lb = deb.get_lb(eb=self.eb, **self.species_dict)
-        self.E0 = deb.get_E0(eb=self.eb,lb=lb, **self.species_dict)
+        self.E0 = deb.get_E0(eb=self.eb, lb=lb, **self.species_dict)
         self.E_Rm = deb.get_E_Rm(lb=lb, **self.species_dict)
 
         Lb = self.Lb = lb * self.Lm
@@ -196,7 +192,6 @@ class DEB(NestedConf):
         # DEB textbook p.91
         # self.y_VE = (self.d_V / self.w_V)*self.mu_E/E_G
         # self.J_E_Am = self.p_Am/self.mu_E
-
 
         # self.U0 = self.uE0 * v ** 2 / g ** 2 / k_M ** 3
         # self.E0 = self.U0 * p_Am
@@ -226,7 +221,6 @@ class DEB(NestedConf):
         xb = g / (eb + g)
         ab = 3 * g * xb ** (1 / 3) / self.lb
         return 3 * quad(func=get_tb, a=1e-15, b=xb, args=(ab, xb))[0]
-
 
     def predict_larva_stage(self, f=1.0):
         g = self.g
@@ -488,12 +482,13 @@ class DEB(NestedConf):
         self.epoch_fs = []
         self.epoch_qs = []
         self.epochs = []
-        for idx, ep in epochs.items():
-            #print(idx,ep)
-            q = ep['substrate']['quality']
-            f = deb.Substrate(**ep['substrate']).get_f(K=self.K)
+        for ep in epochs:
+            sub = ep.substrate
+            if not isinstance(sub, Substrate):
+                sub = Substrate(**sub)
+            f = sub.get_f(K=self.K)
             c = {'assimilation_mode': 'sim', 'f': f}
-            t0,t1=ep['age_range']
+            t0, t1 = ep.age_range
             if t1 is None:
                 while self.stage == 'larva':
                     self.run(**c)
@@ -503,12 +498,39 @@ class DEB(NestedConf):
                     if self.stage == 'larva':
                         self.run(**c)
             self.epoch_fs.append(f)
-            self.epoch_qs.append(q)
+            self.epoch_qs.append(sub.quality)
             self.epochs.append(
                 [t0 + tb, t1 + tb if t1 is not None else self.pupation_time_in_hours])
         self.hours_as_larva = self.age * 24 - tb
         if self.gut is not None:
             self.gut.update()
+
+    # def grow_larva(self, epochs, **kwargs):
+    #     tb = self.birth_time_in_hours
+    #     self.epoch_fs = []
+    #     self.epoch_qs = []
+    #     self.epochs = []
+    #     for idx, ep in epochs.items():
+    #         #print(idx,ep)
+    #         q = ep['substrate']['quality']
+    #         f = deb.Substrate(**ep['substrate']).get_f(K=self.K)
+    #         c = {'assimilation_mode': 'sim', 'f': f}
+    #         t0,t1=ep['age_range']
+    #         if t1 is None:
+    #             while self.stage == 'larva':
+    #                 self.run(**c)
+    #         else:
+    #             N = int(self.steps_per_day / 24 * (t1 - t0))
+    #             for i in range(N):
+    #                 if self.stage == 'larva':
+    #                     self.run(**c)
+    #         self.epoch_fs.append(f)
+    #         self.epoch_qs.append(q)
+    #         self.epochs.append(
+    #             [t0 + tb, t1 + tb if t1 is not None else self.pupation_time_in_hours])
+    #     self.hours_as_larva = self.age * 24 - tb
+    #     if self.gut is not None:
+    #         self.gut.update()
 
     @property
     def pupation_buffer(self):
@@ -666,11 +688,11 @@ def deb_default(id='DEB model', epochs={}, age=None, **kwargs):
 
     if N == 0:
         epochs = {0: Epoch().nestedConf}
-    elif str(N - 1) in epochs.keys() :
-        t1=epochs[str(N - 1)].age_range[1]
+    elif str(N - 1) in epochs.keys():
+        t1 = epochs[str(N - 1)].age_range[1]
         if t1 is not None:
             epochs.update({N: Epoch(age_range=(t1, None)).nestedConf})
-    elif N - 1 in epochs.keys() :
+    elif N - 1 in epochs.keys():
         t1 = epochs[N - 1].age_range[1]
         if t1 is not None:
             epochs.update({N: Epoch(age_range=(t1, None)).nestedConf})
@@ -678,6 +700,7 @@ def deb_default(id='DEB model', epochs={}, age=None, **kwargs):
     deb.finalize_dict()
     d = deb.return_dict()
     return d
+
 
 def get_best_EEB(deb, cRef):
     z = np.poly1d(cRef['EEB_poly1d'])
@@ -717,7 +740,7 @@ def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=Fals
         if inter.Nfeeds > cum_feeds:
             feeds += 1
             cum_feeds += 1
-        if int(inter.total_t/inter.dt) % Nticks == 0:
+        if int(inter.total_t / inter.dt) % Nticks == 0:
             feed_dict.append(feeds)
             X_V = deb.V_bite * deb.V * feeds
             deb.run(X_V=X_V)

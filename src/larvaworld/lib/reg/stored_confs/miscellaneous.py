@@ -5,9 +5,9 @@ from ...param import Epoch
 
 __all__ = [
     'Trial_dict',
-    'Life_dict',
+    # 'Life_dict',
     'Tree_dict',
-    'Food_dict',
+    # 'Food_dict',
 ]
 
 
@@ -39,17 +39,17 @@ def Trial_dict():
     return d
 
 
-def life_conf(durs=[], qs=[], age=0.0):
-    return reg.par.get_null('Life', epochs=trial_conf(durs, qs), age=age)
-
-
-@reg.funcs.stored_conf("Life")
-def Life_dict():
-    d = aux.AttrDict({
-        'default': life_conf(durs=[0.0], qs=[1.0], age=0.0),
-        '72h_q50': life_conf(durs=[72.0], qs=[0.5], age=72.0),
-    })
-    return d
+# def life_conf(durs=[], qs=[], age=0.0):
+#     return reg.par.get_null('Life', epochs=trial_conf(durs, qs), age=age)
+#
+#
+# @reg.funcs.stored_conf("Life")
+# def Life_dict():
+#     d = aux.AttrDict({
+#         'default': life_conf(durs=[0.0], qs=[1.0], age=0.0),
+#         '72h_q50': life_conf(durs=[72.0], qs=[0.5], age=72.0),
+#     })
+#     return d
 
 
 @reg.funcs.stored_conf("Tree")
@@ -57,8 +57,8 @@ def Tree_dict():
     return aux.AttrDict()
 
 
-@reg.funcs.stored_conf("Food")
-def Food_dict():
-    from ...reg import gen
-
-    return aux.AttrDict()
+# @reg.funcs.stored_conf("Food")
+# def Food_dict():
+#     from ...reg import gen
+#
+#     return aux.AttrDict()

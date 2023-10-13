@@ -218,6 +218,8 @@ class Life(NestedConf):
         return cls(age=age, epochs=epochs, reach_pupation=reach_pupation)
 
 
+
+
 class AirPuff(NestedConf):
     duration = PositiveNumber(default=1.0, softmax=100.0, step=0.1, doc='The duration of the air-puff in seconds.')
     speed = PositiveNumber(default=10.0, softmax=1000.0, step=0.1, doc='The wind speed of the air-puff.')
