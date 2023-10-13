@@ -192,8 +192,6 @@ class Life(NestedConf):
     epochs = ItemListParam(item_type=Epoch, doc='The feeding epochs comprising life history.')
     reach_pupation = param.Boolean(False, doc='If True the larva will grow to pupation.')
 
-    # epochs = ClassDict(item_type=Epoch, doc='The feeding epochs comprising life history.')
-
     @classmethod
     def from_epoch_ticks(cls, ticks=[], subs=None, reach_pupation=False):
         assert all([tick > 0 for tick in ticks])
@@ -208,16 +206,29 @@ class Life(NestedConf):
             age = None
         N = len(age_range)
         if subs is None:
-            sub = [[1.0, 'standard']]*N
+            sub = [[1.0, 'standard']] * N
         elif len(subs) == 2 and isinstance(subs[0], float) and isinstance(subs[1], str):
-            sub = [subs]*N
+            sub = [subs] * N
         else:
             assert len(subs) == N
             sub = subs
         epochs = aux.ItemList(cls=Epoch, objs=N, sub=sub, age_range=age_range)
         return cls(age=age, epochs=epochs, reach_pupation=reach_pupation)
 
-
+    @classmethod
+    def prestarved(cls, age=0.0, h_starved=0.0, rearing_quality=1.0, starvation_quality=0.0, substrate_type='standard'):
+        sub_r = [rearing_quality, substrate_type]
+        sub_s = [starvation_quality, substrate_type]
+        if age == 0.0:
+            ticks, subs = [], []
+        else:
+            if h_starved == 0:
+                ticks, subs = [age], [sub_r]
+            elif h_starved >= age:
+                ticks, subs = [age], [sub_s]
+            else:
+                ticks, subs = [age - h_starved, age], [sub_r, sub_s]
+        return cls.from_epoch_ticks(ticks=ticks, subs=subs)
 
 
 class AirPuff(NestedConf):

@@ -505,32 +505,6 @@ class DEB(NestedConf):
         if self.gut is not None:
             self.gut.update()
 
-    # def grow_larva(self, epochs, **kwargs):
-    #     tb = self.birth_time_in_hours
-    #     self.epoch_fs = []
-    #     self.epoch_qs = []
-    #     self.epochs = []
-    #     for idx, ep in epochs.items():
-    #         #print(idx,ep)
-    #         q = ep['substrate']['quality']
-    #         f = deb.Substrate(**ep['substrate']).get_f(K=self.K)
-    #         c = {'assimilation_mode': 'sim', 'f': f}
-    #         t0,t1=ep['age_range']
-    #         if t1 is None:
-    #             while self.stage == 'larva':
-    #                 self.run(**c)
-    #         else:
-    #             N = int(self.steps_per_day / 24 * (t1 - t0))
-    #             for i in range(N):
-    #                 if self.stage == 'larva':
-    #                     self.run(**c)
-    #         self.epoch_fs.append(f)
-    #         self.epoch_qs.append(q)
-    #         self.epochs.append(
-    #             [t0 + tb, t1 + tb if t1 is not None else self.pupation_time_in_hours])
-    #     self.hours_as_larva = self.age * 24 - tb
-    #     if self.gut is not None:
-    #         self.gut.update()
 
     @property
     def pupation_buffer(self):

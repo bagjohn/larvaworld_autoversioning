@@ -556,17 +556,9 @@ gen.Replay = class_generator(ReplayConf)
 
 def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, sample=None, substrate_type='standard', pref='', navigator=False,
            expand=False):
-    if age == 0.0:
-        life=Life.from_epoch_ticks()
-    else:
-        if h_starved == 0:
-            life = Life.from_epoch_ticks(ticks=[age], subs=[[q, substrate_type]])
-        else:
-            life = Life.from_epoch_ticks(ticks=[age - h_starved, age], subs=[[q, substrate_type], [0.0, substrate_type]])
-
     kws0 = {
         'distribution': {'N': N, 'scale': (0.005, 0.005)},
-        'life_history': life,
+        'life_history': Life.prestarved(age=age, h_starved=h_starved, rearing_quality=q, substrate_type=substrate_type),
         'sample': sample,
     }
 

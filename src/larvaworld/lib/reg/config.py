@@ -30,13 +30,13 @@ def next_idx(id, conftype='Exp'):
     return d[conftype][id]
 
 
-def build_GroupTypeSubkeys():
-    d0 = {k: {} for k in reg.GROUPTYPES}
-    d1 = {
-        'LarvaGroup': {'Model'}
-    }
-    d0.update(d1)
-    return aux.AttrDict(d0)
+# def build_GroupTypeSubkeys():
+#     d0 = {k: {} for k in reg.GROUPTYPES}
+#     d1 = {
+#         'LarvaGroup': {'Model'}
+#     }
+#     d0.update(d1)
+#     return aux.AttrDict(d0)
 
 
 class ConfType(param.Parameterized):
