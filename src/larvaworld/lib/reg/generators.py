@@ -557,26 +557,16 @@ gen.Replay = class_generator(ReplayConf)
 def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, sample=None, substrate_type='standard', pref='', navigator=False,
            expand=False):
     if age == 0.0:
-        epochs = aux.ItemList()
+        life=Life.from_epoch_ticks()
     else:
         if h_starved == 0:
-            epochs = aux.ItemList([
-                Epoch(age_range=(0.0, age), sub=[q, substrate_type])
-            ])
+            life = Life.from_epoch_ticks(ticks=[age], subs=[[q, substrate_type]])
         else:
-            epochs = aux.ItemList([
-                Epoch(age_range=(0.0, age - h_starved), sub=[q, substrate_type]),
-                Epoch(age_range=(age - h_starved, age), sub=[0, substrate_type])
-                # {'age_range': (0.0, age - h_starved), 'substrate': {'type': substrate_type, 'quality': q}},
-                # {'age_range': (age - h_starved, age), 'substrate': {'type': substrate_type, 'quality': 0}}
-            ])
-            # epochs = {
-            #     0: {'age_range': (0.0, age - h_starved), 'substrate': {'type': substrate_type, 'quality': q}},
-            #     1: {'age_range': (age - h_starved, age), 'substrate': {'type': substrate_type, 'quality': 0}},
-            # }
+            life = Life.from_epoch_ticks(ticks=[age - h_starved, age], subs=[[q, substrate_type], [0.0, substrate_type]])
+
     kws0 = {
         'distribution': {'N': N, 'scale': (0.005, 0.005)},
-        'life_history': Life(age=age, epochs=epochs),
+        'life_history': life,
         'sample': sample,
     }
 

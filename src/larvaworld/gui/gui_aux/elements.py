@@ -1725,11 +1725,8 @@ class GuiTreeData(sg.TreeData):
             [' ' * 4 * level + self._NodeStr(child, level + 1, k, v) for child in node.children])
 
     def get_df(self):
-        if not self.build_tree and self.root_key in reg.conf.Tree.confIDs:
-            df = pd.DataFrame.from_dict(reg.conf.Tree.getID(self.root_key))
-        else:
-            df = gui_aux.pars_to_tree(self.root_key)
-            reg.conf['Tree'].setID(conf=df.to_dict(), id=self.root_key)
+        df = gui_aux.pars_to_tree(self.root_key)
+        reg.conf['Tree'].setID(conf=df.to_dict(), id=self.root_key)
         return df
 
     def get_entries(self):

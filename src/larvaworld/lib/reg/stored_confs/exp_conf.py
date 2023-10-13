@@ -1,11 +1,33 @@
 import numpy as np
 
 from ... import reg, aux
+from ...param import Epoch
 
 __all__ = [
+    'Trial_dict',
     'Exp_dict',
     'ExpGroup_dict',
 ]
+
+def trial_conf(durs=[], qs=[]):
+    cumdurs = np.cumsum([0] + durs)
+    return aux.ItemList(
+        Epoch(age_range=(t0,t1), sub=[q, 'standard']).nestedConf for
+         i, (t0, t1, q) in enumerate(zip(cumdurs[:-1], cumdurs[1:], qs)))
+
+
+@reg.funcs.stored_conf("Trial")
+def Trial_dict():
+    d = aux.AttrDict({
+        'default': aux.AttrDict({'epochs' : trial_conf()}),
+        'odor_preference': aux.AttrDict({'epochs' : trial_conf(
+            [5.0] * 8,
+            [1.0, 0.0] * 4)}),
+        'odor_preference_short': aux.AttrDict({'epochs' : trial_conf(
+            [0.125] * 8,
+            [1.0, 0.0] * 4)})
+    })
+    return d
 
 
 def grouped_exp_dic():
