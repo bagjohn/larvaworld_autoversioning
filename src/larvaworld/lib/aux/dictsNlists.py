@@ -177,7 +177,8 @@ def save_dict(d, file):
             with open(file, "w") as fp:
                 json.dump(d, fp)
         finally:
-            print('Failed to save dict')
+            pass
+            # print('Failed to save dict')
 
 
 def merge_dicts(dict_list):
