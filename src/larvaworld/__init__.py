@@ -4,7 +4,7 @@ Larvaworld : A Drosophila larva behavioral analysis and simulation platform
 
 from . import lib, cli, gui
 # print('now')
-lib.reg.config.resetConfs(init=False)
+lib.reg.config.resetConfs(init=True)
 
 __author__ = 'Panagiotis Sakagiannis'
 __license__ = 'GNU GENERAL PUBLIC LICENSE'

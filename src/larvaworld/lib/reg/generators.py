@@ -287,7 +287,7 @@ class LabFormat(NestedConf):
         return self.import_func(source_dir=source_dir, tracker=self.tracker, filesystem=self.filesystem, **kwargs)
 
     def build_dataset(self, step, end, parent_dir, proc_folder=None, group_id=None, N=None, id=None, sample=None,
-                      color='black', epochs={}, age=0.0, ):
+                      color='black', epochs=[], age=0.0):
         if group_id is None:
             group_id = parent_dir
         if id is None:
@@ -324,7 +324,7 @@ class LabFormat(NestedConf):
         return d
 
     def import_dataset(self, parent_dir, raw_folder=None, merged=False,
-                       proc_folder=None, group_id=None, N=None, id=None, sample=None, color='black', epochs={}, age=0.0,
+                       proc_folder=None, group_id=None, N=None, id=None, sample=None, color='black', epochs=[], age=0.0,
                        refID=None, enrich_conf=None, save_dataset=True, **kwargs):
 
         """
@@ -557,20 +557,26 @@ gen.Replay = class_generator(ReplayConf)
 def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, sample=None, substrate_type='standard', pref='', navigator=False,
            expand=False):
     if age == 0.0:
-        epochs = {}
+        epochs = aux.ItemList()
     else:
         if h_starved == 0:
-            epochs = {
-                0: {'age_range': (0.0, age), 'substrate': {'type': substrate_type, 'quality': q}}
-            }
+            epochs = aux.ItemList([
+                Epoch(age_range=(0.0, age), sub=[q, substrate_type])
+            ])
         else:
-            epochs = {
-                0: {'age_range': (0.0, age - h_starved), 'substrate': {'type': substrate_type, 'quality': q}},
-                1: {'age_range': (age - h_starved, age), 'substrate': {'type': substrate_type, 'quality': 0}},
-            }
+            epochs = aux.ItemList([
+                Epoch(age_range=(0.0, age - h_starved), sub=[q, substrate_type]),
+                Epoch(age_range=(age - h_starved, age), sub=[0, substrate_type])
+                # {'age_range': (0.0, age - h_starved), 'substrate': {'type': substrate_type, 'quality': q}},
+                # {'age_range': (age - h_starved, age), 'substrate': {'type': substrate_type, 'quality': 0}}
+            ])
+            # epochs = {
+            #     0: {'age_range': (0.0, age - h_starved), 'substrate': {'type': substrate_type, 'quality': q}},
+            #     1: {'age_range': (age - h_starved, age), 'substrate': {'type': substrate_type, 'quality': 0}},
+            # }
     kws0 = {
         'distribution': {'N': N, 'scale': (0.005, 0.005)},
-        'life_history': {'age': age, 'epochs': epochs},
+        'life_history': Life(age=age, epochs=epochs),
         'sample': sample,
     }
 

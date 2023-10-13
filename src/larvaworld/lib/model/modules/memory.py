@@ -77,10 +77,10 @@ class RLmemory(Memory):
     def step(self, dx=None, reward=False, **kwargs):
         if dx is None:
             dx = {}
-        if self.table == False:
-            temp = self.brain.agent.model.table_collector
-            if temp is not None:
-                self.table = temp.tables['best_gains'] if 'best_gains' in list(temp.tables.keys()) else None
+        # if self.table == False:
+        #     temp = self.brain.agent.model.table_collector
+        #     if temp is not None:
+        #         self.table = temp.tables['best_gains'] if 'best_gains' in list(temp.tables.keys()) else None
         self.count_time()
         if self.active and self.total_t > self.train_dur * 60:
             self.active = False

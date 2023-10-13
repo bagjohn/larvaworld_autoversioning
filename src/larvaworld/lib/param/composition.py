@@ -4,9 +4,8 @@ from scipy.stats import multivariate_normal
 
 from .. import aux
 from .custom import PositiveNumber, PositiveInteger, StringRobust, OptionalPositiveNumber, \
-    OptionalPositiveRange, ClassAttr, ClassDict, OptionalPositiveInteger
-from .nested_parameter_group import NestedConf
-
+    OptionalPositiveRange, ClassAttr, ClassDict, OptionalPositiveInteger, ItemListParam
+from .nested_parameter_group import NestedConf, expand_kws_shortcuts
 
 __all__ = [
     'Compound',
@@ -50,11 +49,6 @@ compound_dict = aux.AttrDict(
 
 all_compounds = [a for a in list(compound_dict.keys()) if a not in ['water']]
 nutritious_compounds = [a for a in list(compound_dict.keys()) if a not in ['water', 'agar']]
-
-
-# class Composition(param.Dict):
-#     def __init__(self, default=aux.AttrDict({k : 0.0 for k in all_compounds}),**params):
-#         param.Dict.__init__(self,default=default, **params)
 
 
 class Substrate(NestedConf):
@@ -181,63 +175,47 @@ class Odor(NestedConf):
 
 
 class Epoch(NestedConf):
-    age_range = OptionalPositiveRange((0.0, None), softmax=100.0, hardmax=250.0,
+    age_range = OptionalPositiveRange(default=(0.0, None), softmax=100.0, hardmax=250.0,
                                       doc='The beginning and end of the epoch in hours post-hatch.')
     substrate = ClassAttr(Substrate, default=Substrate(type='standard'), doc='The substrate of the epoch')
 
+    def __init__(self, **kwargs):
+        kwargs = expand_kws_shortcuts(kwargs)
+        super().__init__(**kwargs)
+
 
 class Life(NestedConf):
-    age = OptionalPositiveNumber(0.0, softmax=100.0, hardmax=250.0,
+    age = OptionalPositiveNumber(default=0.0, softmax=100.0, hardmax=250.0,
                                  doc='The larva age in hours post-hatch at the start of the behavioral simulation. '
                                      'The larva will grow to that age based on the DEB model. If age is None the '
                                      'larva will grow to pupation.')
-    epochs = ClassDict(item_type=Epoch, doc='The feeding epochs comprising life history.')
-
-
-class Life3(NestedConf):
-    age = OptionalPositiveNumber(0.0, softmax=100.0, hardmax=250.0,
-                                 doc='The larva age in hours post-hatch at the start of the behavioral simulation. '
-                                     'The larva will grow to that age based on the DEB model. If age is None the '
-                                     'larva will grow to pupation.')
-    age_ticks = param.List([0.0], item_type=float,
-                           doc='The larva age in hours post-hatch at the end of the rearing periods.The last-one is '
-                               'always equal to the final age (or None). The first is 0.0.')
-    subs = param.List([], item_type=Substrate, doc='The substrates of the rearing periods.')
+    epochs = ItemListParam(item_type=Epoch, doc='The feeding epochs comprising life history.')
     reach_pupation = param.Boolean(False, doc='If True the larva will grow to pupation.')
 
-    @param.depends('grow_to_pupation')
-    def update_age_to_inf(self):
-        if self.reach_pupation:
-            self.age = param.Infinity
+    # epochs = ClassDict(item_type=Epoch, doc='The feeding epochs comprising life history.')
+
+    @classmethod
+    def from_epoch_ticks(cls, ticks=[], subs=None, reach_pupation=False):
+        assert all([tick > 0 for tick in ticks])
+        ticks.sort()
+        age_range = []
+        age = 0
+        for tick in ticks:
+            age_range.append((age, tick))
+            age = tick
+        if reach_pupation:
+            age_range.append((age, None))
+            age = None
+        N = len(age_range)
+        if subs is None:
+            sub = [[1.0, 'standard']]*N
+        elif len(subs) == 2 and isinstance(subs[0], float) and isinstance(subs[1], str):
+            sub = [subs]*N
         else:
-            self.age = max(self.age_ticks)
-
-    @param.depends('age')
-    def update_last_tick(self):
-        if self.age not in self.age_ticks:
-            self.age_ticks = sorted([t for t in self.age_ticks if t < self.age])
-            self.age_ticks.append(self.age)
-
-    @param.depends('age_ticks', 'epoch_substrates')
-    def update_substrates(self):
-        while self.Nmismatch != 0:
-            if self.Nmismatch > 0:
-                self.subs += Substrate()
-            elif self.Nmismatch < 0:
-                self.subs.pop()
-
-    @property
-    def Ncorrect(self):
-        return len(self.age_ticks) - 1
-
-    @property
-    def Ncurrent(self):
-        return len(self.epoch_substrates)
-
-    @property
-    def Nmismatch(self):
-        return self.Ncorrect - self.Ncurrent
-
+            assert len(subs) == N
+            sub = subs
+        epochs = aux.ItemList(cls=Epoch, objs=N, sub=sub, age_range=age_range)
+        return cls(age=age, epochs=epochs, reach_pupation=reach_pupation)
 
 
 class AirPuff(NestedConf):

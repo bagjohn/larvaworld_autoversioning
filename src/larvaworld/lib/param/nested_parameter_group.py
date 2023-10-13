@@ -3,12 +3,12 @@ import param
 from .. import aux
 from .custom import ClassAttr, ClassDict
 
-
-
 __all__ = [
     'NestedConf',
     'class_generator',
+    'expand_kws_shortcuts',
 ]
+
 
 class NestedConf(param.Parameterized):
     """
@@ -226,21 +226,7 @@ def class_generator(A0, mode='Unit'):
                 'a': 'amount',
             }, kws=kwargs)
 
-            if 'life' in kwargs.keys():
-                assert 'life_history' not in kwargs.keys()
-                assert len(kwargs['life']) == 2
-                kwargs['life_history'] = dict(zip(['age', 'epochs'], kwargs['life']))
-                kwargs.pop('life')
-            if 'o' in kwargs.keys():
-                assert 'odor' not in kwargs.keys()
-                assert len(kwargs['o']) == 3
-                kwargs['odor'] = dict(zip(['id', 'intensity', 'spread'], kwargs['o']))
-                kwargs.pop('o')
-            if 'sub' in kwargs.keys():
-                assert 'substrate' not in kwargs.keys()
-                assert len(kwargs['sub']) == 2
-                kwargs['substrate'] = dict(zip(['quality', 'type'], kwargs['sub']))
-                kwargs.pop('sub')
+            kwargs = expand_kws_shortcuts(kwargs)
 
             super().__init__(**kwargs)
 
@@ -299,3 +285,22 @@ def class_generator(A0, mode='Unit'):
         if k not in invalid:
             A.param._add_parameter(k, p)
     return A
+
+
+def expand_kws_shortcuts(kwargs):
+    if 'life' in kwargs.keys():
+        assert 'life_history' not in kwargs.keys()
+        assert len(kwargs['life']) == 2
+        kwargs['life_history'] = dict(zip(['age', 'epochs'], kwargs['life']))
+        kwargs.pop('life')
+    if 'o' in kwargs.keys():
+        assert 'odor' not in kwargs.keys()
+        assert len(kwargs['o']) == 3
+        kwargs['odor'] = dict(zip(['id', 'intensity', 'spread'], kwargs['o']))
+        kwargs.pop('o')
+    if 'sub' in kwargs.keys():
+        assert 'substrate' not in kwargs.keys()
+        assert len(kwargs['sub']) == 2
+        kwargs['substrate'] = dict(zip(['quality', 'type'], kwargs['sub']))
+        kwargs.pop('sub')
+    return kwargs
