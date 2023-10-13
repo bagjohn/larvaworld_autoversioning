@@ -36,7 +36,7 @@ def grouped_exp_dic():
     def food_exp(id, c=['feeder'], dur=10.0,
                  en=gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],
                                            proc_keys=['spatial', 'angular', 'source']), **kwargs):
-        return exp(id, c=c,dur=dur, enrichment=en,
+        return exp(id, c=c,dur=dur, en=en,
                    **kwargs)
 
     def game_exp(id, dur=20.0, **kwargs):

@@ -75,7 +75,6 @@ class AttrDict(dict):
             if isinstance(v, typing.MutableMapping):
                 if len(v) > 0:
                     items.extend(AttrDict(v).flatten(new_key, sep=sep).items())
-                    # items.extend(flatten_dict(v, new_key, sep=sep).items())
                 else:
                     items.append((new_key, 'empty_dict'))
 
