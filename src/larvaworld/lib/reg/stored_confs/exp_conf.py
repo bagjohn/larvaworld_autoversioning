@@ -27,27 +27,16 @@ def grouped_exp_dic():
             cs = aux.N_colors(N)
         return aux.AttrDict(aux.merge_dicts([lg(id=id, c=c, mID=mID, **kwargs) for mID, c, id in zip(mIDs, cs, ids)]))
 
-    def exp(id, env=None, l={}, enrichment=reg.gen.EnrichConf(), dur=10.0,c=[], c0=['pose'], **kwargs):
+    def exp(id, env=None, l={}, en=reg.gen.EnrichConf(), dur=10.0,c=[], c0=['pose'], **kwargs):
         if env is None:
             env = id
-        # sim = {'duration': dur}
-        # kw = {'kwdic': {'sim_params': sim},
-        #       'larva_groups': l,
-        #       'env_params': env,
-        #       'experiment': id,
-        #       'enrichment': enrichment,
-        #       'collections': c0 + c,
-        #       }
-        #
-        # kw.update(kwargs)
         env_p=reg.conf.Env.get(env)
-        return gen.Exp(larva_groups=l, env_params=env_p, experiment=id, enrichment=enrichment, collections=c0 + c,duration=dur, **kwargs).nestedConf
-        # return reg.stored.conf.Exp.gConf(**kw)
+        return gen.Exp(larva_groups=l, env_params=env_p, experiment=id, enrichment=en, collections=c0 + c,duration=dur, **kwargs).nestedConf
 
     def food_exp(id, c=['feeder'], dur=10.0,
-                 enrichment=gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],
+                 en=gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],
                                            proc_keys=['spatial', 'angular', 'source']), **kwargs):
-        return exp(id, c=c,dur=dur, enrichment=enrichment,
+        return exp(id, c=c,dur=dur, enrichment=en,
                    **kwargs)
 
     def game_exp(id, dur=20.0, **kwargs):
@@ -55,13 +44,13 @@ def grouped_exp_dic():
 
     def deb_exp(id, dur=5.0, **kwargs):
         return exp(id, dur=dur, c=['feeder', 'gut'],
-                   enrichment=gen.EnrichConf(proc_keys=['spatial']), **kwargs)
+                   en=gen.EnrichConf(proc_keys=['spatial']), **kwargs)
 
     def thermo_exp(id, dur=10.0, **kwargs):
         return exp(id, dur=dur, c=['thermo'], **kwargs)
 
-    def pref_exp(id, dur=5.0, c=[], **kwargs):
-        return exp(id,dur=dur, c=c, enrichment=gen.EnrichConf(proc_keys=['PI']), **kwargs)
+    def pref_exp(id, dur=5.0, **kwargs):
+        return exp(id,dur=dur, en=gen.EnrichConf(proc_keys=['PI']), **kwargs)
 
     def game_groups(dim=0.1, N=10, x=0.4, y=0.0, mode='king'):
         x = np.round(x * dim, 3)
@@ -121,7 +110,7 @@ def grouped_exp_dic():
     }
 
     d11 = {id: exp(id=id, c0=['olfactor', 'pose'],
-                   enrichment=gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],
+                   en=gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],
                                              proc_keys=['spatial', 'angular', 'source']),
                    **kws) for id, kws in d1.items()}
 
@@ -132,7 +121,7 @@ def grouped_exp_dic():
     }
 
     d22 = {id: exp(id=id, c0=['wind', 'pose'],
-                   enrichment=gen.EnrichConf(proc_keys=['spatial', 'angular', 'wind']),
+                   en=gen.EnrichConf(proc_keys=['spatial', 'angular', 'wind']),
                    **kws) for id, kws in d2.items()}
 
     d3 = {
@@ -141,7 +130,7 @@ def grouped_exp_dic():
     }
 
     d33 = {id: exp(id=id, c0=['wind', 'olfactor', 'pose'],
-                   enrichment=gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],
+                   en=gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],
                                              proc_keys=['spatial', 'angular', 'source', 'wind']),
                    **kws) for id, kws in d3.items()}
 
@@ -178,7 +167,7 @@ def grouped_exp_dic():
                                           ids=['Orco', 'RL'], N=5,
                                           mode='uniform',
                                           shape='rectangular', s=(0.04,0.04)),
-                                    enrichment=gen.EnrichConf(proc_keys=['spatial'])),
+                                    en=gen.EnrichConf(proc_keys=['spatial'])),
             'uniform_food': food_exp('uniform_food', env='uniform_food',
                                      l=lg(mID='RE_NEU_PHI_DEF_feeder', N=5, s=(0.005,0.005))),
             'food_grid': food_exp('food_grid', env='food_grid', l=lg(mID='RE_NEU_PHI_DEF_feeder', N=25)),
@@ -188,7 +177,7 @@ def grouped_exp_dic():
             'single_odor_patch_x4': food_exp('single_odor_patch_x4', env='single_odor_patch', l=lgs_x4()),
             'double_patch': food_exp('double_patch', env='double_patch', l=GTRvsS(N=5),
                                      c=['toucher', 'feeder', 'olfactor'],
-                                     enrichment=reg.gen.EnrichConf(
+                                     en=reg.gen.EnrichConf(
                                          anot_keys=['bout_detection', 'bout_distribution', 'interference',
                                                     'patch_residency'],
                                          proc_keys=['spatial', 'angular', 'source']),),
