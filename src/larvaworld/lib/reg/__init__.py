@@ -20,7 +20,6 @@ __all__ = [
     'CONF_DIR',
     'SIMTYPES',
     'CONFTYPES',
-    'GROUPTYPES',
     'units',
     'funcs',
     'controls',

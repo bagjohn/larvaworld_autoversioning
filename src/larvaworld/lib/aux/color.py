@@ -7,6 +7,7 @@ import random
 import matplotlib
 import numpy as np
 
+
 __all__ = [
     'invert_color',
     'random_colors',
