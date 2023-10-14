@@ -14,6 +14,7 @@ __all__ = [
     'col_kws',
     'b6_kws',
     't_kws',
+    'tab_kws',
 ]
 
 window_size = (2400, 1200)  #(1512,982)
@@ -39,6 +40,9 @@ w_kws = {
     'element_justification': 'center',
     'debugger_enabled': True,
 }
+
+tab_kws = {'font': ("Helvetica", 14, "normal"), 'selected_title_color': 'darkblue', 'title_color': 'grey',
+                   'tab_background_color': 'lightgrey'}
 
 def get_disp_name(name) -> str:
     n = "%s%s" % (name[0].upper(), name[1:])

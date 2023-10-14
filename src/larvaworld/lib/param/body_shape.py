@@ -8,6 +8,7 @@ from .spatial import LineClosed, MobileVector
 from .drawable import Viewable
 
 __all__ = [
+    'body_plans',
     'BodyContour',
     'ShapeViewable',
     'SegmentedBody',

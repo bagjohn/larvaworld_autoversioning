@@ -32,7 +32,7 @@ def traj_1group(d, unit='mm', title=None, single_color=False,time_range=None, **
     P = plot.AutoBasePlot(name=f'trajectories', **kwargs)
     ax = P.axs[0]
     tank = c.arena_vertices * scale
-    for id,xy0 in d.data_byID(xy).items():
+    for id,xy0 in d.data_by_ID(xy).items():
         xy0*=scale
         ax.plot(xy0[:, 0], xy0[:, 1], color=color)
 

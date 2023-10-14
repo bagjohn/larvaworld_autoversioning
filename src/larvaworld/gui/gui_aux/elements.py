@@ -33,6 +33,7 @@ __all__ = [
     'NamedList',
     'DataList',
     'Collapsible',
+    'CollapsibleDict',
     'CollapsibleTable',
     'PadDict',
     'PadTable',
@@ -255,7 +256,7 @@ class MultiSpin(sg.Pane):
             ss = [sg.Col([[sg.T(i, **gui_aux.t_kws(1)), s]]) for i, s in enumerate(ss)]
 
         if Ng is not None and self.Nspins >= Ng:
-            spins = aux.group_list_by_n(ss, Ng)
+            spins = aux.SuperList(ss).group_by_n(Ng)
             spins = [sg.Col(spins)]
             return spins
         else:
@@ -503,7 +504,10 @@ class SelectionList(GuiElement):
 
     @property
     def confs(self):
-        return reg.conf[self.conftype].confIDs
+        try:
+            return reg.conf[self.conftype].confIDs
+        except:
+            return []
         # return kConfDict(self.conftype)
 
     @property
@@ -988,7 +992,7 @@ class CollapsibleDict(Collapsible):
     def __init__(self, name, dict_name=None, type_dict=None, value_kws={}, text_kws={}, as_entry=None,
                  subdict_state=False, **kwargs):
         if type_dict is None:
-            from dtypes import par,par_dict
+            from .dtypes import par,par_dict
             entry = par(name=as_entry, dtype=str, v='Unnamed') if as_entry is not None else {}
             if dict_name is None:
                 dict_name = name
@@ -1119,10 +1123,12 @@ class PadDict(PadElement):
         if col_idx is not None:
             Ncols = len(col_idx)
         if type_dict is None :
-            from dtypes import par_dict
+            from .dtypes import par_dict
             D = reg.par.PI
             if self.dict_name in D.keys() :
                 type_dict = par_dict(d0=D[self.dict_name])
+            else:
+                type_dict={}
         self.type_dict = type_dict
         if content is None:
             content = self.build(name)
@@ -1155,7 +1161,7 @@ class PadDict(PadElement):
         elif row_idx is not None:
             content = [[content[i] for i in idx] for idx in row_idx]
         elif Ncols > 1:
-            content = aux.group_list_by_n([*content], int(np.ceil(len(content) / Ncols)))
+            content = aux.SuperList([*content]).group_by_n(int(np.ceil(len(content) / Ncols)))
             content = [[sg.Col(ii, **gui_aux.col_kws) for ii in content]]
         return content
 
@@ -1726,7 +1732,7 @@ class GuiTreeData(sg.TreeData):
 
     def get_df(self):
         df = gui_aux.pars_to_tree(self.root_key)
-        reg.conf['Tree'].setID(conf=df.to_dict(), id=self.root_key)
+        # reg.conf['Tree'].setID(conf=df.to_dict(), id=self.root_key)
         return df
 
     def get_entries(self):
