@@ -5,6 +5,8 @@ from numpy.lib import scimath
 from scipy.optimize import minimize
 
 __all__ = [
+    'simplex',
+    'beta0',
     'get_lb',
     'get_E0',
     'get_E_Rm',

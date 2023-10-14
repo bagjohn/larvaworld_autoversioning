@@ -136,9 +136,9 @@ def grouped_exp_dic():
                    **kws) for id, kws in d1.items()}
 
     d2 = {
-        'anemotaxis': {'env': 'windy_arena', 'dur': 0.5, 'l': lg(mID='nengo_explorer', N=4)},
-        'anemotaxis_bordered': {'env': 'windy_arena_bordered', 'dur': 0.5, 'l': lg(mID='nengo_explorer', N=4)},
-        'puff_anemotaxis_bordered': {'env': 'puff_arena_bordered', 'dur': 0.5, 'l': lg(mID='nengo_explorer', N=4)},
+        'anemotaxis': {'env': 'windy_arena', 'dur': 0.5, 'l': lg(mID='loco_default', N=4)},
+        'anemotaxis_bordered': {'env': 'windy_arena_bordered', 'dur': 0.5, 'l': lg(mID='loco_default', N=4)},
+        'puff_anemotaxis_bordered': {'env': 'puff_arena_bordered', 'dur': 0.5, 'l': lg(mID='loco_default', N=4)},
     }
 
     d22 = {id: exp(id=id, c0=['wind', 'pose'],

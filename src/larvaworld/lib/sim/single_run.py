@@ -28,10 +28,12 @@ class ExpRun(BaseRun):
         self.parameter_dict = parameter_dict
 
     def setup(self):
-        self.sim_epochs = self.p.trials
-        for idx, ep in self.sim_epochs.items():
-            ep['start'] = int(ep['start'] * 60 / self.dt)
-            ep['stop'] = int(ep['stop'] * 60 / self.dt)
+
+        self.sim_epochs = self.p.trials.epochs
+        for ep in self.sim_epochs:
+            t1,t2=ep.age_range
+            ep['start'] = int(t1 * 60 / self.dt)
+            ep['stop'] = int(t2 * 60 / self.dt)
         self.build_env(self.p.env_params)
         self.build_agents(self.p.larva_groups, self.parameter_dict)
         self.set_collectors(self.p.collections)

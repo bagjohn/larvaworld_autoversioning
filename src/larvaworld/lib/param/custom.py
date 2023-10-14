@@ -274,6 +274,7 @@ class NumericTuple2DRobust(param.NumericTuple):
     def __init__(self, default=(0.0, 0.0), **kwargs):
         if not isinstance(default, tuple):
             default = tuple(default)
+
         super().__init__(default=default, length=2, **kwargs)
 
 

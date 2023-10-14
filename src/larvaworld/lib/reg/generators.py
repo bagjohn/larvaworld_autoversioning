@@ -482,7 +482,8 @@ class LabFormat(NestedConf):
 class ExpConf(SimOps):
     env_params = ClassAttr(gen.Env, doc='The environment configuration')
     experiment = reg.conf.Exp.confID_selector()
-    trials = param.Dict(default={}, doc='Dictionary of temporal epochs of the experiment')
+    trials = param.Dict(default=aux.AttrDict({'epochs': aux.ItemList()}),
+                        doc='Dictionary of temporal epochs of the experiment')
     # trials = reg.conf.Trial.confID_selector('default')
     collections = param.ListSelector(default=['pose'], objects=reg.parDB.output_keys,
                                      doc='The data to collect as output')
@@ -550,7 +551,7 @@ class ReplayConf(ReplayConfGroup, ReplayConfUnit):
                                          doc='Whether to artificially simplify the experimentally tracked larva body to a segmented virtual body of the given number of segments.')
 
 
-gen.LabFormat = LabFormat
+# gen.LabFormat = LabFormat
 gen.Replay = class_generator(ReplayConf)
 
 

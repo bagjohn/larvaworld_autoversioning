@@ -167,8 +167,9 @@ class BaseRun(sim.ABModel):
     def place_food(self, p):
         self.food_grid = envs.FoodGrid(**p.food_grid, model=self) if p.food_grid else None
         sourceConfs = reg.gen.FoodGroup.from_entries(p.source_groups) + reg.gen.Food.from_entries(p.source_units)
-        # print(sourceConfs)
+        # print([a.pos for a in sourceConfs])
         source_list = [agents.Food(model=self, **conf) for conf in sourceConfs]
+        # print([a.pos for a in source_list])
         self.p.source_xy = aux.AttrDict({a.id: a.pos for a in source_list})
         self.space.add_sources(source_list, positions=[a.pos for a in source_list])
         self.sources = agentpy.AgentList(model=self, objs=source_list)
@@ -208,6 +209,10 @@ class BaseRun(sim.ABModel):
     def delete_agent(self, a):
         self.agents.remove(a)
         self.space.remove_agents([a])
+
+    def delete_source(self, a):
+        self.sources.remove(a)
+        # self.space.remove_agents([a])
 
     def delete_agents(self, agent_list=None):
         if agent_list is None:

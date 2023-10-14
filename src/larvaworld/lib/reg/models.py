@@ -6,7 +6,6 @@ import param
 from ..aux.par_aux import sub, subsup, circle, bar, tilde, sup
 from .. import reg, aux, util
 
-
 __all__ = [
     # 'model',
     'ModelRegistry',
@@ -15,11 +14,8 @@ __all__ = [
 bF, bT = {'dtype': bool, 'v0': False, 'v': False}, {'dtype': bool, 'v0': True, 'v': True}
 
 
-
-
 def arrange_index_labels(index):
-
-    ks=index.unique().tolist()
+    ks = index.unique().tolist()
     Nks = index.value_counts(sort=False)
 
     def merge(k, Nk):
@@ -34,8 +30,6 @@ def arrange_index_labels(index):
 def init_brain_modules():
     from ..model import modules
     def Tur0():
-
-
         NEUargs = {
             'base_activation': {'dtype': float, 'v0': 20.0, 'lim': (10.0, 40.0), 'dv': 0.1,
                                 'disp': 'tonic input', 'sym': '$I_{T}^{0}$', 'k': 'I_T0',
@@ -69,20 +63,20 @@ def init_brain_modules():
 
         SINargs = {**Tamp,
                    'freq': {'v0': 0.58, 'lim': (0.01, 2.0), 'dv': 0.01,
-                                    'k': 'f_T0',
-                                    'disp': 'bending frequency', 'sym': sub('f', 'T'), 'u_name': '$Hz$',
-                                    'u': reg.units.Hz, 'codename': 'front_orientation_velocity_freq',
-                                    'h': 'The initial frequency of the repetitive lateral bending behavior if this is hardcoded (e.g. sinusoidal mode).'},
+                            'k': 'f_T0',
+                            'disp': 'bending frequency', 'sym': sub('f', 'T'), 'u_name': '$Hz$',
+                            'u': reg.units.Hz, 'codename': 'front_orientation_velocity_freq',
+                            'h': 'The initial frequency of the repetitive lateral bending behavior if this is hardcoded (e.g. sinusoidal mode).'},
                    }
 
-        d = {'neural': {'args': NEUargs, 'class_func': modules.NeuralOscillator, 'variable': ['base_activation', 'tau', 'n']},
+        d = {'neural': {'args': NEUargs, 'class_func': modules.NeuralOscillator,
+                        'variable': ['base_activation', 'tau', 'n']},
              'sinusoidal': {'args': SINargs, 'class_func': modules.SinOscillator, 'variable': ['initial_amp', 'freq']},
              'constant': {'args': Tamp, 'class_func': modules.StepEffector, 'variable': ['initial_amp']}
              }
         return aux.AttrDict(d)
 
     def Cr0():
-
         str_kws = {'stride_dst_mean': {'v0': 0.23, 'lim': (0.0, 1.0), 'dv': 0.01,
                                        'k': 'str_sd_mu',
                                        'disp': r'stride distance mean', 'sym': sub(bar(circle('d')), 'S'),
@@ -99,10 +93,10 @@ def init_brain_modules():
                                 'disp': 'output amplitude', 'sym': subsup('A', 'C', 0),
                                 'h': 'The initial output amplitude of the CRAWLER module.'}}
         Cfr = {'freq': {'v0': 1.42, 'lim': (0.5, 2.5), 'dv': 0.1,
-                                'k': 'f_C0',
-                                'disp': 'crawling frequency', 'sym': subsup('f', 'C', 0), 'u': reg.units.Hz,
-                                'codename': 'scaled_velocity_freq',
-                                'h': 'The initial frequency of the repetitive crawling behavior.'}}
+                        'k': 'f_C0',
+                        'disp': 'crawling frequency', 'sym': subsup('f', 'C', 0), 'u': reg.units.Hz,
+                        'codename': 'scaled_velocity_freq',
+                        'h': 'The initial frequency of the repetitive crawling behavior.'}}
 
         SQargs = {
             'duty': {'v0': 0.6, 'lim': (0.0, 1.0), 'dv': 0.1,
@@ -148,7 +142,6 @@ def init_brain_modules():
         return aux.AttrDict(d)
 
     def If0():
-
         IFargs = {
             'suppression_mode': {'dtype': str, 'v0': 'amplitude', 'vs': ['amplitude', 'oscillation', 'both'],
                                  'k': 'IF_target',
@@ -194,7 +187,6 @@ def init_brain_modules():
         return aux.AttrDict(d)
 
     def Im0():
-
         dist_args = {k: reg.distro.get_dist(k=k) for k in ['stridechain_dist', 'run_dist', 'pause_dist']}
 
         IMargs = {
@@ -342,11 +334,10 @@ def init_brain_modules():
         return aux.AttrDict(d)
 
     def Fee0():
-
         Fargs = {
             'freq': {'v0': 2.0, 'lim': (0.0, 4.0), 'k': 'f_F0',
-                             'disp': 'feeding frequency', 'sym': sub('f', 'F'), 'u': reg.units.Hz,
-                             'h': 'The initial default frequency of the repetitive feeding behavior'},
+                     'disp': 'feeding frequency', 'sym': sub('f', 'F'), 'u': reg.units.Hz,
+                     'h': 'The initial default frequency of the repetitive feeding behavior'},
             'feed_radius': {'v0': 0.1, 'lim': (0.1, 10.0), 'sym': sub('rad', 'F'),
                             'disp': 'feeding radius', 'k': 'rad_F',
                             'h': 'The radius around the mouth in which food is consumable as a fraction of the body length.'},
@@ -362,6 +353,10 @@ def init_brain_modules():
         return aux.AttrDict(d)
 
     def Mem0():
+        args0 = {
+            'modality': {'dtype': str, 'v0': 'olfaction', 'vs': ['olfaction', 'touch'],
+                         'h': 'The modality for which the memory module is used.'},
+        }
 
         RLargs = {
             # 'modality': {'dtype': str, 'v0': 'olfaction', 'vs': ['olfaction', 'touch'],
@@ -380,21 +375,19 @@ def init_brain_modules():
             'epsilon': {'v0': 0.3, 'lim': (0.0, 2.0),
                         'h': 'The epsilon parameter of reinforcement learning algorithm.'},
             'train_dur': {'v0': 20.0, 'lim': (0.0, 100.0),
-                          'h': 'The duration of the training period after which no further learning will take place.'}
+                          'h': 'The duration of the training period after which no further learning will take place.'},
+            **args0
         }
 
-        touchRLargs = {}
-        MBargs = {}
+        # touchRLargs = {}
+        MBargs = {**args0}
 
         d = {'RL': {'args': RLargs, 'class_func': modules.RLOlfMemory,
-                           'variable': ['Delta', 'update_dt', 'alpha', 'epsilon']},
+                    'variable': ['Delta', 'update_dt', 'alpha', 'epsilon']},
              'MB': {'args': MBargs, 'class_func': modules.RemoteBrianModelMemory, 'variable': []},
-             'touchRL': {'args': touchRLargs, 'class_func': modules.RLTouchMemory, 'variable': []},
+             # 'touchRL': {'args': touchRLargs, 'class_func': modules.RLTouchMemory, 'variable': []},
              }
         return aux.AttrDict(d)
-
-
-
 
     kws = {'kwargs': {'dt': 0.1}}
     d0 = {}
@@ -412,147 +405,147 @@ def init_brain_modules():
     return aux.AttrDict(d0)
 
 
-
-
-
 def init_aux_modules():
     return aux.AttrDict({
-        'physics' : {
+        'physics': {
             'args': {
-            'torque_coef': {'v0': 0.5, 'lim': (0.1, 1.0), 'dv': 0.01, 'disp': 'torque coefficient',
-                            'sym': sub('c', 'T'), 'u_name': sup('sec', -2), 'u': reg.units.s ** -2,
-                            'h': 'Conversion coefficient from TURNER output to torque-per-inertia-unit.'},
-            'ang_vel_coef': {'v0': 1.0, 'lim': (0.0, 5.0), 'dv': 0.01, 'disp': 'angular velocity coefficient',
-                             'h': 'Conversion coefficient from TURNER output to angular velocity.'},
-            'ang_damping': {'v0': 1.0, 'lim': (0.1, 2.0), 'disp': 'angular damping', 'sym': 'z',
-                            'u_name': sup('sec', -1), 'u': reg.units.s ** -1,
-                            'h': 'Angular damping exerted on angular velocity.'},
-            'lin_damping': {'v0': 1.0, 'lim': (0.0, 10.0), 'disp': 'linear damping', 'sym': 'zl',
-                            'u_name': sup('sec', -1), 'u': reg.units.s ** -1,
-                            'h': 'Linear damping exerted on forward velocity.'},
-            'body_spring_k': {'v0': 1.0, 'lim': (0.0, 10.0), 'dv': 0.1, 'disp': 'body spring constant',
-                              'sym': 'k', 'u_name': sup('sec', -2), 'u': reg.units.s ** -2,
-                              'h': 'Larva-body torsional spring constant reflecting deformation resistance.'},
-            'bend_correction_coef': {'v0': 1.0, 'lim': (0.8, 1.5), 'disp': 'bend correction coefficient',
-                                     'sym': sub('c', 'b'),
-                                     'h': 'Correction coefficient of bending angle during forward motion.'},
-            'ang_mode': {'dtype': str, 'v0': 'torque', 'vs': ['torque', 'velocity'], 'disp': 'angular mode',
-                         'h': 'Whether the Turner module output is equivalent to torque or angular velocity.'},
+                'torque_coef': {'v0': 0.5, 'lim': (0.1, 1.0), 'dv': 0.01, 'disp': 'torque coefficient',
+                                'sym': sub('c', 'T'), 'u_name': sup('sec', -2), 'u': reg.units.s ** -2,
+                                'h': 'Conversion coefficient from TURNER output to torque-per-inertia-unit.'},
+                'ang_vel_coef': {'v0': 1.0, 'lim': (0.0, 5.0), 'dv': 0.01, 'disp': 'angular velocity coefficient',
+                                 'h': 'Conversion coefficient from TURNER output to angular velocity.'},
+                'ang_damping': {'v0': 1.0, 'lim': (0.1, 2.0), 'disp': 'angular damping', 'sym': 'z',
+                                'u_name': sup('sec', -1), 'u': reg.units.s ** -1,
+                                'h': 'Angular damping exerted on angular velocity.'},
+                'lin_damping': {'v0': 1.0, 'lim': (0.0, 10.0), 'disp': 'linear damping', 'sym': 'zl',
+                                'u_name': sup('sec', -1), 'u': reg.units.s ** -1,
+                                'h': 'Linear damping exerted on forward velocity.'},
+                'body_spring_k': {'v0': 1.0, 'lim': (0.0, 10.0), 'dv': 0.1, 'disp': 'body spring constant',
+                                  'sym': 'k', 'u_name': sup('sec', -2), 'u': reg.units.s ** -2,
+                                  'h': 'Larva-body torsional spring constant reflecting deformation resistance.'},
+                'bend_correction_coef': {'v0': 1.0, 'lim': (0.8, 1.5), 'disp': 'bend correction coefficient',
+                                         'sym': sub('c', 'b'),
+                                         'h': 'Correction coefficient of bending angle during forward motion.'},
+                'ang_mode': {'dtype': str, 'v0': 'torque', 'vs': ['torque', 'velocity'], 'disp': 'angular mode',
+                             'h': 'Whether the Turner module output is equivalent to torque or angular velocity.'},
+            },
+            'variable': ['torque_coef', 'ang_damping', 'body_spring_k', 'bend_correction_coef']
         },
-             'variable': ['torque_coef', 'ang_damping', 'body_spring_k', 'bend_correction_coef']
-             },
-        'body' : {
+        'body': {
             'args': {
-            'length': {'v0': 0.004, 'lim': (0.0, 0.01), 'dv': 0.0001,
-                               'disp': 'length', 'sym': '$l$', 'u': reg.units.m, 'k': 'l0',
-                               'h': 'The initial body length.'},
+                'length': {'v0': 0.004, 'lim': (0.0, 0.01), 'dv': 0.0001,
+                           'disp': 'length', 'sym': '$l$', 'u': reg.units.m, 'k': 'l0',
+                           'h': 'The initial body length.'},
 
-            'Nsegs': {'dtype': int, 'v0': 2, 'lim': (1, 12), 'disp': 'number of body segments', 'sym': sub('N', 'segs'),
-                      'u_name': '# $segments$', 'k': 'Nsegs',
-                      'h': 'The number of segments comprising the larva body.'},
-            'segment_ratio': {'k': 'seg_r', 'lim': (0.0, 1.0),
-                          'h': 'The length ratio of the body segments. If null, equal-length segments are generated.'},
+                'Nsegs': {'dtype': int, 'v0': 2, 'lim': (1, 12), 'disp': 'number of body segments',
+                          'sym': sub('N', 'segs'),
+                          'u_name': '# $segments$', 'k': 'Nsegs',
+                          'h': 'The number of segments comprising the larva body.'},
+                'segment_ratio': {'k': 'seg_r', 'lim': (0.0, 1.0),
+                                  'h': 'The length ratio of the body segments. If null, equal-length segments are generated.'},
 
-            'body_plan': {'dtype': str, 'v0': 'drosophila_larva', 'vs': ['drosophila_larva', 'zebrafish_larva'],
-                      'k': 'body_shape', 'h': 'The body shape.'},
-        },
+                'body_plan': {'dtype': str, 'v0': 'drosophila_larva', 'vs': ['drosophila_larva', 'zebrafish_larva'],
+                              'k': 'body_shape', 'h': 'The body shape.'},
+            },
             'variable': ['length', 'Nsegs']
         },
-        'energetics' : {
+        'energetics': {
             'mode': {
                 'gut': {
                     'args': {
-            'M_gm': {'v0': 10 ** -2, 'lim': (0.0, 10.0), 'disp': 'gut scaled capacity',
-                     'sym': 'M_gm',
-                     'k': 'M_gm',
-                     'h': 'Gut capacity in C-moles per unit of gut volume.'},
-            'y_P_X': {'v0': 0.9, 'disp': 'food->product yield',
-                      'sym': 'y_P_X', 'k': 'y_P_X',
-                      'h': 'Yield of product per unit of food.'},
-            'J_g_per_cm2': {'v0': 10 ** -2 / (24 * 60 * 60), 'lim': (0.0, 10.0), 'disp': 'digestion secretion rate',
-                            'sym': 'J_g_per_cm2', 'k': 'J_g_per_cm2',
-                            'h': 'Secretion rate of enzyme per unit of gut surface per second.'},
-            'k_g': {'v0': 1.0, 'lim': (0.0, 10.0), 'disp': 'digestion decay rate', 'sym': 'k_g',
-                    'k': 'k_g',
-                    'h': 'Decay rate of digestive enzyme.'},
-            'k_dig': {'v0': 1.0, 'lim': (0.0, 10.0), 'disp': 'digestion rate', 'sym': 'k_dig',
-                      'k': 'k_dig',
-                      'h': 'Rate constant for digestion : k_X * y_Xg.'},
-            'f_dig': {'v0': 1.0, 'disp': 'digestion response',
-                      'sym': 'f_dig', 'k': 'f_dig',
-                      'h': 'Scaled functional response for digestion : M_X/(M_X+M_K_X)'},
-            'M_c_per_cm2': {'v0': 5 * 10 ** -8, 'lim': (0.0, 10.0), 'disp': 'carrier density',
-                            'sym': 'M_c_per_cm2', 'k': 'M_c_per_cm2',
-                            'h': 'Area specific amount of carriers in the gut per unit of gut surface.'},
-            'constant_M_c': {**bT, 'disp': 'constant carrier density', 'sym': 'constant_M_c',
-                             'k': 'constant_M_c',
-                             'h': 'Whether to assume a constant amount of carrier enzymes on the gut surface.'},
-            'k_c': {'v0': 1.0, 'lim': (0.0, 10.0), 'disp': 'carrier release rate', 'sym': 'k_c',
-                    'k': 'gut_k_c',
-                    'h': 'Release rate of carrier enzymes.'},
-            'k_abs': {'v0': 1.0, 'lim': (0.0, 10.0), 'disp': 'absorption rate', 'sym': 'k_abs',
-                      'k': 'gut_k_abs',
-                      'h': 'Rate constant for absorption : k_P * y_Pc.'},
-            'f_abs': {'v0': 1.0, 'lim': (0.0, 1.0), 'disp': 'absorption response',
-                      'sym': 'f_abs', 'k': 'f_abs',
-                      'h': 'Scaled functional response for absorption : M_P/(M_P+M_K_P)'},
-        },
+                        'M_gm': {'v0': 10 ** -2, 'lim': (0.0, 10.0), 'disp': 'gut scaled capacity',
+                                 'sym': 'M_gm',
+                                 'k': 'M_gm',
+                                 'h': 'Gut capacity in C-moles per unit of gut volume.'},
+                        'y_P_X': {'v0': 0.9, 'disp': 'food->product yield',
+                                  'sym': 'y_P_X', 'k': 'y_P_X',
+                                  'h': 'Yield of product per unit of food.'},
+                        'J_g_per_cm2': {'v0': 10 ** -2 / (24 * 60 * 60), 'lim': (0.0, 10.0),
+                                        'disp': 'digestion secretion rate',
+                                        'sym': 'J_g_per_cm2', 'k': 'J_g_per_cm2',
+                                        'h': 'Secretion rate of enzyme per unit of gut surface per second.'},
+                        'k_g': {'v0': 1.0, 'lim': (0.0, 10.0), 'disp': 'digestion decay rate', 'sym': 'k_g',
+                                'k': 'k_g',
+                                'h': 'Decay rate of digestive enzyme.'},
+                        'k_dig': {'v0': 1.0, 'lim': (0.0, 10.0), 'disp': 'digestion rate', 'sym': 'k_dig',
+                                  'k': 'k_dig',
+                                  'h': 'Rate constant for digestion : k_X * y_Xg.'},
+                        'f_dig': {'v0': 1.0, 'disp': 'digestion response',
+                                  'sym': 'f_dig', 'k': 'f_dig',
+                                  'h': 'Scaled functional response for digestion : M_X/(M_X+M_K_X)'},
+                        'M_c_per_cm2': {'v0': 5 * 10 ** -8, 'lim': (0.0, 10.0), 'disp': 'carrier density',
+                                        'sym': 'M_c_per_cm2', 'k': 'M_c_per_cm2',
+                                        'h': 'Area specific amount of carriers in the gut per unit of gut surface.'},
+                        'constant_M_c': {**bT, 'disp': 'constant carrier density', 'sym': 'constant_M_c',
+                                         'k': 'constant_M_c',
+                                         'h': 'Whether to assume a constant amount of carrier enzymes on the gut surface.'},
+                        'k_c': {'v0': 1.0, 'lim': (0.0, 10.0), 'disp': 'carrier release rate', 'sym': 'k_c',
+                                'k': 'gut_k_c',
+                                'h': 'Release rate of carrier enzymes.'},
+                        'k_abs': {'v0': 1.0, 'lim': (0.0, 10.0), 'disp': 'absorption rate', 'sym': 'k_abs',
+                                  'k': 'gut_k_abs',
+                                  'h': 'Rate constant for absorption : k_P * y_Pc.'},
+                        'f_abs': {'v0': 1.0, 'lim': (0.0, 1.0), 'disp': 'absorption response',
+                                  'sym': 'f_abs', 'k': 'f_abs',
+                                  'h': 'Scaled functional response for absorption : M_P/(M_P+M_K_P)'},
+                    },
                     'variable': ['k_abs', 'k_g']
                 },
-             'DEB': {
-                 'args': {
-            'species': {'dtype': str, 'v0': 'default', 'vs': ['default', 'rover', 'sitter'], 'disp': 'phenotype',
-                        'k': 'species',
-                        'h': 'The phenotype/species-specific fitted DEB model to use.'},
-            'f_decay': {'v0': 0.1, 'lim': (0.0, 1.0), 'dv': 0.1, 'sym': sub('c', 'DEB'), 'k': 'c_DEB',
-                        'disp': 'DEB functional response decay coef',
-                        'h': 'The exponential decay coefficient of the DEB functional response.'},
-            'V_bite': {'v0': 0.0005, 'lim': (0.0, 0.1), 'dv': 0.0001,
-                       'sym': sub('V', 'bite'),
-                       'k': 'V_bite',
-                       'h': 'The volume of food consumed on a single feeding motion as a fraction of the body volume.'},
-            'hunger_as_EEB': {**bT,
-                              'h': 'Whether the DEB-generated hunger drive informs the exploration-exploitation balance.',
-                              'sym': 'hunger_as_EEB', 'k': 'hunger_as_EEB'},
-            'hunger_gain': {'v0': 0.0, 'lim': (0.0, 1.0), 'sym': sub('G', 'hunger'),
-                            'k': 'G_hunger', 'disp': 'hunger sensitivity to reserve reduction',
-                            'h': 'The sensitivy of the hunger drive in deviations of the DEB reserve density.'},
-            'assimilation_mode': {'dtype': str, 'v0': 'gut', 'vs': ['sim', 'gut', 'deb'],
-                                  'sym': sub('m', 'ass'), 'k': 'ass_mod',
-                                  'h': 'The method used to calculate the DEB assimilation energy flow.'},
-            'DEB_dt': {'lim': (0.0, 1000.0), 'disp': 'DEB timestep (sec)', 'v0': None,
-                       'sym': sub('dt', 'DEB'),
-                       'k': 'DEB_dt',
-                       'h': 'The timestep of the DEB energetics module in seconds.'},
-            # 'gut_params':d['gut_params']
-            },
-                 'variable': ['DEB_dt', 'hunger_gain']
-             }
-             }
+                'DEB': {
+                    'args': {
+                        'species': {'dtype': str, 'v0': 'default', 'vs': ['default', 'rover', 'sitter'],
+                                    'disp': 'phenotype',
+                                    'k': 'species',
+                                    'h': 'The phenotype/species-specific fitted DEB model to use.'},
+                        'f_decay': {'v0': 0.1, 'lim': (0.0, 1.0), 'dv': 0.1, 'sym': sub('c', 'DEB'), 'k': 'c_DEB',
+                                    'disp': 'DEB functional response decay coef',
+                                    'h': 'The exponential decay coefficient of the DEB functional response.'},
+                        'V_bite': {'v0': 0.0005, 'lim': (0.0, 0.1), 'dv': 0.0001,
+                                   'sym': sub('V', 'bite'),
+                                   'k': 'V_bite',
+                                   'h': 'The volume of food consumed on a single feeding motion as a fraction of the body volume.'},
+                        'hunger_as_EEB': {**bT,
+                                          'h': 'Whether the DEB-generated hunger drive informs the exploration-exploitation balance.',
+                                          'sym': 'hunger_as_EEB', 'k': 'hunger_as_EEB'},
+                        'hunger_gain': {'v0': 0.0, 'lim': (0.0, 1.0), 'sym': sub('G', 'hunger'),
+                                        'k': 'G_hunger', 'disp': 'hunger sensitivity to reserve reduction',
+                                        'h': 'The sensitivy of the hunger drive in deviations of the DEB reserve density.'},
+                        'assimilation_mode': {'dtype': str, 'v0': 'gut', 'vs': ['sim', 'gut', 'deb'],
+                                              'sym': sub('m', 'ass'), 'k': 'ass_mod',
+                                              'h': 'The method used to calculate the DEB assimilation energy flow.'},
+                        'DEB_dt': {'lim': (0.0, 1000.0), 'disp': 'DEB timestep (sec)', 'v0': None,
+                                   'sym': sub('dt', 'DEB'),
+                                   'k': 'DEB_dt',
+                                   'h': 'The timestep of the DEB energetics module in seconds.'},
+                        # 'gut_params':d['gut_params']
+                    },
+                    'variable': ['DEB_dt', 'hunger_gain']
+                }
+            }
         },
-        'sensorimotor' : {
+        'sensorimotor': {
             'mode': {
                 'default': {
-                'args': {
-            'sensor_delta_direction': {'v0': 0.4, 'dv': 0.01, 'lim': (0.2, 1.2), 'k': 'sens_Dor',
-                                       'h': 'Sensor delta_direction'},
-            'sensor_saturation_value': {'dtype': int, 'v0': 40, 'lim': (0, 200), 'k': 'sens_c_sat',
-                                        'h': 'Sensor saturation value'},
-            'obstacle_sensor_error': {'v0': 0.35, 'dv': 0.01, 'lim': (0.0, 1.0), 'k': 'sens_err',
-                                      'h': 'Proximity sensor error'},
-            'sensor_max_distance': {'v0': 0.9, 'dv': 0.01, 'lim': (0.1, 1.5), 'k': 'sens_dmax',
-                                    'h': 'Sensor max_distance'},
-            'motor_ctrl_coefficient': {'dtype': int, 'v0': 8770, 'lim': (0, 10000), 'k': 'c_mot',
-                                       'h': 'Motor ctrl_coefficient'},
-            'motor_ctrl_min_actuator_value': {'dtype': int, 'v0': 35, 'lim': (0, 50), 'k': 'mot_vmin',
-                                              'h': 'Motor ctrl_min_actuator_value'}
-        },
-                'class_func': None,
-                'variable': ['sensor_delta_direction', 'sensor_saturation_value', 'obstacle_sensor_error',
-                                      'sensor_max_distance', 'motor_ctrl_coefficient',
-                                      'motor_ctrl_min_actuator_value']
-            }
-             },
+                    'args': {
+                        'sensor_delta_direction': {'v0': 0.4, 'dv': 0.01, 'lim': (0.2, 1.2), 'k': 'sens_Dor',
+                                                   'h': 'Sensor delta_direction'},
+                        'sensor_saturation_value': {'dtype': int, 'v0': 40, 'lim': (0, 200), 'k': 'sens_c_sat',
+                                                    'h': 'Sensor saturation value'},
+                        'obstacle_sensor_error': {'v0': 0.35, 'dv': 0.01, 'lim': (0.0, 1.0), 'k': 'sens_err',
+                                                  'h': 'Proximity sensor error'},
+                        'sensor_max_distance': {'v0': 0.9, 'dv': 0.01, 'lim': (0.1, 1.5), 'k': 'sens_dmax',
+                                                'h': 'Sensor max_distance'},
+                        'motor_ctrl_coefficient': {'dtype': int, 'v0': 8770, 'lim': (0, 10000), 'k': 'c_mot',
+                                                   'h': 'Motor ctrl_coefficient'},
+                        'motor_ctrl_min_actuator_value': {'dtype': int, 'v0': 35, 'lim': (0, 50), 'k': 'mot_vmin',
+                                                          'h': 'Motor ctrl_min_actuator_value'}
+                    },
+                    'class_func': None,
+                    'variable': ['sensor_delta_direction', 'sensor_saturation_value', 'obstacle_sensor_error',
+                                 'sensor_max_distance', 'motor_ctrl_coefficient',
+                                 'motor_ctrl_min_actuator_value']
+                }
+            },
             'pref': 'sensorimotor.'
         }
     })
@@ -574,15 +567,12 @@ def build_aux_module_dict(d0):
 
 
 def build_brain_module_dict(d0):
-
     d = d0.get_copy()
     for k in d0.keys():
         for m, mdic in d0[k].mode.items():
             for p, vs in mdic.args.items():
                 d[k].mode[m].args[p] = util.build_LarvaworldParam(p=p, **vs)
     return d
-
-
 
 
 def build_confdicts():
@@ -598,7 +588,6 @@ def build_confdicts():
 
     d = aux.AttrDict({'init': d0, 'm': aux.AttrDict({**bm, **am}), 'keys': list(d0.keys())})
     return aux.AttrDict({'brain': bd, 'aux': ad, 'model': d})
-
 
 
 class ModelRegistry:
@@ -659,7 +648,6 @@ class ModelRegistry:
             conf0 = self.adapt_intermitter(refID=refID, mode=mode, conf=conf0)
         return aux.AttrDict(conf0)
 
-
     def mutate(self, mdict, Pmut, Cmut):
         for d, p in mdict.items():
             p.mutate(Pmut, Cmut)
@@ -669,16 +657,15 @@ class ModelRegistry:
         for d, p in mdict.items():
             p.randomize()
 
-
     def mIDtable_data(self, m, columns):
         D = self.dict
+
         def gen_rows2(var_mdict, parent, columns, data):
             for k, p in var_mdict.items():
                 if isinstance(p, param.Parameterized):
                     ddd = [getattr(p, pname) for pname in columns]
                     row = [parent] + ddd
                     data.append(row)
-
 
         mF = m.flatten()
         data = []
@@ -730,16 +717,15 @@ class ModelRegistry:
         df.set_index(['field'], inplace=True)
         return df
 
-    def mIDtable(self, mID,m=None, columns=['parameter', 'symbol', 'value', 'unit'],
-                 colWidths=[0.35, 0.1, 0.25, 0.15],**kwargs):
+    def mIDtable(self, mID, m=None, columns=['parameter', 'symbol', 'value', 'unit'],
+                 colWidths=[0.35, 0.1, 0.25, 0.15], **kwargs):
         from larvaworld.lib.plot.table import conf_table
-        if m is None :
+        if m is None:
             m = reg.conf.Model.getID(mID)
         df = self.mIDtable_data(m, columns=columns)
         row_colors = [None] + [self.mcolor[ii] for ii in df.index.values]
         df.index = arrange_index_labels(df.index)
-        return conf_table(df, row_colors, mID=mID,colWidths=colWidths, **kwargs)
-
+        return conf_table(df, row_colors, mID=mID, colWidths=colWidths, **kwargs)
 
     def brainConf(self, modes=None, modkws={}, nengo=False):
 
@@ -815,7 +801,7 @@ class ModelRegistry:
         T0 = m0.get_copy()
         conf = T0.update_nestdict(kwargs)
         if mID is not None:
-            reg.conf.Model.setID(mID,conf)
+            reg.conf.Model.setID(mID, conf)
         return conf
 
     def autogenerate_confs(self):
@@ -868,20 +854,24 @@ class ModelRegistry:
         kwargs1 = {'brain.modules.olfactor': True, 'brain.olfactor_params': olf_pars1}
         kwargs2 = {'brain.modules.olfactor': True, 'brain.olfactor_params': olf_pars2}
 
-        MB_pars = aux.AttrDict({'mode': 'MB'})
+        # MB_pars = aux.AttrDict({'mode': 'MB'})
+        MB_pars = self.generate_configuration(self.dict.brain.m['memory'].mode['MB'].args)
+        MB_pars.mode='MB'
         MB_kws = {'brain.modules.memory': True, 'brain.memory_params': MB_pars}
 
         feed_pars = self.generate_configuration(self.dict.brain.m['feeder'].mode['default'].args)
         feed_kws = {'brain.modules.feeder': True, 'brain.feeder_params': feed_pars,
                     'brain.intermitter_params.EEB': 0.5, 'brain.intermitter_params.feed_bouts': True}
-        maxEEB_kws ={'brain.intermitter_params.EEB': 0.9}
+        maxEEB_kws = {'brain.intermitter_params.EEB': 0.9}
 
-        RvSkws={}
+        RvSkws = {}
         for species, k_abs, EEB in zip(['rover', 'sitter'], [0.8, 0.4], [0.67, 0.37]):
-            DEB_pars=self.generate_configuration(self.dict.aux.m['energetics'].mode['DEB'].args,species=species, hunger_gain=1.0,DEB_dt=10.0)
-            gut_pars=self.generate_configuration(self.dict.aux.m['energetics'].mode['gut'].args,k_abs=k_abs)
-            energy_pars=aux.AttrDict({'DEB' : DEB_pars, 'gut':gut_pars})
-            RvSkws[species] = {'wF' : {'energetics': energy_pars, 'brain.intermitter_params.EEB': EEB}, 'woF' :{'energetics': energy_pars} }
+            DEB_pars = self.generate_configuration(self.dict.aux.m['energetics'].mode['DEB'].args, species=species,
+                                                   hunger_gain=1.0, DEB_dt=10.0)
+            gut_pars = self.generate_configuration(self.dict.aux.m['energetics'].mode['gut'].args, k_abs=k_abs)
+            energy_pars = aux.AttrDict({'DEB': DEB_pars, 'gut': gut_pars})
+            RvSkws[species] = {'wF': {'energetics': energy_pars, 'brain.intermitter_params.EEB': EEB},
+                               'woF': {'energetics': energy_pars}}
 
         for mID0, m0 in mID0dic.items():
             mID00 = f'{mID0}_nav0'
@@ -932,7 +922,6 @@ class ModelRegistry:
         sm_pars = self.generate_configuration(self.dict.aux.m['sensorimotor'].mode['default'].args)
         E['obstacle_avoider'] = self.newConf(m0=E['RE_NEU_PHI_DEF_nav'], kwargs={'sensorimotor': sm_pars})
 
-
         sample_ks = [
             'brain.crawler_params.stride_dst_mean',
             'brain.crawler_params.stride_dst_std',
@@ -940,13 +929,12 @@ class ModelRegistry:
             'brain.crawler_params.max_vel_phase',
             'brain.crawler_params.freq',
         ]
-        for mID0,RvSsuf,Fexists in zip(['RE_NEU_PHI_DEF', 'RE_NEU_PHI_DEF_feeder', 'RE_NEU_PHI_DEF_nav','RE_NEU_PHI_DEF_forager'], ['_loco', '', '_nav', '_forager'], ['woF', 'wF', 'woF', 'wF']):
+        for mID0, RvSsuf, Fexists in zip(
+                ['RE_NEU_PHI_DEF', 'RE_NEU_PHI_DEF_feeder', 'RE_NEU_PHI_DEF_nav', 'RE_NEU_PHI_DEF_forager'],
+                ['_loco', '', '_nav', '_forager'], ['woF', 'wF', 'woF', 'wF']):
             E[f'v{mID0}'] = self.newConf(m0=E[mID0], kwargs={k: 'sample' for k in sample_ks})
-            for species,kws in RvSkws.items():
-                E[f'{species}{RvSsuf}']=self.newConf(m0=E[mID0], kwargs=kws[Fexists])
-
-
-
+            for species, kws in RvSkws.items():
+                E[f'{species}{RvSsuf}'] = self.newConf(m0=E[mID0], kwargs=kws[Fexists])
 
         return E
 
@@ -961,7 +949,6 @@ class ModelRegistry:
                     FD[kk] = p
                 else:
                     register(p, kk)
-
 
         for aux_key in D.aux.keys:
             if aux_key in ['energetics', 'sensorimotor']:
@@ -1089,7 +1076,6 @@ class ModelRegistry:
                              id=mID, dir=dir, **kwargs)
         return entry
 
-
     def update_mdict(self, mdict, mmdic):
         if mmdic is None:
             return None
@@ -1105,9 +1091,8 @@ class ModelRegistry:
                     mdict[d] = self.update_mdict(mdict=p, mmdic=new_v)
             return mdict
 
-
     def variable_mdict(self, mkey, mode='default'):
-        D=self.dict.model
+        D = self.dict.model
         var_ks = D.init[mkey].mode[mode].variable
         d00 = D.m[mkey].mode[mode].args
         return aux.AttrDict({k: d00[k] for k in var_ks})
@@ -1143,7 +1128,5 @@ def epar(e, k=None, par=None, average=True, Nround=2):
         return np.round(vs.median(), Nround)
     else:
         return vs
-
-
 
 # model = ModelRegistry()

@@ -129,11 +129,11 @@ class Food(Source):
         If the source runs out of food, it is deleted from the simulation.
         """
         prev_amount = self.amount
-        self.amount -= amount
-        if self.amount <= 0.0:
+        if amount>=self.amount :
             self.amount = 0.0
-            self.model.delete_agent(self)
+            self.model.delete_source(self)
         else:
+            self.amount -= amount
             r = self.amount / self.initial_amount
             try:
                 self.color = (1 - r) * np.array((255, 255, 255)) + r * np.array(self.default_color)
@@ -146,6 +146,7 @@ class Food(Source):
         p, c, r = self.get_position(), self.color, self.radius
         v.draw_circle(p, r, c, filled, r / 5)
         super().draw(v=v, filled=filled)
+
 
 
 

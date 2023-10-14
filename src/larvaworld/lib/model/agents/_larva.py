@@ -219,7 +219,7 @@ class LarvaMotile(LarvaSegmented):
                 pass
         else:
             self.deb = None
-            self.V = None
+            self.V = self.length**3
             self.real_mass = None
             self.real_length = None
 
@@ -236,7 +236,8 @@ class LarvaMotile(LarvaSegmented):
                 self.real_length = self.deb.Lw * 10 / 1000
                 self.real_mass = self.deb.Ww
                 self.V = self.deb.V
-                self.adjust_body_vertices()
+                # TODO add this again
+                # self.adjust_body_vertices()
 
     def get_feed_success(self, t):
         if self.feeder_motion:

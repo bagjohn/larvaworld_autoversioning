@@ -81,7 +81,7 @@ class PrefTrainCondition:
         env.input_box.flash_text(text)
 
     def check(self, env):
-        for i, ep in env.sim_epochs.items():
+        for i, ep in enumerate(env.sim_epochs):
             if env.Nticks == ep['start']:
                 q=ep['substrate']['quality']
                 if q == 0.0:

@@ -24,7 +24,8 @@ __all__ = [
 ]
 
 
-class BasicABModel(Object):
+class BasicABModel:
+# class BasicABModel(Object):
     '''
         Basic Class for the Agent-based model
         Extends the agentpy Model class
@@ -43,7 +44,9 @@ class BasicABModel(Object):
 
         # Iniate model as model object with id 0
         self._id_counter = -1
-        super().__init__(model=self, id=id)
+        # super().__init__(model=self, id=id)
+        self.type = type(self).__name__
+        self.id = id
 
         # Simulation attributes
         self.t = 0
@@ -76,6 +79,10 @@ class BasicABModel(Object):
 
     def __repr__(self):
         return self.type
+
+    def _set_var_ignore(self):
+        """Store current attributes to separate them from custom variables"""
+        self._var_ignore = [k for k in self.__dict__.keys() if k[0] != '_']
 
     # Class Methods --------------------------------------------------------- #
 

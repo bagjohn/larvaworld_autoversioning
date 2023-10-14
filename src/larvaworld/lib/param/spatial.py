@@ -30,6 +30,7 @@ __all__ = [
 __displayname__ = 'Spatial elements'
 
 
+# class Pos2D(param.Parameterized):
 class Pos2D(NestedConf):
     pos = NumericTuple2DRobust(doc='The xy spatial position coordinates')
 
@@ -70,7 +71,9 @@ class RadiallyExtended(Pos2D):
     radius = PositiveNumber(0.003, softmax=0.1, step=0.001, doc='The spatial radius of the source in meters')
 
     def __init__(self, **kwargs):
+
         super().__init__(**kwargs)
+
 
     def get_shape(self, scale=1):
         p = self.get_position()

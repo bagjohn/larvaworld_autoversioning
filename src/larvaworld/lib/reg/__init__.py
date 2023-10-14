@@ -76,7 +76,7 @@ from . import parDB, parFunc, stored_confs
 par = parDB.ParamRegistry()
 
 vprint("Initializing configuration registry")
-from .config import conf, resetConfs
+from .config import conf
 
 from .generators import gen
 
@@ -135,7 +135,7 @@ def define_default_refID():
                     arena=gen.Arena(dims=(0.15, 0.15), geometry='circular')),
                 'preprocess': PreprocessConf(filter_f=2.0, rescale_by=0.001, drop_collisions=True)
             }
-            g = gen.LabFormat(labID='Schleyer', **kws)
+            g = generators.LabFormat(labID='Schleyer', **kws)
 
         # Merged case
         N = 30

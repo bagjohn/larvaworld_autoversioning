@@ -120,10 +120,14 @@ class Gut(NestedConf):
         self.p_A = dM_Pu * self.deb.mu_E
 
     def get_residence_time(self, f, J_X_Am, Lb):
-        return self.r_gut_V*self.M_gm / (J_X_Am / Lb) / f
+        if f==0.0 :
+            return 0.0
+        else:
+            return self.r_gut_V*self.M_gm / (J_X_Am / Lb) / f
 
 
     def get_residence_ticks(self, dt):
+        # print(dt,self.residence_time)
         self.residence_ticks = int(self.residence_time / dt)
 
     @property
