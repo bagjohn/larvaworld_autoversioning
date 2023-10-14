@@ -100,7 +100,10 @@ class GridOverSpace(Grid, agentpy.Grid):
 
 class ValueGrid(Grid):
     initial_value = param.Number(0.0, doc='initial value over the grid')
+
     fixed_max = param.Boolean(False, doc='whether the max is kept constant')
+
+    # grid_dims = PositiveIntegerRange((51, 51),softmax=500, doc='The spatial resolution of the food grid.')
 
     def __init__(self, sources=None, max_value=None, min_value=0.0, **kwargs):
         super().__init__(**kwargs)
@@ -282,7 +285,7 @@ class OdorScape(ValueGrid):
 
 
 class GaussianValueLayer(OdorScape):
-    odorscape = param.Selector(default='Gaussian', readonly=True)
+    odorscape = param.Selector(default='Gaussian')
 
     def __init__(self, **kwargs):
         super().__init__(subclass_initialized=True, **kwargs)
@@ -327,7 +330,7 @@ class GaussianValueLayer(OdorScape):
 
 
 class DiffusionValueLayer(OdorScape):
-    odorscape = param.Selector(default='Diffusion', readonly=True)
+    odorscape = param.Selector(default='Diffusion')
     evap_const = param.Magnitude(0.9, doc='The evaporation constant of the diffusion algorithm.')
     gaussian_sigma = param.NumericTuple((0.95, 0.95), doc='The sigma of the gaussian difusion algorithm.')
 
