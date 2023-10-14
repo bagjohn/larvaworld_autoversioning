@@ -859,6 +859,10 @@ class ModelRegistry:
         MB_pars.mode='MB'
         MB_kws = {'brain.modules.memory': True, 'brain.memory_params': MB_pars}
 
+        RL_pars = self.generate_configuration(self.dict.brain.m['memory'].mode['RL'].args)
+        RL_pars.mode = 'RL'
+        RL_kws = {'brain.modules.memory': True, 'brain.memory_params': RL_pars}
+
         feed_pars = self.generate_configuration(self.dict.brain.m['feeder'].mode['default'].args)
         feed_kws = {'brain.modules.feeder': True, 'brain.feeder_params': feed_pars,
                     'brain.intermitter_params.EEB': 0.5, 'brain.intermitter_params.feed_bouts': True}
@@ -885,6 +889,9 @@ class ModelRegistry:
             mID2br = f'{mID2}_brute'
             E[mID2br] = self.newConf(m0=E[mID2], kwargs={'brain.olfactor_params.brute_force': True})
 
+            mID1_RL = f'{mID1}_RL'
+            E[mID1_RL] = self.newConf(m0=E[mID1], kwargs=RL_kws)
+
             mID01 = f'{mID0}_feeder'
             E[mID01] = self.newConf(m0=m0, kwargs=feed_kws)
             mID02 = f'{mID0}_max_feeder'
@@ -908,6 +915,15 @@ class ModelRegistry:
             E[mID21] = self.newConf(m0=E[mID11], kwargs=MB_kws)
             mID22 = f'{mID0}_max_forager_MB'
             E[mID22] = self.newConf(m0=E[mID21], kwargs=maxEEB_kws)
+
+            mID310 = f'{mID0}_forager0_RL'
+            E[mID310] = self.newConf(m0=E[mID110], kwargs=RL_kws)
+            mID320 = f'{mID0}_max_forager0_RL'
+            E[mID320] = self.newConf(m0=E[mID310], kwargs=maxEEB_kws)
+            mID31 = f'{mID0}_forager_RL'
+            E[mID31] = self.newConf(m0=E[mID11], kwargs=RL_kws)
+            mID32 = f'{mID0}_max_forager_RL'
+            E[mID32] = self.newConf(m0=E[mID31], kwargs=maxEEB_kws)
 
         E['noMB_untrained'] = self.newConf(m0=E['RE_NEU_PHI_DEF_max_forager0'], kwargs={})
         E['noMB_trained'] = self.newConf(m0=E['RE_NEU_PHI_DEF_max_forager'], kwargs={})
