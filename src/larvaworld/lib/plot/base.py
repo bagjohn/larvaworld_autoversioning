@@ -57,6 +57,11 @@ class BasePlot:
         self.show = show
         build_kws['subplot_kw'] = subplot_kw
         self.build_kws = build_kws
+        for k, v in self.build_kws.items():
+            if v == 'Ndatasets' and hasattr(self,'Ndatasets'):
+                self.build_kws[k] = self.Ndatasets
+            elif v == 'Nks' and hasattr(self,'Nks'):
+                self.build_kws[k] = self.Nks
 
     def build(self, fig=None, axs=None, dim3=False, azim=115, elev=15):
         '''
@@ -325,11 +330,7 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
         self.ranges = ranges
         self.absolute = absolute
         self.rad2deg = rad2deg
-        for k, v in self.build_kws.items():
-            if v == 'Ndatasets':
-                self.build_kws[k] = self.Ndatasets
-            elif v == 'Nks':
-                self.build_kws[k] = self.Nks
+
         AutoBasePlot.__init__(self, **kwargs)
 
     def comp_all_pvalues(self):
