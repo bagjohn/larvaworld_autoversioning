@@ -60,7 +60,6 @@ class ParamLarvaDataset(param.Parameterized):
         if self.step_data is not None and self.endpoint_data is not None:
             s1 = self.step_data.index.unique('AgentID').tolist()
             s2 = self.endpoint_data.index.values.tolist()
-            print(len(s1), len(s2))
             assert len(s1) == len(s2)
             assert set(s1) == set(s2)
             assert s1 == s2
@@ -71,7 +70,6 @@ class ParamLarvaDataset(param.Parameterized):
         s, e = None, None
         if self.step_data is not None:
             s = self.step_data.loc[(slice(None), self.config.agent_ids), :]
-
         if self.endpoint_data is not None:
             e = self.endpoint_data.loc[self.config.agent_ids]
         self.set_data(step=s, end=e)

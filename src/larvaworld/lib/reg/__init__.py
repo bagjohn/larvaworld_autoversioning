@@ -33,7 +33,7 @@ __all__ = [
 
 __displayname__ = 'Registry'
 
-VERBOSE = 0
+VERBOSE = 2
 
 
 def vprint(text='', verbose=0):
@@ -115,35 +115,11 @@ def define_default_refID():
 
         vprint('No reference datasets are available.Automatically importing one from the raw experimental data folder.', 2)
 
-        try:
-            assert 'Schleyer' in conf.LabFormat.confIDs
-        except:
-            # from ..aux import nam
-            # from ..param import Filesystem, TrackerOps, PreprocessConf
-            # kws = {
-            #     'tracker': TrackerOps(XY_unit='mm', fr=16.0, Npoints=12, Ncontour=22,
-            #                           front_vector=(2, 6), rear_vector=(7, 11), point_idx=9),
-            #     'filesystem': Filesystem(**{
-            #         'read_sequence': ['Step'] + nam.midline_xy(12, flat=True) + nam.contour_xy(22,
-            #                                                                                    flat=True) + nam.centroid_xy + \
-            #                          ['blob_orientation', 'area', 'grey_value', 'raw_spinelength', 'width', 'perimeter',
-            #                           'collision_flag'],
-            #         'structure': 'per_larva',
-            #         'read_metadata': True,
-            #         'folder_pref': 'box'}),
-            #     'env_params': gen.Env(
-            #         arena=gen.Arena(dims=(0.15, 0.15), geometry='circular')),
-            #     'preprocess': PreprocessConf(filter_f=2.0, rescale_by=0.001, drop_collisions=True)
-            # }
-            # g = generators.LabFormat(labID='Schleyer', **kws)
-
-        # Merged case
+        if 'Schleyer' not in conf.LabFormat.confIDs:
             config.resetConfs(conftypes=['LabFormat'])
-        finally:
-            g = conf.LabFormat.get('Schleyer')
+        g = conf.LabFormat.get('Schleyer')
         N = 30
         kws = {
-            'group_id': 'exploration',
             'parent_dir': 'exploration',
             'merged': True,
             'color': 'blue',
