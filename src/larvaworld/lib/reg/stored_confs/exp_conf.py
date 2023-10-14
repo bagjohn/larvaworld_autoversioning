@@ -59,11 +59,17 @@ def grouped_exp_dic():
         return exp(id, c=c,dur=dur, en=en,
                    **kwargs)
 
+    def touch_exp(id, c=['toucher'], dur=600.0,
+                 en=gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],
+                                           proc_keys=['spatial', 'angular', 'source']), **kwargs):
+        return exp(id, c=c,dur=dur, en=en,
+                   **kwargs)
+
     def game_exp(id, dur=20.0, **kwargs):
         return exp(id, dur=dur, **kwargs)
 
-    def deb_exp(id, dur=5.0, **kwargs):
-        return exp(id, dur=dur, c=['feeder', 'gut'],
+    def deb_exp(id, dur=5.0,env='food_grid', **kwargs):
+        return exp(id, dur=dur,env=env, c=['feeder', 'gut'],
                    en=gen.EnrichConf(proc_keys=['spatial'],anot_keys=[]), **kwargs)
 
     def thermo_exp(id, dur=10.0, **kwargs):
@@ -199,35 +205,39 @@ def grouped_exp_dic():
                                          anot_keys=['bout_detection', 'bout_distribution', 'interference',
                                                     'patch_residency'],
                                          proc_keys=['spatial', 'angular', 'source'])),
-            'tactile_detection': food_exp('tactile_detection', env='single_patch', dur=5.0, c=['toucher'],
-                                          l=lg(mID='toucher', N=15, mode='periphery', s=(0.03,0.03))),
-            'tactile_detection_x3': food_exp('tactile_detection_x3', env='single_patch', dur=600.0, c=['toucher'],
+
+            '4corners': exp('4corners', env='4corners', c=['memory'], l=lg(mID='RLforager', N=10, s=(0.04,0.04)))
+        },
+
+        'tactile' : {
+            'tactile_detection': touch_exp('tactile_detection', env='single_patch',
+                                          l=lg(mID='toucher', N=15, mode='periphery', s=(0.03, 0.03))),
+            'tactile_detection_x3': touch_exp('tactile_detection_x3', env='single_patch',
                                              l=lgs(mIDs=['RL_toucher_2', 'RL_toucher_0', 'toucher', 'toucher_brute',
                                                          'gRL_toucher_0'],
                                                    ids=['RL_3sensors', 'RL_1sensor', 'control', 'brute',
                                                         'RL global best'],
                                                    N=10)),
-            'tactile_detection_g': food_exp('tactile_detection_g', env='single_patch', dur=600.0, c=['toucher'],
+            'tactile_detection_g': touch_exp('tactile_detection_g', env='single_patch',
                                             l=lgs(mIDs=['RL_toucher_0', 'gRL_toucher_0'],
                                                   ids=['RL state-specific best', 'RL global best'], N=10)),
-            'multi_tactile_detection': food_exp('multi_tactile_detection', env='multi_patch', dur=600.0, c=['toucher'],
+            'multi_tactile_detection': touch_exp('multi_tactile_detection', env='multi_patch',
                                                 l=lgs(mIDs=['RL_toucher_2', 'RL_toucher_0', 'toucher'],
                                                       ids=['RL_3sensors', 'RL_1sensor', 'control'], N=4)),
-            '4corners': exp('4corners', env='4corners', c=['memory'], l=lg(mID='RLforager', N=10, s=(0.04,0.04)))
         },
 
-        'growth': {'growth': deb_exp('growth', env='food_grid', dur=24 * 60.0, l=GTRvsS(age=0.0)),
-                   'RvsS': deb_exp('RvsS', env='food_grid', dur=180.0, l=GTRvsS(age=0.0)),
-                   'RvsS_on': deb_exp('RvsS_on', env='food_grid', dur=20.0, l=GTRvsS()),
+        'growth': {'growth': deb_exp('growth',  dur=24 * 60.0, l=GTRvsS(age=0.0)),
+                   'RvsS': deb_exp('RvsS', dur=180.0, l=GTRvsS(age=0.0)),
+                   'RvsS_on': deb_exp('RvsS_on',  dur=20.0, l=GTRvsS()),
                    'RvsS_off': deb_exp('RvsS_off', env='arena_200mm', dur=20.0, l=GTRvsS()),
-                   'RvsS_on_q75': deb_exp('RvsS_on_q75', env='food_grid', l=GTRvsS(q=0.75)),
-                   'RvsS_on_q50': deb_exp('RvsS_on_q50', env='food_grid', l=GTRvsS(q=0.50)),
-                   'RvsS_on_q25': deb_exp('RvsS_on_q25', env='food_grid', l=GTRvsS(q=0.25)),
-                   'RvsS_on_q15': deb_exp('RvsS_on_q15', env='food_grid', l=GTRvsS(q=0.15)),
-                   'RvsS_on_1h_prestarved': deb_exp('RvsS_on_1h_prestarved', env='food_grid', l=GTRvsS(h_starved=1.0)),
-                   'RvsS_on_2h_prestarved': deb_exp('RvsS_on_2h_prestarved', env='food_grid', l=GTRvsS(h_starved=2.0)),
-                   'RvsS_on_3h_prestarved': deb_exp('RvsS_on_3h_prestarved', env='food_grid', l=GTRvsS(h_starved=3.0)),
-                   'RvsS_on_4h_prestarved': deb_exp('RvsS_on_4h_prestarved', env='food_grid', l=GTRvsS(h_starved=4.0)),
+                   'RvsS_on_q75': deb_exp('RvsS_on_q75',  l=GTRvsS(q=0.75)),
+                   'RvsS_on_q50': deb_exp('RvsS_on_q50',  l=GTRvsS(q=0.50)),
+                   'RvsS_on_q25': deb_exp('RvsS_on_q25',  l=GTRvsS(q=0.25)),
+                   'RvsS_on_q15': deb_exp('RvsS_on_q15', l=GTRvsS(q=0.15)),
+                   'RvsS_on_1h_prestarved': deb_exp('RvsS_on_1h_prestarved',  l=GTRvsS(h_starved=1.0)),
+                   'RvsS_on_2h_prestarved': deb_exp('RvsS_on_2h_prestarved',  l=GTRvsS(h_starved=2.0)),
+                   'RvsS_on_3h_prestarved': deb_exp('RvsS_on_3h_prestarved',  l=GTRvsS(h_starved=3.0)),
+                   'RvsS_on_4h_prestarved': deb_exp('RvsS_on_4h_prestarved', l=GTRvsS(h_starved=4.0)),
 
                    },
 
