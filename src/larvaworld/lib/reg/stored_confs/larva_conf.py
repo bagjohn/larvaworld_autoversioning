@@ -11,8 +11,8 @@ __all__ = [
     'Model_dict',
 ]
 
-OD1 = {'Odor': {'mean': 150.0, 'std': 0.0}}
-OD2 = {'CS': {'mean': 150.0, 'std': 0.0}, 'UCS': {'mean': 0.0, 'std': 0.0}}
+OD1 = {'Odor': 150.0}
+OD2 = {'CS': 150.0, 'UCS': 0.0}
 
 
 def Im(EEB, **kwargs):
@@ -72,82 +72,6 @@ def brain(ks, nengo=False, OD=None, **kwargs):
     return aux.AttrDict(d)
 
 
-def nengo_brain(module_shorts, EEB, OD=None):
-    if EEB > 0:
-        f_fr0, f_fr_r = 2.0, (1.0, 3.0)
-    else:
-        f_fr0, f_fr_r = 0.0, (0.0, 0.0)
-    return brain(module_shorts,
-                 turner=reg.par.get_null('turner', initial_amp=30.0, output_noise=0.1, input_noise=0.8),
-                 crawler=reg.par.get_null('crawler', freq=1.5, initial_amp=0.6, freq_range=(1.2, 1.8),
-                                       mode='realistic', stride_dst_mean=0.25, stride_dst_std=0.01),
-                 feeder=reg.par.get_null('feeder', freq=f_fr0, freq_range=f_fr_r),
-                 intermitter=reg.par.get_null('intermitter', feed_bouts=EEB > 0, EEB=EEB, mode='nengo'),
-                 nengo=True,
-                 OD=OD
-                 )
-
-
-def build_RvsS(b):
-
-    def RvsS_larva(species, mock=False, OD=None, l0=0.001):
-        if species == 'rover':
-            EEB = 0.67
-            gut_kws = {'k_abs': 0.8}
-        elif species == 'sitter':
-            EEB = 0.37
-            gut_kws = {'k_abs': 0.4}
-        else:
-            raise
-
-        mods = ['intermitter', 'feeder']
-        kws = {'intermitter_params': reg.par.get_null('intermitter', feed_bouts=True, EEB=EEB),
-               'feeder_params': reg.par.get_null('feeder'),
-               'nengo': False}
-        if mock:
-            Nsegs = 1
-        else:
-            Nsegs = 2
-
-            mods2 = ['crawler', 'turner', 'interference']
-
-            if OD is not None:
-                mods2 += ['olfactor']
-
-            for mod in mods2:
-                key = f'{mod}_params'
-                kws[key] = b[key]
-                if mod == 'olfactor':
-                    kws[key]['gain_dict'] = OD
-
-            mods += mods2
-
-        kws['modules'] = reg.par.get_null('modules', **{m: True for m in mods})
-        bb = reg.par.get_null('brain', **kws)
-
-        gut = reg.par.get_null('gut', **gut_kws)
-        deb = reg.par.get_null('DEB', hunger_as_EEB=True, hunger_gain=1.0, DEB_dt=10.0, species=species)
-
-        null_Box2D_params = {
-            'joint_types': {
-                'friction': {'N': 0, 'args': {}},
-                'revolute': {'N': 0, 'args': {}},
-                'distance': {'N': 0, 'args': {}}
-            }
-        }
-
-        return reg.par.get_null('Model', brain=bb, body=reg.par.get_null('body', length=l0, Nsegs=Nsegs),
-                             energetics={'DEB': deb, 'gut': gut}, Box2D_params=null_Box2D_params)
-
-    RvsS = {
-        'rover_old': RvsS_larva(species='rover'),
-        'sitter_old': RvsS_larva(species='sitter'),
-        'navigator_rover': RvsS_larva(species='rover', OD=OD1),
-        'mock_rover': RvsS_larva(species='rover', mock=True),
-        'navigator_sitter': RvsS_larva(species='sitter', OD=OD1),
-        'mock_sitter': RvsS_larva(species='sitter', mock=True),
-    }
-    return RvsS
 
 
 def mod(brain=None, bod={}, energetics=None, phys={}, Box2D={}):
@@ -249,7 +173,7 @@ def create_mod_dict(b):
 
     grouped_mod_dict = {
         'touchers': touchers,
-        'foraging phenotypes': build_RvsS(b),
+        # 'foraging phenotypes': build_RvsS(b),
         'games': gamers,
         'zebrafish': zebrafish,
         'other': other,
@@ -257,15 +181,11 @@ def create_mod_dict(b):
 
     return grouped_mod_dict
 
-def all_mod_dict():
-    dnew = reg.model.autostored_confs
-    b = dnew['RE_NEU_SQ_DEF_nav'].brain
-    return create_mod_dict(b)
 
 @reg.funcs.stored_conf("Model")
 def Model_dict():
     dnew = reg.model.autostored_confs
-    b = dnew['RE_NEU_SQ_DEF_nav'].brain
+    b = dnew['navigator'].brain
     d = create_mod_dict(b)
     dd = aux.merge_dicts(list(d.values()))
     dnew.update(dd)

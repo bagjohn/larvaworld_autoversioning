@@ -569,7 +569,7 @@ def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, sample=None, substrate_type='sta
         id = f'{pref}{mID0.capitalize()}'
 
         if navigator:
-            mID0 = f'navigator_{mID0}'
+            mID0 = f'{mID0}_nav'
 
         kws = {
             'id': id,
