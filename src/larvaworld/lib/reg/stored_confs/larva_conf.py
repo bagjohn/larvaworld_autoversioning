@@ -191,11 +191,11 @@ def create_mod_dict(b):
 
     RL_touch_memory = reg.par.get_null('memory', Delta=0.5, state_spacePerSide=1, modality='touch', train_dur=30,
                                     update_dt=0.5,
-                                    gain_space=np.round(np.arange(-10, 11, 5), 1).tolist(), state_specific_best=True)
+                                    gain_space=np.round(np.arange(-10.0, 11.0, 5), 1).tolist(), state_specific_best=True)
 
     gRL_touch_memory = reg.par.get_null('memory', Delta=0.5, state_spacePerSide=1, modality='touch', train_dur=30,
                                      update_dt=0.5,
-                                     gain_space=np.round(np.arange(-10, 11, 5), 1).tolist(), state_specific_best=False)
+                                     gain_space=np.round(np.arange(-10.0, 11.0, 5), 1).tolist(), state_specific_best=False)
 
     M0 = mod()
 

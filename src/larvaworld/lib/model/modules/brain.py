@@ -56,7 +56,8 @@ class Brain(NestedConf):
         kws = {
             'sources': a.model.sources, 'grid': a.model.food_grid, 'radius': a.radius
         }
-        return {s: int(aux.sense_food(pos=a.get_sensor_position(s), **kws) is not None) for s in list(a.sensors.keys())}
+        input= {s: int(aux.sense_food(pos=a.get_sensor_position(s), **kws) is not None) for s in list(a.sensors.keys())}
+        return input
 
     def sense_wind(self, **kwargs):
         if self.agent is None:

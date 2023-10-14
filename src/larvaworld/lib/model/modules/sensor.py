@@ -171,14 +171,14 @@ class Olfactor(Sensor):
 
 class Toucher(Sensor):
     def __init__(self, initial_gain, touch_sensors=None, **kwargs):
-
+        self.initial_gain = initial_gain
         if touch_sensors is not None:
-            gain_dict = {s: initial_gain for s in touch_sensors}
+            gain_dict = aux.AttrDict({s: initial_gain for s in touch_sensors})
 
             # self.brain.agent.add_touch_sensors(touch_sensors)
         else:
-            gain_dict = {}
-
+            gain_dict = aux.AttrDict()
+        gain_dict.olfactor=0
         super().__init__(gain_dict=gain_dict, **kwargs)
         self.touch_sensors = touch_sensors
         self.init_sensors()
@@ -189,6 +189,9 @@ class Toucher(Sensor):
                 self.brain.agent.touch_sensors = self.touch_sensors
                 if self.touch_sensors is not None:
                     self.brain.agent.add_touch_sensors(self.touch_sensors)
+                    for s in self.brain.agent.sensors:
+                        if s not in self.gain:
+                            self.add_novel_gain(id=s,gain=self.initial_gain)
 
     def affect_locomotion(self):
         if self.brain is None :

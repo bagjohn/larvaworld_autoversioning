@@ -308,7 +308,7 @@ class SegmentedBodySensored(SegmentedBody):
 
     def add_touch_sensors(self, idx):
         for i in idx:
-            self.define_sensor(f'touch_sensor_{i}', self.contour_points[i])
+            self.define_sensor(f'touch_sensor_{i}', self.base_vertices[i])
 
     def draw_sensors(self, v, **kwargs):
         for s in self.sensors:
