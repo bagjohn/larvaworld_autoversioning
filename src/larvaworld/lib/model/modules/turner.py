@@ -30,7 +30,8 @@ class Turner(Effector):
 class ConstantTurner(Turner, StepEffector): pass
 
 
-class SinTurner(Turner, SinOscillator): pass
+class SinTurner(Turner, SinOscillator):
+    freq = PositiveNumber(0.58, bounds=(0.0, 2.0))
 
 
 class NeuralOscillator(Turner):

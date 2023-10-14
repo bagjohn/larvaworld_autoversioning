@@ -12,8 +12,8 @@ class Feeder(Oscillator):
     feed_radius = param.Magnitude(0.05,label='feeding radius', doc='The accessible radius for a feeding motion as fraction of body length.')
     V_bite = param.Magnitude(0.001,label='mouthook capacity', doc='The volume of a feeding motion as fraction of body volume.')
 
-    def __init__(self, freq_range=(1.0, 3.0),**kwargs):
-        super().__init__(freq_range=freq_range,**kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.stop_effector()
 
     def step(self):
