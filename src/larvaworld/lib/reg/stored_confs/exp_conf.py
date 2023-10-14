@@ -169,7 +169,7 @@ def grouped_exp_dic():
         'odor_preference': {
             'PItest_off': pref_exp('PItest_off', env='CS_UCS_off_food', dur=3.0,
                                    l=lg(N=25, s=(0.005, 0.02), mID='RE_NEU_PHI_DEF_nav_x2')),
-            'PItest_on': pref_exp('PItest_on', env='CS_UCS_on_food', l=lg(N=25, s=(0.005, 0.02), mID='forager_x2')),
+            'PItest_on': pref_exp('PItest_on', env='CS_UCS_on_food', l=lg(N=25, s=(0.005, 0.02), mID='RE_NEU_PHI_DEF_forager_x2')),
             'PItrain_mini': pref_exp('PItrain_mini', env='CS_UCS_on_food_x2', dur=1.0, c=['olfactor', 'memory'],
                                      trials=reg.conf.Trial.getID('odor_preference_short'), l=lg(N=25, s=(0.005, 0.02), mID='RE_NEU_PHI_DEF_forager_RL')),
             'PItrain': pref_exp('PItrain', env='CS_UCS_on_food_x2', dur=41.0, c=['olfactor', 'memory'],
@@ -177,7 +177,7 @@ def grouped_exp_dic():
             'PItest_off_RL': pref_exp('PItest_off_RL', env='CS_UCS_off_food', dur=105.0, c=['olfactor', 'memory'],
                                       l=lg(N=25, s=(0.005, 0.02), mID='RE_NEU_PHI_DEF_nav_RL'))},
         'foraging': {
-            'patchy_food': food_exp('patchy_food', env='patchy_food', l=lg(mID='forager', N=25)),
+            'patchy_food': food_exp('patchy_food', env='patchy_food', l=lg(mID='RE_NEU_PHI_DEF_forager', N=25)),
             'patch_grid': food_exp('patch_grid', env='patch_grid', l=lgs_x4()),
             'MB_patch_grid': food_exp('MB_patch_grid', env='patch_grid', c=['feeder', 'olfactor'],
                                       l=lgs(mIDs=['MB_untrained', 'MB_trained'], N=3)),
@@ -191,7 +191,7 @@ def grouped_exp_dic():
                                      l=lg(mID='RE_NEU_PHI_DEF_feeder', N=5, s=(0.005,0.005))),
             'food_grid': food_exp('food_grid', env='food_grid', l=lg(mID='RE_NEU_PHI_DEF_feeder', N=5)),
             'single_odor_patch': food_exp('single_odor_patch', env='single_odor_patch',
-                                          l=lgs(mIDs=['RE_NEU_PHI_DEF_feeder', 'forager'],
+                                          l=lgs(mIDs=['RE_NEU_PHI_DEF_feeder', 'RE_NEU_PHI_DEF_forager'],
                                                 ids=['Orco', 'control'], N=5, mode='periphery', s=(0.01,0.01))),
             'single_odor_patch_x4': food_exp('single_odor_patch_x4', env='single_odor_patch', l=lgs_x4()),
             'double_patch': food_exp('double_patch', env='double_patch', l=GTRvsS(N=5),

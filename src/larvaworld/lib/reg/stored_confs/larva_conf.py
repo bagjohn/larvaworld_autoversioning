@@ -9,7 +9,6 @@ from ... import reg, aux
 
 __all__ = [
     'Model_dict',
-    'ModelGroup_dict',
 ]
 
 OD1 = {'Odor': {'mean': 150.0, 'std': 0.0}}
@@ -125,12 +124,6 @@ def build_RvsS(b):
 
         kws['modules'] = reg.par.get_null('modules', **{m: True for m in mods})
         bb = reg.par.get_null('brain', **kws)
-        #
-
-        # if not mock :
-        #     b = brain(ms, OD=OD, intermitter=Im)
-        # else :
-        #     b =brain(['Im', 'F'], intermitter=Im)
 
         gut = reg.par.get_null('gut', **gut_kws)
         deb = reg.par.get_null('DEB', hunger_as_EEB=True, hunger_gain=1.0, DEB_dt=10.0, species=species)
@@ -208,8 +201,6 @@ def create_mod_dict(b):
         return M1
 
     LOF = brain(['LOF'])
-    LOFM = brain(['LOF', 'M'])
-    LW = brain(['L', 'W'])
     L = brain(['L'])
     LTo = brain(['L', 'To'], toucher=reg.par.get_null('toucher', touch_sensors=[]))
     LToM = brain(['L', 'To', 'M'], toucher=reg.par.get_null('toucher', touch_sensors=[]),
@@ -221,42 +212,12 @@ def create_mod_dict(b):
     LTo2Mg = brain(['L', 'To', 'M'], toucher=reg.par.get_null('toucher', touch_sensors=[0, 2]),
                    memory=gRL_touch_memory)
     LTo_brute = brain(['L', 'To'], toucher=reg.par.get_null('toucher', touch_sensors=[], brute_force=True))
-    nLO = nengo_brain(['L', 'O'], EEB=0.0)
     LTh = brain(['L', 'Th'])
 
     def add_OD(OD, B0=LOF):
         B1 = aux.AttrDict(copy.deepcopy(B0))
         B1.olfactor_params.odor_dict = OD
         return B1
-
-    def add_Im(Im, B0=LOFM):
-        B1 = aux.AttrDict(copy.deepcopy(B0))
-        B1.intermitter_params = Im
-        return B1
-
-    explorers = {
-        'explorer': add_brain(LW),
-        'branch_explorer': add_brain(add_Im(reg.par.get_null('intermitter', feed_bouts=False, EEB=0, mode='branch'), LW)),
-        'nengo_explorer': add_brain(nengo_brain(['L', 'W'], EEB=0.0)),
-        'imitator': add_brain(L, bod={'Nsegs': 11}),
-
-    }
-
-    navigators = {
-        'RL_navigator': add_brain(LOFM),
-        'nengo_navigator': add_brain(nLO),
-        'nengo_navigator_x2': add_brain(add_OD(OD2, nLO)),
-        'thermo_navigator': add_brain(LTh),
-    }
-
-    foragers = {
-        'Orco_forager': add_brain(brain(['L', 'F'], intermitter=Im(0.5))),
-        'nengo_feeder': add_brain(nengo_brain(['L', 'F'], EEB=0.75)),
-        'forager': add_brain(add_Im(Im(0.5), add_OD(OD1))),
-        'forager_x2': add_brain(add_Im(Im(0.5), add_OD(OD2))),
-        'RL_forager': add_brain(add_Im(Im(0.5), LOFM)),
-        'nengo_forager': add_brain(nengo_brain(['LOF'], EEB=0.75, OD=OD1))
-    }
 
 
 
@@ -270,6 +231,8 @@ def create_mod_dict(b):
     }
 
     other = {
+        'thermo_navigator': add_brain(LTh),
+        'imitator': add_brain(L, bod={'Nsegs': 11}),
         'immobile': add_brain(brain(['T', 'O'], OD=OD1)),
     }
 
@@ -291,9 +254,6 @@ def create_mod_dict(b):
     }
 
     grouped_mod_dict = {
-        'explorers': explorers,
-        'navigators': navigators,
-        'foragers': foragers,
         'touchers': touchers,
         'foraging phenotypes': build_RvsS(b),
         'games': gamers,
@@ -313,14 +273,8 @@ def Model_dict():
     dnew = reg.model.autostored_confs
     b = dnew['RE_NEU_SQ_DEF_nav'].brain
     d = create_mod_dict(b)
-
-
     dd = aux.merge_dicts(list(d.values()))
-
     dnew.update(dd)
     return dnew
 
-@reg.funcs.stored_conf("ModelGroup")
-def ModelGroup_dict():
-    d = all_mod_dict()
-    return aux.AttrDict({k: {'model families': list(v.keys())} for k, v in d.items()})
+

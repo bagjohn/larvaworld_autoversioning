@@ -837,11 +837,12 @@ class ModelRegistry:
         mID0dic = {}
         for Tmod in ['NEU', 'SIN']:
             for Ifmod in ['PHI', 'SQ', 'DEF']:
-                mID0 = f'RE_{Tmod}_{Ifmod}_DEF'
-                mID0dic[mID0] = E[mID0]
-                for mm in [f'{mID0}_avg', f'{mID0}_var', f'{mID0}_var2']:
-                    if mm in reg.conf.Model.confIDs:
-                        mID0dic[mm] = reg.conf.Model.getID(mm)
+                for IMmod in ['NENGO', 'BR', 'DEF']:
+                    mID0 = f'RE_{Tmod}_{Ifmod}_{IMmod}'
+                    mID0dic[mID0] = E[mID0]
+                    for mm in [f'{mID0}_avg', f'{mID0}_var', f'{mID0}_var2']:
+                        if mm in reg.conf.Model.confIDs:
+                            mID0dic[mm] = reg.conf.Model.getID(mm)
 
         olf_pars0 = self.generate_configuration(self.dict.brain.m['olfactor'].mode['default'].args,
                                                 odor_dict={'Odor': {'mean': 0.0, 'std': 0.0}})
@@ -904,7 +905,7 @@ class ModelRegistry:
 
             mID11 = f'{mID0}_forager'
             E[mID11] = self.newConf(m0=E[mID1], kwargs=feed_kws)
-            mID12 = f'{mID0}_max_forager'
+            E[f'{mID0}_forager_x2'] = self.newConf(m0=E[mID2], kwargs=feed_kws)
             E[f'{mID0}_max_forager'] = self.newConf(m0=E[mID11], kwargs=maxEEB_kws)
 
             E[f'{mID0}_forager0_MB'] = self.newConf(m0=E[mID110], kwargs=MB_kws)

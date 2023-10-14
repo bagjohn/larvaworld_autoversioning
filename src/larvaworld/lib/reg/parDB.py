@@ -1391,10 +1391,7 @@ def buildInitDict():
             **d['reference_dataset']
         }
 
-        d['ModelGroup'] = {
-            'ModelGroupID': ConfID_entry('ModelGroup'),
-            'model families': ConfID_entry('Model', single_choice=False)
-        }
+
         d['ExpGroup'] = {
             'ExpGroupID': ConfID_entry('ExpGroup'),
             'simulations': ConfID_entry('Exp', single_choice=False)

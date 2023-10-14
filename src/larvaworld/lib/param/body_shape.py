@@ -277,7 +277,6 @@ class SegmentedBody(BodyMobile):
 class SegmentedBodySensored(SegmentedBody):
 
     def __init__(self, **kwargs):
-
         super().__init__(**kwargs)
         self.sensors = aux.AttrDict()
         self.define_sensor('olfactor', (1, 0))
@@ -313,8 +312,6 @@ class SegmentedBodySensored(SegmentedBody):
     def draw_sensors(self, v, **kwargs):
         for s in self.sensors:
             pos = self.get_sensor_position(s)
-        # for s, d in self.sensors.items():
-        #     pos = self.segs[d.seg_idx].translate(d.local_pos * self.length)
             v.draw_circle(radius=self.length / 10,
                           position=pos,
                           filled=True, color=(255, 0, 0), width=.1)

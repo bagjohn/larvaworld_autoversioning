@@ -140,10 +140,8 @@ class ModelTab(gui_aux.GuiTab):
 
     def build(self):
         sl0 = gui_aux.SelectionList(tab=self, buttons=['load', 'save', 'delete', 'tree', 'conf_tree'], root_key='Model')
-        sl1 = gui_aux.SelectionList(tab=self, conftype='ModelGroup', disp='Model family :', buttons=[], single_line=True,
-                                    width=15, text_kws=gui_aux.t_kws(10), sublists={'model families': sl0})
         b_nengo = gui_aux.named_bool_button('nengo', False)
-        l00 = gui_aux.gui_col([sl1, sl0], x_frac=0.2, y_frac=0.6, as_pane=True, pad=(20, 20), add_to_bottom=[b_nengo])
+        l00 = gui_aux.gui_col([sl0], x_frac=0.2, y_frac=0.6, as_pane=True, pad=(20, 20), add_to_bottom=[b_nengo])
         l01, c1 = self.build_module_tab()
         l1=[[l00, l01]]
         l2, g2 = self.build_architecture_tab()
