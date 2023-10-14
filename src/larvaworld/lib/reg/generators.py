@@ -287,7 +287,7 @@ class LabFormat(NestedConf):
         return self.import_func(source_dir=source_dir, tracker=self.tracker, filesystem=self.filesystem, **kwargs)
 
     def build_dataset(self, step, end, parent_dir, proc_folder=None, group_id=None, N=None, id=None, sample=None,
-                      color='black', epochs=[], age=0.0):
+                      color='black', epochs=[], age=0.0,refID=None):
         if group_id is None:
             group_id = parent_dir
         if id is None:
@@ -301,6 +301,7 @@ class LabFormat(NestedConf):
             'load_data': False,
             'dir': dir,
             'id': id,
+            'refID': refID,
             'color': color,
             'larva_groups': gen.LarvaGroup(c=color, sample=sample, mID=None, N=N, life=[age, epochs]).entry(
                 id=group_id),
@@ -318,14 +319,12 @@ class LabFormat(NestedConf):
         d.preprocess(**self.preprocess.nestedConf)
         if conf is None:
             conf = reg.gen.EnrichConf(proc_keys=[], anot_keys=[]).nestedConf
-        # conf.pre_kws = self.preprocess.nestedConf
-        # d = d.enrich(**conf, is_last=False)
         reg.vprint(f'****- Processed dataset {d.id} to derive secondary metrics -----', 1)
         return d
 
     def import_dataset(self, parent_dir, raw_folder=None, merged=False,
                        proc_folder=None, group_id=None, N=None, id=None, sample=None, color='black', epochs=[], age=0.0,
-                       refID=None, enrich_conf=None, save_dataset=True, **kwargs):
+                       refID=None, enrich_conf=None, save_dataset=False, **kwargs):
 
         """
         Imports a single experimental dataset defined by their ID from a source folder.
@@ -392,11 +391,11 @@ class LabFormat(NestedConf):
         else:
             step = step.astype(float)
             d = self.build_dataset(step, end, parent_dir, proc_folder=proc_folder, group_id=group_id, N=N,
-                                   id=id, sample=sample, color=color, epochs=epochs, age=age)
+                                   id=id, sample=sample, color=color, epochs=epochs, age=age, refID=refID)
             d = self.enrich_dataset(d, conf=enrich_conf)
             if save_dataset:
                 shutil.rmtree(d.config.dir, ignore_errors=True)
-                d.save(refID=refID)
+                d.save()
                 # reg.vprint(f'***** Dataset {d.id} stored -----', 1)
             return d
 
@@ -551,7 +550,7 @@ class ReplayConf(ReplayConfGroup, ReplayConfUnit):
                                          doc='Whether to artificially simplify the experimentally tracked larva body to a segmented virtual body of the given number of segments.')
 
 
-# gen.LabFormat = LabFormat
+gen.LabFormat = LabFormat
 gen.Replay = class_generator(ReplayConf)
 
 

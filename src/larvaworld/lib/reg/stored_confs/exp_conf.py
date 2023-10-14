@@ -191,7 +191,7 @@ def grouped_exp_dic():
                                     en=gen.EnrichConf(proc_keys=['spatial'])),
             'uniform_food': food_exp('uniform_food', env='uniform_food',
                                      l=lg(mID='RE_NEU_PHI_DEF_feeder', N=5, s=(0.005,0.005))),
-            'food_grid': food_exp('food_grid', env='food_grid', l=lg(mID='RE_NEU_PHI_DEF_feeder', N=25)),
+            'food_grid': food_exp('food_grid', env='food_grid', l=lg(mID='RE_NEU_PHI_DEF_feeder', N=5)),
             'single_odor_patch': food_exp('single_odor_patch', env='single_odor_patch',
                                           l=lgs(mIDs=['RE_NEU_PHI_DEF_feeder', 'forager'],
                                                 ids=['Orco', 'control'], N=5, mode='periphery', s=(0.01,0.01))),
