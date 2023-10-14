@@ -19,14 +19,14 @@ __all__ = [
 class Crawler(StepEffector):
 
     @staticmethod
-    def select(mode, **kwargs):
+    def select(mode):
         d = aux.AttrDict({
             'gaussian': GaussOscillator,
             'square': SquareOscillator,
             'realistic': PhaseOscillator,
             'constant': ConstantCrawler
         })
-        return d[mode](**kwargs)
+        return d[mode]
 
 class ConstantCrawler(Crawler):pass
     # mode = param.Selector(default='constant', readonly=True)

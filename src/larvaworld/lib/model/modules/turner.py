@@ -15,13 +15,13 @@ __all__ = [
 class Turner(Effector):
 
     @staticmethod
-    def select(mode, **kwargs):
+    def select(mode):
         d = aux.AttrDict({
             'neural': NeuralOscillator,
             'sinusoidal': SinTurner,
             'constant': ConstantTurner
         })
-        return d[mode](**kwargs)
+        return d[mode]
 
 class ConstantTurner(Turner, StepEffector):pass
 

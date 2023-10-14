@@ -44,13 +44,13 @@ class Coupling(param.Parameterized):
         self.cur_attenuation = self.attenuation
 
     @ staticmethod
-    def select(mode, **kwargs):
+    def select(mode):
         d = aux.AttrDict({
             'default': DefaultCoupling,
             'square': SquareCoupling,
             'phasic': PhasicCoupling
         })
-        return d[mode](**kwargs)
+        return d[mode]
 
 
 

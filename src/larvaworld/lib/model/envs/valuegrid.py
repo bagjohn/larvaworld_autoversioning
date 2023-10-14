@@ -399,7 +399,7 @@ class WindScape(SpatialEntity):
         if self.obstructed(agent.pos):
             return 0
         else:
-            o = np.rad2deg(agent.head.get_orientation())
+            o = np.rad2deg(agent.get_orientation())
             return np.abs(aux.angle_dif(o, self.wind_direction)) / 180 * self.wind_speed
 
     def obstructed(self, pos):
@@ -499,7 +499,7 @@ class ThermoScape(ValueGrid):
 
         self.thermoscape_layers = rv_dict
 
-    def get_thermo_value(self, pos):
+    def get_value(self, pos):
 
         size, size2 = [1, 1]
         pos_ad = [size * pos[0], size2 * pos[1]]

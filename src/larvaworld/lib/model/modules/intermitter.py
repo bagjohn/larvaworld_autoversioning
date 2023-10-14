@@ -274,13 +274,13 @@ class Intermitter(Timer):
         return self.Nfeeds / self.total_t
 
     @staticmethod
-    def select(mode, **kwargs):
+    def select(mode):
         d = aux.AttrDict({
             'default': Intermitter,
             'nengo': NengoIntermitter,
             'branch': BranchIntermitter
         })
-        return d[mode](**kwargs)
+        return d[mode]
 
 
 

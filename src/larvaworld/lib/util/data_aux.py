@@ -45,12 +45,9 @@ def init2mdict(d0):
 def gConf(mdict, **kwargs):
     if mdict is None:
         return None
-
-
     elif isinstance(mdict, param.Parameterized):
         return mdict.v
     elif isinstance(mdict, dict):
-
         conf = aux.AttrDict()
         for d, p in mdict.items():
             if isinstance(p, param.Parameterized):

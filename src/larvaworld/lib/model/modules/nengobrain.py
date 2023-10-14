@@ -1,14 +1,11 @@
-from nengo import *
+from nengo import Network, Connection, Node, Direct, Ensemble, Probe, dists, Simulator
 import numpy as np
 from nengo.networks import EnsembleArray
 
 
 from ... import aux
-from .basic import StepOscillator
-from .brain import Brain
-from .crawl_bend_interference import SquareCoupling
-from .intermitter import NengoIntermitter
-from .locomotor import Locomotor
+from . import Brain,StepOscillator,SquareCoupling, Locomotor,NengoIntermitter
+
 
 
 __all__ = [
