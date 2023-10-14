@@ -48,7 +48,7 @@ def Batch_dict():
                 o='final_dst_to_Source',
                 proc=['angular', 'spatial', 'source']),
         **batch('PItest_off',
-                ss={'odor_dict.CS.mean': [[-100.0, 100.0], 4], 'odor_dict.UCS.mean': [[-100.0, 100.0], 4]},
+                ss={'gain_dict.CS': [[-100.0, 100.0], 4], 'gain_dict.UCS': [[-100.0, 100.0], 4]},
                 # bm='PI',
                 proc=['PI']),
         **batch('PItrain_mini',

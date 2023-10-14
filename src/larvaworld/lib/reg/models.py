@@ -258,12 +258,12 @@ def init_brain_modules():
 
     def Olf0():
         args = {
-            'odor_dict': {'dtype': dict, 'k': 'G_O', 'v0': {},
+            'gain_dict': {'dtype': dict, 'k': 'G_O', 'v0': {},
                           'sym': sub('G', 'O'), 'disp': 'gain per odor ID',
                           'h': 'The dictionary of the olfactory gains.'},
             **sensor_kws(k0='O', l0='olfaction')}
         d = {'default': {'args': args, 'class_func': modules.Olfactor,
-                         'variable': ['perception', 'decay_coef', 'brute_force', 'odor_dict']},
+                         'variable': ['perception', 'decay_coef', 'brute_force', 'gain_dict']},
              # 'nengo': {'args': IMargs, 'class_func': NengoIntermitter},
              # 'branch': {'args': BRargs, 'class_func': BranchIntermitter},
              }
@@ -845,12 +845,12 @@ class ModelRegistry:
                             mID0dic[mm] = reg.conf.Model.getID(mm)
 
         olf_pars0 = self.generate_configuration(self.dict.brain.m['olfactor'].mode['default'].args,
-                                                odor_dict={'Odor': {'mean': 0.0, 'std': 0.0}})
+                                                gain_dict={'Odor': 0.0})
         olf_pars1 = self.generate_configuration(self.dict.brain.m['olfactor'].mode['default'].args,
-                                                odor_dict={'Odor': {'mean': 150.0, 'std': 0.0}})
+                                                gain_dict={'Odor': 150.0})
         olf_pars2 = self.generate_configuration(self.dict.brain.m['olfactor'].mode['default'].args,
-                                                odor_dict={'CS': {'mean': 150.0, 'std': 0.0},
-                                                           'UCS': {'mean': 0.0, 'std': 0.0}})
+                                                gain_dict={'CS': 150.0,
+                                                           'UCS': 0.0})
         kwargs0 = {'brain.modules.olfactor': True, 'brain.olfactor_params': olf_pars0}
         kwargs1 = {'brain.modules.olfactor': True, 'brain.olfactor_params': olf_pars1}
         kwargs2 = {'brain.modules.olfactor': True, 'brain.olfactor_params': olf_pars2}

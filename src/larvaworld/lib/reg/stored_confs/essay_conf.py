@@ -480,15 +480,15 @@ class Chemotaxis_Essay(Essay):
     def get_models1(self, gain):
         mID0 = 'RE_NEU_SQ_DEF_nav'
         o = 'brain.olfactor_params'
-        mW = reg.model.newConf(mID0=mID0, kwargs={f'{o}.odor_dict.Odor.mean': gain,
+        mW = reg.model.newConf(mID0=mID0, kwargs={f'{o}.gain_dict.Odor': gain,
                                                f'{o}.perception': 'log'})
-        mWlin = reg.model.newConf(mID0=mID0, kwargs={f'{o}.odor_dict.Odor.mean': gain,
+        mWlin = reg.model.newConf(mID0=mID0, kwargs={f'{o}.gain_dict.Odor': gain,
                                                   f'{o}.perception': 'linear'})
-        mC = reg.model.newConf(mID0=mID0, kwargs={f'{o}.odor_dict.Odor.mean': 0})
-        mT = reg.model.newConf(mID0=mID0, kwargs={f'{o}.odor_dict.Odor.mean': gain,
+        mC = reg.model.newConf(mID0=mID0, kwargs={f'{o}.gain_dict.Odor': 0})
+        mT = reg.model.newConf(mID0=mID0, kwargs={f'{o}.gain_dict.Odor': gain,
                                                f'{o}.perception': 'log',
                                                f'{o}.brute_force': True})
-        mTlin = reg.model.newConf(mID0=mID0, kwargs={f'{o}.odor_dict.Odor.mean': gain,
+        mTlin = reg.model.newConf(mID0=mID0, kwargs={f'{o}.gain_dict.Odor': gain,
                                                   f'{o}.brute_force': True,
                                                   f'{o}.perception': 'linear'})
 
@@ -514,7 +514,7 @@ class Chemotaxis_Essay(Essay):
                 mID0 = f'RE_{Tmod}_{Ifmod}_DEF_nav'
                 models[f'{Tmod}_{Ifmod}'] = {'model': reg.model.newConf(mID0=mID0, kwargs={
                     f'brain.olfactor_params.brute_force': True,
-                    f'brain.olfactor_params.odor_dict.Odor.mean': gain,
+                    f'brain.olfactor_params.gain_dict.Odor': gain,
                     f'brain.interference_params.attenuation': 0.1,
                     f'brain.interference_params.attenuation_max': 0.0,
                 }), 'color': cols[i]}
@@ -531,7 +531,7 @@ class Chemotaxis_Essay(Essay):
                 models[f'{Tmod}_{Ifmod}'] = {'model': reg.model.newConf(mID0=mID0, kwargs={
                     f'brain.olfactor_params.perception': 'log',
                     f'brain.olfactor_params.decay_coef': 0.1,
-                    f'brain.olfactor_params.odor_dict.Odor.mean': gain,
+                    f'brain.olfactor_params.gain_dict.Odor': gain,
                     f'brain.interference_params.attenuation': 0.1,
                     f'brain.interference_params.attenuation_max': 0.9,
                 }), 'color': cols[i]}
@@ -549,7 +549,7 @@ class Chemotaxis_Essay(Essay):
                 models[f'{Tmod}_{Ifmod}'] = {'model': reg.model.newConf(mID0=mID0, kwargs={
                     f'brain.olfactor_params.perception': 'log',
                     f'brain.olfactor_params.decay_coef': 0.1,
-                    f'brain.olfactor_params.odor_dict.Odor.mean': gain,
+                    f'brain.olfactor_params.gain_dict.Odor': gain,
                 }), 'color': cols[i]}
                 i += 1
 

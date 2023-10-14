@@ -1,9 +1,6 @@
-import numpy as np
-
 from ... import reg, aux
 from .. import modules
-from ...param import PhaseRange, Phase, NestedConf, ClassAttr
-from . import Olfactor, Toucher, WindSensor, Thermosensor
+from ...param import NestedConf, ClassAttr
 
 __all__ = [
     'Brain',
@@ -12,10 +9,10 @@ __all__ = [
 
 
 class Brain(NestedConf):
-    olfactor = ClassAttr(class_=Olfactor, default=None, doc='The olfactory sensor')
-    toucher = ClassAttr(class_=Toucher, default=None, doc='The tactile sensor')
-    windsensor = ClassAttr(class_=WindSensor, default=None, doc='The wind sensor')
-    thermosensor = ClassAttr(class_=Thermosensor, default=None, doc='The temperature sensor')
+    olfactor = ClassAttr(class_=modules.Olfactor, default=None, doc='The olfactory sensor')
+    toucher = ClassAttr(class_=modules.Toucher, default=None, doc='The tactile sensor')
+    windsensor = ClassAttr(class_=modules.WindSensor, default=None, doc='The wind sensor')
+    thermosensor = ClassAttr(class_=modules.Thermosensor, default=None, doc='The temperature sensor')
 
     def __init__(self, agent=None, dt=None, **kwargs):
         super().__init__(**kwargs)
@@ -111,7 +108,8 @@ class DefaultBrain(Brain):
             'MB': {'olfaction': modules.RemoteBrianModelMemory, 'touch': modules.RemoteBrianModelMemory}
         }
         if mods['memory']:
-            mm = conf['memory_params']
+
+            mm = conf['memory_params'].get_copy()
             # FIXME
             if 'mode' not in mm.keys():
                 mm['mode'] = 'RL'

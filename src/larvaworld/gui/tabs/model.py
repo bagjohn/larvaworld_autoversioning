@@ -38,8 +38,8 @@ class ModelTab(gui_aux.GuiTab):
             dic = conf['brain'][f'{k}_params']
             if k == 'olfactor':
                 if dic is not None:
-                    odor_gains = dic['odor_dict']
-                    dic.pop('odor_dict')
+                    odor_gains = dic['gain_dict']
+                    dic.pop('gain_dict')
                 else:
                     odor_gains = {}
                 c['odor_gains'].update(w, odor_gains)
@@ -67,7 +67,7 @@ class ModelTab(gui_aux.GuiTab):
         for k in module_dict.keys():
             b[f'{k}_params'] = c[k].get_dict(v, w)
         if b['olfactor_params'] is not None:
-            b['olfactor_params']['odor_dict'] = c['odor_gains'].dict
+            b['olfactor_params']['gain_dict'] = c['odor_gains'].dict
         for kk in ['nengo']:
             b[kk] = w[f'TOGGLE_{kk}'].get_state()
         m['brain'] = b

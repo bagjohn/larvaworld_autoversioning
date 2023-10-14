@@ -301,7 +301,7 @@ class BranchIntermitter(Intermitter):
     feed_bouts = param.Boolean(False, readonly=True)
     beta = OptionalPositiveNumber(default=None,doc='The beta coefficient for the exponential function')
     c = PositiveNumber(default=0.7,doc='The c parameter for the criticality function')
-    sigma = PositiveNumber(default=1.0,doc='The sigma parameter for the criticality function')
+    sigma = PositiveNumber(default=1.0,doc='The ISING branching coef.')
 
 
     def __init__(self,**kwargs):

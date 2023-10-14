@@ -67,7 +67,7 @@ def brain(ks, nengo=False, OD=None, **kwargs):
         else:
             d[p] = reg.par.get_null(k)
         if k == 'olfactor' and d[p] is not None:
-            d[p]['odor_dict'] = OD
+            d[p]['gain_dict'] = OD
     d['nengo'] = nengo
     return aux.AttrDict(d)
 
@@ -118,7 +118,7 @@ def build_RvsS(b):
                 key = f'{mod}_params'
                 kws[key] = b[key]
                 if mod == 'olfactor':
-                    kws[key]['odor_dict'] = OD
+                    kws[key]['gain_dict'] = OD
 
             mods += mods2
 
@@ -170,14 +170,8 @@ def mod(brain=None, bod={}, energetics=None, phys={}, Box2D={}):
                          )
 
 
-def OD(ids: list, means: list, stds=None) -> dict:
-    if stds is None:
-        stds = np.array([0.0] * len(means))
-    odor_dict = {}
-    for id, m, s in zip(ids, means, stds):
-        odor_dict[id] = {'mean': m,
-                         'std': s}
-    return odor_dict
+def OD(ids: list, gains: list) -> dict:
+    return aux.AttrDict({id:g for id, g in zip(ids, gains)})
 
 
 def create_mod_dict(b):
@@ -216,7 +210,7 @@ def create_mod_dict(b):
 
     def add_OD(OD, B0=LOF):
         B1 = aux.AttrDict(copy.deepcopy(B0))
-        B1.olfactor_params.odor_dict = OD
+        B1.olfactor_params.gain_dict = OD
         return B1
 
 
