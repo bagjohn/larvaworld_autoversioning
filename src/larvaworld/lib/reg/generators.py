@@ -286,7 +286,7 @@ class LabFormat(NestedConf):
             store_sequence = self.get_store_sequence(save_mode)
         return self.import_func(source_dir=source_dir, tracker=self.tracker, filesystem=self.filesystem, **kwargs)
 
-    def build_dataset(self, step, end, parent_dir, proc_folder=None, group_id=None, N=None, id=None, sample=None,
+    def build_dataset(self, step, end, parent_dir, proc_folder=None, group_id=None, id=None, sample=None,
                       color='black', epochs=[], age=0.0,refID=None):
         if group_id is None:
             group_id = parent_dir
@@ -303,7 +303,7 @@ class LabFormat(NestedConf):
             'id': id,
             'refID': refID,
             'color': color,
-            'larva_groups': gen.LarvaGroup(c=color, sample=sample, mID=None, N=N, life=[age, epochs]).entry(
+            'larva_groups': gen.LarvaGroup(c=color, sample=sample, mID=None, N=end.index.values.shape[0], life=[age, epochs]).entry(
                 id=group_id),
             'env_params': self.env_params.nestedConf,
             **self.tracker.nestedConf,
@@ -323,7 +323,7 @@ class LabFormat(NestedConf):
         return d
 
     def import_dataset(self, parent_dir, raw_folder=None, merged=False,
-                       proc_folder=None, group_id=None, N=None, id=None, sample=None, color='black', epochs=[], age=0.0,
+                       proc_folder=None, group_id=None, id=None, sample=None, color='black', epochs=[], age=0.0,
                        refID=None, enrich_conf=None, save_dataset=False, **kwargs):
 
         """
@@ -390,7 +390,7 @@ class LabFormat(NestedConf):
             return None
         else:
             step = step.astype(float)
-            d = self.build_dataset(step, end, parent_dir, proc_folder=proc_folder, group_id=group_id, N=N,
+            d = self.build_dataset(step, end, parent_dir, proc_folder=proc_folder, group_id=group_id,
                                    id=id, sample=sample, color=color, epochs=epochs, age=age, refID=refID)
             d = self.enrich_dataset(d, conf=enrich_conf)
             if save_dataset:

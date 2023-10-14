@@ -123,7 +123,7 @@ def define_default_refID():
             'parent_dir': 'exploration',
             'merged': True,
             'color': 'blue',
-            'N': N,
+            'max_Nagents': N,
             'min_duration_in_sec': 60,
             'id': f'{N}controls',
             'refID': f'exploration.{N}controls',

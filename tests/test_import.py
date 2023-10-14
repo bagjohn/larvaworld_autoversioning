@@ -17,7 +17,7 @@ def test_import_Schleyer():
         'parent_dir': 'exploration',
         'merged': True,
         'color': 'blue',
-        'N': N,
+        'max_Nagents': N,
         'min_duration_in_sec': 60,
         'id': f'{N}controls',
         'refID': f'exploration.{N}controls',
@@ -29,7 +29,6 @@ def test_import_Schleyer():
     kws2 = {
         'parent_dir': f'exploration/{folder}',
         'merged': False,
-        'N': None,
         'color': 'red',
         'min_duration_in_sec': 90,
         'id': folder,
