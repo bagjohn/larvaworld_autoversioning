@@ -1,6 +1,4 @@
 import random
-
-import numpy as np
 import param
 
 from .basic import Effector
@@ -10,27 +8,32 @@ __all__ = [
     'NeuralOscillator',
 ]
 
+
 class NeuralOscillator(Effector):
-    base_activation = PositiveNumber(20.0,bounds=(10.0, 40.0),step=1.0,precedence=1, label='baseline activation', doc='The baseline activation of the oscillator.')
-    activation_range = param.Range((10.0, 40.0),bounds=(0.0, 100.0), precedence=1,label='activation range', doc='The activation range of the oscillator.')
-    input_range = param.Range((-1, 1),bounds=(-1, 1), precedence=-2,label='input range', doc='The input range of the oscillator.')
-    tau = param.Number(0.1,precedence=2, label='time constant', doc='The time constant of the oscillator.')
+    base_activation = PositiveNumber(20.0, bounds=(10.0, 40.0), step=1.0, precedence=1, label='baseline activation',
+                                     doc='The baseline activation of the oscillator.')
+    activation_range = param.Range((10.0, 40.0), bounds=(0.0, 100.0), precedence=1, label='activation range',
+                                   doc='The activation range of the oscillator.')
+    input_range = param.Range((-1, 1), bounds=(-1, 1), precedence=-2, label='input range',
+                              doc='The input range of the oscillator.')
+    tau = param.Number(0.1, precedence=2, label='time constant', doc='The time constant of the oscillator.')
     w_ee = param.Number(3.0, label='E->E weigths', doc='The E->E synapse connection weights.')
     w_ce = param.Number(0.1, label='C->E weigths', doc='The C->E synapse connection weights.')
     w_ec = param.Number(4.0, label='E->C weigths', doc='The E->C synapse connection weights.')
     w_cc = param.Number(4.0, label='C->C weigths', doc='The C->C synapse connection weights.')
-    m = PositiveInteger(100,softmax=1000, label='maximum spike-rate', doc='The maximum allowed spike rate.')
-    n = PositiveNumber(2.0,softmax=10.0,step=0.1, label='spike response steepness', doc='The neuron spike-rate response steepness coefficient.')
+    m = PositiveInteger(100, softmax=1000, label='maximum spike-rate', doc='The maximum allowed spike rate.')
+    n = PositiveNumber(2.0, softmax=10.0, step=0.1, label='spike response steepness',
+                       doc='The neuron spike-rate response steepness coefficient.')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.param.base_activation.bounds=self.activation_range
+        self.param.base_activation.bounds = self.activation_range
 
         # self.start_effector()
 
         self.r1 = self.activation_range[1] - self.base_activation
         self.r0 = self.base_activation - self.activation_range[0]
-        self.activation=self.base_activation
+        self.activation = self.base_activation
         # self.output = self.base_activation
 
         # Neural populations
@@ -49,7 +52,6 @@ class NeuralOscillator(Effector):
         self.scaled_tau = self.dt / self.tau
         self.warm_up()
 
-
     def warm_up(self):
         for i in range(100):
             if random.uniform(0, 1) < 0.5:
@@ -60,8 +62,7 @@ class NeuralOscillator(Effector):
             a = self.r0 * self.input
         elif self.input >= 0:
             a = self.r1 * self.input
-        self.activation=self.base_activation + a
-
+        self.activation = self.base_activation + a
 
     # @property
     # def Act_coef(self):
@@ -71,7 +72,7 @@ class NeuralOscillator(Effector):
         self.output = self.E_r - self.E_l
 
     def inact(self):
-        self.output =0
+        self.output = 0
 
     def oscillate(self):
         A = self.activation
@@ -111,5 +112,3 @@ class NeuralOscillator(Effector):
     def get_state(self):
         state = [self.E_l, self.H_E_l, self.E_r, self.H_E_r, self.C_l, self.H_C_l, self.C_r, self.H_C_r]
         return state
-
-

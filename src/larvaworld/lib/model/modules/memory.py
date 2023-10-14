@@ -26,7 +26,7 @@ class Memory(Timer):
     mode = param.Selector(objects=['RL', 'MB'], doc='The memory algorithm')
     modality = param.Selector(objects=['olfaction', 'touch'], doc='The sensory modality')
 
-    def __init__(self, brain, gain, **kwargs):
+    def __init__(self, brain=None, gain={}, **kwargs):
         super().__init__(**kwargs)
         self.brain = brain
         self.gain = gain
@@ -34,6 +34,7 @@ class Memory(Timer):
         self.gain_ids = list(gain.keys())
         self.Ngains = len(self.gain_ids)
         self.Niters = int(self.update_dt * 60 / self.dt)
+        self.iterator=self.Niters
         self.table = False
         self.rewardSum = 0
 
@@ -52,10 +53,10 @@ class RLmemory(Memory):
     epsilon = PositiveNumber(0.15, doc='The epsilon parameter of reinforcement learning algorithm.')
     state_spacePerSide = PositiveInteger(0,doc='The number of discrete states to parse the state space on either side of 0.')
     state_specific_best = param.Boolean(True, doc='Whether to select the best action for each state')
+    gain_space = param.List(default=[-300.0, -50.0, 50.0, 300.0],item_type=float, doc='The possible values for memory gain to choose from.')
 
-    def __init__(self, gain_space, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.gain_space = gain_space
         self.state_space = np.array(
             [ii for ii in itertools.product(range(2 * self.state_spacePerSide + 1), repeat=self.Ngains)])
         self.actions = [ii for ii in itertools.product(self.gain_space, repeat=self.Ngains)]
@@ -164,7 +165,6 @@ class RLOlfMemory(RLmemory):
 
 class RLTouchMemory(RLmemory):
     def __init__(self, modality='touch', **kwargs):
-        # gain = {s: 0.0 for s in brain.agent.get_sensors()}
         super().__init__(modality=modality, **kwargs)
 
     def condition(self, dx):
@@ -180,8 +180,8 @@ class RLTouchMemory(RLmemory):
 
 class RemoteBrianModelMemory(Memory):
 
-    def __init__(self, brain, gain, G=0.001, server_host='localhost', server_port=5795, **kwargs):
-        super().__init__(brain, gain, **kwargs)
+    def __init__(self, G=0.001, server_host='localhost', server_port=5795, **kwargs):
+        super().__init__(**kwargs)
         self.server_host = server_host
         self.server_port = server_port
         self.sim_id = self.brain.agent.model.id
