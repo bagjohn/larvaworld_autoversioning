@@ -905,25 +905,17 @@ class ModelRegistry:
             mID11 = f'{mID0}_forager'
             E[mID11] = self.newConf(m0=E[mID1], kwargs=feed_kws)
             mID12 = f'{mID0}_max_forager'
-            E[mID12] = self.newConf(m0=E[mID11], kwargs=maxEEB_kws)
+            E[f'{mID0}_max_forager'] = self.newConf(m0=E[mID11], kwargs=maxEEB_kws)
 
-            mID210 = f'{mID0}_forager0_MB'
-            E[mID210] = self.newConf(m0=E[mID110], kwargs=MB_kws)
-            mID220 = f'{mID0}_max_forager0_MB'
-            E[mID220] = self.newConf(m0=E[mID210], kwargs=maxEEB_kws)
-            mID21 = f'{mID0}_forager_MB'
-            E[mID21] = self.newConf(m0=E[mID11], kwargs=MB_kws)
-            mID22 = f'{mID0}_max_forager_MB'
-            E[mID22] = self.newConf(m0=E[mID21], kwargs=maxEEB_kws)
+            E[f'{mID0}_forager0_MB'] = self.newConf(m0=E[mID110], kwargs=MB_kws)
+            E[f'{mID0}_max_forager0_MB'] = self.newConf(m0=E[f'{mID0}_forager0_MB'], kwargs=maxEEB_kws)
+            E[f'{mID0}_forager_MB'] = self.newConf(m0=E[mID11], kwargs=MB_kws)
+            E[f'{mID0}_max_forager_MB'] = self.newConf(m0=E[f'{mID0}_forager_MB'], kwargs=maxEEB_kws)
 
-            mID310 = f'{mID0}_forager0_RL'
-            E[mID310] = self.newConf(m0=E[mID110], kwargs=RL_kws)
-            mID320 = f'{mID0}_max_forager0_RL'
-            E[mID320] = self.newConf(m0=E[mID310], kwargs=maxEEB_kws)
-            mID31 = f'{mID0}_forager_RL'
-            E[mID31] = self.newConf(m0=E[mID11], kwargs=RL_kws)
-            mID32 = f'{mID0}_max_forager_RL'
-            E[mID32] = self.newConf(m0=E[mID31], kwargs=maxEEB_kws)
+            E[f'{mID0}_forager0_RL'] = self.newConf(m0=E[mID110], kwargs=RL_kws)
+            E[f'{mID0}_max_forager0_RL'] = self.newConf(m0=E[f'{mID0}_forager0_RL'], kwargs=maxEEB_kws)
+            E[f'{mID0}_forager_RL'] = self.newConf(m0=E[mID11], kwargs=RL_kws)
+            E[f'{mID0}_max_forager_RL'] = self.newConf(m0=E[f'{mID0}_forager_RL'], kwargs=maxEEB_kws)
 
         E['noMB_untrained'] = self.newConf(m0=E['RE_NEU_PHI_DEF_max_forager0'], kwargs={})
         E['noMB_trained'] = self.newConf(m0=E['RE_NEU_PHI_DEF_max_forager'], kwargs={})

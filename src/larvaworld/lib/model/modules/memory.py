@@ -17,7 +17,7 @@ __all__ = [
 
 
 class Memory(Timer):
-    def __init__(self, brain, gain, update_dt=2, train_dur=30, **kwargs):
+    def __init__(self, brain, gain, update_dt=2, train_dur=30,mode='RL', **kwargs):
         super().__init__(**kwargs)
         self.brain = brain
         self.gain = gain
@@ -30,6 +30,7 @@ class Memory(Timer):
         self.table = False
         self.rewardSum = 0
         self.active = True
+        self.mode = mode
 
     def step(self, dx=None, reward=False, **kwargs):
         if dx is None:
@@ -42,7 +43,7 @@ class Memory(Timer):
 class RLmemory(Memory):
     def __init__(self, gain_space, Delta=0.1, state_spacePerSide=0, alpha=0.05,
                  gamma=0.6, epsilon=0.15, state_specific_best=True, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(mode='RL',**kwargs)
         self.state_specific_best = state_specific_best
         self.alpha = alpha
         self.gamma = gamma
@@ -175,7 +176,7 @@ class RLTouchMemory(RLmemory):
 class RemoteBrianModelMemory(Memory):
 
     def __init__(self, brain, gain, G=0.001, server_host='localhost', server_port=5795, **kwargs):
-        super().__init__(brain, gain, **kwargs)
+        super().__init__(brain, gain,mode='MB', **kwargs)
         self.server_host = server_host
         self.server_port = server_port
         self.sim_id = self.brain.agent.model.id
