@@ -88,7 +88,7 @@ def grouped_exp_dic():
 
     def lgs_x4(N=5):
         return lgs(
-            mIDs=['RE_NEU_PHI_DEF_max_forager', 'RE_NEU_PHI_DEF_max_feeder', 'RE_NEU_PHI_DEF_nav', 'RE_NEU_PHI_DEF'],
+            mIDs=['max_forager', 'max_feeder', 'navigator', 'explorer'],
             ids=['forager', 'Orco', 'navigator', 'explorer'], N=N)
 
     d0 = {
@@ -99,13 +99,13 @@ def grouped_exp_dic():
             'l': lg(mID='Levy', N=1, ors=(90.0, 90.0))
         },
         'dish': {
-            'l': lg(mID='loco_default', N=25, s=(0.02,0.02))
+            'l': lg(mID='explorer', N=25, s=(0.02,0.02))
         },
         'dispersion': {'env': 'arena_200mm',
-                       'l': lg(mID='loco_default', N=25)
+                       'l': lg(mID='explorer', N=25)
                        },
         'dispersion_x2': {'env': 'arena_200mm', 'dur': 3.0,
-                          'l': lgs(mIDs=['loco_default', 'Levy'], ids=['CoupledOsc', 'Levy'],
+                          'l': lgs(mIDs=['explorer', 'Levy'], ids=['CoupledOsc', 'Levy'],
                                    N=5)
                           }
     }
@@ -115,17 +115,17 @@ def grouped_exp_dic():
         'chemotaxis': {'env': 'odor_gradient', 'dur': 5.0,
                        'l': lg(mID='NEU_Levy_continuous_nav', N=8, loc=(-0.04, 0.0), s=(0.005, 0.02),
                                ors=(-30.0, 30.0))},
-        'chemorbit': {'env': 'mid_odor_gaussian', 'dur': 3.0, 'l': lg(mID='RE_NEU_PHI_DEF_nav', N=3)},
+        'chemorbit': {'env': 'mid_odor_gaussian', 'dur': 3.0, 'l': lg(mID='navigator', N=3)},
         'chemorbit_x2': {'env': 'mid_odor_gaussian', 'dur': 3.0,
-                         'l': lgs(mIDs=['RE_NEU_PHI_DEF_nav', 'RE_NEU_PHI_DEF_nav_RL'],
+                         'l': lgs(mIDs=['navigator', 'RLnavigator'],
                                   ids=['CoupledOsc', 'RL'], N=10)},
         'chemorbit_x4': {'env': 'odor_gaussian_square', 'dur': 3.0, 'l': lgs_x4()},
-        'chemotaxis_diffusion': {'env': 'mid_odor_diffusion', 'l': lg(mID='RE_NEU_PHI_DEF_nav', N=30)},
+        'chemotaxis_diffusion': {'env': 'mid_odor_diffusion', 'l': lg(mID='navigator', N=30)},
         'chemotaxis_RL': {'env': 'mid_odor_diffusion', 'c': ['memory'],
-                          'l': lg(mID='RE_NEU_PHI_DEF_nav_RL', N=10, mode='periphery', s=(0.04,0.04))},
+                          'l': lg(mID='RLnavigator', N=10, mode='periphery', s=(0.04,0.04))},
         'reorientation': {'env': 'mid_odor_diffusion', 'l': lg(mID='immobile', N=200, s=(0.05,0.05))},
         'food_at_bottom': {'dur': 1.0,
-                           'l': lgs(mIDs=['RE_NEU_PHI_DEF_max_feeder', 'RE_NEU_PHI_DEF_max_forager'],
+                           'l': lgs(mIDs=['max_feeder', 'max_forager'],
                                     ids=['Orco', 'control'], N=5, sh='oval', loc=(0.0, 0.04), s=(0.04, 0.01))}
     }
 
@@ -135,9 +135,9 @@ def grouped_exp_dic():
                    **kws) for id, kws in d1.items()}
 
     d2 = {
-        'anemotaxis': {'env': 'windy_arena', 'dur': 0.5, 'l': lg(mID='loco_default', N=4)},
-        'anemotaxis_bordered': {'env': 'windy_arena_bordered', 'dur': 0.5, 'l': lg(mID='loco_default', N=4)},
-        'puff_anemotaxis_bordered': {'env': 'puff_arena_bordered', 'dur': 0.5, 'l': lg(mID='loco_default', N=4)},
+        'anemotaxis': {'env': 'windy_arena', 'dur': 0.5, 'l': lg(mID='explorer', N=4)},
+        'anemotaxis_bordered': {'env': 'windy_arena_bordered', 'dur': 0.5, 'l': lg(mID='explorer', N=4)},
+        'puff_anemotaxis_bordered': {'env': 'puff_arena_bordered', 'dur': 0.5, 'l': lg(mID='explorer', N=4)},
     }
 
     d22 = {id: exp(id=id, c0=['wind', 'pose'],
@@ -146,7 +146,7 @@ def grouped_exp_dic():
 
     d3 = {
         'single_puff': {'env': 'single_puff', 'dur': 2.5,
-                        'l': lg(mID='loco_default', N=20)}
+                        'l': lg(mID='explorer', N=20)}
     }
 
     d33 = {id: exp(id=id, c0=['wind', 'olfactor', 'pose'],
@@ -167,30 +167,30 @@ def grouped_exp_dic():
 
         'odor_preference': {
             'PItest_off': pref_exp('PItest_off', env='CS_UCS_off_food', dur=3.0,
-                                   l=lg(N=25, s=(0.005, 0.02), mID='RE_NEU_PHI_DEF_nav_x2')),
-            'PItest_on': pref_exp('PItest_on', env='CS_UCS_on_food', l=lg(N=25, s=(0.005, 0.02), mID='RE_NEU_PHI_DEF_forager_x2')),
+                                   l=lg(N=25, s=(0.005, 0.02), mID='navigator_x2')),
+            'PItest_on': pref_exp('PItest_on', env='CS_UCS_on_food', l=lg(N=25, s=(0.005, 0.02), mID='forager_x2')),
             'PItrain_mini': pref_exp('PItrain_mini', env='CS_UCS_on_food_x2', dur=1.0, c=['olfactor', 'memory'],
-                                     trials=reg.conf.Trial.getID('odor_preference_short'), l=lg(N=25, s=(0.005, 0.02), mID='RE_NEU_PHI_DEF_forager_RL')),
+                                     trials=reg.conf.Trial.getID('odor_preference_short'), l=lg(N=25, s=(0.005, 0.02), mID='RLforager')),
             'PItrain': pref_exp('PItrain', env='CS_UCS_on_food_x2', dur=41.0, c=['olfactor', 'memory'],
-                                trials=reg.conf.Trial.getID('odor_preference'), l=lg(N=25, s=(0.005, 0.02), mID='RE_NEU_PHI_DEF_forager_RL')),
+                                trials=reg.conf.Trial.getID('odor_preference'), l=lg(N=25, s=(0.005, 0.02), mID='RLforager')),
             'PItest_off_RL': pref_exp('PItest_off_RL', env='CS_UCS_off_food', dur=105.0, c=['olfactor', 'memory'],
-                                      l=lg(N=25, s=(0.005, 0.02), mID='RE_NEU_PHI_DEF_nav_RL'))},
+                                      l=lg(N=25, s=(0.005, 0.02), mID='RLnavigator'))},
         'foraging': {
-            'patchy_food': food_exp('patchy_food', env='patchy_food', l=lg(mID='RE_NEU_PHI_DEF_forager', N=25)),
+            'patchy_food': food_exp('patchy_food', env='patchy_food', l=lg(mID='forager', N=25)),
             'patch_grid': food_exp('patch_grid', env='patch_grid', l=lgs_x4()),
             'MB_patch_grid': food_exp('MB_patch_grid', env='patch_grid', c=['feeder', 'olfactor'],
                                       l=lgs(mIDs=['MB_untrained', 'MB_trained'], N=3)),
             'noMB_patch_grid': food_exp('noMB_patch_grid', env='patch_grid', c=['feeder', 'olfactor'],
                                         l=lgs(mIDs=['noMB_untrained', 'noMB_trained'], N=4)),
             'random_food': food_exp('random_food', env='random_food', c=['feeder', 'toucher'],
-                                    l=lgs(mIDs=['RE_NEU_PHI_DEF_feeder', 'RE_NEU_PHI_DEF_forager_RL'],
+                                    l=lgs(mIDs=['feeder', 'RLforager'],
                                           ids=['Orco', 'RL'], N=5,mode='uniform',
                                           shape='rect', s=(0.04,0.04))),
             'uniform_food': food_exp('uniform_food', env='uniform_food',
-                                     l=lg(mID='RE_NEU_PHI_DEF_feeder', N=5, s=(0.005,0.005))),
-            'food_grid': food_exp('food_grid', env='food_grid', l=lg(mID='RE_NEU_PHI_DEF_feeder', N=5)),
+                                     l=lg(mID='feeder', N=5, s=(0.005,0.005))),
+            'food_grid': food_exp('food_grid', env='food_grid', l=lg(mID='feeder', N=5)),
             'single_odor_patch': food_exp('single_odor_patch', env='single_odor_patch',
-                                          l=lgs(mIDs=['RE_NEU_PHI_DEF_feeder', 'RE_NEU_PHI_DEF_forager'],
+                                          l=lgs(mIDs=['feeder', 'forager'],
                                                 ids=['Orco', 'control'], N=5, mode='periphery', s=(0.01,0.01))),
             'single_odor_patch_x4': food_exp('single_odor_patch_x4', env='single_odor_patch', l=lgs_x4()),
             'double_patch': food_exp('double_patch', env='double_patch', l=GTRvsS(N=5),
@@ -198,7 +198,7 @@ def grouped_exp_dic():
                                      en=reg.gen.EnrichConf(
                                          anot_keys=['bout_detection', 'bout_distribution', 'interference',
                                                     'patch_residency'],
-                                         proc_keys=['spatial', 'angular', 'source']),),
+                                         proc_keys=['spatial', 'angular', 'source'])),
             'tactile_detection': food_exp('tactile_detection', env='single_patch', dur=5.0, c=['toucher'],
                                           l=lg(mID='toucher', N=15, mode='periphery', s=(0.03,0.03))),
             'tactile_detection_x3': food_exp('tactile_detection_x3', env='single_patch', dur=600.0, c=['toucher'],
@@ -213,7 +213,7 @@ def grouped_exp_dic():
             'multi_tactile_detection': food_exp('multi_tactile_detection', env='multi_patch', dur=600.0, c=['toucher'],
                                                 l=lgs(mIDs=['RL_toucher_2', 'RL_toucher_0', 'toucher'],
                                                       ids=['RL_3sensors', 'RL_1sensor', 'control'], N=4)),
-            '4corners': exp('4corners', env='4corners', c=['memory'], l=lg(mID='RE_NEU_PHI_DEF_forager_RL', N=10, s=(0.04,0.04)))
+            '4corners': exp('4corners', env='4corners', c=['memory'], l=lg(mID='RLforager', N=10, s=(0.04,0.04)))
         },
 
         'growth': {'growth': deb_exp('growth', env='food_grid', dur=24 * 60.0, l=GTRvsS(age=0.0)),
@@ -233,7 +233,7 @@ def grouped_exp_dic():
 
         'games': {
             'maze': game_exp('maze', env='maze', c=['olfactor'],
-                             l=lg(N=5, loc=(-0.4 * 0.1, 0.0), ors=(-60.0, 60.0), mID='RE_NEU_PHI_DEF_nav')),
+                             l=lg(N=5, loc=(-0.4 * 0.1, 0.0), ors=(-60.0, 60.0), mID='navigator')),
             'keep_the_flag': game_exp('keep_the_flag', env='game', l=game_groups(mode='king')),
             'capture_the_flag': game_exp('capture_the_flag', env='game', l=game_groups(mode='flag')),
             'catch_me': game_exp('catch_me', env='arena_50mm_diffusion', l=game_groups(mode='catch_me'))
