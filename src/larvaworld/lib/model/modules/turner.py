@@ -12,7 +12,10 @@ __all__ = [
     'NeuralOscillator',
 ]
 
+
 class Turner(Effector):
+    input_range = param.Range((-1, 1), bounds=(-1, 1), precedence=-2, label='input range',
+                              doc='The input range of the oscillator.', readonly=True)
 
     @staticmethod
     def select(mode):
@@ -23,10 +26,11 @@ class Turner(Effector):
         })
         return d[mode]
 
-class ConstantTurner(Turner, StepEffector):pass
 
-class SinTurner(Turner, SinOscillator):pass
-    # mode = param.Selector(default='constant', readonly=True)
+class ConstantTurner(Turner, StepEffector): pass
+
+
+class SinTurner(Turner, SinOscillator): pass
 
 
 class NeuralOscillator(Turner):
@@ -34,8 +38,8 @@ class NeuralOscillator(Turner):
                                      doc='The baseline activation of the oscillator.')
     activation_range = param.Range((10.0, 40.0), bounds=(0.0, 100.0), precedence=1, label='activation range',
                                    doc='The activation range of the oscillator.')
-    input_range = param.Range((-1, 1), bounds=(-1, 1), precedence=-2, label='input range',
-                              doc='The input range of the oscillator.', readonly=True)
+    # input_range = param.Range((-1, 1), bounds=(-1, 1), precedence=-2, label='input range',
+    #                           doc='The input range of the oscillator.', readonly=True)
     tau = param.Number(0.1, precedence=2, label='time constant', doc='The time constant of the oscillator.')
     w_ee = param.Number(3.0, label='E->E weigths', doc='The E->E synapse connection weights.')
     w_ce = param.Number(0.1, label='C->E weigths', doc='The C->E synapse connection weights.')
@@ -48,13 +52,9 @@ class NeuralOscillator(Turner):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.param.base_activation.bounds = self.activation_range
-
-        # self.start_effector()
-
         self.r1 = self.activation_range[1] - self.base_activation
         self.r0 = self.base_activation - self.activation_range[0]
         self.activation = self.base_activation
-        # self.output = self.base_activation
 
         # Neural populations
         self.E_r = 0  # 28
@@ -84,9 +84,7 @@ class NeuralOscillator(Turner):
             a = self.r1 * self.input
         self.activation = self.base_activation + a
 
-    # @property
-    # def Act_coef(self):
-    #     return 1
+
     def act(self):
         self.oscillate()
         self.output = self.E_r - self.E_l
@@ -96,8 +94,6 @@ class NeuralOscillator(Turner):
 
     def oscillate(self):
         A = self.activation
-        # print(A)
-        # print()
         t = self.scaled_tau
         tau_h = 3 / (1 + (0.04 * A) ** 2)
         t_h = self.dt / tau_h
@@ -116,11 +112,6 @@ class NeuralOscillator(Turner):
                 -self.C_r + self.compute_R(A + self.w_ce * self.E_r - self.w_cc * self.C_l, 64 + g * self.H_C_r))
         self.H_C_l += t_h * (-self.H_C_l + self.E_l)
         self.H_C_r += t_h * (-self.H_C_r + self.E_r)
-
-    # @property
-    # def Act_Phi(self):
-    #
-    #     return self.E_r - self.E_l
 
     def compute_R(self, x, h):
         if x > 0:

@@ -19,6 +19,7 @@ class Timer(param.Parameterized):
                         doc='The timestep of the simulation in seconds.')
 
     def __init__(self, **kwargs):
+        print('xx')
         super().__init__(**kwargs)
         self.ticks = 0
         self.total_ticks = 0
