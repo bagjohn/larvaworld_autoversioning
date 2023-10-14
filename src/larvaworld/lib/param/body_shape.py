@@ -4,7 +4,7 @@ from shapely import geometry, ops, affinity
 
 from .. import aux
 from .custom import XYLine, PositiveInteger, PositiveNumber, ItemListParam
-from .spatial import LineClosed,MobileVector
+from .spatial import LineClosed, MobileVector
 from .drawable import Viewable
 
 __all__ = [
@@ -16,11 +16,11 @@ __all__ = [
 
 __displayname__ = 'Virtual body'
 
-
-body_plans=aux.AttrDict({
-'drosophila_larva': [(0.9, 0.1), (0.05, 0.1)],
-'zebrafish_larva': [(0.9, 0.25), (0.7, 0.25), (0.6, 0.005), (0.05, 0.005)]
+body_plans = aux.AttrDict({
+    'drosophila_larva': [(0.9, 0.1), (0.05, 0.1)],
+    'zebrafish_larva': [(0.9, 0.25), (0.7, 0.25), (0.6, 0.005), (0.05, 0.005)]
 })
+
 
 class BodyContour(LineClosed):
     '''
@@ -28,30 +28,27 @@ class BodyContour(LineClosed):
 
     '''
     symmetry = param.Selector(objects=['bilateral', 'radial'], doc='The body symmetry.')
-    guide_points=XYLine(doc='A list of 2d points outside the midline in order to generate the vertices')
+    guide_points = XYLine(doc='A list of 2d points outside the midline in order to generate the vertices')
     base_vertices = XYLine(doc='The list of 2d points')
     body_plan = param.Selector(objects=['drosophila_larva', 'zebrafish'], doc='The body plan.')
 
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.generate_base_vertices()
 
     def generate_base_vertices(self):
         if not self.guide_points:
-            self.guide_points=body_plans[self.body_plan]
-        if self.symmetry=='bilateral' :
-            symmetric_ps=[(x,-y) for (x,y) in self.guide_points]
+            self.guide_points = body_plans[self.body_plan]
+        if self.symmetry == 'bilateral':
+            symmetric_ps = [(x, -y) for (x, y) in self.guide_points]
             symmetric_ps.reverse()
-            self.base_vertices=[(1.0,0.0)]+self.guide_points+ [(0.0,0.0)] + symmetric_ps
+            self.base_vertices = [(1.0, 0.0)] + self.guide_points + [(0.0, 0.0)] + symmetric_ps
 
     # TODO make this more explicit
     @property
     def width_to_length_ratio(self):
-        return np.mean(np.array(self.guide_points)[:,1])
-
-
-
+        return np.mean(np.array(self.guide_points)[:, 1])
 
 
 class ShapeMobile(LineClosed, MobileVector):
@@ -60,19 +57,19 @@ class ShapeMobile(LineClosed, MobileVector):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.length_ratio=self.get_length_ratio()
+        self.length_ratio = self.get_length_ratio()
         self.update_vertices()
 
-
     def get_length_ratio(self):
-        xs=np.array(self.base_vertices)[:,0]
-        return -np.min(xs)+np.max(xs)
+        xs = np.array(self.base_vertices)[:, 0]
+        return -np.min(xs) + np.max(xs)
 
-    @param.depends('pos','orientation','length', watch=True)
+    @param.depends('pos', 'orientation', 'length', watch=True)
     def update_vertices(self):
-        self.vertices = self.translate(self.length/self.length_ratio*np.array(self.base_vertices))
+        self.vertices = self.translate(self.length / self.length_ratio * np.array(self.base_vertices))
         # self.vertices = [self.translate(self.length / self.length_ratio * np.array(p)) for p in self.base_vertices]
         # self.vertices = self.pos + self.length*self.base_vertices @ self.rotationMatrix
+
 
 class ShapeViewable(ShapeMobile, Viewable):
 
@@ -83,8 +80,7 @@ class ShapeViewable(ShapeMobile, Viewable):
 class BodyMobile(ShapeMobile, BodyContour):
     density = PositiveNumber(300.0, softmax=10000.0, step=1.0, doc='The density of the larva body in kg/m**2')
 
-    def __init__(self,**kwargs):
-
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.initial_length = self.length
         self.body_bend = 0
@@ -109,22 +105,21 @@ class BodyMobile(ShapeMobile, BodyContour):
 class SegmentedBody(BodyMobile):
     Nsegs = PositiveInteger(2, softmax=20, doc='The number of segments comprising the segmented larva body.')
     segment_ratio = param.Parameter(None, doc='The number of segments comprising the segmented larva body.')
-    segs=ItemListParam(item_type=ShapeViewable, doc='The body segments.')
+    segs = ItemListParam(item_type=ShapeViewable, doc='The body segments.')
 
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # If segment ratio is not provided, generate equal-length segments
         if self.segment_ratio is None:
             self.segment_ratio = np.array([1 / self.Nsegs] * self.Nsegs)
-        self.base_seg_vertices=self.segmentize()
+        self.base_seg_vertices = self.segmentize()
         self.seg_positions = self.generate_seg_positions()
         self.generate_segs()
         self.update_seg_lengths()
 
-
     @property
     def Nangles(self):
-        return self.Nsegs-1
+        return self.Nsegs - 1
 
     def segmentize(self, centered: bool = True, closed: bool = False) -> np.ndarray:
         """
@@ -143,9 +138,8 @@ class SegmentedBody(BodyMobile):
               The first segment in the list is the front-most segment.
         """
 
-
         # N=self.Nsegs
-        R=self.segment_ratio
+        R = self.segment_ratio
 
         # Create a polygon from the given body contour
         p = geometry.Polygon(np.array(self.base_vertices))
@@ -184,21 +178,22 @@ class SegmentedBody(BodyMobile):
             ps[i] = ps[i][np.sort(idx)]
             if closed:
                 ps[i] = np.concatenate([ps[i], [ps[i][0]]])
-            ps=[aux.np2Dtotuples(pp) for pp in ps]
+            ps = [aux.np2Dtotuples(pp) for pp in ps]
         return ps
 
     def generate_seg_positions(self):
-        N=self.Nsegs
+        N = self.Nsegs
         ls_x = np.cos(self.orientation) * self.length * self.segment_ratio
-        ls_y = np.sin(self.orientation) * self.length /N
+        ls_y = np.sin(self.orientation) * self.length / N
         return [(self.x + (-i + (N - 1) / 2) * ls_x[i],
                  self.y + (-i + (N - 1) / 2) * ls_y) for i in range(N)]
 
     def generate_segs(self):
 
-        self.segs = aux.ItemList(objs=self.Nsegs, cls=self.param.segs.item_type, pos=self.seg_positions,orientation=self.orientation,
-                        base_vertices=self.base_seg_vertices, length=(self.length*self.segment_ratio).tolist())
-
+        self.segs = aux.ItemList(objs=self.Nsegs, cls=self.param.segs.item_type, pos=self.seg_positions,
+                                 orientation=self.orientation,
+                                 base_vertices=self.base_seg_vertices,
+                                 length=(self.length * self.segment_ratio).tolist())
 
     def compute_body_bend(self):
         angles = [
@@ -219,9 +214,9 @@ class SegmentedBody(BodyMobile):
         return self.head.get_orientation()
 
     def get_shape(self, scale=1):
-        ps=[geometry.Polygon(seg.vertices) for seg in self.segs]
-        if scale!=1:
-            ps=[affinity.scale(p, xfact=scale, yfact=scale) for p in ps]
+        ps = [geometry.Polygon(seg.vertices) for seg in self.segs]
+        if scale != 1:
+            ps = [affinity.scale(p, xfact=scale, yfact=scale) for p in ps]
         return ops.cascaded_union(ps).boundary.coords
 
     @property
@@ -240,15 +235,15 @@ class SegmentedBody(BodyMobile):
 
     @param.depends('length', watch=True)
     def update_seg_lengths(self):
-        for i in range(self.Nsegs) :
-            self.segs[i].length=self.length*self.segment_ratio[i]
+        for i in range(self.Nsegs):
+            self.segs[i].length = self.length * self.segment_ratio[i]
 
     def move_body(self, dx, dy):
         x0, y0 = self.get_position()
         self.set_position((x0 + dx, y0 + dy))
         for i, seg in enumerate(self.segs):
             x, y = seg.get_position()
-            seg.set_position((x+dx,y+dy))
+            seg.set_position((x + dx, y + dy))
 
     def valid_Dbend_range(self, idx=0):
         if self.Nsegs > idx + 1:
@@ -261,11 +256,7 @@ class SegmentedBody(BodyMobile):
         if len(colors) != self.Nsegs:
             colors = [tuple(colors)] * self.Nsegs
         for seg, col in zip(self.segs, colors):
-            seg.color=col
-
-
-
-
+            seg.color = col
 
     @property
     def midline_xy(self):
@@ -273,21 +264,19 @@ class SegmentedBody(BodyMobile):
 
     @property
     def front_orientation(self):
-        return self.head.get_orientation()%(2*np.pi)
-
+        return self.head.get_orientation() % (2 * np.pi)
 
     @property
     def rear_orientation(self):
-        return self.tail.get_orientation()%(2*np.pi)
+        return self.tail.get_orientation() % (2 * np.pi)
 
     def draw_segs(self, v, **kwargs):
         self.segs.draw(v, **kwargs)
 
 
-
 class SegmentedBodySensored(SegmentedBody):
 
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
 
         super().__init__(**kwargs)
         self.sensors = aux.AttrDict()
@@ -311,24 +300,21 @@ class SegmentedBodySensored(SegmentedBody):
         self.sensors[sensor] = aux.AttrDict({
             'seg_idx': seg_idx,
             'local_pos': local_pos,
-            # 'local_pos': local_pos * self.sim_length
         })
 
-
     def get_sensor_position(self, sensor):
-        d=self.sensors[sensor]
-        return self.segs[d.seg_idx].translate(d.local_pos* self.length)
+        d = self.sensors[sensor]
+        return self.segs[d.seg_idx].translate(tuple(d.local_pos * self.length))
 
     def add_touch_sensors(self, idx):
         for i in idx:
             self.define_sensor(f'touch_sensor_{i}', self.contour_points[i])
 
-
     def draw_sensors(self, v, **kwargs):
-        for s, d in self.sensors.items():
-            pos = self.segs[d.seg_idx].translate(d.local_pos * self.length)
+        for s in self.sensors:
+            pos = self.get_sensor_position(s)
+        # for s, d in self.sensors.items():
+        #     pos = self.segs[d.seg_idx].translate(d.local_pos * self.length)
             v.draw_circle(radius=self.length / 10,
-                               position=pos,
-                               filled=True, color=(255, 0, 0), width=.1)
-
-
+                          position=pos,
+                          filled=True, color=(255, 0, 0), width=.1)
