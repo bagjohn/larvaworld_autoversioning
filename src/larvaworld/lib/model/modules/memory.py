@@ -2,10 +2,12 @@ import itertools
 import random
 
 import numpy as np
+import param
 
 from ...ipc import LarvaMessage
 from ...ipc.ipc import Client
 from .oscillator import Timer
+from ...param import PositiveNumber, PositiveInteger
 
 __all__ = [
     'Memory',
@@ -17,20 +19,23 @@ __all__ = [
 
 
 class Memory(Timer):
-    def __init__(self, brain, gain, update_dt=2, train_dur=30,mode='RL', **kwargs):
+    update_dt = PositiveNumber(1.0, precedence=2, softmax=10.0, step=0.01, label='gain-update timestep',
+                               doc='The interval duration between gain switches.')
+    train_dur = PositiveNumber(30.0, precedence=2, step=0.01, label='training duration',
+                               doc='The duration of the training period after which no further learning will take place.')
+    mode = param.Selector(objects=['RL', 'MB'], doc='The memory algorithm')
+    modality = param.Selector(objects=['olfaction', 'touch'], doc='The sensory modality')
+
+    def __init__(self, brain, gain, **kwargs):
         super().__init__(**kwargs)
         self.brain = brain
         self.gain = gain
         self.best_gain = gain
         self.gain_ids = list(gain.keys())
         self.Ngains = len(self.gain_ids)
-        self.train_dur = train_dur
-        self.Niters = int(update_dt * 60 / self.dt)
-        self.iterator = self.Niters
+        self.Niters = int(self.update_dt * 60 / self.dt)
         self.table = False
         self.rewardSum = 0
-        self.active = True
-        self.mode = mode
 
     def step(self, dx=None, reward=False, **kwargs):
         if dx is None:
@@ -41,16 +46,16 @@ class Memory(Timer):
 
 
 class RLmemory(Memory):
-    def __init__(self, gain_space, Delta=0.1, state_spacePerSide=0, alpha=0.05,
-                 gamma=0.6, epsilon=0.15, state_specific_best=True, **kwargs):
+    Delta = PositiveNumber(0.1, doc='The input sensitivity of the memory.')
+    alpha = PositiveNumber(0.05, doc='The alpha parameter of reinforcement learning algorithm.')
+    gamma = PositiveNumber(0.6,doc='The probability of sampling a random gain rather than exploiting the currently highest evaluated gain for the current state.')
+    epsilon = PositiveNumber(0.15, doc='The epsilon parameter of reinforcement learning algorithm.')
+    state_spacePerSide = PositiveInteger(0,doc='The number of discrete states to parse the state space on either side of 0.')
+    state_specific_best = param.Boolean(True, doc='Whether to select the best action for each state')
+
+    def __init__(self, gain_space, **kwargs):
         super().__init__(**kwargs)
-        self.state_specific_best = state_specific_best
-        self.alpha = alpha
-        self.gamma = gamma
-        self.epsilon = epsilon
-        self.Delta = Delta
         self.gain_space = gain_space
-        self.state_spacePerSide = state_spacePerSide
         self.state_space = np.array(
             [ii for ii in itertools.product(range(2 * self.state_spacePerSide + 1), repeat=self.Ngains)])
         self.actions = [ii for ii in itertools.product(self.gain_space, repeat=self.Ngains)]
@@ -146,7 +151,7 @@ class RLmemory(Memory):
 
 class RLOlfMemory(RLmemory):
     def __init__(self, modality='olfaction', **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(modality=modality, **kwargs)
 
     @property
     def first_odor_best_gain(self):
@@ -160,7 +165,7 @@ class RLOlfMemory(RLmemory):
 class RLTouchMemory(RLmemory):
     def __init__(self, modality='touch', **kwargs):
         # gain = {s: 0.0 for s in brain.agent.get_sensors()}
-        super().__init__(**kwargs)
+        super().__init__(modality=modality, **kwargs)
 
     def condition(self, dx):
         if 1 in dx.values() or -1 in dx.values():
@@ -176,7 +181,7 @@ class RLTouchMemory(RLmemory):
 class RemoteBrianModelMemory(Memory):
 
     def __init__(self, brain, gain, G=0.001, server_host='localhost', server_port=5795, **kwargs):
-        super().__init__(brain, gain,**kwargs)
+        super().__init__(brain, gain, **kwargs)
         self.server_host = server_host
         self.server_port = server_port
         self.sim_id = self.brain.agent.model.id
