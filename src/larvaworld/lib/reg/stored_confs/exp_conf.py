@@ -105,8 +105,8 @@ def grouped_exp_dic():
         'dispersion': {'env': 'arena_200mm',
                        'l': lg(mID='loco_default', N=25)
                        },
-        'dispersion_x4': {'env': 'arena_200mm', 'dur': 3.0,
-                          'l': lgs(mIDs=['loco_default', 'Levy', 'nengo_explorer'], ids=['CoupledOsc', 'Levy', 'nengo'],
+        'dispersion_x2': {'env': 'arena_200mm', 'dur': 3.0,
+                          'l': lgs(mIDs=['loco_default', 'Levy'], ids=['CoupledOsc', 'Levy'],
                                    N=5)
                           }
     }
@@ -147,7 +147,7 @@ def grouped_exp_dic():
 
     d3 = {
         'single_puff': {'env': 'single_puff', 'dur': 2.5,
-                        'l': lg(mID='nengo_explorer', N=20)}
+                        'l': lg(mID='loco_default', N=20)}
     }
 
     d33 = {id: exp(id=id, c0=['wind', 'olfactor', 'pose'],
