@@ -1391,12 +1391,6 @@ def buildInitDict():
             **d['reference_dataset']
         }
 
-
-        d['ExpGroup'] = {
-            'ExpGroupID': ConfID_entry('ExpGroup'),
-            'simulations': ConfID_entry('Exp', single_choice=False)
-        }
-
         return aux.AttrDict(d)
 
     def larvaGroup(d):

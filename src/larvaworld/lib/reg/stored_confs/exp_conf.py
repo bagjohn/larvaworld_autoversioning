@@ -6,7 +6,6 @@ from ...param import Epoch
 __all__ = [
     'Trial_dict',
     'Exp_dict',
-    'ExpGroup_dict',
 ]
 
 def trial_conf(durs=[], qs=[]):
@@ -262,7 +261,3 @@ def Exp_dict():
     return exp_dict
 
 
-@reg.funcs.stored_conf("ExpGroup")
-def ExpGroup_dict():
-    exp_group_dict = aux.AttrDict({k: {'simulations': list(v.keys())} for k, v in grouped_exp_dic().items()})
-    return exp_group_dict

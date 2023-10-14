@@ -53,7 +53,7 @@ TEST_DIR = f'{ROOT_DIR}/../../tests'
 os.makedirs(CONF_DIR, exist_ok=True)
 
 SIMTYPES = ['Exp', 'Batch', 'Ga', 'Eval', 'Replay']
-CONFTYPES = ['Env', 'LabFormat', 'Ref', 'Model', 'Trial', 'Exp', 'ExpGroup', 'Batch', 'Ga']
+CONFTYPES = ['Env', 'LabFormat', 'Ref', 'Model', 'Trial', 'Exp', 'Batch', 'Ga']
 # GROUPTYPES = ['LarvaGroup', 'FoodGroup', 'epoch']
 
 vprint("Initializing function registry")

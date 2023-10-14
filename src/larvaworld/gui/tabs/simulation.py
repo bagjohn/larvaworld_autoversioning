@@ -64,8 +64,6 @@ class SimTab(gui_aux.GuiTab):
                                             'type': 'substrate.type'}, dict_name='epoch')
         sl3 = gui_aux.SelectionList(tab=self, buttons=['load', 'save', 'delete', 'exec', 'tree', 'conf_tree'], progress=True, root_key='Exp',
                                     sublists={'env_params': sl1, 'larva_groups': s1}, text_kws=gui_aux.t_kws(10), width=28)
-        sl4 = gui_aux.SelectionList(tab=self, conftype='ExpGroup', disp='Behavior/field :', buttons=[], single_line=True,
-                                    width=15, text_kws=gui_aux.t_kws(12), sublists={'simulations': sl3})
 
         c1 = gui_aux.PadDict('sim_params', disp_name='Configuration', text_kws= gui_aux.t_kws(10), header_width=30, **kws)
         c2 = gui_aux.PadDict('output', text_kws= gui_aux.t_kws(7), Ncols=2, header_width=30, **kws)
@@ -78,7 +76,7 @@ class SimTab(gui_aux.GuiTab):
         for i in [c1, c2, s2, s1]:
             c.update(i.get_subdicts())
         c.update(**tab1_c)
-        l0 = gui_aux.gui_col([sl4, sl3, s1, c['arena']], x_frac=0.2, as_pane=True, pad=(10, 10))
+        l0 = gui_aux.gui_col([sl3, s1, c['arena']], x_frac=0.2, as_pane=True, pad=(10, 10))
         return l0, l1, c, tab1_g, tab1_d
 
     def update(self, w, c, conf, id):
