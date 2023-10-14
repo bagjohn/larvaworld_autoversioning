@@ -1,4 +1,8 @@
+
+
 from ... import reg
+from ...param import PhaseRange, Phase, NestedConf, ClassAttr
+from . import DefaultCoupling,Intermitter,Feeder,Effector
 
 __all__ = [
     'Locomotor',
@@ -6,9 +10,16 @@ __all__ = [
 ]
 
 
-class Locomotor:
-    def __init__(self, dt=0.1):
-        self.crawler, self.turner, self.feeder, self.intermitter, self.interference = [None] * 5
+class Locomotor(NestedConf):
+    interference = ClassAttr(class_=DefaultCoupling, default=None, doc='The crawl-bend coupling module')
+    intermitter = ClassAttr(class_=Intermitter, default=None, doc='The behavioral intermittency module')
+    feeder = ClassAttr(class_=Feeder, default=None, doc='The feeding module')
+    turner = ClassAttr(class_=Effector, default=None, doc='The body-bending module')
+    crawler = ClassAttr(class_=Effector, default=None, doc='The peristaltic crawling module')
+
+    def __init__(self, dt=0.1, **kwargs):
+        super().__init__(**kwargs)
+        # self.crawler, self.turner, self.feeder, self.intermitter, self.interference = [None] * 5
         self.dt = dt
 
     def on_new_pause(self):

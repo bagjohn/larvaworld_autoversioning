@@ -2,20 +2,29 @@ import numpy as np
 
 from ... import reg, aux
 from .. import modules
+from ...param import PhaseRange, Phase, NestedConf, ClassAttr
+from . import Olfactor, Toucher, WindSensor, Thermosensor
 
 __all__ = [
     'Brain',
     'DefaultBrain',
 ]
 
-class Brain:
-    def __init__(self, agent=None, dt=None):
+
+class Brain(NestedConf):
+    olfactor = ClassAttr(class_=Olfactor, default=None, doc='The olfactory sensor')
+    toucher = ClassAttr(class_=Toucher, default=None, doc='The tactile sensor')
+    windsensor = ClassAttr(class_=WindSensor, default=None, doc='The wind sensor')
+    thermosensor = ClassAttr(class_=Thermosensor, default=None, doc='The temperature sensor')
+
+    def __init__(self, agent=None, dt=None, **kwargs):
+        super().__init__(**kwargs)
         self.agent = agent
         self.A_olf = 0
         self.A_touch = 0
         self.A_thermo = 0
         self.A_wind = 0
-        self.olfactor, self.toucher, self.windsensor, self.thermosensor = [None]*4
+        # self.olfactor, self.toucher, self.windsensor, self.thermosensor = [None]*4
         # A dictionary of the possibly existing sensors along with the sensing functions and the possibly existing memory modules
         self.sensor_dict = aux.AttrDict({
             'olfactor': {'func': self.sense_odors, 'A': 0.0, 'mem': 'memory'},
@@ -40,19 +49,16 @@ class Brain:
 
         return cons
 
-    def sense_food_multi(self,**kwargs):
+    def sense_food_multi(self, **kwargs):
         a = self.agent
         if a is None:
             return {}
-        kws={
-            'sources' : a.model.sources, 'grid' : a.model.food_grid, 'radius' : a.radius
+        kws = {
+            'sources': a.model.sources, 'grid': a.model.food_grid, 'radius': a.radius
         }
         return {s: int(aux.sense_food(pos=a.get_sensor_position(s), **kws) is not None) for s in list(a.sensors.keys())}
 
-
-
-
-    def sense_wind(self,**kwargs):
+    def sense_wind(self, **kwargs):
         if self.agent is None:
             v = 0.0
         else:
@@ -77,18 +83,13 @@ class Brain:
             return {'cool': 0, 'warm': 0}
         return cons
 
-
-
-
-
-
-    @ property
+    @property
     def A_in(self):
         return self.A_olf + self.A_touch + self.A_thermo + self.A_wind
 
 
 class DefaultBrain(Brain):
-    def __init__(self, conf,agent=None, **kwargs):
+    def __init__(self, conf, agent=None, **kwargs):
         super().__init__(agent=agent)
         self.locomotor = modules.DefaultLocomotor(conf=conf, **kwargs)
 
@@ -99,59 +100,51 @@ class DefaultBrain(Brain):
         mods = conf.modules
 
         if mods.olfactor:
-            self.olfactor=modules.Olfactor(**kws,**conf['olfactor_params'])
+            self.olfactor = modules.Olfactor(**kws, **conf['olfactor_params'])
         if mods.toucher:
-            self.toucher=modules.Toucher(**kws,**conf['toucher_params'])
+            self.toucher = modules.Toucher(**kws, **conf['toucher_params'])
             self.toucher.init_sensors()
 
         memory_modes = {
-            'RL': {'olfaction' : modules.RLOlfMemory, 'touch' : modules.RLTouchMemory},
-            'MB':  {'olfaction' : modules.RemoteBrianModelMemory, 'touch' : modules.RemoteBrianModelMemory}
+            'RL': {'olfaction': modules.RLOlfMemory, 'touch': modules.RLTouchMemory},
+            'MB': {'olfaction': modules.RemoteBrianModelMemory, 'touch': modules.RemoteBrianModelMemory}
         }
         if mods['memory']:
             mm = conf['memory_params']
             # FIXME
             if 'mode' not in mm.keys():
-                mm['mode']='RL'
-            modality_classes=memory_modes[mm['mode']]
-            modality=mm['modality']
-            class_func=modality_classes[modality]
+                mm['mode'] = 'RL'
+            modality_classes = memory_modes[mm['mode']]
+            modality = mm['modality']
+            class_func = modality_classes[modality]
 
-
-
-
-
-            if modality=='olfaction' and self.olfactor:
+            if modality == 'olfaction' and self.olfactor:
                 mm.gain = self.olfactor.gain
                 self.memory = class_func(**mm, **kws)
 
-            elif modality=='touch' and self.toucher:
+            elif modality == 'touch' and self.toucher:
                 mm.gain = self.toucher.gain
                 self.touch_memory = class_func(**mm, **kws)
         if mods.windsensor:
-            self.windsensor=modules.WindSensor(**kws,**conf['windsensor_params'])
+            self.windsensor = modules.WindSensor(**kws, **conf['windsensor_params'])
         if mods.thermosensor:
-            self.thermosensor=modules.Thermosensor(**kws,**conf['thermosensor_params'])
-
-
-
-
+            self.thermosensor = modules.Thermosensor(**kws, **conf['thermosensor_params'])
 
     def sense(self, pos=None, reward=False):
 
-        if self.olfactor :
+        if self.olfactor:
             if self.memory:
                 dx = self.olfactor.get_dX()
                 self.olfactor.gain = self.memory.step(dx, reward)
             self.A_olf = self.olfactor.step(self.sense_odors(pos))
-        if self.toucher :
+        if self.toucher:
             if self.touch_memory:
                 dx = self.toucher.get_dX()
                 self.toucher.gain = self.touch_memory.step(dx, reward)
             self.A_touch = self.toucher.step(self.sense_food_multi())
-        if self.thermosensor :
+        if self.thermosensor:
             self.A_thermo = self.thermosensor.step(self.sense_thermo(pos))
-        if self.windsensor :
+        if self.windsensor:
             self.A_wind = self.windsensor.step(self.sense_wind())
 
     def step(self, pos, length, on_food=False, **kwargs):
