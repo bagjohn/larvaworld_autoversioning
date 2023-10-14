@@ -42,6 +42,7 @@ class Memory(Timer):
 
 
 class RLmemory(Memory):
+    mode = param.Selector(default='RL', readonly=True)
     update_dt = PositiveNumber(1.0, precedence=2, softmax=10.0, step=0.01, label='gain-update timestep',
                                doc='The interval duration between gain switches.')
     train_dur = PositiveNumber(30.0, precedence=2, step=0.01, label='training duration',
@@ -152,8 +153,10 @@ class RLmemory(Memory):
 
 
 class RLOlfMemory(RLmemory):
-    def __init__(self, modality='olfaction', **kwargs):
-        super().__init__(modality=modality, **kwargs)
+    modality = param.Selector(default='olfaction', readonly=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @property
     def first_odor_best_gain(self):
@@ -165,8 +168,10 @@ class RLOlfMemory(RLmemory):
 
 
 class RLTouchMemory(RLmemory):
-    def __init__(self, modality='touch', **kwargs):
-        super().__init__(modality=modality, **kwargs)
+    modality = param.Selector(default='touch', readonly=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def condition(self, dx):
         if 1 in dx.values() or -1 in dx.values():
@@ -180,6 +185,7 @@ class RLTouchMemory(RLmemory):
 
 
 class RemoteBrianModelMemory(Memory):
+    mode = param.Selector(default='MB', readonly=True)
 
     def __init__(self, G=0.001, server_host='localhost', server_port=5795, **kwargs):
         super().__init__(**kwargs)

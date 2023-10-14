@@ -7,6 +7,7 @@ __all__ = [
     'NestedConf',
     'class_generator',
     'expand_kws_shortcuts',
+    'class_defaults',
 ]
 
 
@@ -44,7 +45,9 @@ class NestedConf(param.Parameterized):
         d = aux.AttrDict(self.param.values())
         d.pop('name')
         for k, p in self.param.objects().items():
-            if k in d and d[k] is not None:
+            if k in d and p.readonly == True:
+                d.pop(k)
+            elif k in d and d[k] is not None:
                 if type(p) == ClassAttr:
                     d[k] = d[k].nestedConf
                 elif type(p) == ClassDict:
@@ -304,3 +307,7 @@ def expand_kws_shortcuts(kwargs):
         kwargs['substrate'] = dict(zip(['quality', 'type'], kwargs['sub']))
         kwargs.pop('sub')
     return kwargs
+
+
+def class_defaults(A):
+    return class_generator(A)().nestedConf

@@ -53,7 +53,6 @@ class Intermitter(Timer):
         self.crawl_freq = crawl_freq
         self.feed_freq = feed_freq
         self.reset()
-
         self.cur_state = None
 
 
@@ -78,7 +77,6 @@ class Intermitter(Timer):
         self.pau_min, self.pau_max = (np.array(pause_dist.range) / self.dt).astype(int)
         self.pause_dist = util.BoutGenerator(**pause_dist, dt=self.dt)
 
-
         self.Nstrides = 0
         self.Nstridechains = 0
         self.Nruns = 0
@@ -89,18 +87,11 @@ class Intermitter(Timer):
         self.Nfeeds_fail = 0
         self.base_EEB = self.EEB
 
-
         self.exp_Nstrides = None
         self.cur_Nstrides = 0
         self.exp_Trun = None
-        # self.current_run_duration =0
         self.exp_Tpause = None
         self.cur_Nfeeds = None
-
-        # self.cum_feedchain_dur = 0
-        # self.cum_stridechain_dur = 0
-        # self.cum_run_dur = 0
-        # self.cum_pause_dur = 0
 
         self.stridechain_lengths = []
         self.stridechain_durs = []
@@ -214,7 +205,6 @@ class Intermitter(Timer):
         if self.feed_bouts :
             self.alternate_exploreNexploit(feed_motion, on_food)
         self.alternate_crawlNpause(stride_completed)
-        # print(self.EEB, self.feeder_reoccurence_rate, self.base_EEB)
         return self.cur_state
 
 
@@ -308,11 +298,14 @@ class NengoIntermitter(Intermitter):
 
 
 class BranchIntermitter(Intermitter):
-    def __init__(self,beta=None,c=0.7,sigma=1,feed_bouts=False,**kwargs):
-        super().__init__(feed_bouts=feed_bouts,**kwargs)
-        self.c = c
-        self.beta = beta
-        self.sigma = sigma
+    feed_bouts = param.Boolean(False, readonly=True)
+    beta = OptionalPositiveNumber(default=None,doc='The beta coefficient for the exponential function')
+    c = PositiveNumber(default=0.7,doc='The c parameter for the criticality function')
+    sigma = PositiveNumber(default=1.0,doc='The sigma parameter for the criticality function')
+
+
+    def __init__(self,**kwargs):
+        super().__init__(**kwargs)
 
     def generate_stridechain(self):
         return util.exp_bout(beta=self.beta, tmax=self.stridechain_max, tmin=self.stridechain_min)

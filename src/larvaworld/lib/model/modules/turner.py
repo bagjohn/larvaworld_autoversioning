@@ -15,7 +15,7 @@ class NeuralOscillator(Effector):
     activation_range = param.Range((10.0, 40.0), bounds=(0.0, 100.0), precedence=1, label='activation range',
                                    doc='The activation range of the oscillator.')
     input_range = param.Range((-1, 1), bounds=(-1, 1), precedence=-2, label='input range',
-                              doc='The input range of the oscillator.')
+                              doc='The input range of the oscillator.', readonly=True)
     tau = param.Number(0.1, precedence=2, label='time constant', doc='The time constant of the oscillator.')
     w_ee = param.Number(3.0, label='E->E weigths', doc='The E->E synapse connection weights.')
     w_ce = param.Number(0.1, label='C->E weigths', doc='The C->E synapse connection weights.')
