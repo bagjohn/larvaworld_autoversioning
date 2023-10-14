@@ -3,18 +3,36 @@ import param
 from scipy import signal
 
 from ... import aux
-from .basic import StepOscillator
+from .basic import StepOscillator,StepEffector
 from ...param import PositiveNumber, Phase
 
 
 __all__ = [
+    'Crawler',
+    'ConstantCrawler',
     'StrideOscillator',
     'GaussOscillator',
     'SquareOscillator',
     'PhaseOscillator',
 ]
 
-class StrideOscillator(StepOscillator) :
+class Crawler(StepEffector):
+
+    @staticmethod
+    def select(mode, **kwargs):
+        d = aux.AttrDict({
+            'gaussian': GaussOscillator,
+            'square': SquareOscillator,
+            'realistic': PhaseOscillator,
+            'constant': ConstantCrawler
+        })
+        return d[mode](**kwargs)
+
+class ConstantCrawler(Crawler):pass
+    # mode = param.Selector(default='constant', readonly=True)
+
+
+class StrideOscillator(Crawler, StepOscillator) :
     stride_dst_mean = PositiveNumber(0.23,softmax=1.0, step=0.01, label='stride distance mean', doc='The mean displacement achieved in a single peristaltic stride as a fraction of the body length.')
     stride_dst_std = PositiveNumber(0.04,softmax=1.0, step=0.01, label='stride distance std', doc='The standard deviation of the displacement achieved in a single peristaltic stride as a fraction of the body length.')
 
@@ -32,6 +50,10 @@ class StrideOscillator(StepOscillator) :
         return self.freq * self.step_to_length * (1 + self.Act_coef*self.Act_Phi)
 
 
+    # def act(self):
+    #     self.oscillate()
+    #     self.output = self.Act
+
     def act_on_complete_iteration(self):
         self.step_to_length = self.new_stride
 
@@ -41,6 +63,7 @@ class StrideOscillator(StepOscillator) :
 
 
 class GaussOscillator(StrideOscillator):
+    # mode = param.Selector(default='gaussian', readonly=True)
     std = PositiveNumber(0.6, softmax=1.0, step=0.01, label='gaussian stride cycle std', doc='The std of the gaussian window for the velocity oscillation during a stride cycle.')
 
     def __init__(self, **kwargs):
@@ -56,6 +79,7 @@ class GaussOscillator(StrideOscillator):
 
 
 class SquareOscillator(StrideOscillator):
+    # mode = param.Selector(default='square', readonly=True)
     duty = param.Magnitude(0.6, label='square signal duty',doc='The duty parameter(%time at the upper end) of the square signal.')
 
 
@@ -67,6 +91,7 @@ class SquareOscillator(StrideOscillator):
         return self.phi <= 2 * np.pi * self.duty
 
 class PhaseOscillator(StrideOscillator):
+    # mode = param.Selector(default='realistic', readonly=True)
     max_vel_phase = Phase(3.49, label='max velocity phase',doc='The phase of the crawling oscillation cycle where forward velocity is maximum.')
     max_scaled_vel = PositiveNumber(0.51, softmax=1.5, step=0.01, label='maximum scaled velocity',doc='The maximum scaled forward velocity.')
 

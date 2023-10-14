@@ -317,16 +317,18 @@ class NengoEffector(StepOscillator):
         self.set_freq(0)
 
 class NengoLocomotor(Locomotor):
-    def __init__(self, conf, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self,conf,dt=0.1,  **kwargs):
+        self.dt = dt
+        kwargs=aux.AttrDict(kwargs)
         m, c = conf.modules, conf
         if m['feeder']:
-            self.feeder = NengoEffector(**c['feeder_params'])
+            kwargs.feeder = NengoEffector(**c['feeder_params'])
         if m['turner'] and m['crawler']:
-            self.turner = NengoEffector(**c['turner_params'])
-            self.crawler = NengoEffector(**c['crawler_params'])
-            self.interference = SquareCoupling(**c['interference_params'])
+            kwargs.turner = NengoEffector(**c['turner_params'])
+            kwargs.crawler = NengoEffector(**c['crawler_params'])
+            kwargs.interference = SquareCoupling(**c['interference_params'])
         if m['intermitter']:
-            self.intermitter = NengoIntermitter(dt=self.dt, **c['intermitter_params'])
-        else:
-            self.intermitter = None
+            kwargs.intermitter = NengoIntermitter(dt=self.dt, **c['intermitter_params'])
+        # else:
+        #     self.intermitter = None
+        super().__init__(**kwargs)

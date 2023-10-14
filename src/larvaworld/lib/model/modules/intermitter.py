@@ -273,6 +273,15 @@ class Intermitter(Timer):
     def mean_feed_freq(self):
         return self.Nfeeds / self.total_t
 
+    @staticmethod
+    def select(mode, **kwargs):
+        d = aux.AttrDict({
+            'default': Intermitter,
+            'nengo': NengoIntermitter,
+            'branch': BranchIntermitter
+        })
+        return d[mode](**kwargs)
+
 
 
 class OfflineIntermitter(Intermitter):

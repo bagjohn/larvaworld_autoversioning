@@ -1,15 +1,35 @@
 import random
 import param
 
-from .basic import Effector
+from ... import reg, aux
+from .basic import Effector, StepEffector, SinOscillator
 from ...param import PositiveNumber, PositiveInteger
 
 __all__ = [
+    'Turner',
+    'ConstantTurner',
+    'SinTurner',
     'NeuralOscillator',
 ]
 
+class Turner(Effector):
 
-class NeuralOscillator(Effector):
+    @staticmethod
+    def select(mode, **kwargs):
+        d = aux.AttrDict({
+            'neural': NeuralOscillator,
+            'sinusoidal': SinTurner,
+            'constant': ConstantTurner
+        })
+        return d[mode](**kwargs)
+
+class ConstantTurner(Turner, StepEffector):pass
+
+class SinTurner(Turner, SinOscillator):pass
+    # mode = param.Selector(default='constant', readonly=True)
+
+
+class NeuralOscillator(Turner):
     base_activation = PositiveNumber(20.0, bounds=(10.0, 40.0), step=1.0, precedence=1, label='baseline activation',
                                      doc='The baseline activation of the oscillator.')
     activation_range = param.Range((10.0, 40.0), bounds=(0.0, 100.0), precedence=1, label='activation range',

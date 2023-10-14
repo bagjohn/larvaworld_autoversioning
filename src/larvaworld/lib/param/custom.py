@@ -33,6 +33,7 @@ __all__ = [
     'ItemListParam',
     'ClassDict',
     'ClassAttr',
+    'ModeSelector',
     'DataFrameIndexed',
     'StepDataFrame',
     'EndpointDataFrame',
@@ -360,6 +361,21 @@ class ClassAttr(param.ClassSelector):
         super().__init__(class_=class_, **kwargs)
 
 
+class ModeSelector(ClassAttr):
+    """Select among objects. Default is None even if None not in objects"""
+
+    __slots__ = ['classDict', 'classID']
+
+    def __init__(self, classDict=aux.AttrDict(), classID=None, class_=None, **kwargs):
+        self.classDict=classDict
+        self.classID=classID
+        # if classID is None and len(classDict.keylist)>0:
+        #     classID=classDict.keylist[0]
+        if classID is not None:
+            class_ = classDict[classID]
+        super().__init__(class_=class_, **kwargs)
+
+
 class DataFrameIndexed(param.DataFrame):
     __slots__ = ['rows', 'columns', 'ordered', 'levels']
 
@@ -394,6 +410,3 @@ class EndpointDataFrame(DataFrameIndexed):
 
     def __init__(self, **params):
         DataFrameIndexed.__init__(self, levels=['AgentID'], **params)
-
-
-

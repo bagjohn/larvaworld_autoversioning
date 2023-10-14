@@ -1,8 +1,9 @@
+import param
 
-
-from ... import reg
-from ...param import PhaseRange, Phase, NestedConf, ClassAttr
-from . import DefaultCoupling,Intermitter,Feeder,Effector
+from ... import reg, aux
+from .. import modules
+from ...param import PhaseRange, Phase, NestedConf, ClassAttr, ModeSelector
+from . import Coupling, Intermitter, Feeder, Effector,Crawler, Turner
 
 __all__ = [
     'Locomotor',
@@ -11,16 +12,26 @@ __all__ = [
 
 
 class Locomotor(NestedConf):
-    interference = ClassAttr(class_=DefaultCoupling, default=None, doc='The crawl-bend coupling module')
+    # interference = ModeSelector(classDict=aux.AttrDict({
+    #     'default': modules.DefaultCoupling,
+    #     'square': modules.SquareCoupling,
+    #     'phasic': modules.PhasicCoupling
+    # }), classID=None, class_=None, default=None, doc='The crawl-bend coupling module')
+    # interference = param.Selector(objects=[modules.DefaultCoupling,modules.SquareCoupling,modules.PhasicCoupling],
+    #                               names=['default','square','phasic'], doc='The crawl-bend coupling module')
+    interference = ClassAttr(class_=Coupling, default=None, doc='The crawl-bend coupling module')
     intermitter = ClassAttr(class_=Intermitter, default=None, doc='The behavioral intermittency module')
     feeder = ClassAttr(class_=Feeder, default=None, doc='The feeding module')
-    turner = ClassAttr(class_=Effector, default=None, doc='The body-bending module')
-    crawler = ClassAttr(class_=Effector, default=None, doc='The peristaltic crawling module')
+    turner = ClassAttr(class_=Turner, default=None, doc='The body-bending module')
+    crawler = ClassAttr(class_=Crawler, default=None, doc='The peristaltic crawling module')
 
-    def __init__(self, dt=0.1, **kwargs):
+    def __init__(self, **kwargs):
+
+
+
         super().__init__(**kwargs)
         # self.crawler, self.turner, self.feeder, self.intermitter, self.interference = [None] * 5
-        self.dt = dt
+
 
     def on_new_pause(self):
         if self.crawler:
@@ -54,25 +65,33 @@ class Locomotor(NestedConf):
 
 
 class DefaultLocomotor(Locomotor):
-    def __init__(self, conf, **kwargs):
-        super().__init__()
-        D = reg.model.dict.model.m
+    def __init__(self,conf,dt=0.1,  **kwargs):
+        self.dt = dt
+        # kwargs = aux.AttrDict(kwargs)
+
+
+
+        # D = reg.model.dict.model.m
         for k in ['crawler', 'turner', 'interference', 'feeder', 'intermitter']:
 
             if conf.modules[k]:
 
                 m = conf[f'{k}_params']
+                if k != 'interference':
+                    m['dt'] = dt
                 if k == 'feeder':
-                    mode = 'default'
+                    kwargs[k] = self.param[k].class_(**m)
                 else:
                     mode = m.mode
-                kws = {kw: getattr(self, kw) for kw in D[k].kwargs.keys()}
-                func = D[k].mode[mode].class_func
-                mm = {k: m[k] for k in m.keys() if k != 'mode'}
-                M = func(**mm, **kws)
-            else:
-                M = None
-            setattr(self, k, M)
+                    mm = {k: m[k] for k in m.keys() if k != 'mode'}
+                    kwargs[k] = self.param[k].class_.select(mode, **mm)
+                    # kws = {kw: getattr(self, kw) for kw in D[k].kwargs.keys()}
+                    # func = D[k].mode[mode].class_func
+                    # kwargs[k] = func(**mm, **kws)
+            # else:
+            #     M = None
+            # setattr(self, k, M)
+        super().__init__(**kwargs)
 
     @property
     def stride_completed(self):
