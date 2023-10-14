@@ -11,8 +11,8 @@ __all__ = [
 ]
 
 
-class DefaultCoupling(NestedConf):
-# class DefaultCoupling(param.Parameterized):
+# class DefaultCoupling(NestedConf):
+class DefaultCoupling(param.Parameterized):
     attenuation = param.Magnitude(0.0, label='crawl-induced angular attenuation',
                                   doc='The attenuation coefficient for the crawl-interference to the angular motion.')
     attenuation_max = param.Magnitude(1.0, label='crawl-induced maximum angular attenuation',

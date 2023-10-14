@@ -19,10 +19,6 @@ __all__ = [
 
 
 class Memory(Timer):
-    update_dt = PositiveNumber(1.0, precedence=2, softmax=10.0, step=0.01, label='gain-update timestep',
-                               doc='The interval duration between gain switches.')
-    train_dur = PositiveNumber(30.0, precedence=2, step=0.01, label='training duration',
-                               doc='The duration of the training period after which no further learning will take place.')
     mode = param.Selector(objects=['RL', 'MB'], doc='The memory algorithm')
     modality = param.Selector(objects=['olfaction', 'touch'], doc='The sensory modality')
 
@@ -33,8 +29,7 @@ class Memory(Timer):
         self.best_gain = gain
         self.gain_ids = list(gain.keys())
         self.Ngains = len(self.gain_ids)
-        self.Niters = int(self.update_dt * 60 / self.dt)
-        self.iterator=self.Niters
+
         self.table = False
         self.rewardSum = 0
 
@@ -47,6 +42,10 @@ class Memory(Timer):
 
 
 class RLmemory(Memory):
+    update_dt = PositiveNumber(1.0, precedence=2, softmax=10.0, step=0.01, label='gain-update timestep',
+                               doc='The interval duration between gain switches.')
+    train_dur = PositiveNumber(30.0, precedence=2, step=0.01, label='training duration',
+                               doc='The duration of the training period after which no further learning will take place.')
     Delta = PositiveNumber(0.1, doc='The input sensitivity of the memory.')
     alpha = PositiveNumber(0.05, doc='The alpha parameter of reinforcement learning algorithm.')
     gamma = PositiveNumber(0.6,doc='The probability of sampling a random gain rather than exploiting the currently highest evaluated gain for the current state.')
@@ -57,6 +56,8 @@ class RLmemory(Memory):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.Niters = int(self.update_dt * 60 / self.dt)
+        self.iterator = self.Niters
         self.state_space = np.array(
             [ii for ii in itertools.product(range(2 * self.state_spacePerSide + 1), repeat=self.Ngains)])
         self.actions = [ii for ii in itertools.product(self.gain_space, repeat=self.Ngains)]

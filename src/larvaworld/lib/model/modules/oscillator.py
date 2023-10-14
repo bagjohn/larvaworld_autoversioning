@@ -13,8 +13,8 @@ __all__ = [
 ]
 
 
-class Timer(NestedConf):
-# class Timer(param.Parameterized):
+# class Timer(NestedConf):
+class Timer(param.Parameterized):
     dt = PositiveNumber(0.1, precedence=2, softmax=1.0, step=0.01, label='simulation timestep',
                         doc='The timestep of the simulation in seconds.')
 
