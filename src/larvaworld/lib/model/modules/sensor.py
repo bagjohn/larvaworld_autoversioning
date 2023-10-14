@@ -5,7 +5,6 @@ from ... import aux
 from .basic import Effector
 from ...param import PositiveNumber, RangeRobust
 
-
 __all__ = [
     'Sensor',
     'Olfactor',
@@ -14,10 +13,13 @@ __all__ = [
     'Thermosensor',
 ]
 
+
 class Sensor(Effector):
-    output_range = RangeRobust((-1.0,1.0))
-    perception = param.Selector(objects=['linear', 'log', 'null'], label='sensory transduction mode', doc='The method used to calculate the perceived sensory activation from the current and previous sensory input.')
-    decay_coef = PositiveNumber(1.0,softmax=2.0, step=0.01, label='sensory decay coef', doc='The linear decay coefficient of the olfactory sensory activation.')
+    output_range = RangeRobust((-1.0, 1.0))
+    perception = param.Selector(objects=['linear', 'log', 'null'], label='sensory transduction mode',
+                                doc='The method used to calculate the perceived sensory activation from the current and previous sensory input.')
+    decay_coef = PositiveNumber(1.0, softmax=2.0, step=0.01, label='sensory decay coef',
+                                doc='The linear decay coefficient of the olfactory sensory activation.')
     brute_force = param.Boolean(False, doc='Whether to apply direct rule-based modulation on locomotion or not.')
 
     def __init__(self, gain_dict=None, brain=None, **kwargs):
@@ -40,8 +42,6 @@ class Sensor(Effector):
     # def update_output(self,output):
     #     return self.apply_noise(output, self.output_noise, range=(self.A0,self.A1))
 
-
-
     def update(self):
         self.update_gain()
         if len(self.input) == 0:
@@ -54,8 +54,6 @@ class Sensor(Effector):
             self.output *= self.exp_decay_coef
             self.output += self.dt * np.sum([self.gain[id] * self.dX[id] for id in self.gain_ids])
 
-
-
     def affect_locomotion(self):
         pass
 
@@ -65,8 +63,8 @@ class Sensor(Effector):
         self.base_gain = {}
         self.Ngains = len(gain_dict)
         self.gain_ids = list(gain_dict.keys())
-        self.X = aux.AttrDict({id:0.0 for id in self.gain_ids})
-        self.dX = aux.AttrDict({id:0.0 for id in self.gain_ids})
+        self.X = aux.AttrDict({id: 0.0 for id in self.gain_ids})
+        self.dX = aux.AttrDict({id: 0.0 for id in self.gain_ids})
         for id, p in gain_dict.items():
             if isinstance(p, dict):
                 self.base_gain[id] = float(np.random.normal(p['mean'], p['std'], 1))
@@ -83,8 +81,6 @@ class Sensor(Effector):
     def get_gain(self):
         return self.gain
 
-
-
     def set_gain(self, value, gain_id):
         self.gain[gain_id] = value
 
@@ -94,14 +90,13 @@ class Sensor(Effector):
     def reset_all_gains(self):
         self.gain = self.base_gain
 
-    def compute_single_dx(self,cur, prev):
+    def compute_single_dx(self, cur, prev):
         if self.perception == 'log':
             return cur / prev - 1 if prev != 0 else 0
         elif self.perception == 'linear':
             return cur - prev if prev != 0 else 0
         elif self.perception == 'null':
             return cur
-
 
     def compute_dX(self, input):
         for id, cur in input.items():
@@ -124,13 +119,13 @@ class Olfactor(Sensor):
         if odor_dict is None:
             odor_dict = {}
 
-    @ property
+    @property
     def novel_odors(self):
-        ids=[]
+        ids = []
         if self.brain is not None:
             if self.brain.agent is not None:
-                ids=self.brain.agent.model.odor_ids
-                ids=aux.nonexisting_cols(ids, self.gain_ids)
+                ids = self.brain.agent.model.odor_ids
+                ids = aux.nonexisting_cols(ids, self.gain_ids)
         return ids
 
     def update_gain(self):
@@ -141,16 +136,14 @@ class Olfactor(Sensor):
                 con = 0
             self.add_novel_gain(id, con=con)
 
-
     def affect_locomotion(self):
-        if self.brain is None :
+        if self.brain is None:
             return
         L = self.brain.locomotor
         if self.output < 0 and L.crawler.complete_iteration:
             if np.random.uniform(0, 1, 1) <= np.abs(self.output):
                 L.intermitter.inhibit_locomotion(L=L)
-                self.interruption_counter+=1
-
+                self.interruption_counter += 1
 
     @property
     def first_odor_concentration(self):
@@ -170,17 +163,11 @@ class Olfactor(Sensor):
 
 
 class Toucher(Sensor):
-    def __init__(self, initial_gain, touch_sensors=None, **kwargs):
-        self.initial_gain = initial_gain
-        if touch_sensors is not None:
-            gain_dict = aux.AttrDict({s: initial_gain for s in touch_sensors})
+    initial_gain = PositiveNumber(40.0, label='tactile sensitivity coef', doc='The initial gain of the tactile sensor.')
+    touch_sensors = param.List(default=None, item_type=int, doc='The location indexes of sensors around body contour.')
 
-            # self.brain.agent.add_touch_sensors(touch_sensors)
-        else:
-            gain_dict = aux.AttrDict()
-        gain_dict.olfactor=0
-        super().__init__(gain_dict=gain_dict, **kwargs)
-        self.touch_sensors = touch_sensors
+    def __init__(self, **kwargs):
+        super().__init__(gain_dict=aux.AttrDict({'olfactor': 0.0}), **kwargs)
         self.init_sensors()
 
     def init_sensors(self):
@@ -191,10 +178,10 @@ class Toucher(Sensor):
                     self.brain.agent.add_touch_sensors(self.touch_sensors)
                     for s in self.brain.agent.sensors:
                         if s not in self.gain:
-                            self.add_novel_gain(id=s,gain=self.initial_gain)
+                            self.add_novel_gain(id=s, gain=self.initial_gain)
 
     def affect_locomotion(self):
-        if self.brain is None :
+        if self.brain is None:
             return
         L = self.brain.locomotor
         for id in self.gain_ids:
@@ -209,21 +196,19 @@ class Toucher(Sensor):
 
 class WindSensor(Sensor):
     def __init__(self, weights, perception='null', **kwargs):
-        super().__init__(perception=perception,gain_dict={'windsensor': 1.0}, **kwargs)
+        super().__init__(perception=perception, gain_dict={'windsensor': 1.0}, **kwargs)
         self.weights = weights
 
 
 # @todo add class Thermosensor(Sensor) here with a double gain dict
 class Thermosensor(Sensor):
-    def __init__(self, cool_gain=0.0,warm_gain=0.0, **kwargs): #thermodict={"cool", "warm"}
+    def __init__(self, cool_gain=0.0, warm_gain=0.0, **kwargs):  # thermodict={"cool", "warm"}
         thermo_dict = aux.AttrDict({'warm': warm_gain, 'cool': cool_gain})
         super().__init__(gain_dict=thermo_dict, **kwargs)
 
-
-
     @property
     def warm_sensor_input(self):
-        return self.X['warm'] #@todo do I need to make self.thermoX.values? same for dX.
+        return self.X['warm']  # @todo do I need to make self.thermoX.values? same for dX.
 
     @property
     def warm_sensor_perception(self):
