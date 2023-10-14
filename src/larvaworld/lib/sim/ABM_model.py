@@ -424,12 +424,9 @@ class ABModel(BasicABModel, reg.generators.SimConfigurationParams):
             Nsteps: The number of simulation timesteps. Defaults to None for unlimited timesteps. Computed from duration if specified.
             **kwargs: Arguments passed to the setup method
         """
-        # print(self.p.experiment)
-        # print(kwargs['experiment'])
         reg.generators.SimConfigurationParams.__init__(self, **kwargs)
-        # print(kwargs['experiment'])
         self.parameters.steps = self.Nsteps
         self.parameters.agentpy_output_kws = {'exp_name': self.experiment, 'exp_id': self.id,
-                                              'path': f'{self.data_dir}/agentpy_output'}
+                                              'path': f'{self.dir}/agentpy_output'}
         BasicABModel.__init__(self, parameters=self.parameters, id=self.id)
 

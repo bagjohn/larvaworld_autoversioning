@@ -65,13 +65,13 @@ def grouped_exp_dic():
 
     def deb_exp(id, dur=5.0, **kwargs):
         return exp(id, dur=dur, c=['feeder', 'gut'],
-                   en=gen.EnrichConf(proc_keys=['spatial']), **kwargs)
+                   en=gen.EnrichConf(proc_keys=['spatial'],anot_keys=[]), **kwargs)
 
     def thermo_exp(id, dur=10.0, **kwargs):
         return exp(id, dur=dur, c=['thermo'], **kwargs)
 
     def pref_exp(id, dur=5.0, **kwargs):
-        return exp(id,dur=dur, en=gen.EnrichConf(proc_keys=['PI']), **kwargs)
+        return exp(id,dur=dur, en=gen.EnrichConf(proc_keys=['PI'],anot_keys=[]), **kwargs)
 
     def game_groups(dim=0.1, N=10, x=0.4, y=0.0, mode='king'):
         x = np.round(x * dim, 3)
@@ -185,10 +185,8 @@ def grouped_exp_dic():
                                         l=lgs(mIDs=['noMB_untrained', 'noMB_trained'], N=4)),
             'random_food': food_exp('random_food', env='random_food', c=['feeder', 'toucher'],
                                     l=lgs(mIDs=['RE_NEU_PHI_DEF_feeder', 'RE_NEU_PHI_DEF_forager_RL'],
-                                          ids=['Orco', 'RL'], N=5,
-                                          mode='uniform',
-                                          shape='rectangular', s=(0.04,0.04)),
-                                    en=gen.EnrichConf(proc_keys=['spatial'])),
+                                          ids=['Orco', 'RL'], N=5,mode='uniform',
+                                          shape='rect', s=(0.04,0.04))),
             'uniform_food': food_exp('uniform_food', env='uniform_food',
                                      l=lg(mID='RE_NEU_PHI_DEF_feeder', N=5, s=(0.005,0.005))),
             'food_grid': food_exp('food_grid', env='food_grid', l=lg(mID='RE_NEU_PHI_DEF_feeder', N=5)),

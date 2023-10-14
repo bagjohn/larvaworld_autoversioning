@@ -1,4 +1,5 @@
 from larvaworld.lib import reg, sim, aux
+from larvaworld.lib.process.dataset import LarvaDataset
 reg.VERBOSE=1
 
 def xx_test_replay():
@@ -70,24 +71,20 @@ def test_genetic_algorithm_simulation():
     assert best2 is not None
 
 
-'''
+
 
 def test_exp_run():
-    for exp in ['chemotaxis']:
-        conf=reg.conf.Exp.expand(exp)
-        # conf.sim_params.duration=1
-        # exp_run = sim.ExpRun(experiment=exp, duration=1)
-        exp_run = sim.ExpRun(parameters=conf, duration=1)
-        # exp_run.run()
-        exp_run.simulate()
-        for d in exp_run.datasets:
+    ids = reg.conf.Exp.confIDs
+    for id in ids:
+        r=sim.ExpRun.from_ID(id, duration=1, store_data=False)
+        for d in r.datasets:
             assert isinstance(d, LarvaDataset)
 
 
 
 
 
-
+'''
 def test_evaluation() :
     # refID = 'exploration.merged_dishes'
     # mIDs = ['RE_NEU_PHI_DEF', 'RE_SIN_PHI_DEF']

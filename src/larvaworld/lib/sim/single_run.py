@@ -157,3 +157,11 @@ class ExpRun(BaseRun):
         df1 = pd.concat(df.variables, axis=0).droplevel(1, axis=0)
         df1.index.rename('Model', inplace=True)
         return df1
+
+    @classmethod
+    def from_ID(cls, id, simulate=True,**kwargs):
+        assert id in reg.conf.Exp.confIDs
+        r= cls(experiment=id,**kwargs)
+        if simulate:
+            _=r.simulate()
+        return r

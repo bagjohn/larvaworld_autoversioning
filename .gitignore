@@ -6,3 +6,5 @@
 /poetry.lock
 /src/larvaworld/lib/reg/confDicts/
 /dist/
+/tests/media/
+/tests/.pytest_cache/

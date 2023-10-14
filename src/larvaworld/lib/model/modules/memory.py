@@ -43,7 +43,7 @@ class Memory(Timer):
 class RLmemory(Memory):
     def __init__(self, gain_space, Delta=0.1, state_spacePerSide=0, alpha=0.05,
                  gamma=0.6, epsilon=0.15, state_specific_best=True, **kwargs):
-        super().__init__(mode='RL',**kwargs)
+        super().__init__(**kwargs)
         self.state_specific_best = state_specific_best
         self.alpha = alpha
         self.gamma = gamma
@@ -176,7 +176,7 @@ class RLTouchMemory(RLmemory):
 class RemoteBrianModelMemory(Memory):
 
     def __init__(self, brain, gain, G=0.001, server_host='localhost', server_port=5795, **kwargs):
-        super().__init__(brain, gain,mode='MB', **kwargs)
+        super().__init__(brain, gain,**kwargs)
         self.server_host = server_host
         self.server_port = server_port
         self.sim_id = self.brain.agent.model.id
