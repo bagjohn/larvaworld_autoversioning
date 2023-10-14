@@ -309,5 +309,12 @@ def expand_kws_shortcuts(kwargs):
     return kwargs
 
 
-def class_defaults(A):
-    return class_generator(A)().nestedConf
+def class_defaults(A, excluded=[]):
+    d= class_generator(A)().nestedConf
+    if len(excluded)>0 :
+        for exc_A in excluded :
+            exc_d=class_generator(exc_A)().nestedConf
+            for k in exc_d :
+                if k in d :
+                    d.pop(k)
+    return d
