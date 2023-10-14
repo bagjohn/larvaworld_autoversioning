@@ -124,8 +124,7 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.segs.default_color = self.default_color
-        self.segs.color = self.color
+        self.set_default_color(self.default_color)
 
 
     def draw(self, v, **kwargs):
@@ -136,8 +135,12 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
         super().draw(v, **kwargs)
 
     def set_default_color(self, color):
-        self.default_color=color
-        self.segs.default_color=color
+        super().set_default_color(color)
+        self.segs.set_default_color(color)
+
+    def invert_default_color(self):
+        super().invert_default_color()
+        self.segs.set_default_color(self.default_color)
 
     def draw_selected(self, v, **kwargs):
         v.draw_polygon(vertices=self.get_shape(), color=v.manager.selection_color,

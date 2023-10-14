@@ -48,6 +48,7 @@ class PointAgent(RadiallyExtended, NonSpatialAgent, Viewable):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.set_default_color(self.color)
         self.id_box = IDBox(agent=self)
 
     def draw(self, v, filled=True):
