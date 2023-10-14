@@ -118,6 +118,8 @@ class DefaultBrain(Brain):
             modality_classes = memory_modes[mm['mode']]
             modality = mm['modality']
             class_func = modality_classes[modality]
+            mm.pop('mode')
+            mm.pop('modality')
 
             if modality == 'olfaction' and self.olfactor:
                 mm.gain = self.olfactor.gain
