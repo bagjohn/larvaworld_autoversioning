@@ -90,11 +90,11 @@ def init_brain_modules():
 
         Camp = {'initial_amp': {'lim': (0.0, 2.0), 'dv': 0.1, 'v0': 0.3,
                                 'k': 'A_C0', 'codename': 'stride_scaled_velocity_mean',
-                                'disp': 'output amplitude', 'sym': nam.tex.subsup('A', 'C', 0),
+                                'disp': 'output amplitude', 'sym': nam.tex.subsup('A', 'C', '0'),
                                 'h': 'The initial output amplitude of the CRAWLER module.'}}
         Cfr = {'freq': {'v0': 1.42, 'lim': (0.5, 2.5), 'dv': 0.1,
                         'k': 'f_C0',
-                        'disp': 'crawling frequency', 'sym': nam.tex.subsup('f', 'C', 0), 'u': reg.units.Hz,
+                        'disp': 'crawling frequency', 'sym': nam.tex.subsup('f', 'C', '0'), 'u': reg.units.Hz,
                         'codename': 'scaled_velocity_freq',
                         'h': 'The initial frequency of the repetitive crawling behavior.'}}
 
@@ -410,18 +410,18 @@ def init_aux_modules():
         'physics': {
             'args': {
                 'torque_coef': {'v0': 0.5, 'lim': (0.1, 1.0), 'dv': 0.01, 'disp': 'torque coefficient',
-                                'sym': nam.tex.sub('c', 'T'), 'u_name': nam.tex.sup('sec', -2), 'u': reg.units.s ** -2,
+                                'sym': nam.tex.sub('c', 'T'), 'u_name': nam.tex.sup('sec','-2'), 'u': reg.units.s ** -2,
                                 'h': 'Conversion coefficient from TURNER output to torque-per-inertia-unit.'},
                 'ang_vel_coef': {'v0': 1.0, 'lim': (0.0, 5.0), 'dv': 0.01, 'disp': 'angular velocity coefficient',
                                  'h': 'Conversion coefficient from TURNER output to angular velocity.'},
                 'ang_damping': {'v0': 1.0, 'lim': (0.1, 2.0), 'disp': 'angular damping', 'sym': 'z',
-                                'u_name': nam.tex.sup('sec', -1), 'u': reg.units.s ** -1,
+                                'u_name': nam.tex.sup('sec', '-1'), 'u': reg.units.s ** -1,
                                 'h': 'Angular damping exerted on angular velocity.'},
                 'lin_damping': {'v0': 1.0, 'lim': (0.0, 10.0), 'disp': 'linear damping', 'sym': 'zl',
-                                'u_name': nam.tex.sup('sec', -1), 'u': reg.units.s ** -1,
+                                'u_name': nam.tex.sup('sec', '-1'), 'u': reg.units.s ** -1,
                                 'h': 'Linear damping exerted on forward velocity.'},
                 'body_spring_k': {'v0': 1.0, 'lim': (0.0, 10.0), 'dv': 0.1, 'disp': 'body spring constant',
-                                  'sym': 'k', 'u_name': nam.tex.sup('sec', -2), 'u': reg.units.s ** -2,
+                                  'sym': 'k', 'u_name': nam.tex.sup('sec', '-2'), 'u': reg.units.s ** -2,
                                   'h': 'Larva-body torsional spring constant reflecting deformation resistance.'},
                 'bend_correction_coef': {'v0': 1.0, 'lim': (0.8, 1.5), 'disp': 'bend correction coefficient',
                                          'sym': nam.tex.sub('c', 'b'),
