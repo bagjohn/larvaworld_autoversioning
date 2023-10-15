@@ -65,6 +65,7 @@ class TexNaming:
         self.symbols = ['bar', 'tilde', 'dot', 'ddot', 'mathring']
         self.letters = ['theta', 'omega', 'Delta', 'sum', 'delta']
 
+
     def get_func(self, symbol):
         assert symbol in self.symbols + self.letters
 
@@ -87,6 +88,9 @@ class TexNaming:
 
     def subsup(self,p, q, z):
         return rf'${{{_tex(p)}}}_{{{_tex(q)}}}^{{{_tex(z)}}}$'
+
+    def circledast(self,p):
+        return f'${_tex(p)}^{{\circledast}}$'
 
 
 class NamingRegistry(AttrDict):

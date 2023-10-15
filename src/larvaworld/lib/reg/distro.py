@@ -3,8 +3,8 @@ import powerlaw
 import typing
 import scipy
 
-from ..aux.par_aux import sub, subsup
 from .. import reg, aux
+from ..aux import nam
 
 __all__ = [
     'generate_distro_database',
@@ -172,10 +172,10 @@ def get_dist(k, k0='intermitter', v=None, return_tabrows=False, return_all=False
     }
     disp, (tt0, tt1), u, uname = dict0[k]
     dispD, dispR = f'{disp} distribution', f'{disp} range'
-    symD = sub(tt0, tt1)
+    symD = nam.tex.sub(tt0, tt1)
     kD = f'{tt0}_{tt1}'
     kR = f'{kD}_r'
-    sym1, sym2 = subsup(tt0, tt1, 'min'), subsup(tt0, tt1, 'max')
+    sym1, sym2 = nam.tex.subsup(tt0, tt1, 'min'), nam.tex.subsup(tt0, tt1, 'max')
     symR = f'[{sym1},{sym2}]'
     p = {'disp': disp, 'k': kD, 'sym': symD, 'u_name': uname, 'u': u, 'dtype': dict,
          'v0': {'fit': True, 'name': None, 'range': None}}

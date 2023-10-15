@@ -16,7 +16,6 @@ import param
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 from ..aux import nam
-from ..aux.par_aux import tilde, bar, wave, subsup, sub, sup, th, Delta, dot, circledast, omega, mathring, delta
 from .. import reg, aux, util
 
 
@@ -167,7 +166,7 @@ def ConfID_entry(conftype, default=None, k=None, symbol=None, single_choice=True
     if k is None:
         k = f'{low}{IDstr}'
     if symbol is None:
-        symbol = sub(IDstr, low)
+        symbol = nam.tex.sub(IDstr, low)
     d = {'dtype': t, 'vparfunc': ConfSelector(default=default, single_choice=single_choice),
          'vs': ids, 'v': default,
          'symbol': symbol, 'k': k, 'h': f'The {conftype} configuration {IDstr}',
@@ -355,15 +354,15 @@ def buildInitDict():
         d['Source_distro'] = d['spatial_distro']
 
         d['food_params'] = {'source_groups': {'dtype': dict, 'v': {}, 'disp': 'source groups', 'k': 'gSources',
-                                              'symbol': sub('source', 'G'), 'entry': 'FoodGroup',
+                                              'symbol': nam.tex.sub('source', 'G'), 'entry': 'FoodGroup',
                                               'h': 'The groups of odor or food sources available in the arena',
                                               },
                             'food_grid': {'dtype': dict, 'v': None, 'disp': 'food grid', 'k': 'gFood',
-                                          'symbol': sub('food', 'G'),
+                                          'symbol': nam.tex.sub('food', 'G'),
                                           'h': 'The food grid in the arena',
                                           },
                             'source_units': {'dtype': dict, 'v': {}, 'disp': 'source units', 'k': 'gUnits',
-                                             'symbol': sub('source', 'U'), 'entry': 'source',
+                                             'symbol': nam.tex.sub('source', 'U'), 'entry': 'source',
                                              'h': 'The individual sources  of odor or food in the arena',
 
                                              }
@@ -526,19 +525,19 @@ def buildInitDict():
             },
             'build_conf': {
                 'min_duration_in_sec': {'v': 170.0, 'lim': (0.0, 3600.0), 'dv': 1.0,
-                                        'symbol': sub('T', 'min'), 'k': 'dur_min',
+                                        'symbol': nam.tex.sub('T', 'min'), 'k': 'dur_min',
                                         'disp': 'Min track duration (sec)'},
                 'min_end_time_in_sec': {'v': 0.0, 'lim': (0.0, 3600.0), 'dv': 1.0,
-                                        'symbol': subsup('t', 'min', 1), 'k': 't1_min',
+                                        'symbol': nam.tex.subsup('t', 'min', 1), 'k': 't1_min',
                                         'disp': 'Min track termination time (sec)'},
                 'start_time_in_sec': {'v': 0.0, 'lim': (0.0, 3600.0), 'dv': 1.0,
-                                      'symbol': sup('t', 0), 'k': 't0',
+                                      'symbol': nam.tex.sup('t', 0), 'k': 't0',
                                       'disp': 'Track initiation time (sec)'},
                 'max_Nagents': {'dtype': int, 'v': 500, 'lim': (0, 5000),
-                                'symbol': sub('N', 'max'), 'k': 'N_max',
+                                'symbol': nam.tex.sub('N', 'max'), 'k': 'N_max',
                                 'disp': 'Max number of larva tracks'},
                 'save_mode': {'dtype': str, 'v': 'semifull',
-                              'symbol': sub('mod', 'build'), 'k': 'mod_build',
+                              'symbol': nam.tex.sub('mod', 'build'), 'k': 'mod_build',
                               'vs': ['minimal', 'semifull', 'full', 'points'],
                               'disp': 'Storage mode'
                               },
@@ -693,22 +692,22 @@ def buildInitDict():
             },
             'physics': {
                 'torque_coef': {'v': 0.5, 'lim': (0.1, 1.0), 'dv': 0.01, 'label': 'torque coefficient',
-                                'symbol': sub('c', 'T'), 'u_name': sup('sec', -2), 'u': reg.units.s ** -2,
+                                'symbol': nam.tex.sub('c', 'T'), 'u_name': nam.tex.sup('sec', -2), 'u': reg.units.s ** -2,
                                 'h': 'Conversion coefficient from TURNER output to torque-per-inertia-unit.'},
                 'ang_vel_coef': {'v': 1.0, 'lim': (0.0, 5.0), 'dv': 0.01,
                                  'label': 'angular velocity coefficient',
                                  'h': 'Conversion coefficient from TURNER output to angular velocity.'},
                 'ang_damping': {'v': 1.0, 'lim': (0.1, 2.0), 'label': 'angular damping', 'symbol': 'z',
-                                'u_name': sup('sec', -1), 'u': reg.units.s ** -1,
+                                'u_name': nam.tex.sup('sec', -1), 'u': reg.units.s ** -1,
                                 'h': 'Angular damping exerted on angular velocity.'},
                 'lin_damping': {'v': 1.0, 'lim': (0.0, 10.0), 'label': 'linear damping', 'symbol': 'zl',
-                                'u_name': sup('sec', -1), 'u': reg.units.s ** -1,
+                                'u_name': nam.tex.sup('sec', -1), 'u': reg.units.s ** -1,
                                 'h': 'Linear damping exerted on forward velocity.'},
                 'body_spring_k': {'v': 1.0, 'lim': (0.0, 10.0), 'dv': 0.1, 'label': 'body spring constant',
-                                  'symbol': 'k', 'u_name': sup('sec', -2), 'u': reg.units.s ** -2,
+                                  'symbol': 'k', 'u_name': nam.tex.sup('sec', -2), 'u': reg.units.s ** -2,
                                   'h': 'Larva-body torsional spring constant reflecting deformation resistance.'},
                 'bend_correction_coef': {'v': 1.0, 'lim': (0.8, 1.5), 'label': 'bend correction coefficient',
-                                         'symbol': sub('c', 'b'),
+                                         'symbol': nam.tex.sub('c', 'b'),
                                          'h': 'Correction coefficient of bending angle during forward motion.'},
                 'ang_mode': {'dtype': str, 'v': 'torque', 'vs': ['torque', 'velocity'], 'label': 'angular mode',
                              'h': 'Whether the Turner module output is equivalent to torque or angular velocity.'},
@@ -716,44 +715,44 @@ def buildInitDict():
             'crawler': {
                 'mode': {'dtype': str, 'v': 'realistic', 'k': 'Cr_mod',
                          'vs': ['realistic', 'square', 'gaussian', 'constant'],
-                         'symbol': subsup('A', 'C', 'mode'),
+                         'symbol': nam.tex.subsup('A', 'C', 'mode'),
                          'label': 'crawler waveform',
                          'h': 'The waveform of the repetitive crawling oscillator (CRAWLER) module.'},
                 'freq': {'v': 1.418, 'lim': (0.5, 2.5), 'dv': 0.1, 'aux_vs': ['sample'],
                                  'disp': 'initial',
                                  'k': 'f_C0',
-                                 'label': 'crawling frequency', 'symbol': sub('f', 'C'), 'u': reg.units.Hz,
+                                 'label': 'crawling frequency', 'symbol': nam.tex.sub('f', 'C'), 'u': reg.units.Hz,
                                  'combo': 'frequency', 'codename': 'scaled_velocity_freq',
                                  'h': 'The initial frequency of the repetitive crawling behavior.'},
                 'max_scaled_vel': {'v': 0.6, 'lim': (0.0, 1.5), 'label': 'maximum scaled velocity',
                                    'codename': 'stride_scaled_velocity_max', 'k': 'sstr_v_max', 'dv': 0.1,
-                                   'symbol': sub(mathring('v'), 'max'), 'u': reg.units.s ** -1,
+                                   'symbol': nam.tex.sub(nam.tex.mathring('v'), 'max'), 'u': reg.units.s ** -1,
                                    'u_name': '$body-lengths/sec$',
                                    'h': 'The maximum scaled forward velocity.'},
                 'stride_dst_mean': {'v': 0.224, 'lim': (0.0, 1.0), 'dv': 0.01, 'aux_vs': ['sample'],
                                     'disp': 'mean',
                                     'k': 'sstr_d_mu',
-                                    'label': r'stride distance mean', 'symbol': sub(bar(mathring('d')), 'S'),
+                                    'label': r'stride distance mean', 'symbol': nam.tex.sub(nam.tex.bar(nam.tex.mathring('d')), 'S'),
                                     'u_name': '$body-lengths$',
                                     'combo': 'scaled distance / stride', 'codename': 'scaled_stride_dst_mean',
                                     'h': 'The mean displacement achieved in a single peristaltic stride as a fraction of the body length.'},
                 'stride_dst_std': {'v': 0.033, 'lim': (0.0, 1.0), 'aux_vs': ['sample'], 'disp': 'std',
                                    'k': 'sstr_d_std',
-                                   'label': 'stride distance std', 'symbol': sub(tilde(mathring('d')), 'S'),
+                                   'label': 'stride distance std', 'symbol': nam.tex.sub(nam.tex.tilde(nam.tex.mathring('d')), 'S'),
                                    'u_name': '$body-lengths$',
                                    'combo': 'scaled distance / stride', 'codename': 'scaled_stride_dst_std',
                                    'h': 'The standard deviation of the displacement achieved in a single peristaltic stride as a fraction of the body length.'},
                 'initial_amp': {'lim': (0.0, 2.0), 'disp': 'initial', 'combo': 'amplitude', 'k': 'A_C0',
                                 'label': 'initial crawler amplitude', 'dv': 0.1,
-                                'symbol': subsup('A', 'C', '0'),
+                                'symbol': nam.tex.subsup('A', 'C', '0'),
                                 'h': 'The initial amplitude of the CRAWLER-generated forward velocity if this is hardcoded (e.g. constant waveform).'},
                 'noise': {'v': 0.0, 'lim': (0.0, 1.0), 'dv': 0.01, 'disp': 'noise', 'combo': 'amplitude',
-                          'k': 'A_Cnoise', 'symbol': subsup('A', 'C', 'noise'),
+                          'k': 'A_Cnoise', 'symbol': nam.tex.subsup('A', 'C', 'noise'),
                           'label': 'crawler output noise',
                           'h': 'The intrinsic output noise of the CRAWLER-generated forward velocity.'},
                 'max_vel_phase': {'v': 3.6, 'lim': (0.0, 2 * np.pi), 'label': 'max velocity phase',
                                   'k': 'phi_v_max', 'dv': 0.1,
-                                  'symbol': subsup('$\phi$', 'C', 'v'), 'u_name': 'rad', 'u': reg.units.rad,
+                                  'symbol': nam.tex.subsup('$\phi$', 'C', 'v'), 'u_name': 'rad', 'u': reg.units.rad,
                                   'codename': 'phi_scaled_velocity_max',
                                   'h': 'The phase of the crawling oscillation cycle where forward velocity is maximum.'}
             },
@@ -761,11 +760,11 @@ def buildInitDict():
                 'perception': {'dtype': str, 'v': 'log', 'vs': ['log', 'linear', 'null'],
                                'label': 'olfaction sensing transduction mode',
                                'k': 'mod_O',
-                               'symbol': sub('mod', 'O'), 'u_name': None,
+                               'symbol': nam.tex.sub('mod', 'O'), 'u_name': None,
                                'h': 'The method used to calculate the perceived sensory activation from the current and previous sensory input.'},
                 'input_noise': {'v': 0.0, 'lim': (0.0, 1.0), 'h': 'The intrinsic noise of the sensory input.'},
                 'decay_coef': {'v': 0.0, 'lim': (0.0, 2.0), 'label': 'olfactory decay coef',
-                               'symbol': sub('c', 'O'), 'k': 'c_O',
+                               'symbol': nam.tex.sub('c', 'O'), 'k': 'c_O',
                                'h': 'The linear decay coefficient of the olfactory sensory activation.'},
                 'brute_force': {**bF,
                                 'h': 'Whether to apply direct rule-based modulation on locomotion or not.'}
@@ -774,55 +773,55 @@ def buildInitDict():
                 'perception': {'dtype': str, 'v': 'linear', 'vs': ['log', 'linear', 'null'],
                                'label': 'thermosensing transduction mode',
                                'k': 'mod_th',
-                               'symbol': sub('mod', 'th'), 'u_name': None,
+                               'symbol': nam.tex.sub('mod', 'th'), 'u_name': None,
                                'h': 'The method used to calculate the perceived sensory activation from the current and previous sensory input.'},
                 'input_noise': {'v': 0.0, 'lim': (0.0, 1.0), 'h': 'The intrinsic noise of the sensory input.'},
                 'decay_coef': {'v': 0.0, 'lim': (0.0, 2.0), 'label': 'thermosensation decay coef',
-                               'symbol': sub('c', 'th'), 'k': 'c_th',
+                               'symbol': nam.tex.sub('c', 'th'), 'k': 'c_th',
                                'h': 'The linear decay coefficient of the thermosensory activation.'},
                 'brute_force': {**bF,
                                 'h': 'Whether to apply direct rule-based modulation on locomotion or not.'},
                 'cool_gain': {'v': 200.0, 'lim': (-1000.0, 1000.0),
-                              'label': 'tactile cool_gain coef', 'symbol': sub('G', 'cool'), 'k': 'G_cool',
+                              'label': 'tactile cool_gain coef', 'symbol': nam.tex.sub('G', 'cool'), 'k': 'G_cool',
                               'h': 'The initial gain of the tactile sensor.'},
                 'warm_gain': {'v': 0.0, 'lim': (-1000.0, 1000.0),
-                              'label': 'warm_gain', 'symbol': sub('G', 'warm'), 'k': 'G_warm',
+                              'label': 'warm_gain', 'symbol': nam.tex.sub('G', 'warm'), 'k': 'G_warm',
                               'h': 'The initial gain of the tactile sensor.'},
             },
             'windsensor': {
                 'weights': {
                     'hunch_lin': {'v': 10.0, 'lim': (-100.0, 100.0), 'label': 'HUNCH->CRAWLER',
-                                  'symbol': sub('w', 'HC'), 'k': 'w_HC',
+                                  'symbol': nam.tex.sub('w', 'HC'), 'k': 'w_HC',
                                   'h': 'The connection weight between the HUNCH neuron ensemble and the CRAWLER module.'},
                     'hunch_ang': {'v': 0.0, 'lim': (-100.0, 100.0), 'label': 'HUNCH->TURNER',
-                                  'symbol': sub('w', 'HT'), 'k': 'w_HT',
+                                  'symbol': nam.tex.sub('w', 'HT'), 'k': 'w_HT',
                                   'h': 'The connection weight between the HUNCH neuron ensemble and the TURNER module.'},
                     'bend_lin': {'v': 0.0, 'lim': (-100.0, 100.0), 'label': 'BEND->CRAWLER',
-                                 'symbol': sub('w', 'BC'), 'k': 'w_BC',
+                                 'symbol': nam.tex.sub('w', 'BC'), 'k': 'w_BC',
                                  'h': 'The connection weight between the BEND neuron ensemble and the CRAWLER module.'},
                     'bend_ang': {'v': -10.0, 'lim': (-100.0, 100.0), 'label': 'BEND->TURNER',
-                                 'symbol': sub('w', 'BT'), 'k': 'w_BT',
+                                 'symbol': nam.tex.sub('w', 'BT'), 'k': 'w_BT',
                                  'h': 'The connection weight between the BEND neuron ensemble and the TURNER module.'},
                 }
             },
             'toucher': {
                 'perception': {'dtype': str, 'v': 'linear', 'vs': ['log', 'linear'],
-                               'symbol': sub('mod', 'T'),
+                               'symbol': nam.tex.sub('mod', 'T'),
                                'k': 'mod_T', 'label': 'tactile sensing transduction mode',
                                'h': 'The method used to calculate the perceived sensory activation from the current and previous sensory input.'},
                 'input_noise': {'v': 0.0, 'lim': (0.0, 1.0), 'h': 'The intrinsic noise of the sensory input.'},
                 'decay_coef': {'v': 0.1, 'lim': (0.0, 2.0), 'label': 'tactile decay coef',
-                               'symbol': sub('c', 'T'), 'k': 'c_T',
+                               'symbol': nam.tex.sub('c', 'T'), 'k': 'c_T',
                                'h': 'The exponential decay coefficient of the tactile sensory activation.'},
                 'state_specific_best': {**bT,
                                         'h': 'Whether to use the state-specific or the global highest evaluated gain after the end of the memory training period.'},
                 'brute_force': {**bF,
                                 'h': 'Whether to apply direct rule-based modulation on locomotion or not.'},
                 'initial_gain': {'v': 40.0, 'lim': (-100.0, 100.0),
-                                 'label': 'tactile sensitivity coef', 'symbol': sub('G', 'T'), 'k': 'G_T',
+                                 'label': 'tactile sensitivity coef', 'symbol': nam.tex.sub('G', 'T'), 'k': 'G_T',
                                  'h': 'The initial gain of the tactile sensor.'},
                 'touch_sensors': {'dtype': List[int], 'lim': (0, 8), 'k': 'sens_touch',
-                                  'symbol': sub('N', 'T'), 'label': 'tactile sensor contour locations',
+                                  'symbol': nam.tex.sub('N', 'T'), 'label': 'tactile sensor contour locations',
                                   'h': 'The number of touch sensors existing on the larva body.'},
             },
             'feeder': {
@@ -831,13 +830,13 @@ def buildInitDict():
                                'h': 'The frequency range of the repetitive feeding behavior.'},
                 'freq': {'v': 2.0, 'lim': (0.0, 4.0), 'disp': 'initial', 'combo': 'frequency',
                                  'k': 'f_F0',
-                                 'label': 'feeding frequency', 'symbol': sub('f', 'F'), 'u': reg.units.Hz,
+                                 'label': 'feeding frequency', 'symbol': nam.tex.sub('f', 'F'), 'u': reg.units.Hz,
                                  'h': 'The initial default frequency of the repetitive feeding behavior'},
-                'feed_radius': {'v': 0.1, 'lim': (0.1, 10.0), 'symbol': sub('rad', 'F'),
+                'feed_radius': {'v': 0.1, 'lim': (0.1, 10.0), 'symbol': nam.tex.sub('rad', 'F'),
                                 'label': 'feeding radius', 'k': 'rad_F',
                                 'h': 'The radius around the mouth in which food is consumable as a fraction of the body length.'},
                 'V_bite': {'v': 0.0005, 'lim': (0.0001, 0.01), 'dv': 0.0001,
-                           'symbol': sub('V', 'F'), 'label': 'feeding volume ratio', 'k': 'V_F',
+                           'symbol': nam.tex.sub('V', 'F'), 'label': 'feeding volume ratio', 'k': 'V_F',
                            'h': 'The volume of food consumed on a single feeding motion as a fraction of the body volume.'}
             },
             'memory': {
@@ -951,7 +950,7 @@ def buildInitDict():
                           'h': 'The activity amplitude range of the TURNER module.'},
             'freq': {'v': 0.58, 'lim': (0.01, 2.0), 'dv': 0.01, 'disp': 'initial', 'combo': 'frequency',
                              'k': 'f_T0',
-                             'label': 'bending frequency', 'symbol': sub('f', 'T'), 'u_name': '$Hz$',
+                             'label': 'bending frequency', 'symbol': nam.tex.sub('f', 'T'), 'u_name': '$Hz$',
                              'u': reg.units.Hz,
                              'h': 'The initial frequency of the repetitive lateral bending behavior if this is hardcoded (e.g. sinusoidal mode).'},
             'freq_range': {'dtype': Tuple[float], 'lim': (0.01, 2.0), 'dv': 0.01, 'disp': 'range',
@@ -1037,20 +1036,20 @@ def buildInitDict():
             'pause_dist': d['bout_distro'],
             'EEB': {'v': 0.0, 'lim': (0.0, 1.0), 'symbol': 'EEB', 'k': 'EEB',
                     'h': 'The baseline exploitation-exploration balance. 0 means only exploitation, 1 only exploration.'},
-            'EEB_decay': {'v': 1.0, 'lim': (0.0, 2.0), 'symbol': sub('c', 'EEB'),
+            'EEB_decay': {'v': 1.0, 'lim': (0.0, 2.0), 'symbol': nam.tex.sub('c', 'EEB'),
                           'k': 'c_EEB',
                           'h': 'The exponential decay coefficient of the exploitation-exploration balance when no food is detected.'},
             'feed_bouts': {**bF, 'disp': 'feeding bouts',
                            'h': 'Whether feeding bouts (feedchains) are generated.'},
             'crawl_freq': {'v': 1.43, 'lim': (0.5, 2.5), 'k': 'f_C', 'dv': 0.01, 'u': reg.units.Hz,
-                           'symbol': sub('f', 'C'),
+                           'symbol': nam.tex.sub('f', 'C'),
                            'disp': 'crawling frequency',
                            'h': 'The default frequency of the CRAWLER oscillator when simulating offline.'},
             'feed_freq': {'v': 2.0, 'lim': (0.5, 4.0), 'dv': 0.01, 'k': 'f_F', 'u': reg.units.Hz,
-                          'symbol': sub('f', 'F'),
+                          'symbol': nam.tex.sub('f', 'F'),
                           'disp': 'feeding frequency',
                           'h': 'The default frequency of the FEEDER oscillator when simulating offline.'},
-            'feeder_reoccurence_rate': {'lim': (0.0, 1.0), 'disp': 'feed reoccurence', 'symbol': sub('r', 'F'),
+            'feeder_reoccurence_rate': {'lim': (0.0, 1.0), 'disp': 'feed reoccurence', 'symbol': nam.tex.sub('r', 'F'),
                                         'h': 'The default reoccurence rate of the feeding motion.'}
 
         }
@@ -1072,43 +1071,43 @@ def buildInitDict():
 
         d['gut'] = {
             'M_gm': {'v': 10 ** -2, 'lim': (0.0, 0.1), 'disp': 'gut scaled capacity',
-                     'symbol': subsup('M', 'm', 'gut'),
+                     'symbol': nam.tex.subsup('M', 'm', 'gut'),
                      'k': 'gut_M_m',
                      'h': 'Gut capacity in C-moles per unit of gut volume.'},
             'y_P_X': {'v': 0.9, 'lim': (0.0, 1.0), 'disp': 'food->product yield',
-                      'symbol': sub('y', 'PX'), 'k': 'y_P_X',
+                      'symbol': nam.tex.sub('y', 'PX'), 'k': 'y_P_X',
                       'h': 'Yield of product per unit of food.'},
             'J_g_per_cm2': {'v': 10 ** -2 / (24 * 60 * 60), 'lim': (0.0, 0.1),
                             'disp': 'digestion secretion rate',
-                            'symbol': subsup('J', 'g', 'gut'), 'k': 'gut_J_g',
+                            'symbol': nam.tex.subsup('J', 'g', 'gut'), 'k': 'gut_J_g',
                             'h': 'Secretion rate of enzyme per unit of gut surface per second.'},
             'k_g': {'v': 1.0, 'lim': (0.0, 1.0), 'disp': 'digestion decay rate',
-                    'symbol': subsup('k', 'g', 'gut'),
+                    'symbol': nam.tex.subsup('k', 'g', 'gut'),
                     'k': 'gut_k_g',
                     'h': 'Decay rate of digestive enzyme.'},
             'k_dig': {'v': 1.0, 'lim': (0.0, 1.0), 'disp': 'digestion rate',
-                      'symbol': subsup('k', 'dig', 'gut'),
+                      'symbol': nam.tex.subsup('k', 'dig', 'gut'),
                       'k': 'gut_k_dig',
                       'h': 'Rate constant for digestion : k_X * y_Xg.'},
             'f_dig': {'v': 1.0, 'lim': (0.0, 1.0), 'disp': 'digestion response',
-                      'symbol': subsup('f', 'dig', 'gut'), 'k': 'gut_f_dig',
+                      'symbol': nam.tex.subsup('f', 'dig', 'gut'), 'k': 'gut_f_dig',
                       'h': 'Scaled functional response for digestion : M_X/(M_X+M_K_X)'},
             'M_c_per_cm2': {'v': 5 * 10 ** -8, 'lim': (0.0, 0.1), 'disp': 'carrier density',
-                            'symbol': subsup('M', 'c', 'gut'), 'k': 'gut_M_c',
+                            'symbol': nam.tex.subsup('M', 'c', 'gut'), 'k': 'gut_M_c',
                             'h': 'Area specific amount of carriers in the gut per unit of gut surface.'},
-            'constant_M_c': {**bT, 'disp': 'constant carrier density', 'symbol': subsup('M_c', 'con', 'gut'),
+            'constant_M_c': {**bT, 'disp': 'constant carrier density', 'symbol': nam.tex.subsup('M_c', 'con', 'gut'),
                              'k': 'gut_M_c_con',
                              'h': 'Whether to assume a constant amount of carrier enzymes on the gut surface.'},
             'k_c': {'v': 1.0, 'lim': (0.0, 1.0), 'disp': 'carrier release rate',
-                    'symbol': subsup('k', 'c', 'gut'),
+                    'symbol': nam.tex.subsup('k', 'c', 'gut'),
                     'k': 'gut_k_c',
                     'h': 'Release rate of carrier enzymes.'},
             'k_abs': {'v': 1.0, 'lim': (0.0, 1.0), 'disp': 'absorption rate',
-                      'symbol': subsup('k', 'abs', 'gut'),
+                      'symbol': nam.tex.subsup('k', 'abs', 'gut'),
                       'k': 'gut_k_abs',
                       'h': 'Rate constant for absorption : k_P * y_Pc.'},
             'f_abs': {'v': 1.0, 'lim': (0.0, 1.0), 'disp': 'absorption response',
-                      'symbol': subsup('f', 'abs', 'gut'), 'k': 'gut_f_abs',
+                      'symbol': nam.tex.subsup('f', 'abs', 'gut'), 'k': 'gut_f_abs',
                       'h': 'Scaled functional response for absorption : M_P/(M_P+M_K_P)'},
         }
 
@@ -1116,24 +1115,24 @@ def buildInitDict():
             'species': {'dtype': str, 'v': 'default', 'vs': ['default', 'rover', 'sitter'], 'disp': 'phenotype',
                         'k': 'species',
                         'h': 'The phenotype/species-specific fitted DEB model to use.'},
-            'f_decay': {'v': 0.1, 'lim': (0.0, 2.0), 'dv': 0.1, 'symbol': sub('c', 'DEB'), 'k': 'c_DEB',
+            'f_decay': {'v': 0.1, 'lim': (0.0, 2.0), 'dv': 0.1, 'symbol': nam.tex.sub('c', 'DEB'), 'k': 'c_DEB',
                         'label': 'DEB functional response decay coef',
                         'h': 'The exponential decay coefficient of the DEB functional response.'},
             'V_bite': {'v': 0.0005, 'lim': (0.0, 0.01), 'dv': 0.0001,
-                       'symbol': sub('V', 'bite'),
+                       'symbol': nam.tex.sub('V', 'bite'),
                        'k': 'V_bite',
                        'h': 'The volume of food consumed on a single feeding motion as a fraction of the body volume.'},
             'hunger_as_EEB': {**bT,
                               'h': 'Whether the DEB-generated hunger drive informs the exploration-exploitation balance.',
                               'symbol': 'H_as_EEB', 'k': 'H_as_EEB'},
-            'hunger_gain': {'v': 0.0, 'lim': (0.0, 1.0), 'symbol': sub('G', 'H'),
+            'hunger_gain': {'v': 0.0, 'lim': (0.0, 1.0), 'symbol': nam.tex.sub('G', 'H'),
                             'k': 'G_H', 'label': 'hunger sensitivity to reserve reduction',
                             'h': 'The sensitivy of the hunger drive in deviations of the DEB reserve density.'},
             'assimilation_mode': {'dtype': str, 'v': 'gut', 'vs': ['gut','sim', 'deb'],
-                                  'symbol': sub('m', 'ass'), 'k': 'ass_mod',
+                                  'symbol': nam.tex.sub('m', 'ass'), 'k': 'ass_mod',
                                   'h': 'The method used to calculate the DEB assimilation energy flow.'},
             'DEB_dt': {'lim': (0.0, 1000.0), 'disp': 'DEB timestep (sec)',
-                       'symbol': sub('dt', 'DEB'),
+                       'symbol': nam.tex.sub('dt', 'DEB'),
                        'k': 'DEB_dt',
                        'h': 'The timestep of the DEB energetics module in seconds.'},
         }
@@ -1180,10 +1179,9 @@ def buildInitDict():
             'Cmutation': {'v': 0.1, 'lim': (0.0, 1.0), 'h': 'Mutation coefficient', 'k': 'Cmut'},
             'selection_ratio': {'v': 0.3, 'lim': (0.0, 1.0),
                                 'h': 'Fraction of agents to be selected for the next generation', 'k': 'Rsel'},
-        # }
-        # d['ga_space_kws'] = {
+
             'space_mkeys': {'dtype': List[str], 'h': 'The module keys to optimize'},
-            'base_model': ConfID_entry('Model', default='RE_NEU_PHI_DEF_nav', k='mID0', symbol=sub('mID', 0)),
+            'base_model': ConfID_entry('Model', default='RE_NEU_PHI_DEF_nav', k='mID0', symbol=nam.tex.sub('mID', 0)),
             'bestConfID': {'v': 'best_model', 'dtype': str,
                            'h': 'The model configuration ID to store the best genome',
                            'k': 'mID1'},
@@ -1201,12 +1199,6 @@ def buildInitDict():
 
         }
 
-        # d['ga_build_kws'] = {
-        #     'ga_eval_kws': d['ga_eval_kws'],
-        #     'ga_space_kws': d['ga_space_kws'],
-        #     'ga_select_kws': d['ga_select_kws'],
-        #
-        # }
         return d
 
     def Ga1(d):
@@ -1357,27 +1349,27 @@ def buildInitDict():
         d['Replay'] = {
             'env_params': ConfID_entry('Env'),
             'transposition': {'dtype': str, 'vs': [None, 'origin', 'arena', 'center'],
-                              'symbol': sub('mod', 'trans'), 'k': 'trans',
+                              'symbol': nam.tex.sub('mod', 'trans'), 'k': 'trans',
                               'h': 'Whether to transpose the dataset spatial coordinates.'},
             'agent_ids': {'dtype': List[int], 'symbol': 'ids', 'k': 'ids',
                           'h': 'Whether to only display some larvae of the dataset, defined by their indexes.'},
-            'dynamic_color': {'dtype': str, 'vs': [None, 'lin_color', 'ang_color'], 'symbol': sub('color', 'dyn'),
+            'dynamic_color': {'dtype': str, 'vs': [None, 'lin_color', 'ang_color'], 'symbol': nam.tex.sub('color', 'dyn'),
                               'k': 'dyn_col',
                               'h': 'Whether to display larva tracks according to the instantaneous forward or angular velocity.'},
-            'time_range': {'dtype': Tuple[float], 'lim': (0.0, 1000.0), 'dv': 1.0, 'symbol': sub('t', 'range'),
+            'time_range': {'dtype': Tuple[float], 'lim': (0.0, 1000.0), 'dv': 1.0, 'symbol': nam.tex.sub('t', 'range'),
                            'k': 't_range',
                            'h': 'Whether to only replay a defined temporal slice of the dataset.'},
-            'track_point': {'dtype': int, 'lim': (-1, 12), 'symbol': sub('p', 'track'), 'k': 'track_p',
+            'track_point': {'dtype': int, 'lim': (-1, 12), 'symbol': nam.tex.sub('p', 'track'), 'k': 'track_p',
                             'h': 'The midline point to use for defining the larva position.'},
-            'draw_Nsegs': {'dtype': int, 'lim': (1, 12), 'symbol': subsup('N', 'segs', 'draw'), 'k': 'Nsegs',
+            'draw_Nsegs': {'dtype': int, 'lim': (1, 12), 'symbol': nam.tex.subsup('N', 'segs', 'draw'), 'k': 'Nsegs',
                            'h': 'Whether to artificially simplify the experimentally tracked larva body to a segmented virtual body of the given number of segments.'},
-            'fix_point': {'dtype': int, 'lim': (1, 12), 'symbol': sub('fix', 'p'), 'k': 'fix_p',
+            'fix_point': {'dtype': int, 'lim': (1, 12), 'symbol': nam.tex.sub('fix', 'p'), 'k': 'fix_p',
                           'h': 'Whether to fixate a specific midline point to the center of the screen. Relevant when replaying a single larva track.'},
-            'fix_segment': {'dtype': int, 'vs': [-1, 1], 'symbol': sub('fix', 'seg'), 'k': 'fix_seg',
+            'fix_segment': {'dtype': int, 'vs': [-1, 1], 'symbol': nam.tex.sub('fix', 'seg'), 'k': 'fix_seg',
                             'h': 'Whether to additionally fixate the above or below body segment.'},
-            'close_view': {**bF, 'symbol': sub('view', 'close'), 'k': 'vis0',
+            'close_view': {**bF, 'symbol': nam.tex.sub('view', 'close'), 'k': 'vis0',
                            'h': 'Whether to visualize a small arena.'},
-            'overlap_mode': {**bF, 'symbol': sub('mod', 'overlap'), 'k': 'overlap',
+            'overlap_mode': {**bF, 'symbol': nam.tex.sub('mod', 'overlap'), 'k': 'overlap',
                              'h': 'Whether to draw overlapped image of the track.'},
             **d['reference_dataset']
         }
@@ -1460,19 +1452,19 @@ class ParamClass:
                **kws})
         self.add_operators(k0='t')
         self.add(
-            **{'p': 'num_ts', 'k': 'N_ts', 'sym': sub('N', 'ts'), 'dtype': int, 'lim': (0, None), 'dv': 1})
+            **{'p': 'num_ts', 'k': 'N_ts', 'sym': nam.tex.sub('N', 'ts'), 'dtype': int, 'lim': (0, None), 'dv': 1})
         self.add(
             **{'p': 'tick', 'k': 'tick', 'd': 'tick', 'sym': '$tick$', 'lim': (0, None), 'v0': 0,'dtype': int,
                **kws})
         self.add_operators(k0='tick')
         self.add(
-            **{'p': 'num_ticks', 'k': 'N_ticks', 'sym': sub('N', 'ticks'), 'dtype': int, 'lim': (0, None), 'dv': 1})
+            **{'p': 'num_ticks', 'k': 'N_ticks', 'sym': nam.tex.sub('N', 'ticks'), 'dtype': int, 'lim': (0, None), 'dv': 1})
 
         self.add(
             **{'p': 'model.dt', 'k': 'dt', 'd': 'dt', 'sym': '$dt$', 'lim': (0.01, 0.5), 'dv': 0.01, 'v0': 0.1,
                **kws})
         self.add(
-            **{'p': 'cum_dur', 'k': nam.cum('t'), 'sym': sub('t', 'cum'), 'lim': (0.0, None), 'dv': 0.1, 'v0': 0.0,
+            **{'p': 'cum_dur', 'k': nam.cum('t'), 'sym': nam.tex.sub('t', 'cum'), 'lim': (0.0, None), 'dv': 0.1, 'v0': 0.0,
                **kws})
 
 
@@ -1492,7 +1484,7 @@ class ParamClass:
             if d is None:
                 d = f'{b.d} rate'
             if sym is None:
-                sym = dot(b.sym)
+                sym = nam.tex.dot(b.sym)
             if k_num is None:
                 k_num = f'D_{k0}'
         if k_den is None:
@@ -1518,27 +1510,27 @@ class ParamClass:
 
         funcs = self.func_dict
 
-        mu_kws = {'d': nam.mean(b.d), 'p': nam.mean(b.p), 'sym': bar(b.sym), 'disp': f'mean {b.disp}',
+        mu_kws = {'d': nam.mean(b.d), 'p': nam.mean(b.p), 'sym': nam.tex.bar(b.sym), 'disp': f'mean {b.disp}',
                   'func': funcs.mean(b.d), 'k': f'{b.k}_mu'}
 
-        std_kws = {'d': nam.std(b.d), 'p': nam.std(b.p), 'sym': wave(b.sym), 'disp': f'std {b.disp}',
+        std_kws = {'d': nam.std(b.d), 'p': nam.std(b.p), 'sym': nam.tex.tilde(b.sym), 'disp': f'std {b.disp}',
                    'func': funcs.std(b.d),
                    'k': f'{b.k}_std'}
 
-        var_kws = {'d': nam.var(b.d), 'p': nam.var(b.p), 'sym': wave(b.sym), 'disp': f'var {b.disp}',
+        var_kws = {'d': nam.var(b.d), 'p': nam.var(b.p), 'sym': nam.tex.tilde(b.sym), 'disp': f'var {b.disp}',
                    'func': funcs.var(b.d),
                    'k': f'{b.k}_var'}
 
-        min_kws = {'d': nam.min(b.d), 'p': nam.min(b.p), 'sym': sub(b.sym, 'min'), 'disp': f'minimum {b.disp}',
+        min_kws = {'d': nam.min(b.d), 'p': nam.min(b.p), 'sym': nam.tex.sub(b.sym, 'min'), 'disp': f'minimum {b.disp}',
                    'func': funcs.min(b.d), 'k': f'{b.k}_min'}
 
-        max_kws = {'d': nam.max(b.d), 'p': nam.max(b.p), 'sym': sub(b.sym, 'max'), 'disp': f'maximum {b.disp}',
+        max_kws = {'d': nam.max(b.d), 'p': nam.max(b.p), 'sym': nam.tex.sub(b.sym, 'max'), 'disp': f'maximum {b.disp}',
                    'func': funcs.max(b.d), 'k': f'{b.k}_max'}
 
-        fin_kws = {'d': nam.final(b.d), 'p': nam.final(b.p), 'sym': sub(b.sym, 'fin'), 'disp': f'final {b.disp}',
+        fin_kws = {'d': nam.final(b.d), 'p': nam.final(b.p), 'sym': nam.tex.sub(b.sym, 'fin'), 'disp': f'final {b.disp}',
                    'func': funcs.final(b.d), 'k': f'{b.k}_fin'}
 
-        init_kws = {'d': nam.initial(b.d), 'p': nam.initial(b.p), 'sym': sub(b.sym, '0'), 'disp': f'initial {b.disp}',
+        init_kws = {'d': nam.initial(b.d), 'p': nam.initial(b.p), 'sym': nam.tex.sub(b.sym, '0'), 'disp': f'initial {b.disp}',
                     'func': funcs.initial(b.d), 'k': f'{b.k}0'}
 
         if k0 == 'd':
@@ -1547,7 +1539,7 @@ class ParamClass:
             disp = 'scaled pathlength'
         else:
             disp = f'total {b.disp}'
-        cum_kws = {'d': nam.cum(b.d), 'p': nam.cum(b.p), 'sym': sub(b.sym, 'cum'), 'disp': disp,
+        cum_kws = {'d': nam.cum(b.d), 'p': nam.cum(b.p), 'sym': nam.tex.sub(b.sym, 'cum'), 'disp': disp,
                    'func': funcs.cum(b.d), 'k': nam.cum(b.k)}
 
         for kws in [mu_kws, std_kws,var_kws, min_kws, max_kws, fin_kws, init_kws, cum_kws]:
@@ -1577,26 +1569,26 @@ class ParamClass:
                 'p': nam.start(pc),
                 'k': f'{kc}0',
                 'u': reg.units.s,
-                'sym': subsup('t', kc, 0),
+                'sym': nam.tex.subsup('t', kc, 0),
                 'disp': f'{pc} start',
                 **f_kws
             },
             {'p': nam.stop(pc),
              'k': f'{kc}1',
              'u': reg.units.s,
-             'sym': subsup('t', kc, 1),
+             'sym': nam.tex.subsup('t', kc, 1),
              'disp': f'{pc} end',
              **f_kws},
             {
                 'p': nam.id(pc),
                 'k': f'{kc}_id',
-                'sym': sub('idx', kc),
+                'sym': nam.tex.sub('idx', kc),
                 'disp': f'{pc} idx',
                 'dtype': str
             },
             {'p': ptr,
              'k': ktr,
-             'sym': sub('r', kc),
+             'sym': nam.tex.sub('r', kc),
              'disp': f'time fraction in {pc}s',
              'lim': (0.0, 1.0),
              'required_ks': [nam.cum(nam.dur(pc)), nam.cum(nam.dur(''))],
@@ -1605,7 +1597,7 @@ class ParamClass:
                 'p': pN,
                 'codename': f'brain.locomotor.intermitter.N{pc}s',
                 'k': kN,
-                'sym': sub('N', f'{pc}s'),
+                'sym': nam.tex.sub('N', f'{pc}s'),
                 'disp': f'# {pc}s',
                 'dtype': int,
                 **f_kws
@@ -1613,7 +1605,7 @@ class ParamClass:
             {
                 'p': nam.dur(pc),
                 'k': kt,
-                'sym': sub(Delta('t'), kc),
+                'sym': nam.tex.sub(nam.tex.Delta('t'), kc),
                 'disp': f'{pc} duration',
                 'u': reg.units.s,
                 **f_kws
@@ -1626,12 +1618,12 @@ class ParamClass:
             self.add(**{'p': f'{pN_mu}_{ii}_food', 'k': f'{kN_mu}_{ii}_food'})
             self.add(**{'p': f'{ptr}_{ii}_food', 'k': f'{ktr}_{ii}_food', 'lim': (0.0, 1.0)})
 
-        self.add_rate(k_num=kN, k_den=nam.cum('t'), k=kN_mu, p=pN_mu, sym=bar(kN), disp=f'avg. # {pc}s per sec',
+        self.add_rate(k_num=kN, k_den=nam.cum('t'), k=kN_mu, p=pN_mu, sym=nam.tex.bar(kN), disp=f'avg. # {pc}s per sec',
                       func=func)
         self.add_operators(k0=kt)
 
         if str.endswith(pc, 'chain'):
-            self.add(**{'p': pl, 'k': kl, 'sym': sub('l', kc), 'dtype': int, **f_kws})
+            self.add(**{'p': pl, 'k': kl, 'sym': nam.tex.sub('l', kc), 'dtype': int, **f_kws})
             self.add_operators(k0=kl)
 
     def add_chunk_track(self, kc, k):
@@ -1647,14 +1639,14 @@ class ParamClass:
             'p': nam.at(b.p, b0.p),
             'k': f'{kc}_{k}0',
             'disp': f'{b.disp} at {bc.p} start',
-            'sym': subsup(b.sym, kc, 0),
+            'sym': nam.tex.subsup(b.sym, kc, 0),
             **kws
         }
         kws1 = {
             'p': nam.at(b.p, b1.p),
             'k': f'{kc}_{k}1',
             'disp': f'{b.disp} at {bc.p} stop',
-            'sym': subsup(b.sym, kc, 1),
+            'sym': nam.tex.subsup(b.sym, kc, 1),
             **kws
         }
 
@@ -1662,7 +1654,7 @@ class ParamClass:
             'p': nam.chunk_track(bc.p, b.p),
             'k': k01,
             'disp': f'{b.disp} during {bc.p}s',
-            'sym': sub(Delta(b.sym), kc),
+            'sym': nam.tex.sub(nam.tex.Delta(b.sym), kc),
             **kws
         }
         if kws01['k']=='tur_fou':
@@ -1690,9 +1682,9 @@ class ParamClass:
         if k_a is None:
             k_a = f'{b.k}a'
         if sym_v is None:
-            sym_v = dot(b.sym)
+            sym_v = nam.tex.dot(b.sym)
         if sym_a is None:
-            sym_a = dot(sym_v)
+            sym_a = nam.tex.dot(sym_v)
 
         if func_v is None:
             def func_v(d):
@@ -1726,7 +1718,7 @@ class ParamClass:
             'k': f's{k0}',
             'd': nam.scal(b.d),
             'u': b.u / b_l.u,
-            'sym': mathring(b.sym),
+            'sym': nam.tex.mathring(b.sym),
             'disp': f'scaled {b.disp}',
             'required_ks': [k0],
             'func': func
@@ -1781,7 +1773,7 @@ class ParamClass:
             'd': nam.dst(point),
             'k': f'{point}d',
             'u': u,
-            'sym': sub('d', point),
+            'sym': nam.tex.sub('d', point),
             'disp': f'{point} distance',
             'lim': (0.0, None),
             'required_ks': [xk, yk],
@@ -1800,7 +1792,7 @@ class ParamClass:
             'd': nam.freq(b.d),
             'k': f'f{b.k}',
             'u': reg.units.Hz,
-            'sym': sub(b.sym, 'freq'),
+            'sym': nam.tex.sub(b.sym, 'freq'),
             'disp': f'{b.disp} frequency',
             # 'disp': f'{b.disp} dominant frequency',
             'required_ks': [k0],
@@ -1812,13 +1804,13 @@ class ParamClass:
     def add_dsp(self, range=(0, 40), u=reg.units.m):
         a = 'dispersion'
         k0 = 'dsp'
-        s0 = circledast('d')
+        s0 = nam.tex.circledast('d')
         r0, r1 = range
         dur = int(r1 - r0)
         p = f'{a}_{r0}_{r1}'
         k = f'{k0}_{r0}_{r1}'
 
-        self.add(**{'p': p, 'k': k, 'u': u, 'sym': subsup(s0, f'{r0}', f'{r1}'),
+        self.add(**{'p': p, 'k': k, 'u': u, 'sym': nam.tex.subsup(s0, f'{r0}', f'{r1}'),
                     'func': self.func_dict.dsp(range), 'required_ks': ['x', 'y'],
                     'disp': f'dispersal in {dur}"'})
         self.add_scaled(k0=k)
@@ -1830,7 +1822,7 @@ class ParamClass:
         k0 = 'tor'
         k = f'{k0}{dur}'
         self.add(
-            **{'p': f'{p0}_{dur}', 'k': k, 'lim': (0.0, 1.0), 'sym': sub(k0, dur), 'disp': f"{p0} over {dur}''",
+            **{'p': f'{p0}_{dur}', 'k': k, 'lim': (0.0, 1.0), 'sym': nam.tex.sub(k0, dur), 'disp': f"{p0} over {dur}''",
                'func': self.func_dict.tor(dur)})
         self.add_operators(k0=k)
 
@@ -1843,8 +1835,8 @@ class ParamClass:
             amax = 180
         kws = {'dv': np.round(amax / 180, 2), 'u': u, 'v0': 0.0}
         self.add(
-            **{'p': 'bend','codename': 'body_bend', 'k': 'b', 'sym': th('b'), 'disp': 'bending angle', 'lim': (-amax, amax), **kws})
-        self.add_velNacc(k0='b', sym_v=omega('b'), disp_v='bending angular velocity',
+            **{'p': 'bend','codename': 'body_bend', 'k': 'b', 'sym': nam.tex.theta('b', sep='_'), 'disp': 'bending angle', 'lim': (-amax, amax), **kws})
+        self.add_velNacc(k0='b', sym_v=nam.tex.omega('b', sep='_'), disp_v='bending angular velocity',
                          disp_a='bending angular acceleration')
 
         angs = [
@@ -1859,13 +1851,13 @@ class ParamClass:
             p_v, p_a = nam.vel(p0), nam.acc(p0)
             ko = f'{suf}o'
             kou = f'{ko}u'
-            self.add(**{'p': p0, 'k': ko, 'sym': th(ksuf), 'disp': f'{lsuf}orientation',
+            self.add(**{'p': p0, 'k': ko, 'sym': nam.tex.theta(ksuf, sep='_'), 'disp': f'{lsuf}orientation',
                         'lim': (0, 2 * amax), **kws})
 
             self.add_unwrap(k0=ko)
 
             self.add_velNacc(k0=kou, k_v=f'{suf}ov', k_a=f'{suf}oa', p_v=p_v, d_v=p_v, p_a=p_a, d_a=p_a,
-                             sym_v=omega(ksuf), disp_v=f'{lsuf}angular velocity',
+                             sym_v=nam.tex.omega(ksuf, sep='_'), disp_v=f'{lsuf}angular velocity',
                              disp_a=f'{lsuf}angular acceleration')
         for k0 in ['b', 'bv', 'ba', 'fov', 'foa', 'rov', 'roa', 'fo', 'ro', 'ho', 'to']:
             self.add_freq(k0=k0)
@@ -1889,7 +1881,7 @@ class ParamClass:
                'sym': '$l$', 'v0': 0.004 * s, 'lim': (0.0005 * s, 0.01 * s), 'dv': 0.0005 * s, **kws})
 
         self.add(
-            **{'p': 'dispersion', 'k': 'dsp', 'sym': circledast('d'), 'disp': 'dispersal', **kws})
+            **{'p': 'dispersion', 'k': 'dsp', 'sym': nam.tex.circledast('d'), 'disp': 'dispersal', **kws})
 
         d_d, d_v, d_a = nam.dst(''), nam.vel(''), nam.acc('')
         d_sd, d_sv, d_sa = nam.scal([d_d, d_v, d_a])
@@ -1899,7 +1891,7 @@ class ParamClass:
                          func_v=self.func_dict.vel(d_d, d_v))
         for k0 in ['x', 'y', 'd']:
             self.add_scaled(k0=k0)
-        self.add_velNacc(k0='sd', k_v='sv', k_a='sa', p_v=d_sv, d_v=d_sv, p_a=d_sa, d_a=d_sa, sym_v=mathring('v'),
+        self.add_velNacc(k0='sd', k_v='sv', k_a='sa', p_v=d_sv, d_v=d_sv, p_a=d_sa, d_a=d_sa, sym_v=nam.tex.mathring('v'),
                          disp_v='scaled crawling speed',
                          disp_a='scaled crawling acceleration',
                          func_v=self.func_dict.vel(d_sd, d_sv))
@@ -1942,10 +1934,10 @@ class ParamClass:
 
     def build_sim_pars(self):
         for ii, jj in zip(['C', 'T', 'F'], ['crawler', 'turner', 'feeder']):
-            self.add(**{'p': f'brain.locomotor.{jj}.output', 'k': f'A_{ii}', 'd': f'{jj} output', 'sym': sub('A', ii)})
-            self.add(**{'p': f'brain.locomotor.{jj}.input', 'k': f'I_{ii}', 'd': f'{jj} input', 'sym': sub('I', ii)})
-            self.add(**{'p': f'brain.locomotor.{jj}.phi', 'k': f'phi_{ii}', 'd': f'{jj} phase', 'sym': sub('Phi', ii)})
-        self.add(**{'p': f'brain.locomotor.interference.cur_attenuation', 'k': f'A_CT', 'd': f'C->T suppression', 'sym': sub('A', 'CT'),
+            self.add(**{'p': f'brain.locomotor.{jj}.output', 'k': f'A_{ii}', 'd': f'{jj} output', 'sym': nam.tex.sub('A', ii)})
+            self.add(**{'p': f'brain.locomotor.{jj}.input', 'k': f'I_{ii}', 'd': f'{jj} input', 'sym': nam.tex.sub('I', ii)})
+            self.add(**{'p': f'brain.locomotor.{jj}.phi', 'k': f'phi_{ii}', 'd': f'{jj} phase', 'sym': nam.tex.sub('Phi', ii)})
+        self.add(**{'p': f'brain.locomotor.interference.cur_attenuation', 'k': f'A_CT', 'd': f'C->T suppression', 'sym': nam.tex.sub('A', 'CT'),
                     'disp' : 'CRAWLER:TURNER interference suppression.'})
         # self.add(**{'p': 'brain.locomotor.cur_ang_suppression', 'k': 'c_CT', 'd': 'ang_suppression',
         #             'disp': 'angular suppression output', 'sym': sub('c', 'CT'), 'lim': (0.0, 1.0)})
@@ -1963,9 +1955,9 @@ class ParamClass:
         for ii, jj in zip(['1', '2'], ['first', 'second']):
             k = f'c_odor{ii}'
             dk = f'd{k}'
-            sym = subsup('C', 'odor', ii)
-            dsym = subsup(delta('C'), 'odor', ii)
-            ddisp = f'{sym} sensed (C/{sub("C", 0)} - 1)'
+            sym = nam.tex.subsup('C', 'odor', ii)
+            dsym = nam.tex.subsup(nam.tex.delta('C'), 'odor', ii)
+            ddisp = f'{sym} sensed (C/{nam.tex.sub("C", 0)} - 1)'
             self.add(**{'p': f'brain.olfactor.{jj}_odor_concentration', 'k': k, 'd': k,
                         'disp': sym, 'sym': sym, 'u': reg.units.micromol})
             self.add(**{'p': f'brain.olfactor.{jj}_odor_concentration_change', 'k': dk, 'd': dk,
@@ -1976,16 +1968,16 @@ class ParamClass:
             dk = f'd{k}'
 
             self.add(**{'p': f'brain.thermosensor.{jj}_sensor_input', 'k': k, 'd': k,
-                        'disp': f'{jj} sensor input', 'sym': sub('Temp', ii)})
+                        'disp': f'{jj} sensor input', 'sym': nam.tex.sub('Temp', ii)})
             self.add(**{'p': f'brain.thermosensor.{jj}_sensor_perception', 'k': dk, 'd': dk, 'lim': (-0.1, 0.1),
-                        'disp': f'{jj} sensor perception', 'sym': sub(Delta('Temp'), ii)})
+                        'disp': f'{jj} sensor perception', 'sym': nam.tex.sub(nam.tex.Delta('Temp'), ii)})
 
         for ii, jj in zip(['olf', 'tou', 'wind', 'therm'], ['olfactor', 'toucher', 'windsensor', 'thermosensor']):
-            self.add(**{'p': f'brain.{jj}.output', 'k': f'A_{ii}', 'd': f'{jj} output', 'lim': (0.0, 1.0),'sym': sub('A', ii)})
+            self.add(**{'p': f'brain.{jj}.output', 'k': f'A_{ii}', 'd': f'{jj} output', 'lim': (0.0, 1.0),'sym': nam.tex.sub('A', ii)})
 
         self.add_rate(k_num='Ltur_N', k_den='tur_N', k='tur_H', p='handedness_score',
-                      disp=f'handedness score ({sub("N", "Lturns")} / {sub("N", "turns")})',
-                      sym=sub('H', 'tur'), lim=(0.0, 1.0))
+                      disp=f'handedness score ({nam.tex.sub("N", "Lturns")} / {nam.tex.sub("N", "turns")})',
+                      sym=nam.tex.sub('H', 'tur'), lim=(0.0, 1.0))
         for ii in ['on', 'off']:
             k = f'{ii}_food'
             self.add(**{'p': k, 'k': k, 'dtype': bool})

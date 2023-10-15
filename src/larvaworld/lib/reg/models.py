@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 import param
 
-from ..aux.par_aux import sub, subsup, bar, tilde, sup, mathring
 from .. import reg, aux, util
+from ..aux import nam
 
 __all__ = [
     # 'model',
@@ -64,7 +64,7 @@ def init_brain_modules():
         SINargs = {**Tamp,
                    'freq': {'v0': 0.58, 'lim': (0.01, 2.0), 'dv': 0.01,
                             'k': 'f_T0',
-                            'disp': 'bending frequency', 'sym': sub('f', 'T'), 'u_name': '$Hz$',
+                            'disp': 'bending frequency', 'sym': nam.tex.sub('f', 'T'), 'u_name': '$Hz$',
                             'u': reg.units.Hz, 'codename': 'front_orientation_velocity_freq',
                             'h': 'The initial frequency of the repetitive lateral bending behavior if this is hardcoded (e.g. sinusoidal mode).'},
                    }
@@ -79,29 +79,29 @@ def init_brain_modules():
     def Cr0():
         str_kws = {'stride_dst_mean': {'v0': 0.23, 'lim': (0.0, 1.0), 'dv': 0.01,
                                        'k': 'str_sd_mu',
-                                       'disp': r'stride distance mean', 'sym': sub(bar(mathring('d')), 'S'),
+                                       'disp': r'stride distance mean', 'sym': nam.tex.sub(nam.tex.bar(nam.tex.mathring('d')), 'S'),
                                        'u_name': '$body-lengths$', 'codename': 'stride_scaled_dst_mean',
                                        'h': 'The mean displacement achieved in a single peristaltic stride as a fraction of the body length.'},
                    'stride_dst_std': {'v0': 0.04, 'lim': (0.0, 1.0),
                                       'k': 'str_sd_std',
-                                      'disp': 'stride distance std', 'sym': sub(tilde(mathring('d')), 'S'),
+                                      'disp': 'stride distance std', 'sym': nam.tex.sub(nam.tex.tilde(nam.tex.mathring('d')), 'S'),
                                       'u_name': '$body-lengths$', 'codename': 'stride_scaled_dst_std',
                                       'h': 'The standard deviation of the displacement achieved in a single peristaltic stride as a fraction of the body length.'}}
 
         Camp = {'initial_amp': {'lim': (0.0, 2.0), 'dv': 0.1, 'v0': 0.3,
                                 'k': 'A_C0', 'codename': 'stride_scaled_velocity_mean',
-                                'disp': 'output amplitude', 'sym': subsup('A', 'C', 0),
+                                'disp': 'output amplitude', 'sym': nam.tex.subsup('A', 'C', 0),
                                 'h': 'The initial output amplitude of the CRAWLER module.'}}
         Cfr = {'freq': {'v0': 1.42, 'lim': (0.5, 2.5), 'dv': 0.1,
                         'k': 'f_C0',
-                        'disp': 'crawling frequency', 'sym': subsup('f', 'C', 0), 'u': reg.units.Hz,
+                        'disp': 'crawling frequency', 'sym': nam.tex.subsup('f', 'C', 0), 'u': reg.units.Hz,
                         'codename': 'scaled_velocity_freq',
                         'h': 'The initial frequency of the repetitive crawling behavior.'}}
 
         SQargs = {
             'duty': {'v0': 0.6, 'lim': (0.0, 1.0), 'dv': 0.1,
                      'k': 'r_C',
-                     'disp': 'square signal duty', 'sym': sub('r', 'C'),
+                     'disp': 'square signal duty', 'sym': nam.tex.sub('r', 'C'),
                      'h': 'The duty parameter(%time at the upper end) of the square signal.'},
             **Cfr, **Camp
 
@@ -109,20 +109,20 @@ def init_brain_modules():
         GAUargs = {
             'std': {'v0': 0.6, 'lim': (0.0, 1.0), 'dv': 0.1,
                     'k': 'r_C',
-                    'disp': 'gaussian stride cycle std', 'sym': sub('r', 'C'),
+                    'disp': 'gaussian stride cycle std', 'sym': nam.tex.sub('r', 'C'),
                     'h': 'The std of the gaussian window.'},
 
             **Cfr, **Camp
         }
         Rargs = {'max_scaled_vel': {'v0': 0.51, 'lim': (0.0, 1.5), 'disp': 'maximum scaled velocity',
                                     'codename': 'stride_scaled_velocity_max', 'k': 'str_sv_max', 'dv': 0.1,
-                                    'sym': sub(mathring('v'), 'max'), 'u': reg.units.s ** -1,
+                                    'sym': nam.tex.sub(nam.tex.mathring('v'), 'max'), 'u': reg.units.s ** -1,
                                     'u_name': '$body-lengths/sec$',
                                     'h': 'The maximum scaled forward velocity.'},
 
                  'max_vel_phase': {'v0': 3.49, 'lim': (0.0, 2 * np.pi), 'disp': 'max velocity phase',
                                    'k': 'phi_v_max', 'dv': 0.1,
-                                   'sym': subsup('$\phi$', 'C', 'v'), 'u_name': 'rad', 'u': reg.units.rad,
+                                   'sym': nam.tex.subsup('$\phi$', 'C', 'v'), 'u_name': 'rad', 'u': reg.units.rad,
                                    'codename': 'phi_scaled_velocity_max',
                                    'h': 'The phase of the crawling oscillation cycle where forward velocity is maximum.'},
                  **Cfr
@@ -194,21 +194,21 @@ def init_brain_modules():
                          'h': 'The generation mode of exec epochs.'},
             'EEB': {'v0': 0.0, 'lim': (0.0, 1.0), 'sym': 'EEB', 'k': 'EEB', 'disp': 'Exploitation:Exploration balance',
                     'h': 'The baseline exploitation-exploration balance. 0 means only exploitation, 1 only exploration.'},
-            'EEB_decay': {'v0': 1.0, 'lim': (0.0, 2.0), 'sym': sub('c', 'EEB'),
+            'EEB_decay': {'v0': 1.0, 'lim': (0.0, 2.0), 'sym': nam.tex.sub('c', 'EEB'),
                           'k': 'c_EEB', 'disp': 'EEB decay coefficient',
                           'h': 'The exponential decay coefficient of the exploitation-exploration balance when no food is detected.'},
 
             'feed_bouts': {**bF, 'disp': 'feeding bouts', 'k': 'epochs_F',
                            'h': 'Whether feeding bouts (feedchains) are generated.'},
             'crawl_freq': {'v0': 1.43, 'lim': (0.5, 2.5), 'k': 'f_C', 'dv': 0.01, 'u': reg.units.Hz,
-                           'sym': sub('f', 'C'),
+                           'sym': nam.tex.sub('f', 'C'),
                            'disp': 'crawling frequency',
                            'h': 'The default frequency of the CRAWLER oscillator when simulating offline.'},
             'feed_freq': {'v0': 2.0, 'lim': (0.5, 4.0), 'dv': 0.01, 'k': 'f_F', 'u': reg.units.Hz,
-                          'sym': sub('f', 'F'),
+                          'sym': nam.tex.sub('f', 'F'),
                           'disp': 'feeding frequency',
                           'h': 'The default frequency of the FEEDER oscillator when simulating offline.'},
-            'feeder_reoccurence_rate': {'lim': (0.0, 1.0), 'disp': 'feed reoccurence', 'sym': sub('r', 'F'),
+            'feeder_reoccurence_rate': {'lim': (0.0, 1.0), 'disp': 'feed reoccurence', 'sym': nam.tex.sub('r', 'F'),
                                         'h': 'The default reoccurence rate of the feeding motion.'},
             **dist_args
 
@@ -217,15 +217,15 @@ def init_brain_modules():
         BRargs = {
             'c': {'v0': 0.7, 'lim': (0.0, 1.0),
                   'disp': 'branch coefficient',
-                  'sym': subsup('c', 'Im', 'br'),
+                  'sym': nam.tex.subsup('c', 'Im', 'br'),
                   'h': 'The ISING branching coef.'},
             'sigma': {'v0': 1.0, 'lim': (0.0, 10.0),
                       'disp': 'branch sigma',
-                      'sym': subsup('s', 'Im', 'br'),
+                      'sym': nam.tex.subsup('s', 'Im', 'br'),
                       'h': 'The ISING branching coef.'},
             'beta': {'v0': 0.15, 'lim': (0.0, 10.0),
                      'disp': 'Exp beta',
-                     'sym': subsup('b', 'Im', 'br'),
+                     'sym': nam.tex.subsup('b', 'Im', 'br'),
                      'h': 'The beta coef for the exponential bout generation.'},
             **IMargs
 
@@ -245,12 +245,12 @@ def init_brain_modules():
             'perception': {'dtype': str, 'v0': 'log', 'vs': ['log', 'linear', 'null'],
                            'disp': f'{l0} sensory transduction mode',
                            'k': f'mod_{k0}',
-                           'sym': sub('mod', k0),
+                           'sym': nam.tex.sub('mod', k0),
                            'h': 'The method used to calculate the perceived sensory activation from the current and previous sensory input.'},
             'decay_coef': {'v0': 0.1, 'lim': (0.0, 2.0), 'disp': f'{l0} output decay coef',
-                           'sym': sub('c', k0), 'k': f'c_{k0}',
+                           'sym': nam.tex.sub('c', k0), 'k': f'c_{k0}',
                            'h': f'The exponential decay coefficient of the {l0} sensory activation.'},
-            'brute_force': {**bF, 'disp': 'ability to interrupt locomotion', 'sym': sub('bf', k0),
+            'brute_force': {**bF, 'disp': 'ability to interrupt locomotion', 'sym': nam.tex.sub('bf', k0),
                             'k': f'bf_{k0}',
                             'h': 'Whether to apply direct rule-based modulation on locomotion or not.'},
         }
@@ -259,7 +259,7 @@ def init_brain_modules():
     def Olf0():
         args = {
             'gain_dict': {'dtype': dict, 'k': 'G_O', 'v0': {},
-                          'sym': sub('G', 'O'), 'disp': 'gain per odor ID',
+                          'sym': nam.tex.sub('G', 'O'), 'disp': 'gain per odor ID',
                           'h': 'The dictionary of the olfactory gains.'},
             **sensor_kws(k0='O', l0='olfaction')}
         d = {'default': {'args': args, 'class_func': modules.Olfactor,
@@ -273,14 +273,14 @@ def init_brain_modules():
         args = {
             **sensor_kws(k0='T', l0='tactile'),
             'state_specific_best': {**bT, 'disp': 'state-specific or the global highest evaluated gain',
-                                    'sym': sub('state_specific', 'T'),
+                                    'sym': nam.tex.sub('state_specific', 'T'),
                                     'k': 'state_specific',
                                     'h': 'Whether to use the state-specific or the global highest evaluated gain after the end of the memory training period.'},
             'initial_gain': {'v0': 40.0, 'lim': (-100.0, 100.0),
-                             'disp': 'tactile sensitivity coef', 'sym': sub('G', 'T'), 'k': 'G_T',
+                             'disp': 'tactile sensitivity coef', 'sym': nam.tex.sub('G', 'T'), 'k': 'G_T',
                              'h': 'The initial gain of the tactile sensor.'},
             'touch_sensors': {'dtype': typing.List[int], 'lim': (0, 8), 'k': 'sens_touch',
-                              'sym': sub('N', 'T'), 'disp': 'tactile sensor contour locations',
+                              'sym': nam.tex.sub('N', 'T'), 'disp': 'tactile sensor contour locations',
                               'h': 'The number of touch sensors existing on the larva body.'},
         }
         d = {'default': {'args': args, 'class_func': modules.Toucher,
@@ -294,16 +294,16 @@ def init_brain_modules():
         args = {
             'weights': {
                 'hunch_lin': {'v0': 10.0, 'lim': (-100.0, 100.0), 'disp': 'HUNCH->CRAWLER',
-                              'sym': sub('w', 'HC'), 'k': 'w_HC',
+                              'sym': nam.tex.sub('w', 'HC'), 'k': 'w_HC',
                               'h': 'The connection weight between the HUNCH neuron ensemble and the CRAWLER module.'},
                 'hunch_ang': {'v0': 0.0, 'lim': (-100.0, 100.0), 'disp': 'HUNCH->TURNER',
-                              'sym': sub('w', 'HT'), 'k': 'w_HT',
+                              'sym': nam.tex.sub('w', 'HT'), 'k': 'w_HT',
                               'h': 'The connection weight between the HUNCH neuron ensemble and the TURNER module.'},
                 'bend_lin': {'v0': 0.0, 'lim': (-100.0, 100.0), 'disp': 'BEND->CRAWLER',
-                             'sym': sub('w', 'BC'), 'k': 'w_BC',
+                             'sym': nam.tex.sub('w', 'BC'), 'k': 'w_BC',
                              'h': 'The connection weight between the BEND neuron ensemble and the CRAWLER module.'},
                 'bend_ang': {'v0': -10.0, 'lim': (-100.0, 100.0), 'disp': 'BEND->TURNER',
-                             'sym': sub('w', 'BT'), 'k': 'w_BT',
+                             'sym': nam.tex.sub('w', 'BT'), 'k': 'w_BT',
                              'h': 'The connection weight between the BEND neuron ensemble and the TURNER module.'},
             },
 
@@ -318,10 +318,10 @@ def init_brain_modules():
 
     def Th0():
         args = {'cool_gain': {'v0': 0.0, 'lim': (-1000.0, 1000.0),
-                              'disp': 'cool thermosensing gain', 'sym': sub('G', 'cool'), 'k': 'G_cool',
+                              'disp': 'cool thermosensing gain', 'sym': nam.tex.sub('G', 'cool'), 'k': 'G_cool',
                               'h': 'The gain of the cool thermosensor.'},
                 'warm_gain': {'v0': 0.0, 'lim': (-1000.0, 1000.0),
-                              'disp': 'warm thermosensing gain', 'sym': sub('G', 'warm'), 'k': 'G_warm',
+                              'disp': 'warm thermosensing gain', 'sym': nam.tex.sub('G', 'warm'), 'k': 'G_warm',
                               'h': 'The gain of the warm thermosensor.'},
 
                 **sensor_kws(k0='Th', l0='thermosensor'),
@@ -336,13 +336,13 @@ def init_brain_modules():
     def Fee0():
         Fargs = {
             'freq': {'v0': 2.0, 'lim': (0.0, 4.0), 'k': 'f_F0',
-                     'disp': 'feeding frequency', 'sym': sub('f', 'F'), 'u': reg.units.Hz,
+                     'disp': 'feeding frequency', 'sym': nam.tex.sub('f', 'F'), 'u': reg.units.Hz,
                      'h': 'The initial default frequency of the repetitive feeding behavior'},
-            'feed_radius': {'v0': 0.1, 'lim': (0.1, 10.0), 'sym': sub('rad', 'F'),
+            'feed_radius': {'v0': 0.1, 'lim': (0.1, 10.0), 'sym': nam.tex.sub('rad', 'F'),
                             'disp': 'feeding radius', 'k': 'rad_F',
                             'h': 'The radius around the mouth in which food is consumable as a fraction of the body length.'},
             'V_bite': {'v0': 0.001, 'lim': (0.0001, 0.01), 'dv': 0.0001,
-                       'sym': sub('V', 'F'), 'disp': 'feeding volume ratio', 'k': 'V_F',
+                       'sym': nam.tex.sub('V', 'F'), 'disp': 'feeding volume ratio', 'k': 'V_F',
                        'h': 'The volume of food consumed on a single feeding motion as a fraction of the body volume.'}
         }
 
@@ -410,21 +410,21 @@ def init_aux_modules():
         'physics': {
             'args': {
                 'torque_coef': {'v0': 0.5, 'lim': (0.1, 1.0), 'dv': 0.01, 'disp': 'torque coefficient',
-                                'sym': sub('c', 'T'), 'u_name': sup('sec', -2), 'u': reg.units.s ** -2,
+                                'sym': nam.tex.sub('c', 'T'), 'u_name': nam.tex.sup('sec', -2), 'u': reg.units.s ** -2,
                                 'h': 'Conversion coefficient from TURNER output to torque-per-inertia-unit.'},
                 'ang_vel_coef': {'v0': 1.0, 'lim': (0.0, 5.0), 'dv': 0.01, 'disp': 'angular velocity coefficient',
                                  'h': 'Conversion coefficient from TURNER output to angular velocity.'},
                 'ang_damping': {'v0': 1.0, 'lim': (0.1, 2.0), 'disp': 'angular damping', 'sym': 'z',
-                                'u_name': sup('sec', -1), 'u': reg.units.s ** -1,
+                                'u_name': nam.tex.sup('sec', -1), 'u': reg.units.s ** -1,
                                 'h': 'Angular damping exerted on angular velocity.'},
                 'lin_damping': {'v0': 1.0, 'lim': (0.0, 10.0), 'disp': 'linear damping', 'sym': 'zl',
-                                'u_name': sup('sec', -1), 'u': reg.units.s ** -1,
+                                'u_name': nam.tex.sup('sec', -1), 'u': reg.units.s ** -1,
                                 'h': 'Linear damping exerted on forward velocity.'},
                 'body_spring_k': {'v0': 1.0, 'lim': (0.0, 10.0), 'dv': 0.1, 'disp': 'body spring constant',
-                                  'sym': 'k', 'u_name': sup('sec', -2), 'u': reg.units.s ** -2,
+                                  'sym': 'k', 'u_name': nam.tex.sup('sec', -2), 'u': reg.units.s ** -2,
                                   'h': 'Larva-body torsional spring constant reflecting deformation resistance.'},
                 'bend_correction_coef': {'v0': 1.0, 'lim': (0.8, 1.5), 'disp': 'bend correction coefficient',
-                                         'sym': sub('c', 'b'),
+                                         'sym': nam.tex.sub('c', 'b'),
                                          'h': 'Correction coefficient of bending angle during forward motion.'},
                 'ang_mode': {'dtype': str, 'v0': 'torque', 'vs': ['torque', 'velocity'], 'disp': 'angular mode',
                              'h': 'Whether the Turner module output is equivalent to torque or angular velocity.'},
@@ -438,7 +438,7 @@ def init_aux_modules():
                            'h': 'The initial body length.'},
 
                 'Nsegs': {'dtype': int, 'v0': 2, 'lim': (1, 12), 'disp': 'number of body segments',
-                          'sym': sub('N', 'segs'),
+                          'sym': nam.tex.sub('N', 'segs'),
                           'u_name': '# $segments$', 'k': 'Nsegs',
                           'h': 'The number of segments comprising the larva body.'},
                 'segment_ratio': {'k': 'seg_r', 'lim': (0.0, 1.0),
@@ -497,24 +497,24 @@ def init_aux_modules():
                                     'disp': 'phenotype',
                                     'k': 'species',
                                     'h': 'The phenotype/species-specific fitted DEB model to use.'},
-                        'f_decay': {'v0': 0.1, 'lim': (0.0, 1.0), 'dv': 0.1, 'sym': sub('c', 'DEB'), 'k': 'c_DEB',
+                        'f_decay': {'v0': 0.1, 'lim': (0.0, 1.0), 'dv': 0.1, 'sym': nam.tex.sub('c', 'DEB'), 'k': 'c_DEB',
                                     'disp': 'DEB functional response decay coef',
                                     'h': 'The exponential decay coefficient of the DEB functional response.'},
                         'V_bite': {'v0': 0.0005, 'lim': (0.0, 0.1), 'dv': 0.0001,
-                                   'sym': sub('V', 'bite'),
+                                   'sym': nam.tex.sub('V', 'bite'),
                                    'k': 'V_bite',
                                    'h': 'The volume of food consumed on a single feeding motion as a fraction of the body volume.'},
                         'hunger_as_EEB': {**bT,
                                           'h': 'Whether the DEB-generated hunger drive informs the exploration-exploitation balance.',
                                           'sym': 'hunger_as_EEB', 'k': 'hunger_as_EEB'},
-                        'hunger_gain': {'v0': 0.0, 'lim': (0.0, 1.0), 'sym': sub('G', 'hunger'),
+                        'hunger_gain': {'v0': 0.0, 'lim': (0.0, 1.0), 'sym': nam.tex.sub('G', 'hunger'),
                                         'k': 'G_hunger', 'disp': 'hunger sensitivity to reserve reduction',
                                         'h': 'The sensitivy of the hunger drive in deviations of the DEB reserve density.'},
                         'assimilation_mode': {'dtype': str, 'v0': 'gut', 'vs': ['sim', 'gut', 'deb'],
-                                              'sym': sub('m', 'ass'), 'k': 'ass_mod',
+                                              'sym': nam.tex.sub('m', 'ass'), 'k': 'ass_mod',
                                               'h': 'The method used to calculate the DEB assimilation energy flow.'},
                         'DEB_dt': {'lim': (0.0, 1000.0), 'disp': 'DEB timestep (sec)', 'v0': None,
-                                   'sym': sub('dt', 'DEB'),
+                                   'sym': nam.tex.sub('dt', 'DEB'),
                                    'k': 'DEB_dt',
                                    'h': 'The timestep of the DEB energetics module in seconds.'},
                         # 'gut_params':d['gut_params']
