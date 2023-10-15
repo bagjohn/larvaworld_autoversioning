@@ -1,65 +1,86 @@
 import hvplot.pandas
+import larvaworld.lib.param
 import numpy as np
 import pandas as pd
 import panel as pn
+import param
 from panel.template import DarkTheme
 
 import larvaworld.lib.model as model
 
-M = model.NeuralOscillator
-module_attrs = ['input', 'activation', 'output']
-title = 'Neural lateral oscillator'
-sidebar_width, sidebar_height = 400, 500
-widget_kws={'type':pn.widgets.NumberInput, 'width':int(sidebar_width / 2)-20}
-args1=["dt","tau","n","m","w_ee","w_ce","w_ec","w_cc","input_noise","output_noise"]
 
-c = pn.Param(M.param,
-             expand_button=True,
-             default_precedence=3,
-             show_name=False,
-             widgets={
-                 "base_activation": {'type' : pn.widgets.FloatSlider},
-                 "activation_range": {'type' : pn.widgets.RangeSlider},
-                 **{arg:widget_kws for arg in args1}
-             })
+def module_tester(M, temp):
+    defaults = larvaworld.lib.param.class_defaults(M)
+    args = defaults.keylist
+    m0 = M()
+    attrs = ['input', 'activation', 'phi', 'output']
+    attrs = [a for a in attrs if hasattr(m0, a)]
+    try:
+        A_in_min, A_in_max = M.param['input_range'].default
+    except:
+        A_in_min, A_in_max = -1, 1
+    A_in = pn.widgets.FloatSlider(name="input", start=A_in_min, end=A_in_max, value=0)
 
-# Data and Widgets
+    c = pn.Param(M.param,
+                 expand_button=True,
+                 default_precedence=3,
+                 show_name=False,
+                 parameters=args
+                 # widgets=widgets
+                 )
 
-A_in_min,A_in_max=M.param['input_range'].default
-A_in = pn.widgets.FloatSlider(name="input", start=A_in_min, end=A_in_max, value=0)
+    N = 100
+    trange = np.arange(N)
 
-p2 = pn.GridBox(*[c.widget(arg) for arg in args1],ncols=2)
+    # Interactive data pipeline
+    def module_sampler(A_in):
+        m = M()
+        df = pd.DataFrame(columns=attrs, index=trange)
+        for i in range(N):
+            m.step(A_in=A_in)
+            df.loc[i] = {k: getattr(m, k) for k in attrs}
+        df.index *= m.dt
+        return df
 
-p1 = pn.Column(
-    pn.pane.Markdown(f"### {title}", align='center'),
-    A_in,
-    c.widget('base_activation'),
-    c.widget('activation_range'),
-    p2,
-    max_width=sidebar_width,
-    max_height=sidebar_height
-)
+    title = M.__name__
+    p2 = pn.GridBox(*[c.widget(arg) for arg in args], ncols=1)
 
-N = 100
-trange = np.arange(N)
-# Interactive data pipeline
-def module_tester(A_in):
-    m = M()
-    df = pd.DataFrame(columns=module_attrs, index=trange)
-    for i in range(N):
-        m.step(A_in=A_in)
-        df.loc[i] = {k: getattr(m, k) for k in module_attrs}
-    df.index *= m.dt
-    return df
+    p1 = pn.Column(
+        pn.pane.Markdown(f"### {title}", align='center'),
+        A_in,
+        p2,
+        max_width=w,
+        max_height=h
+    )
+
+    plot = hvplot.bind(module_sampler, A_in).interactive()
+
+    card = pn.Card(plot.hvplot(min_height=h).output().options(xlabel='time (sec)', ylabel='Units'),
+                   title=title)
+
+    temp.main.append(card)
+
+    return p1
 
 
-plot = hvplot.bind(module_tester, A_in).interactive()
-template = pn.template.MaterialTemplate(title='Material Dark', theme=DarkTheme, sidebar_width=sidebar_width)
-template.sidebar.append(p1)
-template.main.append(
-    pn.Card(plot.hvplot(min_height=sidebar_height).output().options(xlabel='time (sec)', ylabel='Neural units'),
-            title=title)
-)
+def bind_to_value(widget, temp):
+    return pn.bind(module_tester, widget, temp)
+
+
+w, h = 400, 500
+w2 = int(w / 2) - 20
+template = pn.template.MaterialTemplate(title='Material Dark', theme=DarkTheme, sidebar_width=w)
+
+Ms = [model.PhaseOscillator, model.ConstantCrawler, model.NeuralOscillator, model.ConstantTurner, model.SinTurner]
+Msel = pn.widgets.Select(name="module", options={MM.__name__: MM for MM in Ms})
+template.sidebar.append(pn.Column(Msel, bind_to_value(Msel, temp=template)))
+
 template.servable();
+pn.serve(template)
+# module_tester(M=model.ConstantCrawler, title='Constrant Crawler')
+# module_tester(M=model.PhaseOscillator, title='Phasic Stride oscillator')
+# module_tester(M=model.ConstantTurner, title='Constant oscillator')
+# module_tester(M=model.SinTurner, title='Sinusoidal oscillator')
+# module_tester(M=model.NeuralOscillator, title='Neural lateral oscillator')
 
-# Run from terminal with : panel serve module_tester.py --show --autoreload
+# Run from terminal with : panel serve neural_oscillator_tester.py --show --autoreload

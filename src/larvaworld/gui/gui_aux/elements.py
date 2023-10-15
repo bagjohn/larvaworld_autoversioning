@@ -922,7 +922,7 @@ def v_layout(k0, args, value_kws0={}, **kwargs):
             'values': vs,
             'initial_value': v,
             'key': k0,
-            'dtype': aux.base_dtype(t),
+            'dtype': gui_aux.base_dtype(t),
             'value_kws': value_kws,
             **kwargs
         }
@@ -949,7 +949,7 @@ def combo_layout(name, title, dic, **kwargs):
         }
         spin_kws = {
             'initial_value': args['initial_value'],
-            'dtype': aux.base_dtype(args['dtype']),
+            'dtype': gui_aux.base_dtype(args['dtype']),
             'value_kws': gui_aux.t_kws(5),
             **kws
         }
@@ -1023,7 +1023,7 @@ class CollapsibleDict(Collapsible):
                 k0 = f'{self.name}_{k}'
                 if t == bool:
                     d[k] = w[f'TOGGLE_{k0}'].get_state()
-                elif aux.base_dtype(t) in [int, float]:
+                elif gui_aux.base_dtype(t) in [int, float]:
                     d[k] = w[k0].get()
                 elif t == dict or type(t) == dict:
                     d[k] = self.subdicts[k0].get_dict(v, w)
@@ -1175,7 +1175,7 @@ class PadDict(PadElement):
             k0 = f'{self.name}_{k}'
             if t == bool:
                 d[k] = w[f'TOGGLE_{k0}'].get_state()
-            elif aux.base_dtype(t) in [int, float]:
+            elif gui_aux.base_dtype(t) in [int, float]:
                 d[k] = w[k0].get()
             elif t in [dict, TypedDict] or type(t) == dict:
                 d[k] = self.subdicts[k0].get_dict(v, w)
@@ -1229,7 +1229,7 @@ class PadDict(PadElement):
                 k0 = f'{self.name}_{k}'
                 if t == bool:
                     w[f'TOGGLE_{k0}'].set_state(d[k])
-                elif aux.base_dtype(t) in [int, float]:
+                elif gui_aux.base_dtype(t) in [int, float]:
                     w[k0].update(d[k])
                 elif t in [dict, TypedDict] or type(t) == dict:
                     self.subdicts[k0].update(w, d[k])

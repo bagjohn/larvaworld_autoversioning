@@ -18,11 +18,20 @@ __all__ = [
     'delta',
     'dot',
     'ddot',
-    'circle',
     'mathring',
     'circledast',
-    'base_dtype',
 ]
+
+def sub(p, q):
+    return rf'${{{p.replace("$", "")}}}_{{{q}}}$'
+
+
+def sup(p, q):
+    return rf'${{{p.replace("$", "")}}}^{{{q}}}$'
+
+
+def subsup(p, q, z):
+    return rf'${{{p.replace("$", "")}}}_{{{q}}}^{{{z}}}$'
 
 
 def bar(p):
@@ -37,16 +46,7 @@ def wave(p):
     return rf'$\~{{{p.replace("$", "")}}}$'
 
 
-def sub(p, q):
-    return rf'${{{p.replace("$", "")}}}_{{{q}}}$'
 
-
-def sup(p, q):
-    return rf'${{{p.replace("$", "")}}}^{{{q}}}$'
-
-
-def subsup(p, q, z):
-    return rf'${{{p.replace("$", "")}}}_{{{q}}}^{{{z}}}$'
 
 
 #
@@ -86,12 +86,7 @@ def dot(p):
     return fr'$\dot{{{p.replace("$", "")}}}$'
 
 
-def circle(p):
-    return fr'$\mathring{{{p.replace("$", "")}}}$'
 
-
-# def circledcirc(p):
-#     return f'${p.replace("$", "")}^{{\circledcirc}}$'
 
 def mathring(p):
     return fr'$\mathring{{{p.replace("$", "")}}}$'
@@ -136,12 +131,3 @@ def ddot(p):
 # def lin(p):
 #     return fr'${{{p.replace("$", "")}}}_{{l}}$'
 
-
-def base_dtype(t):
-    if t in [float, Tuple[float], List[float], List[Tuple[float]]]:
-        base_t = float
-    elif t in [int, Tuple[int], List[int], List[Tuple[int]]]:
-        base_t = int
-    else:
-        base_t = t
-    return base_t

@@ -6,6 +6,7 @@ from ...lib import reg, aux
 __all__ = [
     'par',
     'par_dict',
+    'base_dtype',
 ]
 
 def define_dv(dv, cur_dtype):
@@ -51,9 +52,18 @@ def define_lim(lim, vs, u, wrap_mode, cur_dtype):
                 lim = (np.min(vs), np.max(vs))
     return lim
 
+def base_dtype(t):
+    if t in [float, typing.Tuple[float], typing.List[float], typing.List[typing.Tuple[float]]]:
+        base_t = float
+    elif t in [int, typing.Tuple[int], typing.List[int], typing.List[typing.Tuple[int]]]:
+        base_t = int
+    else:
+        base_t = t
+    return base_t
+
 
 def define_range(dtype, lim, vs, dv, u, wrap_mode):
-    cur_dtype = aux.base_dtype(dtype)
+    cur_dtype = base_dtype(dtype)
     dv = define_dv(dv, cur_dtype)
     lim = define_lim(lim, vs, u, wrap_mode, cur_dtype)
     vs = define_vs(vs, dv, lim, cur_dtype)

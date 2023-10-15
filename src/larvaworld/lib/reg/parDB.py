@@ -16,7 +16,7 @@ import param
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 from ..aux import nam
-from ..aux.par_aux import tilde, circle, bar, wave, subsup, sub, sup, th, Delta, dot, circledast, omega, ddot, mathring, delta
+from ..aux.par_aux import tilde, bar, wave, subsup, sub, sup, th, Delta, dot, circledast, omega, mathring, delta
 from .. import reg, aux, util
 
 
@@ -727,19 +727,19 @@ def buildInitDict():
                                  'h': 'The initial frequency of the repetitive crawling behavior.'},
                 'max_scaled_vel': {'v': 0.6, 'lim': (0.0, 1.5), 'label': 'maximum scaled velocity',
                                    'codename': 'stride_scaled_velocity_max', 'k': 'sstr_v_max', 'dv': 0.1,
-                                   'symbol': sub(circle('v'), 'max'), 'u': reg.units.s ** -1,
+                                   'symbol': sub(mathring('v'), 'max'), 'u': reg.units.s ** -1,
                                    'u_name': '$body-lengths/sec$',
                                    'h': 'The maximum scaled forward velocity.'},
                 'stride_dst_mean': {'v': 0.224, 'lim': (0.0, 1.0), 'dv': 0.01, 'aux_vs': ['sample'],
                                     'disp': 'mean',
                                     'k': 'sstr_d_mu',
-                                    'label': r'stride distance mean', 'symbol': sub(bar(circle('d')), 'S'),
+                                    'label': r'stride distance mean', 'symbol': sub(bar(mathring('d')), 'S'),
                                     'u_name': '$body-lengths$',
                                     'combo': 'scaled distance / stride', 'codename': 'scaled_stride_dst_mean',
                                     'h': 'The mean displacement achieved in a single peristaltic stride as a fraction of the body length.'},
                 'stride_dst_std': {'v': 0.033, 'lim': (0.0, 1.0), 'aux_vs': ['sample'], 'disp': 'std',
                                    'k': 'sstr_d_std',
-                                   'label': 'stride distance std', 'symbol': sub(tilde(circle('d')), 'S'),
+                                   'label': 'stride distance std', 'symbol': sub(tilde(mathring('d')), 'S'),
                                    'u_name': '$body-lengths$',
                                    'combo': 'scaled distance / stride', 'codename': 'scaled_stride_dst_std',
                                    'h': 'The standard deviation of the displacement achieved in a single peristaltic stride as a fraction of the body length.'},
@@ -1692,7 +1692,7 @@ class ParamClass:
         if sym_v is None:
             sym_v = dot(b.sym)
         if sym_a is None:
-            sym_a = ddot(b.sym)
+            sym_a = dot(sym_v)
 
         if func_v is None:
             def func_v(d):
@@ -1844,7 +1844,7 @@ class ParamClass:
         kws = {'dv': np.round(amax / 180, 2), 'u': u, 'v0': 0.0}
         self.add(
             **{'p': 'bend','codename': 'body_bend', 'k': 'b', 'sym': th('b'), 'disp': 'bending angle', 'lim': (-amax, amax), **kws})
-        self.add_velNacc(k0='b', sym_v=omega('b'), sym_a=dot(omega('b')), disp_v='bending angular velocity',
+        self.add_velNacc(k0='b', sym_v=omega('b'), disp_v='bending angular velocity',
                          disp_a='bending angular acceleration')
 
         angs = [
@@ -1865,7 +1865,7 @@ class ParamClass:
             self.add_unwrap(k0=ko)
 
             self.add_velNacc(k0=kou, k_v=f'{suf}ov', k_a=f'{suf}oa', p_v=p_v, d_v=p_v, p_a=p_a, d_a=p_a,
-                             sym_v=omega(ksuf), sym_a=dot(omega(ksuf)), disp_v=f'{lsuf}angular velocity',
+                             sym_v=omega(ksuf), disp_v=f'{lsuf}angular velocity',
                              disp_a=f'{lsuf}angular acceleration')
         for k0 in ['b', 'bv', 'ba', 'fov', 'foa', 'rov', 'roa', 'fo', 'ro', 'ho', 'to']:
             self.add_freq(k0=k0)
@@ -1895,12 +1895,12 @@ class ParamClass:
         d_sd, d_sv, d_sa = nam.scal([d_d, d_v, d_a])
         self.add_dst(point='')
         self.add_velNacc(k0='d', k_v='v', k_a='a', p_v=d_v, d_v=d_v, p_a=d_a, d_a=d_a,
-                         sym_v='v', sym_a=dot('v'), disp_v='crawling speed', disp_a='crawling acceleration',
+                         sym_v='v', disp_v='crawling speed', disp_a='crawling acceleration',
                          func_v=self.func_dict.vel(d_d, d_v))
         for k0 in ['x', 'y', 'd']:
             self.add_scaled(k0=k0)
         self.add_velNacc(k0='sd', k_v='sv', k_a='sa', p_v=d_sv, d_v=d_sv, p_a=d_sa, d_a=d_sa, sym_v=mathring('v'),
-                         sym_a=dot(mathring('v')), disp_v='scaled crawling speed',
+                         disp_v='scaled crawling speed',
                          disp_a='scaled crawling acceleration',
                          func_v=self.func_dict.vel(d_sd, d_sv))
         for k0 in ['l', 'd', 'sd', 'v', 'sv', 'a', 'sa', 'x', 'y']:

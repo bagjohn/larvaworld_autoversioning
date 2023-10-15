@@ -2,11 +2,14 @@
 Class managing parameter naming
 """
 
-
 import numpy as np
 
 __all__ = [
     'NamingRegistry',
+    # 'tex',
+    # 'sub',
+    # 'sup',
+    # 'subsup',
 ]
 
 from .dictsNlists import SuperList, AttrDict
@@ -16,6 +19,8 @@ def join(s, p, loc, c='_'):
     if loc == 'suf':
         return f'{p}{c}{s}'
     elif loc == 'pref':
+        return f'{s}{c}{p}'
+    elif loc == 'sep':
         return f'{s}{c}{p}'
 
 
@@ -29,12 +34,72 @@ def name(s, ps, loc='suf', c='_'):
         return SuperList([join(s, p, loc, c) if p != '' else s for p in ps])
 
 
+def _tex(p):
+    return p.replace("$", "")
+
+
+def tex_sym(symbol, p, sep=''):
+    return fr'$\{symbol}{sep}{{{_tex(p)}}}$'
+
+
+def tex(p, q, sep=''):
+    return fr'${{{_tex(p)}}}{sep}{{{_tex(q)}}}$'
+
+
+def sub(p, q):
+    return tex(p, q, sep='_')
+
+
+def sup(p, q):
+    return tex(p, q, sep='^')
+
+
+def subsup(p, q, z):
+    return rf'${{{_tex(p)}}}_{{{_tex(q)}}}^{{{_tex(z)}}}$'
+
+
+class TexNaming:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.symbols = ['bar', 'tilde', 'dot', 'ddot', 'mathring']
+        self.letters = ['theta', 'omega', 'Delta', 'sum', 'delta']
+
+    def get_func(self, symbol):
+        assert symbol in self.symbols + self.letters
+
+        def func(p, **kwargs):
+            return tex_sym(symbol=symbol, p=p, **kwargs)
+
+        return func
+
+    def __getattr__(self, item):
+        return self[item]
+
+    def __getitem__(self, k):
+        return self.get_func(k)
+
+    def sub(self,p, q):
+        return tex(p, q, sep='_')
+
+    def sup(self,p, q):
+        return tex(p, q, sep='^')
+
+    def subsup(self,p, q, z):
+        return rf'${{{_tex(p)}}}_{{{_tex(q)}}}^{{{_tex(z)}}}$'
+
+
 class NamingRegistry(AttrDict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.ks = ['mean', 'std', 'var', 'min', 'max', 'final', 'initial', 'cum', 'freq', 'lin', 'scal', 'abs', 'non',
                    'chain', 'dur', 'unwrap', 'dst', 'dst_to', 'bearing_to', 'vel', 'acc', 'orient', 'scal']
+
+        self.tex_symbols = ['bar', 'tilde', 'wave', 'theta_', 'omega_', 'Delta', 'sum', 'delta', 'dot', 'ddot',
+                            'mathring']
+
+        self.tex=TexNaming()
 
     def get_kws(self, k):
         loc_pref = ['final', 'initial', 'cum', 'lin', 'scal', 'abs', 'dst_to', 'bearing_to', 'non']
@@ -117,7 +182,7 @@ class NamingRegistry(AttrDict):
     def midline_xy(self, N, flat=False, xsNys=False):
         return self.xy(self.midline(N), flat=flat, xsNys=xsNys)
 
-    @ property
+    @property
     def centroid_xy(self):
         return self.xy('centroid')
 

@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import param
 
-from ..aux.par_aux import sub, subsup, circle, bar, tilde, sup
+from ..aux.par_aux import sub, subsup, bar, tilde, sup, mathring
 from .. import reg, aux, util
 
 __all__ = [
@@ -79,12 +79,12 @@ def init_brain_modules():
     def Cr0():
         str_kws = {'stride_dst_mean': {'v0': 0.23, 'lim': (0.0, 1.0), 'dv': 0.01,
                                        'k': 'str_sd_mu',
-                                       'disp': r'stride distance mean', 'sym': sub(bar(circle('d')), 'S'),
+                                       'disp': r'stride distance mean', 'sym': sub(bar(mathring('d')), 'S'),
                                        'u_name': '$body-lengths$', 'codename': 'stride_scaled_dst_mean',
                                        'h': 'The mean displacement achieved in a single peristaltic stride as a fraction of the body length.'},
                    'stride_dst_std': {'v0': 0.04, 'lim': (0.0, 1.0),
                                       'k': 'str_sd_std',
-                                      'disp': 'stride distance std', 'sym': sub(tilde(circle('d')), 'S'),
+                                      'disp': 'stride distance std', 'sym': sub(tilde(mathring('d')), 'S'),
                                       'u_name': '$body-lengths$', 'codename': 'stride_scaled_dst_std',
                                       'h': 'The standard deviation of the displacement achieved in a single peristaltic stride as a fraction of the body length.'}}
 
@@ -116,7 +116,7 @@ def init_brain_modules():
         }
         Rargs = {'max_scaled_vel': {'v0': 0.51, 'lim': (0.0, 1.5), 'disp': 'maximum scaled velocity',
                                     'codename': 'stride_scaled_velocity_max', 'k': 'str_sv_max', 'dv': 0.1,
-                                    'sym': sub(circle('v'), 'max'), 'u': reg.units.s ** -1,
+                                    'sym': sub(mathring('v'), 'max'), 'u': reg.units.s ** -1,
                                     'u_name': '$body-lengths/sec$',
                                     'h': 'The maximum scaled forward velocity.'},
 
