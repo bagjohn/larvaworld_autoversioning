@@ -87,7 +87,8 @@ class PhasicCoupling(Coupling):
         def gaussian(x, mu, sig):
             return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
 
-        A = gaussian(x, self.max_attenuation_phase, 1) * self.attenuation_max + self.attenuation
+        #A = gaussian(x, self.max_attenuation_phase, 1) * self.attenuation_max + self.attenuation
+        A = np.exp(-np.power(x - self.max_attenuation_phase, 2.) / 2)* self.attenuation_max + self.attenuation
         if A >= 1:
             A = 1
         elif A <= 0:

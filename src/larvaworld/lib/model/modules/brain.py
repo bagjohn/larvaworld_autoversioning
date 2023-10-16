@@ -148,6 +148,6 @@ class DefaultBrain(Brain):
         if self.windsensor:
             self.A_wind = self.windsensor.step(self.sense_wind())
 
-    def step(self, pos, length, on_food=False, **kwargs):
+    def step(self, pos, on_food=False, **kwargs):
         self.sense(pos=pos, reward=on_food)
-        return self.locomotor.step(A_in=self.A_in, length=length, on_food=on_food)
+        return self.locomotor.step(A_in=self.A_in, on_food=on_food, **kwargs)
