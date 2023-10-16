@@ -51,7 +51,7 @@ class Timer(param.Parameterized):
 
 
 class Oscillator(Timer):
-    freq = PositiveNumber(bounds=None, label='oscillation frequency', doc='The initial frequency of the oscillator.')
+    freq = PositiveNumber(label='oscillation frequency', doc='The initial frequency of the oscillator.')
     phi = RandomizedPhase(precedence=-1,label='oscillation phase', doc='The phase of the oscillation.')
 
     def __init__(self, random_phi=True, **kwargs):

@@ -9,7 +9,7 @@ from ...param import PositiveNumber, Phase
 
 __all__ = [
     'Crawler',
-    'ConstantCrawler',
+    # 'ConstantCrawler',
     'StrideOscillator',
     'GaussOscillator',
     'SquareOscillator',
@@ -24,11 +24,11 @@ class Crawler(StepEffector):
             'gaussian': GaussOscillator,
             'square': SquareOscillator,
             'realistic': PhaseOscillator,
-            'constant': ConstantCrawler
+            'constant': Crawler
         })
         return d[mode]
 
-class ConstantCrawler(Crawler):pass
+# class ConstantCrawler(Crawler):pass
     # mode = param.Selector(default='constant', readonly=True)
 
 

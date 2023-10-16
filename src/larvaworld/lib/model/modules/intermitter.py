@@ -202,14 +202,14 @@ class Intermitter(Timer):
             self.exp_Tpause = None
 
     def update_state(self, stride_completed=False, feed_motion=False, on_food=False):
+        if self.cur_state is None:
+            self.trigger_locomotion()
         if self.feed_bouts:
             self.alternate_exploreNexploit(feed_motion, on_food)
         self.alternate_crawlNpause(stride_completed)
         return self.cur_state
 
     def step(self, **kwargs):
-        if self.cur_state is None:
-            self.trigger_locomotion()
         self.count_time()
         return self.update_state(**kwargs)
 
@@ -301,7 +301,7 @@ class OfflineIntermitter(Intermitter):
         self.crawl_ticks = np.round(1 / (self.crawl_freq * self.dt)).astype(int)
         self.feed_ticks = np.round(1 / (self.feed_freq * self.dt)).astype(int)
 
-    def step(self, stride_completed=None, feed_motion=None, on_food=False):
+    def step(self, stride_completed=None, feed_motion=None, on_food=True):
         self.count_time()
         if feed_motion is None:
             feed_motion = self.cur_state == 'feed' and self.ticks % self.feed_ticks == 0
@@ -362,7 +362,7 @@ def get_EEB_poly1d(**kws):
 
 def get_EEB_time_fractions(refID=None, dt=None, **kwargs):
     if refID is not None:
-        kws = reg.conf.Ref.getRef(refID)['intermitter']
+        kws = reg.conf.Ref.getRef(refID).intermitter
     else:
         kws = kwargs
     if dt is not None:
