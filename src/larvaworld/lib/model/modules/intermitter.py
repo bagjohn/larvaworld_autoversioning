@@ -18,66 +18,70 @@ __all__ = [
     'get_EEB_time_fractions',
 ]
 
-default_bout_distros=aux.AttrDict({'turn_dur': {'range': [0.25, 3.25], 'name': 'exponential', 'beta': 4.70099},
- 'turn_amp': {'range': [0.00042, 305.7906],
-  'name': 'lognormal',
-  'mu': 2.08133,
-  'sigma': 1.26487},
- 'turn_vel_max': {'range': [0.00031, 2752.80403],
-  'name': 'levy',
-  'mu': -1.22434,
-  'sigma': 11.93284},
- 'run_dur': {'range': [0.44, 114.25],
-  'name': 'lognormal',
-  'mu': 1.148,
-  'sigma': 1.11329},
- 'run_dst': {'range': [0.00022, 0.14457],
-  'name': 'levy',
-  'mu': 0.00017,
-  'sigma': 0.00125},
- 'pause_dur': {'range': [0.12, 15.94], 'name': 'exponential', 'beta': 1.01503},
- 'run_count': {'range': [1, 142],
-  'name': 'lognormal',
-  'mu': 1.39115,
-  'sigma': 1.14667}})
+default_bout_distros = aux.AttrDict({'turn_dur': {'range': [0.25, 3.25], 'name': 'exponential', 'beta': 4.70099},
+                                     'turn_amp': {'range': [0.00042, 305.7906],
+                                                  'name': 'lognormal',
+                                                  'mu': 2.08133,
+                                                  'sigma': 1.26487},
+                                     'turn_vel_max': {'range': [0.00031, 2752.80403],
+                                                      'name': 'levy',
+                                                      'mu': -1.22434,
+                                                      'sigma': 11.93284},
+                                     'run_dur': {'range': [0.44, 114.25],
+                                                 'name': 'lognormal',
+                                                 'mu': 1.148,
+                                                 'sigma': 1.11329},
+                                     'run_dst': {'range': [0.00022, 0.14457],
+                                                 'name': 'levy',
+                                                 'mu': 0.00017,
+                                                 'sigma': 0.00125},
+                                     'pause_dur': {'range': [0.12, 15.94], 'name': 'exponential', 'beta': 1.01503},
+                                     'run_count': {'range': [1, 142],
+                                                   'name': 'lognormal',
+                                                   'mu': 1.39115,
+                                                   'sigma': 1.14667}})
+
 
 class Intermitter(Timer):
-    EEB = param.Magnitude(1.0, label='exploitation-exploration balance', doc='The baseline exploitation-exploration balance. 0 means only exploitation, 1 only exploration.')
-    EEB_decay = PositiveNumber(1.0, softmax=2.0, doc='The exponential decay coefficient of the exploitation-exploration balance when no food is detected.')
-    run_mode = param.Selector(objects=['stridechain','exec'], doc='The generation mode of the crawling epochs.')
-    feeder_reoccurence_rate = OptionalPositiveNumber(softmax=1.0, label='feed reoccurence', doc='The default reoccurence rate of the feeding motion.')
+    EEB = param.Magnitude(1.0, label='exploitation-exploration balance',
+                          doc='The baseline exploitation-exploration balance. 0 means only exploitation, 1 only exploration.')
+    EEB_decay = PositiveNumber(1.0, softmax=2.0,
+                               doc='The exponential decay coefficient of the exploitation-exploration balance when no food is detected.')
+    run_mode = param.Selector(objects=['stridechain', 'exec'], doc='The generation mode of the crawling epochs.')
+    feeder_reoccurence_rate = OptionalPositiveNumber(softmax=1.0, label='feed reoccurence',
+                                                     doc='The default reoccurence rate of the feeding motion.')
     feed_bouts = param.Boolean(False, doc='Whether feeding epochs are generated.')
 
-    def __init__(self, pause_dist=None, stridechain_dist=None, run_dist=None, crawl_freq=10 / 7, feed_freq=2.0, **kwargs):
+    def __init__(self, pause_dist=None, stridechain_dist=None, run_dist=None, crawl_freq=10 / 7, feed_freq=2.0,
+                 **kwargs):
         super().__init__(**kwargs)
         if self.feeder_reoccurence_rate is None:
-            self.feeder_reoccurence_rate= self.EEB
-            self.use_EEB=True
+            self.feeder_reoccurence_rate = self.EEB
+            self.use_EEB = True
         else:
-            self.use_EEB=False
+            self.use_EEB = False
         self.crawl_freq = crawl_freq
         self.feed_freq = feed_freq
         self.reset()
         self.cur_state = None
 
-
-        if self.run_mode=='stridechain' :
+        if self.run_mode == 'stridechain':
             if stridechain_dist is None or stridechain_dist.range is None:
                 stridechain_dist = default_bout_distros.run_count
             self.stridechain_min, self.stridechain_max = stridechain_dist.range
             self.stridechain_dist = util.BoutGenerator(**stridechain_dist, dt=1)
             self.run_dist = None
 
-        elif self.run_mode=='exec' :
+        elif self.run_mode == 'exec':
             if run_dist is not None or run_dist.range is None:
                 run_dist = default_bout_distros.run_dur
             self.stridechain_min, self.stridechain_max = run_dist.range
             self.run_dist = util.BoutGenerator(**run_dist, dt=self.dt)
             self.stridechain_dist = None
-        else :
-            raise ValueError ('None of stidechain or exec distribution exist')
+        else:
+            raise ValueError('None of stidechain or exec distribution exist')
 
-        if pause_dist is None or pause_dist.range is None :
+        if pause_dist is None or pause_dist.range is None:
             pause_dist = default_bout_distros.pause_dur
         self.pau_min, self.pau_max = (np.array(pause_dist.range) / self.dt).astype(int)
         self.pause_dist = util.BoutGenerator(**pause_dist, dt=self.dt)
@@ -107,12 +111,9 @@ class Intermitter(Timer):
         self.feed_durs = []
         self.stride_durs = []
 
-
-
-
-    @ property
+    @property
     def pause_completed(self):
-        t=self.exp_Tpause
+        t = self.exp_Tpause
         return t is not None and self.t > t
 
     @property
@@ -125,65 +126,59 @@ class Intermitter(Timer):
         n = self.exp_Nstrides
         return n is not None and self.cur_Nstrides > n
 
-    def alternate_crawlNpause(self,stride_completed=False):
-        if stride_completed :
+    def alternate_crawlNpause(self, stride_completed=False):
+        if stride_completed:
             self.cur_Nstrides += 1
 
+        if self.stridechain_completed or self.run_completed:
+            self.interrupt_locomotion()
 
-        if self.stridechain_completed :
-            self.register('stridechain')
-            self.exp_Tpause = self.generate_pause()
-            self.cur_state = 'pause'
+        elif self.pause_completed:
+            self.trigger_locomotion()
 
-        elif self.pause_completed :
-            self.register('pause')
-            self.run_initiation()
 
-        elif self.run_completed:
-            self.register('run')
-            self.exp_Tpause = self.generate_pause()
-            self.cur_state = 'pause'
-
-    @ property
+    @property
     def feed_repeated(self):
         r = self.feeder_reoccurence_rate if not self.use_EEB else self.EEB
         return np.random.uniform(0, 1, 1) < r
 
+    def alternate_exploreNexploit(self, feed_motion=False, on_food=False):
 
-    def alternate_exploreNexploit(self,feed_motion=False,on_food=False):
-
-        if feed_motion :
-            if self.cur_Nfeeds is None:
-                raise
-            else :
-                self.Nfeeds += 1
-                if not on_food:
-                    self.Nfeeds_fail +=1
-                    self.register('feedchain')
-                    self.run_initiation()
+        if feed_motion:
+            assert self.cur_Nfeeds is not None
+            self.Nfeeds += 1
+            if not on_food:
+                self.Nfeeds_fail += 1
+                self.trigger_locomotion()
+            else:
+                self.Nfeeds_success += 1
+                if self.feed_repeated:
+                    self.cur_Nfeeds += 1
                 else:
-                    self.Nfeeds_success += 1
-                    if self.feed_repeated :
-                        self.cur_Nfeeds += 1
-                    else:
-                        self.register('feedchain')
-                        self.run_initiation()
+                    self.trigger_locomotion()
         elif on_food and self.cur_Nfeeds is None and np.random.uniform(0, 1, 1) <= self.EEB:
             self.cur_Nfeeds = 1
-            self.register(self.cur_state)
+            self.register()
             self.cur_state = 'feed'
             # self.reset()
 
-    def register(self, bout):
+
+
+    def register(self, bout=None):
+        if bout is None:
+            if self.cur_state is not None:
+                bout = self.cur_state
+            else:
+                return
         dur = self.t
         self.ticks = 0
-        if bout=='exec' :
+        if bout == 'exec':
             if self.stridechain_dist is None and self.run_dist is not None:
-                bout='run'
+                bout = 'run'
             elif self.stridechain_dist is not None and self.run_dist is None:
                 bout = 'stridechain'
 
-        if bout == 'feedchain':
+        if bout in ['feedchain', 'feed']:
             self.Nfeedchains += 1
             self.feedchain_lengths.append(self.cur_Nfeeds)
             self.feedchain_durs.append(dur)
@@ -206,16 +201,15 @@ class Intermitter(Timer):
             self.pause_durs.append(dur)
             self.exp_Tpause = None
 
-    def update_state(self, stride_completed=False, feed_motion=False,on_food=False):
-        if self.feed_bouts :
+    def update_state(self, stride_completed=False, feed_motion=False, on_food=False):
+        if self.feed_bouts:
             self.alternate_exploreNexploit(feed_motion, on_food)
         self.alternate_crawlNpause(stride_completed)
         return self.cur_state
 
-
     def step(self, **kwargs):
-        if self.cur_state is None :
-            self.run_initiation()
+        if self.cur_state is None:
+            self.trigger_locomotion()
         self.count_time()
         return self.update_state(**kwargs)
 
@@ -225,7 +219,22 @@ class Intermitter(Timer):
     def generate_run(self):
         return self.run_dist.sample()
 
-    def run_initiation(self):
+    # def trigger_exploitation(self, force=False):
+    #     if not force and self.cur_state == 'feed':
+    #         return
+    #     self.register()
+
+    def interrupt_locomotion(self):
+        if not self.cur_state == 'exec':
+            return
+        self.register()
+        self.exp_Tpause = self.generate_pause()
+        self.cur_state = 'pause'
+
+    def trigger_locomotion(self, force=False):
+        if not force and self.cur_state == 'exec':
+            return
+        self.register()
         if self.stridechain_dist is not None:
             self.exp_Nstrides = self.stridechain_dist.sample()
         elif self.run_dist is not None:
@@ -234,13 +243,11 @@ class Intermitter(Timer):
         self.cur_state = 'exec'
         self.ticks = 0
 
-
     def generate_pause(self):
         return self.pause_dist.sample()
 
-
     def build_dict(self):
-        cum_t=nam.cum('t')
+        cum_t = nam.cum('t')
         d = {}
         d[cum_t] = self.total_t
         d[nam.num('tick')] = int(self.total_ticks)
@@ -288,21 +295,19 @@ class Intermitter(Timer):
         return d[mode]
 
 
-
 class OfflineIntermitter(Intermitter):
-    def __init__(self,  **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.crawl_ticks = np.round(1 / (self.crawl_freq * self.dt)).astype(int)
         self.feed_ticks = np.round(1 / (self.feed_freq * self.dt)).astype(int)
 
-    def step(self, stride_completed=None, feed_motion=None,on_food=False):
+    def step(self, stride_completed=None, feed_motion=None, on_food=False):
         self.count_time()
         if feed_motion is None:
-            feed_motion = self.cur_state == 'feed' and self.ticks%self.feed_ticks==0
+            feed_motion = self.cur_state == 'feed' and self.ticks % self.feed_ticks == 0
         if stride_completed is None:
-            stride_completed = self.cur_state == 'exec' and self.ticks%self.crawl_ticks==0
+            stride_completed = self.cur_state == 'exec' and self.ticks % self.crawl_ticks == 0
         return self.update_state(stride_completed, feed_motion, on_food)
-
 
 
 class NengoIntermitter(Intermitter):
@@ -310,22 +315,20 @@ class NengoIntermitter(Intermitter):
         super().__init__(**kwargs)
 
 
-
 class BranchIntermitter(Intermitter):
     feed_bouts = param.Boolean(False, readonly=True)
-    beta = OptionalPositiveNumber(default=None,doc='The beta coefficient for the exponential function')
-    c = PositiveNumber(default=0.7,doc='The c parameter for the criticality function')
-    sigma = PositiveNumber(default=1.0,doc='The ISING branching coef.')
+    beta = OptionalPositiveNumber(default=None, doc='The beta coefficient for the exponential function')
+    c = PositiveNumber(default=0.7, doc='The c parameter for the criticality function')
+    sigma = PositiveNumber(default=1.0, doc='The ISING branching coef.')
 
-
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def generate_stridechain(self):
         return util.exp_bout(beta=self.beta, tmax=self.stridechain_max, tmin=self.stridechain_min)
 
     def generate_pause(self):
-        return util.critical_bout(c=self.c, sigma=self.sigma, N=1000, tmax=self.pau_max, tmin=self.pau_min)*self.dt
+        return util.critical_bout(c=self.c, sigma=self.sigma, N=1000, tmax=self.pau_max, tmin=self.pau_min) * self.dt
 
 
 class FittedIntermitter(OfflineIntermitter):
@@ -343,6 +346,7 @@ class FittedIntermitter(OfflineIntermitter):
         stored_conf['feed_bouts'] = True if stored_conf['feed_freq'] is not None else False
         super().__init__(**stored_conf)
 
+
 def get_EEB_poly1d(**kws):
     max_dur = 60 * 60
     EEBs = np.arange(0, 1.05, 0.05)
@@ -354,6 +358,7 @@ def get_EEB_poly1d(**kws):
         ms.append(M.mean_feed_freq)
     z = np.poly1d(np.polyfit(np.array(ms), EEBs, 5))
     return z
+
 
 def get_EEB_time_fractions(refID=None, dt=None, **kwargs):
     if refID is not None:
@@ -372,8 +377,8 @@ def get_EEB_time_fractions(refID=None, dt=None, **kwargs):
         while M.total_t < max_dur:
             M.step()
         dic = M.build_dict()
-        entry = {'EEB': EEB, **{k: np.round(dic[v], 2) for k, v in rts.items()}, nam.mean(nam.freq('feed')): M.mean_feed_freq}
+        entry = {'EEB': EEB, **{k: np.round(dic[v], 2) for k, v in rts.items()},
+                 nam.mean(nam.freq('feed')): M.mean_feed_freq}
         data.append(entry)
     df = pd.DataFrame.from_records(data=data)
     return df
-

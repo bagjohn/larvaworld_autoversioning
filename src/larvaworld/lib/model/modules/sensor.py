@@ -29,7 +29,6 @@ class Sensor(Effector):
         super().__init__(**kwargs)
 
         self.brain = brain
-        self.interruption_counter = 0
 
         self.exp_decay_coef = np.exp(- self.dt * self.decay_coef)
 
@@ -51,14 +50,15 @@ class Sensor(Effector):
         if len(self.input) == 0:
             self.output = 0
         elif self.brute_force:
-            self.affect_locomotion()
+            if self.brain is not None:
+                self.affect_locomotion(L=self.brain.locomotor)
             self.output = 0
         else:
             self.compute_dX(self.input)
             self.output *= self.exp_decay_coef
             self.output += self.dt * np.sum([self.gain[id] * self.dX[id] for id in self.gain_ids])
 
-    def affect_locomotion(self):
+    def affect_locomotion(self, L):
         pass
 
 
@@ -131,14 +131,10 @@ class Olfactor(Sensor):
     #             con = 0
     #         self.add_novel_gain(id, con=con)
 
-    def affect_locomotion(self):
-        if self.brain is None:
-            return
-        L = self.brain.locomotor
-        if self.output < 0 and L.crawler.complete_iteration:
+    def affect_locomotion(self, L):
+        if self.output < 0 and L.stride_completed:
             if np.random.uniform(0, 1, 1) <= np.abs(self.output):
-                L.intermitter.inhibit_locomotion(L=L)
-                self.interruption_counter += 1
+                L.intermitter.interrupt_locomotion()
 
     @property
     def first_odor_concentration(self):
@@ -173,17 +169,13 @@ class Toucher(Sensor):
                     if s not in self.gain:
                         self.add_novel_gain(id=s, gain=self.initial_gain)
 
-    def affect_locomotion(self):
-        if self.brain is None:
-            return
-        L = self.brain.locomotor
+    def affect_locomotion(self, L):
         for id in self.gain_ids:
             if self.dX[id] == 1:
-                L.intermitter.trigger_locomotion(L=L)
+                L.intermitter.trigger_locomotion()
                 break
             elif self.dX[id] == -1:
-                L.intermitter.interrupt_locomotion(L=L)
-                self.interruption_counter += 1
+                L.intermitter.interrupt_locomotion()
                 break
 
 

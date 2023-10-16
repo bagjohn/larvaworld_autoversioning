@@ -12,13 +12,6 @@ __all__ = [
 
 
 class Locomotor(NestedConf):
-    # interference = ModeSelector(classDict=aux.AttrDict({
-    #     'default': modules.DefaultCoupling,
-    #     'square': modules.SquareCoupling,
-    #     'phasic': modules.PhasicCoupling
-    # }), classID=None, class_=None, default=None, doc='The crawl-bend coupling module')
-    # interference = param.Selector(objects=[modules.DefaultCoupling,modules.SquareCoupling,modules.PhasicCoupling],
-    #                               names=['default','square','phasic'], doc='The crawl-bend coupling module')
     interference = ClassAttr(class_=Coupling, default=None, doc='The crawl-bend coupling module')
     intermitter = ClassAttr(class_=Intermitter, default=None, doc='The behavioral intermittency module')
     feeder = ClassAttr(class_=Feeder, default=None, doc='The feeding module')
@@ -63,6 +56,20 @@ class Locomotor(NestedConf):
                 self.on_new_feed()
             # print(cur_state)
 
+    @property
+    def stride_completed(self):
+        if self.crawler:
+            return self.crawler.complete_iteration
+        else:
+            return False
+
+    @property
+    def feed_motion(self):
+        if self.feeder:
+            return self.feeder.complete_iteration
+        else:
+            return False
+
 
 class DefaultLocomotor(Locomotor):
     def __init__(self,conf,dt=0.1,  **kwargs):
@@ -93,19 +100,7 @@ class DefaultLocomotor(Locomotor):
             # setattr(self, k, M)
         super().__init__(**kwargs)
 
-    @property
-    def stride_completed(self):
-        if self.crawler:
-            return self.crawler.complete_iteration
-        else:
-            return False
 
-    @property
-    def feed_motion(self):
-        if self.feeder:
-            return self.feeder.complete_iteration
-        else:
-            return False
 
     def step(self, A_in=0, length=1, on_food=False):
         C, F, T, If = self.crawler, self.feeder, self.turner, self.interference
