@@ -12,7 +12,7 @@ import warnings
 
 import param
 
-from .. import reg, aux
+from .. import reg, aux, process, util
 from ..aux import nam
 from ..param import ClassAttr, StepDataFrame, EndpointDataFrame, ClassDict
 
@@ -54,6 +54,104 @@ class ParamLarvaDataset(param.Parameterized):
         self.epoch_dict = aux.AttrDict({'pause': None, 'run': None})
         self.larva_dicts = {}
         self.__dict__.update(self.config.nestedConf)
+        self._chunk_dicts = None
+        self._pooled_epochs = None
+        self._cycle_curves = None
+
+    @property
+    def chunk_dicts(self):
+        try:
+            assert self._chunk_dicts is not None
+        except AssertionError:
+            self._chunk_dicts = aux.AttrDict(self.read('chunk_dicts'))
+        except KeyError:
+            self.detect_bouts()
+        finally:
+            return self._chunk_dicts
+
+    @chunk_dicts.setter
+    def chunk_dicts(self, d):
+        self._chunk_dicts = d
+        self.store(d, 'chunk_dicts')
+
+    @property
+    def pooled_epochs(self):
+        try:
+            assert self._pooled_epochs is not None
+        except AssertionError:
+            self._pooled_epochs = aux.AttrDict(self.read('pooled_epochs'))
+        except KeyError:
+            self.comp_pooled_epochs()
+        finally:
+            return self._pooled_epochs
+
+    @pooled_epochs.setter
+    def pooled_epochs(self, d):
+        self._pooled_epochs = d
+        self.store(d, 'pooled_epochs')
+
+    @property
+    def cycle_curves(self):
+        try:
+            assert self._cycle_curves is not None
+        except AssertionError:
+            self._cycle_curves = aux.AttrDict(self.read('cycle_curves'))
+        except KeyError:
+            self.comp_interference()
+        finally:
+            return self._cycle_curves
+
+    @cycle_curves.setter
+    def cycle_curves(self, d):
+        self._cycle_curves = d
+        self.store(d, 'cycle_curves')
+
+    def detect_bouts(self, **kwargs):
+        s, e, c = self.data
+        self.chunk_dicts = process.annotation.comp_chunk_dicts(s, e, c, **kwargs)
+        reg.vprint(f'Completed bout detection.', 1)
+
+    def comp_pooled_epochs(self):
+        try :
+            grouped_epochs = aux.group_epoch_dicts(self.chunk_dicts)
+            self.pooled_epochs = util.fit_epochs(grouped_epochs)
+            reg.vprint(f'Computed pooled epoch durations.', 1)
+        except:
+            reg.vprint(f'Failed to compute pooled epoch durations.', 1)
+
+
+    def comp_bout_distros(self):
+        s, e, c = self.data
+        try :
+            c.bout_distros = util.get_bout_distros(self.pooled_epochs)
+            process.annotation.register_bout_distros(c, e)
+            reg.vprint(f'Completed bout distribution analysis.', 1)
+        except:
+            reg.vprint(f'Failed to complete bout distribution analysis.',1)
+
+    def comp_interference(self, **kwargs):
+        s, e, c = self.data
+        try:
+            self.cycle_curves = process.annotation.compute_interference(s, e, c,chunk_dicts=self.chunk_dicts, **kwargs)
+            reg.vprint(f'Completed stridecycle interference analysis.', 1)
+        except:
+            reg.vprint(f'Failed to complete stridecycle interference analysis.', 1)
+
+    def annotate(self, anot_keys=["bout_detection", "bout_distribution", "interference"],is_last=False):
+        if 'bout_detection' in anot_keys:
+            self.detect_bouts()
+        if 'bout_distribution' in anot_keys:
+            self.comp_bout_distros()
+        if 'interference' in anot_keys:
+            self.comp_interference()
+        if 'source_attraction' in anot_keys:
+            s, e, c = self.data
+            process.patch.comp_bearing_to_source(s, e, c)
+        if 'patch_residency' in anot_keys:
+            s, e, c = self.data
+            process.patch.comp_time_on_patch(s, e, c)
+        if is_last:
+            self.save()
 
     # @param.depends('step_data', 'endpoint_data', watch=True)
     def validate_IDs(self):
@@ -112,11 +210,11 @@ class ParamLarvaDataset(param.Parameterized):
         return self.step_data.index.unique('Step').min()
 
     def timeseries_slice(self, time_range=None, df=None):
-        if df is None :
-            df=self.step_data
+        if df is None:
+            df = self.step_data
         if time_range is None:
             return df
-        else :
+        else:
 
             t0, t1 = time_range
             s0 = int(t0 / self.config.dt)
@@ -124,16 +222,15 @@ class ParamLarvaDataset(param.Parameterized):
             df_slice = df.loc[(slice(s0, s1), slice(None)), :]
             return df_slice
 
-
     def interpolate_nan_values(self):
         s, e, c = self.data
-        pars=c.all_xy.existing(s)
-        Npars=len(pars)
+        pars = c.all_xy.existing(s)
+        Npars = len(pars)
         for id in c.agent_ids:
-            A=np.zeros([c.Nticks, Npars])
-            ss=s.xs(id, level='AgentID')
-            for i,p in enumerate(pars):
-                A[:,i]=aux.interpolate_nans(ss[p].values)
+            A = np.zeros([c.Nticks, Npars])
+            ss = s.xs(id, level='AgentID')
+            for i, p in enumerate(pars):
+                A[:, i] = aux.interpolate_nans(ss[p].values)
             s.loc[(slice(None), id), pars] = A
         reg.vprint('All parameters interpolated', 1)
 
@@ -259,7 +356,7 @@ class ParamLarvaDataset(param.Parameterized):
 
     @property
     def data(self):
-        if self.step_data is None or self.endpoint_data is None :
+        if self.step_data is None or self.endpoint_data is None:
             self.load()
         return self.step_data, self.endpoint_data, self.config
 
@@ -383,7 +480,6 @@ class ParamLarvaDataset(param.Parameterized):
         grouped = data.groupby('AgentID')
         return aux.AttrDict({id: df.values for id, df in grouped})
 
-
     @property
     def midline_xy_data(self):
         return self.step_data[self.config.midline_xy].values.reshape([-1, self.config.Npoints, 2])
@@ -427,7 +523,7 @@ class ParamLarvaDataset(param.Parameterized):
         level = 'AgentID'
         s = self.timeseries_slice(time_range)[pars]
         Nt = s.index.unique('Step').size
-        s0 = s.index.unique('Step').min()-self.min_tick
+        s0 = s.index.unique('Step').min() - self.min_tick
 
         A = None
 
@@ -467,6 +563,21 @@ class ParamLarvaDataset(param.Parameterized):
     #     mid = self.midline_xy_data
     #     seg_ors = self.midline_seg_orients_from_mid(mid)
     #     return seg_ors
+
+    def comp_freq(self, par, fr_range=(0.0, +np.inf)):
+        s, e, c = self.data
+        e[nam.freq(par)] = s[par].groupby("AgentID").apply(aux.fft_max, dt=c.dt, fr_range=fr_range)
+
+    def comp_freqs(self):
+        v = reg.getPar('v')
+        if v in self.step_ps:
+            self.comp_freq(par=v, fr_range=(1.0, 2.5))
+        sv = nam.scal(v)
+        if sv in self.step_ps:
+            self.comp_freq(par=sv, fr_range=(1.0, 2.5))
+        fov = reg.getPar('fov')
+        if fov in self.step_ps:
+            self.comp_freq(par=fov, fr_range=(0.1, 0.8))
 
     def comp_orientations(self):
         s, e, c = self.data
@@ -548,7 +659,7 @@ class ParamLarvaDataset(param.Parameterized):
     def comp_xy_moments(self, point=''):
         s, e, c = self.data
         xy = nam.xy(point)
-        if not xy.exist_in(s) :
+        if not xy.exist_in(s):
             return
 
         dst = nam.dst(point)
@@ -559,7 +670,6 @@ class ParamLarvaDataset(param.Parameterized):
         sdst = nam.scal(dst)
         svel = nam.scal(vel)
         csdst = nam.cum(sdst)
-
 
         s[dst] = self.apply_per_agent(pars=xy, func=aux.eudist).flatten()
         s[vel] = s[dst] / c.dt
@@ -609,7 +719,7 @@ class ParamLarvaDataset(param.Parameterized):
 
     def comp_centroid(self):
         c = self.config
-        if c.Ncontour>0 :
+        if c.Ncontour > 0:
             self.step_data[c.centroid_xy] = np.sum(self.contour_xy_data, axis=1) / c.Ncontour
 
     def comp_length(self):
@@ -678,14 +788,14 @@ class ParamLarvaDataset(param.Parameterized):
     def comp_wind(self):
         w = self.config.env_params.windscape
         if w is not None:
-            wo=w.wind_direction
+            wo = w.wind_direction
             woo = np.deg2rad(wo)
             try:
-                self.comp_wind_metrics(woo,wo)
+                self.comp_wind_metrics(woo, wo)
             except:
                 self.comp_final_anemotaxis(woo)
 
-    def comp_wind_metrics(self,woo,wo):
+    def comp_wind_metrics(self, woo, wo):
         s, e, c = self.data
         for id in c.agent_ids:
             xy = s[c.traj_xy].xs(id, level='AgentID', drop_level=True).values
@@ -699,7 +809,7 @@ class ParamLarvaDataset(param.Parameterized):
         s[nam.bearing_to('wind')] = s.apply(lambda r: aux.angle_dif(r[nam.orient('front')], wo), axis=1)
         e['anemotaxis'] = s['anemotaxis'].groupby('AgentID').last()
 
-    def comp_final_anemotaxis(self,woo):
+    def comp_final_anemotaxis(self, woo):
         s, e, c = self.data
         xy0 = s[c.traj_xy].groupby('AgentID').first()
         xy1 = s[c.traj_xy].groupby('AgentID').last()
@@ -1420,7 +1530,7 @@ class LarvaDatasetCollection:
                 })
             config.update(**kws)
             d = BaseLarvaDataset.initGeo(to_Geo=to_Geo, load_data=False, step=step, end=end,
-                                         agents=agents, initialize=True,**config)
+                                         agents=agents, initialize=True, **config)
 
             ds.append(d)
 

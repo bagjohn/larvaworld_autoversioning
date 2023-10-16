@@ -130,7 +130,7 @@ def define_default_refID():
         }
         d = g.import_dataset(**kws)
         d.process(is_last=False)
-        d.enrich(anot_keys=['bout_detection','bout_distribution','interference'], is_last=True)
+        d.annotate(is_last=True)
         assert len(conf.Ref.confIDs) == 1
     return conf.Ref.confIDs[0]
 

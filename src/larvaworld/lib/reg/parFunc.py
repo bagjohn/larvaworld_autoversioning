@@ -136,7 +136,7 @@ def cum_func(par):
 @funcs.param("freq")
 def freq_func(par):
     def func(d):
-        aux.get_freq(d, par=par, fr_range=(0.0, +np.inf))
+        d.comp_freq(par=par, fr_range=(0.0, +np.inf))
 
     return func
 
