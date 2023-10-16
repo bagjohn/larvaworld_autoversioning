@@ -742,8 +742,8 @@ def buildInitDict():
                                    'u_name': '$body-lengths$',
                                    'combo': 'scaled distance / stride', 'codename': 'scaled_stride_dst_std',
                                    'h': 'The standard deviation of the displacement achieved in a single peristaltic stride as a fraction of the body length.'},
-                'initial_amp': {'lim': (0.0, 2.0), 'disp': 'initial', 'combo': 'amplitude', 'k': 'A_C0',
-                                'label': 'initial crawler amplitude', 'dv': 0.1,
+                'amp': {'lim': (0.0, 2.0), 'combo': 'amplitude', 'k': 'A_C0',
+                                'label': 'crawler amplitude', 'dv': 0.1,
                                 'symbol': nam.tex.subsup('A', 'C', '0'),
                                 'h': 'The initial amplitude of the CRAWLER-generated forward velocity if this is hardcoded (e.g. constant waveform).'},
                 'noise': {'v': 0.0, 'lim': (0.0, 1.0), 'dv': 0.01, 'disp': 'noise', 'combo': 'amplitude',
@@ -939,15 +939,10 @@ def buildInitDict():
         }
 
         d['sinusoidal_turner'] = {
-            'initial_amp': {'v': 19.27, 'lim': (0.0, 100.0), 'disp': 'initial',
+            'amp': {'v': 19.27, 'lim': (0.0, 100.0), 'disp': 'initial',
                             'combo': 'amplitude',
                             'label': 'output amplitude', 'symbol': '$A_{T}^{0}$', 'k': 'A_T0',
                             'h': 'The initial activity amplitude of the TURNER module.'},
-            'amp_range': {'dtype': Tuple[float], 'lim': (0.0, 1000.0), 'v': (0.0, 100.0),
-                          'disp': 'range', 'combo': 'amplitude',
-                          'label': 'output amplitude range', 'symbol': r'$[A_{T}^{min},A_{T}^{max}]$',
-                          'k': 'A_T_r',
-                          'h': 'The activity amplitude range of the TURNER module.'},
             'freq': {'v': 0.58, 'lim': (0.01, 2.0), 'dv': 0.01, 'disp': 'initial', 'combo': 'frequency',
                              'k': 'f_T0',
                              'label': 'bending frequency', 'symbol': nam.tex.sub('f', 'T'), 'u_name': '$Hz$',
@@ -961,7 +956,7 @@ def buildInitDict():
         }
 
         d['constant_turner'] = {
-            'initial_amp': {'lim': (0.1, 20.0), 'disp': 'initial', 'combo': 'amplitude', 'k': 'A_T0',
+            'amp': {'lim': (0.1, 20.0), 'disp': 'initial', 'combo': 'amplitude', 'k': 'A_T0',
                             'label': 'output amplitude', 'symbol': '$A_{T}^{0}$', 'u_name': None,
                             'h': 'The initial activity amplitude of the TURNER module.'},
         }
@@ -1569,14 +1564,14 @@ class ParamClass:
                 'p': nam.start(pc),
                 'k': f'{kc}0',
                 'u': reg.units.s,
-                'sym': nam.tex.subsup('t', kc, 0),
+                'sym': nam.tex.subsup('t', kc, '0'),
                 'disp': f'{pc} start',
                 **f_kws
             },
             {'p': nam.stop(pc),
              'k': f'{kc}1',
              'u': reg.units.s,
-             'sym': nam.tex.subsup('t', kc, 1),
+             'sym': nam.tex.subsup('t', kc, '1'),
              'disp': f'{pc} end',
              **f_kws},
             {
@@ -1639,14 +1634,14 @@ class ParamClass:
             'p': nam.at(b.p, b0.p),
             'k': f'{kc}_{k}0',
             'disp': f'{b.disp} at {bc.p} start',
-            'sym': nam.tex.subsup(b.sym, kc, 0),
+            'sym': nam.tex.subsup(b.sym, kc, '0'),
             **kws
         }
         kws1 = {
             'p': nam.at(b.p, b1.p),
             'k': f'{kc}_{k}1',
             'disp': f'{b.disp} at {bc.p} stop',
-            'sym': nam.tex.subsup(b.sym, kc, 1),
+            'sym': nam.tex.subsup(b.sym, kc, '1'),
             **kws
         }
 
@@ -1822,7 +1817,7 @@ class ParamClass:
         k0 = 'tor'
         k = f'{k0}{dur}'
         self.add(
-            **{'p': f'{p0}_{dur}', 'k': k, 'lim': (0.0, 1.0), 'sym': nam.tex.sub(k0, dur), 'disp': f"{p0} over {dur}''",
+            **{'p': f'{p0}_{dur}', 'k': k, 'lim': (0.0, 1.0), 'sym': nam.tex.sub(k0, str(dur)), 'disp': f"{p0} over {dur}''",
                'func': self.func_dict.tor(dur)})
         self.add_operators(k0=k)
 
@@ -1957,7 +1952,7 @@ class ParamClass:
             dk = f'd{k}'
             sym = nam.tex.subsup('C', 'odor', ii)
             dsym = nam.tex.subsup(nam.tex.delta('C'), 'odor', ii)
-            ddisp = f'{sym} sensed (C/{nam.tex.sub("C", 0)} - 1)'
+            ddisp = f'{sym} sensed (C/{nam.tex.sub("C", "0")} - 1)'
             self.add(**{'p': f'brain.olfactor.{jj}_odor_concentration', 'k': k, 'd': k,
                         'disp': sym, 'sym': sym, 'u': reg.units.micromol})
             self.add(**{'p': f'brain.olfactor.{jj}_odor_concentration_change', 'k': dk, 'd': dk,

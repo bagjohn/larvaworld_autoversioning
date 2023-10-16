@@ -71,7 +71,7 @@ w, h = 400, 500
 w2 = int(w / 2) - 20
 template = pn.template.MaterialTemplate(title='Material Dark', theme=DarkTheme, sidebar_width=w)
 
-Ms = [model.PhaseOscillator, model.ConstantCrawler, model.NeuralOscillator, model.ConstantTurner, model.SinTurner]
+Ms = [model.Crawler,model.PhaseOscillator, model.ConstantCrawler, model.NeuralOscillator, model.ConstantTurner, model.SinTurner]
 Msel = pn.widgets.Select(name="module", options={MM.__name__: MM for MM in Ms})
 template.sidebar.append(pn.Column(Msel, bind_to_value(Msel, temp=template)))
 

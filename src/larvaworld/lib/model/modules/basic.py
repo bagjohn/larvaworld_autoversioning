@@ -72,13 +72,11 @@ class Effector(Timer):
 
 
 class StepEffector(Effector):
-    initial_amp = PositiveNumber(1.0, allow_None=True, label='oscillation amplitude',
+    amp = PositiveNumber(1.0, allow_None=True, label='oscillation amplitude',
                                  doc='The initial amplitude of the oscillation.')
-    amp_range = param.Range(label='oscillation amplitude range', doc='The amplitude range of the oscillator.')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.amp = self.initial_amp
 
     @property
     def Act_coef(self):
@@ -90,9 +88,7 @@ class StepEffector(Effector):
 
     @property
     def Act(self):
-        c = self.Act_coef
-        Aphi = self.Act_Phi
-        return c * Aphi
+        return self.Act_coef * self.Act_Phi
 
     def set_amp(self, v):
         self.amp = v

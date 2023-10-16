@@ -88,8 +88,8 @@ class Brain(NestedConf):
 
 class DefaultBrain(Brain):
     def __init__(self, conf, agent=None, **kwargs):
-        super().__init__(agent=agent)
-        self.locomotor = modules.DefaultLocomotor(conf=conf, **kwargs)
+        super().__init__(agent=agent, **kwargs)
+        self.locomotor = modules.DefaultLocomotor(conf=conf,dt=self.dt)
 
         kws = {"brain": self, "dt": self.dt}
         self.touch_memory = None

@@ -50,6 +50,11 @@ class Intermitter(Timer):
 
     def __init__(self, pause_dist=None, stridechain_dist=None, run_dist=None, crawl_freq=10 / 7, feed_freq=2.0, **kwargs):
         super().__init__(**kwargs)
+        if self.feeder_reoccurence_rate is None:
+            self.feeder_reoccurence_rate= self.EEB
+            self.use_EEB=True
+        else:
+            self.use_EEB=False
         self.crawl_freq = crawl_freq
         self.feed_freq = feed_freq
         self.reset()
@@ -141,7 +146,7 @@ class Intermitter(Timer):
 
     @ property
     def feed_repeated(self):
-        r = self.feeder_reoccurence_rate if self.feeder_reoccurence_rate is not None else self.EEB
+        r = self.feeder_reoccurence_rate if not self.use_EEB else self.EEB
         return np.random.uniform(0, 1, 1) < r
 
 

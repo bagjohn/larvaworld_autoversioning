@@ -55,7 +55,7 @@ def init_brain_modules():
 
         }
 
-        Tamp = {'initial_amp': {'lim': (0.1, 200.0), 'dv': 0.1, 'v0': 20.0,
+        Tamp = {'amp': {'lim': (0.1, 200.0), 'dv': 0.1, 'v0': 20.0,
                                 'k': 'A_T0', 'codename': 'pause_front_orientation_velocity_mean',
                                 'disp': 'output amplitude', 'sym': '$A_{T}^{0}$',
                                 'h': 'The initial activity amplitude of the TURNER module.'},
@@ -71,8 +71,8 @@ def init_brain_modules():
 
         d = {'neural': {'args': NEUargs, 'class_func': modules.NeuralOscillator,
                         'variable': ['base_activation', 'tau', 'n']},
-             'sinusoidal': {'args': SINargs, 'class_func': modules.SinOscillator, 'variable': ['initial_amp', 'freq']},
-             'constant': {'args': Tamp, 'class_func': modules.StepEffector, 'variable': ['initial_amp']}
+             'sinusoidal': {'args': SINargs, 'class_func': modules.SinOscillator, 'variable': ['amp', 'freq']},
+             'constant': {'args': Tamp, 'class_func': modules.StepEffector, 'variable': ['amp']}
              }
         return aux.AttrDict(d)
 
@@ -88,7 +88,7 @@ def init_brain_modules():
                                       'u_name': '$body-lengths$', 'codename': 'stride_scaled_dst_std',
                                       'h': 'The standard deviation of the displacement achieved in a single peristaltic stride as a fraction of the body length.'}}
 
-        Camp = {'initial_amp': {'lim': (0.0, 2.0), 'dv': 0.1, 'v0': 0.3,
+        Camp = {'amp': {'lim': (0.0, 2.0), 'dv': 0.1, 'v0': 0.3,
                                 'k': 'A_C0', 'codename': 'stride_scaled_velocity_mean',
                                 'disp': 'output amplitude', 'sym': nam.tex.subsup('A', 'C', '0'),
                                 'h': 'The initial output amplitude of the CRAWLER module.'}}
@@ -131,13 +131,13 @@ def init_brain_modules():
         d = {
 
             'gaussian': {'args': {**GAUargs, **str_kws}, 'class_func': modules.GaussOscillator,
-                         'variable': ['stride_dst_mean', 'stride_dst_std', 'std', 'initial_amp', 'freq']},
+                         'variable': ['stride_dst_mean', 'stride_dst_std', 'std', 'amp', 'freq']},
             'square': {'args': {**SQargs, **str_kws}, 'class_func': modules.SquareOscillator,
-                       'variable': ['stride_dst_mean', 'stride_dst_std', 'duty', 'initial_amp', 'freq']},
+                       'variable': ['stride_dst_mean', 'stride_dst_std', 'duty', 'amp', 'freq']},
             'realistic': {'args': {**Rargs, **str_kws}, 'class_func': modules.PhaseOscillator,
                           'variable': ['stride_dst_mean', 'stride_dst_std', 'max_scaled_vel', 'max_vel_phase',
                                        'freq']},
-            'constant': {'args': Camp, 'class_func': modules.StepEffector, 'variable': ['initial_amp']}
+            'constant': {'args': Camp, 'class_func': modules.StepEffector, 'variable': ['amp']}
         }
         return aux.AttrDict(d)
 
