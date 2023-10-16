@@ -53,7 +53,7 @@ class Brain(NestedConf):
         kws = {
             'sources': a.model.sources, 'grid': a.model.food_grid, 'radius': a.radius
         }
-        input= {s: int(aux.sense_food(pos=a.get_sensor_position(s), **kws) is not None) for s in list(a.sensors.keys())}
+        input = {s: int(aux.sense_food(pos=a.get_sensor_position(s), **kws) is not None) for s in a.touch_sensorIDs}
         return input
 
     def sense_wind(self, **kwargs):
@@ -89,7 +89,7 @@ class Brain(NestedConf):
 class DefaultBrain(Brain):
     def __init__(self, conf, agent=None, **kwargs):
         super().__init__(agent=agent, **kwargs)
-        self.locomotor = modules.DefaultLocomotor(conf=conf,dt=self.dt)
+        self.locomotor = modules.DefaultLocomotor(conf=conf, dt=self.dt)
 
         kws = {"brain": self, "dt": self.dt}
         self.touch_memory = None
@@ -101,7 +101,7 @@ class DefaultBrain(Brain):
             self.olfactor = modules.Olfactor(**kws, **conf['olfactor_params'])
         if mods.toucher:
             self.toucher = modules.Toucher(**kws, **conf['toucher_params'])
-            self.toucher.init_sensors()
+
 
         memory_modes = {
             'RL': {'olfaction': modules.RLOlfMemory, 'touch': modules.RLTouchMemory},

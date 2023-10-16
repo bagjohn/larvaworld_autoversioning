@@ -280,7 +280,7 @@ class SegmentedBodySensored(SegmentedBody):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.sensors = aux.AttrDict()
-        self.define_sensor('olfactor', (1, 0))
+        self.define_sensor('olfactor', (1, 0), modality='olfaction')
 
     @property
     def olfactor_pos(self):
@@ -290,7 +290,7 @@ class SegmentedBodySensored(SegmentedBody):
     def olfactor_point(self):
         return geometry.Point(self.olfactor_pos[0], self.olfactor_pos[1])
 
-    def define_sensor(self, sensor, pos_on_body):
+    def define_sensor(self, sensor, pos_on_body, modality):
         x, y = pos_on_body
         for i, (r, cum_r) in enumerate(zip(self.segment_ratio, np.cumsum(self.segment_ratio))):
             if x >= 1 - cum_r:
@@ -300,6 +300,7 @@ class SegmentedBodySensored(SegmentedBody):
         self.sensors[sensor] = aux.AttrDict({
             'seg_idx': seg_idx,
             'local_pos': local_pos,
+            'modality': modality,
         })
 
     def get_sensor_position(self, sensor):
@@ -308,7 +309,7 @@ class SegmentedBodySensored(SegmentedBody):
 
     def add_touch_sensors(self, idx):
         for i in idx:
-            self.define_sensor(f'touch_sensor_{i}', self.base_vertices[i])
+            self.define_sensor(f'touch_sensor_{i}', self.base_vertices[i], modality='touch')
 
     def draw_sensors(self, v, **kwargs):
         for s in self.sensors:
@@ -316,3 +317,10 @@ class SegmentedBodySensored(SegmentedBody):
             v.draw_circle(radius=self.length / 10,
                           position=pos,
                           filled=True, color=(255, 0, 0), width=.1)
+
+    def get_sensors_by_modality(self, modality):
+        return [s for s, dic in self.sensors.items() if dic['modality'] == modality]
+
+    @property
+    def touch_sensorIDs(self):
+        return self.get_sensors_by_modality('touch')

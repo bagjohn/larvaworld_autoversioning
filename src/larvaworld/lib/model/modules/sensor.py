@@ -23,9 +23,7 @@ class Sensor(Effector):
     brute_force = param.Boolean(False, doc='Whether to apply direct rule-based modulation on locomotion or not.')
     gain_dict = param.Dict(default=aux.AttrDict(), doc='Dictionary of sensor gain per stimulus ID')
 
-    @ property
-    def gain_ids(self):
-        return list(self.gain_dict.keys())
+
 
     def __init__(self, brain=None, **kwargs):
         super().__init__(**kwargs)
@@ -42,14 +40,14 @@ class Sensor(Effector):
     def compute_dif(self, input):
         pass
 
-    def update_gain(self):
-        pass
+    # def update_gain(self):
+    #     pass
 
     # def update_output(self,output):
     #     return self.apply_noise(output, self.output_noise, range=(self.A0,self.A1))
 
     def update(self):
-        self.update_gain()
+        # self.update_gain()
         if len(self.input) == 0:
             self.output = 0
         elif self.brute_force:
@@ -93,8 +91,11 @@ class Sensor(Effector):
 
     def compute_dX(self, input):
         for id, cur in input.items():
-            prev = self.X[id]
-            self.dX[id] = self.compute_single_dx(cur, prev)
+            if id not in self.X :
+                self.add_novel_gain(id, con=cur)
+            else:
+                prev = self.X[id]
+                self.dX[id] = self.compute_single_dx(cur, prev)
         self.X = input
 
     def add_novel_gain(self, id, con=0.0, gain=0.0):
@@ -103,28 +104,32 @@ class Sensor(Effector):
         self.dX[id] = 0.0
         self.X[id] = con
 
+    @property
+    def gain_ids(self):
+        return list(self.gain_dict.keys())
+
 
 class Olfactor(Sensor):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
 
-    @property
-    def novel_odors(self):
-        ids = []
-        if self.brain is not None:
-            if self.brain.agent is not None:
-                ids = self.brain.agent.model.odor_ids
-                ids = aux.nonexisting_cols(ids, self.gain_ids)
-        return ids
+    # @property
+    # def novel_odors(self):
+    #     ids = []
+    #     if self.brain is not None:
+    #         if self.brain.agent is not None:
+    #             ids = self.brain.agent.model.odor_ids
+    #             ids = aux.nonexisting_cols(ids, self.gain_ids)
+    #     return ids
 
-    def update_gain(self):
-        for id in self.novel_odors:
-            if isinstance(self.input, dict) and id in self.input.keys():
-                con = self.input[id]
-            else:
-                con = 0
-            self.add_novel_gain(id, con=con)
+    # def update_gain(self):
+    #     for id in self.novel_odors:
+    #         if isinstance(self.input, dict) and id in self.input.keys():
+    #             con = self.input[id]
+    #         else:
+    #             con = 0
+    #         self.add_novel_gain(id, con=con)
 
     def affect_locomotion(self):
         if self.brain is None:
@@ -153,9 +158,8 @@ class Olfactor(Sensor):
 
 
 class Toucher(Sensor):
-    gain_dict = param.Dict(default=aux.AttrDict({'olfactor': 0.0}))
     initial_gain = PositiveNumber(40.0, label='tactile sensitivity coef', doc='The initial gain of the tactile sensor.')
-    touch_sensors = param.List(default=None, item_type=int, doc='The location indexes of sensors around body contour.')
+    touch_sensors = param.List(default=[], item_type=int, doc='The location indexes of sensors around body contour.')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -164,12 +168,10 @@ class Toucher(Sensor):
     def init_sensors(self):
         if self.brain is not None:
             if self.brain.agent is not None:
-                self.brain.agent.touch_sensors = self.touch_sensors
-                if self.touch_sensors is not None:
-                    self.brain.agent.add_touch_sensors(self.touch_sensors)
-                    for s in self.brain.agent.sensors:
-                        if s not in self.gain:
-                            self.add_novel_gain(id=s, gain=self.initial_gain)
+                self.brain.agent.add_touch_sensors(self.touch_sensors)
+                for s in self.brain.agent.touch_sensorIDs:
+                    if s not in self.gain:
+                        self.add_novel_gain(id=s, gain=self.initial_gain)
 
     def affect_locomotion(self):
         if self.brain is None:
