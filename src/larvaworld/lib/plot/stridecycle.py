@@ -132,14 +132,8 @@ def stride_cycle(name=None, shorts=['sv', 'fov', 'rov', 'foa', 'b'], modes=None,
             c = d.config
             col = c.color if 'color' in c.keys() else d.color
             if individuals:
-                try:
-                    cycle_curves = aux.AttrDict(d.read('cycle_curves'))
-                    assert cycle_curves not in [None, {}]
-                except:
-                    s,e,c=d.data
-                    cycle_curves = compute_interference(s, e, c=c)
-                if cycle_curves not in [None, {}]:
-                    df = cycle_curves[sh][mode]
+                if d.cycle_curves not in [None, {}]:
+                    df = d.cycle_curves[sh][mode]
                     if pooled:
                         plot.plot_quantiles(df=df, axis=P.axs[ii], color_shading=col, x=x, label=d.id)
                     else:
@@ -148,17 +142,8 @@ def stride_cycle(name=None, shorts=['sv', 'fov', 'rov', 'foa', 'b'], modes=None,
                         P.axs[ii].plot(x, np.nanquantile(df, q=0.5, axis=0), label=d.id, color=col)
 
             else:
-                try:
-                    pooled_cycle_curves=c.pooled_cycle_curves
-                    assert pooled_cycle_curves not in [None, {}]
-                except:
-                    pooled_cycle_curves = aux.AttrDict(d.read('pooled_cycle_curves'))
-                    assert pooled_cycle_curves not in [None, {}]
-                finally:
-                    s,e,c=d.data
-                    compute_interference(s, e, c=c, d=d)
-                    pooled_cycle_curves = aux.AttrDict(d.read('pooled_cycle_curves'))
-                P.axs[ii].plot(x, np.array(pooled_cycle_curves[sh][mode]), label=d.id, color=col)
+                if d.pooled_cycle_curves not in [None, {}]:
+                    P.axs[ii].plot(x, np.array(d.pooled_cycle_curves[sh][mode]), label=d.id, color=col)
 
         P.conf_ax(ii, xticks=np.linspace(0, 2 * np.pi, 5), xlim=[0, 2 * np.pi],
                   xticklabels=[r'$0$', r'$\frac{\pi}{2}$', r'$\pi$', r'$\frac{3\pi}{2}$', r'$2\pi$'],

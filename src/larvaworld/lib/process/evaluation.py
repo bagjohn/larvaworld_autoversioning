@@ -100,8 +100,8 @@ def RSS(vs0, vs):
 
 
 def RSS_dic(dd, d):
-    f = d.config.pooled_cycle_curves
-    ff = dd.config.pooled_cycle_curves
+    f = d.pooled_cycle_curves
+    ff = dd.pooled_cycle_curves
 
     def RSS0(ff, f, sh, mode):
         vs0 = np.array(f[sh][mode])
@@ -119,7 +119,7 @@ def RSS_dic(dd, d):
         dic[sh] = RSS1(ff, f, sh)
 
     stat = np.round(np.mean([dic[sh]['norm'] for sh in f.keys() if sh != 'sv']), 2)
-    dd.config.pooled_cycle_curves_errors = aux.AttrDict({'dict': dic, 'stat': stat})
+    dd.pooled_cycle_curves_errors = aux.AttrDict({'dict': dic, 'stat': stat})
     return stat
 
 
@@ -240,19 +240,11 @@ class Evaluation(NestedConf):
         self.target_data = self.get_target_data(s, e)
         self.evaluation = self.arrange_evaluation(data=self.target_data)
 
-        # if len(self.eval_metrics) > 0:
-        #     self.evaluation, self.target_data = self.arrange_evaluation(s,e)
-        # else:
-        #     self.s_shorts = []
-        if len(self.cycle_curve_metrics) > 0:
-            if not hasattr(c, 'pooled_cycle_curves'):
-                from ..process.annotation import compute_interference
-                c.pooled_cycle_curves = compute_interference(s, e, c=c, d=d, chunk_dicts=d.read('chunk_dicts'))
-
+        if len(self.cycle_curve_metrics) > 0 and d.pooled_cycle_curves is not None:
             cycle_dict = {'sv': 'abs', 'fov': 'norm', 'rov': 'norm', 'foa': 'norm', 'b': 'norm'}
             self.cycle_modes = {sh: cycle_dict[sh] for sh in self.cycle_curve_metrics}
             self.cycle_curve_target = aux.AttrDict(
-                {sh: np.array(c.pooled_cycle_curves[sh][mod]) for sh, mod in self.cycle_modes.items()})
+                {sh: np.array(d.pooled_cycle_curves[sh][mod]) for sh, mod in self.cycle_modes.items()})
             self.rss_sym = {sh: sh for sh in self.cycle_curve_metrics}
 
     def get_target_data(self, s, e):

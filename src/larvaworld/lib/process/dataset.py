@@ -101,10 +101,25 @@ class ParamLarvaDataset(param.Parameterized):
         finally:
             return self._cycle_curves
 
+
+
     @cycle_curves.setter
     def cycle_curves(self, d):
         self._cycle_curves = d
         self.store(d, 'cycle_curves')
+
+    @property
+    def pooled_cycle_curves(self):
+        try:
+            assert self.config.pooled_cycle_curves is not None
+        except AssertionError:
+            self.comp_pooled_cycle_curves()
+        finally:
+            return self.config.pooled_cycle_curves
+
+    @pooled_cycle_curves.setter
+    def pooled_cycle_curves(self, d):
+        self.config.pooled_cycle_curves = d
 
     def detect_bouts(self, **kwargs):
         s, e, c = self.data
@@ -136,6 +151,14 @@ class ParamLarvaDataset(param.Parameterized):
             reg.vprint(f'Completed stridecycle interference analysis.', 1)
         except:
             reg.vprint(f'Failed to complete stridecycle interference analysis.', 1)
+
+    def comp_pooled_cycle_curves(self):
+        try :
+            self.pooled_cycle_curves = aux.AttrDict({
+                k: np.nanquantile(v, q=0.5, axis=0).tolist() for k, v in self.cycle_curves.items()})
+            reg.vprint(f'Computed average curves during stridecycle for diverse parameters.', 1)
+        except:
+            reg.vprint(f'Failed to compute average curves during stridecycle for diverse parameters.', 1)
 
     def annotate(self, anot_keys=["bout_detection", "bout_distribution", "interference"],is_last=False):
         if 'bout_detection' in anot_keys:

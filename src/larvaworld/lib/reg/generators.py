@@ -593,6 +593,7 @@ class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
     sample = reg.conf.Ref.confID_selector()
     filtered_at = OptionalPositiveNumber(default=None)
     rescaled_by = OptionalPositiveNumber(default=None)
+    pooled_cycle_curves=param.Dict(default=None, doc='The average across-larvae curves of diverse parameters during the stridecycle')
     bout_distros=param.Dict(default=None, doc='The temporal distributions of the diverse types of behavioral bouts')
     intermitter = param.Dict(default=None, doc='The fitted parameters for the intermittency module')
     EEB_poly1d = param.Parameter(default=None, doc='The polynomial describing the exploration-exploitation balance.')
