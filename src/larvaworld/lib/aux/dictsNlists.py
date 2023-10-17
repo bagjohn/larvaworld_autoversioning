@@ -253,7 +253,14 @@ class SuperList(list):
 
     @property
     def flatten(self):
-        return SuperList([item for sublist in self for item in sublist])
+        l=SuperList()
+        for a in self :
+            if not isinstance(a,list):
+                l.append(a)
+            else :
+                aa=SuperList(a).flatten
+                l.extend(aa)
+        return l
 
     @property
     def unique(self):

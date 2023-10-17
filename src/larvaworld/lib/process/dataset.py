@@ -58,20 +58,76 @@ class ParamLarvaDataset(param.Parameterized):
         self._pooled_epochs = None
         self._cycle_curves = None
 
-    def required(ks=[], ps=[], config_attrs=[]):
+    def required(**pars):
         def wrap(f):
             def wrapped_f(self, *args, **kwargs):
-                s, e, c = self.data
-                pars = aux.SuperList(
-                    ps + reg.getPar(ks) + [getattr(c, attr) for attr in config_attrs]).flatten.unique
-                if pars.exist_in(s):
+                if self.data_exists(**pars):
                     f(self, *args, **kwargs)
-                else:
-                    reg.vprint(f'Required columns {pars.nonexisting(s)} not found. Aborting method.', 3)
+                # else:
+                #     reg.vprint(f'Required columns {pars.nonexisting(s)} not found. Aborting method.', 3)
+
             return wrapped_f
+
         return wrap
 
+    # def returned(**pars):
+    #     def wrap(f):
+    #         def wrapped_f(self, recompute, *args, **kwargs):
+    #             if not self.data_exists(**pars) or recompute:
+    #                 f(self, *args, **kwargs)
+    #             # else:
+    #             #     reg.vprint(f'Required columns {pars.nonexisting(s)} not found. Aborting method.', 3)
+    #         return wrapped_f
+    #     return wrap
 
+    def valid(required=None, returned=None):
+        _verbose = 3
+
+        def wrap(f):
+            def wrapped_f(self, *args, **kwargs):
+
+                reg.vprint(f'_______________________________', _verbose)
+                reg.vprint(f'Checking method {f.__name__}', _verbose)
+                if required is not None:
+
+                    if self.data_exists(**required):
+                        reg.vprint(f'   Required columns exist. Proceeding ...', _verbose)
+                    else:
+                        reg.vprint(f'   Required columns not found. Aborting...', _verbose)
+                        return wrapped_f
+                if returned is not None:
+                    #     reg.vprint(f'   Columns to be returned not provided. Executing ...', _verbose)
+                    #     f(self, *args, **kwargs)
+                    # else:
+                    #     returned_exists = self.data_exists(**returned)
+                    if not self.data_exists(**returned):
+                        reg.vprint(f'   Columns to be returned do not exist. Executing ...', _verbose)
+
+                    else:
+
+                        if 'recompute' in kwargs and kwargs['recompute']:
+                            reg.vprint(f'   Forced to recompute. Executing...', _verbose)
+                            f(self, *args, **kwargs)
+                        else:
+                            reg.vprint(f'   Columns to be returned exist and not forced to recompute. Aborting...',
+                                       _verbose)
+                            return wrapped_f
+
+                f(self, *args, **kwargs)
+            return wrapped_f
+
+        return wrap
+
+    def data_exists(self, ks=[], ps=[], eks=[], eps=[], config_attrs=[], attrs=[]):
+        if not all([hasattr(self, attr) for attr in attrs]):
+            return False
+        s, e, c = self.data
+        spars = aux.SuperList(
+            ps + reg.getPar(ks) + [getattr(c, attr) for attr in config_attrs]).flatten.unique
+        if not spars.exist_in(s):
+            return False
+        epars = aux.SuperList(eps + reg.getPar(eks))
+        return epars.exist_in(s)
 
     @property
     def chunk_dicts(self):
@@ -488,7 +544,7 @@ class ParamLarvaDataset(param.Parameterized):
             ds = aux.loadSoloDics(agent_ids=ids, path=f'{self.config.data_dir}/individuals/{type}.txt')
         return ds
 
-    @required(config_attrs=['contour_xy'])
+    # @required(config_attrs=['contour_xy'])
     @property
     def contour_xy_data_byID(self):
         xy = self.config.contour_xy
@@ -496,7 +552,7 @@ class ParamLarvaDataset(param.Parameterized):
         grouped = self.step_data[xy].groupby('AgentID')
         return aux.AttrDict({id: df.values.reshape([-1, self.config.Ncontour, 2]) for id, df in grouped})
 
-    @required(config_attrs=['midline_xy'])
+    # @required(config_attrs=['midline_xy'])
     @property
     def midline_xy_data_byID(self):
         xy = self.config.midline_xy
@@ -504,7 +560,7 @@ class ParamLarvaDataset(param.Parameterized):
         grouped = self.step_data[xy].groupby('AgentID')
         return aux.AttrDict({id: df.values.reshape([-1, self.config.Npoints, 2]) for id, df in grouped})
 
-    @required(config_attrs=['traj_xy'])
+    # @required(config_attrs=['traj_xy'])
     @property
     def traj_xy_data_byID(self):
         s = self.step_data
@@ -520,12 +576,12 @@ class ParamLarvaDataset(param.Parameterized):
         grouped = data.groupby('AgentID')
         return aux.AttrDict({id: df.values for id, df in grouped})
 
-    @required(config_attrs=['midline_xy'])
+    # @required(config_attrs=['midline_xy'])
     @property
     def midline_xy_data(self):
         return self.step_data[self.config.midline_xy].values.reshape([-1, self.config.Npoints, 2])
 
-    @required(config_attrs=['contour_xy'])
+    # @required(config_attrs=['contour_xy'])
     @property
     def contour_xy_data(self):
         return self.step_data[self.config.contour_xy].values.reshape([-1, self.config.Ncontour, 2])
@@ -620,7 +676,7 @@ class ParamLarvaDataset(param.Parameterized):
         if fov in self.step_ps:
             self.comp_freq(par=fov, fr_range=(0.1, 0.8))
 
-    @required(config_attrs=['midline_xy'])
+    @valid(required={'config_attrs': ['midline_xy']}, returned={'ks': ['fo', 'ro']})
     def comp_orientations(self, mode='minimal', recompute=False):
         s, e, c = self.data
         all_vecs = list(c.vector_dict.keys())
@@ -653,7 +709,6 @@ class ParamLarvaDataset(param.Parameterized):
         self.comp_ang_moments(**kwargs)
         if is_last:
             self.save()
-
 
     def comp_bend(self, mode='minimal', recompute=False):
 
@@ -744,7 +799,7 @@ class ParamLarvaDataset(param.Parameterized):
         e[csdst] = s[sdst].dropna().groupby('AgentID').sum()
         e[nam.mean(svel)] = s[svel].dropna().groupby('AgentID').mean()
 
-    @required(ps=['x', 'y', 'dst'])
+    @valid(required={'ps': ['x', 'y', 'dst']})
     def comp_tortuosity(self, dur=20, **kwargs):
         from ..process.spatial import rolling_window, straightness_index
         s, e, c = self.data
@@ -756,7 +811,7 @@ class ParamLarvaDataset(param.Parameterized):
         e[nam.mean(p)] = s[p].groupby('AgentID').mean()
         e[nam.std(p)] = s[p].groupby('AgentID').std()
 
-    @required(config_attrs=['traj_xy'])
+    @valid(required={'config_attrs': ['traj_xy']})
     def comp_dispersal(self, t0=0, t1=60, **kwargs):
         s, e, c = self.data
         p = reg.getPar(f'dsp_{int(t0)}_{int(t1)}')
@@ -777,13 +832,15 @@ class ParamLarvaDataset(param.Parameterized):
             e[nam.final(p)] = g.last()
             e[nam.cum(p)] = g.sum()
 
-    @required(config_attrs=['centroid_xy'])
+    @valid(required={'config_attrs': ['contour_xy']}, returned={'config_attrs': ['centroid_xy']})
+    # @required(config_attrs=['centroid_xy'])
     def comp_centroid(self, **kwargs):
         c = self.config
         if c.Ncontour > 0:
             self.step_data[c.centroid_xy] = np.sum(self.contour_xy_data, axis=1) / c.Ncontour
 
-    @required(config_attrs=['midline_xy'])
+    @valid(required={'config_attrs': ['midline_xy']}, returned={'eks': ['l']})
+    # @required(config_attrs=['midline_xy'])
     def comp_length(self, mode='minimal', recompute=False):
         if 'length' in self.end_ps and not recompute:
             reg.vprint('Length is already computed. If you want to recompute it, set recompute_length to True', 1)
