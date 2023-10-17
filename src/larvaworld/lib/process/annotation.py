@@ -312,13 +312,17 @@ def bout_distribution(s, e, c, d, **kwargs) :
     d.pooled_epochs = util.fit_epochs(d.grouped_epochs)
     c.bout_distros = util.get_bout_distros(d.pooled_epochs)
     register_bout_distros(c, e)
+    d.store(d.pooled_epochs, 'pooled_epochs')
     # print(d.pooled_epochs)
     # raise
     reg.vprint(f'Completed bout distribution analysis.',1)
 
 @reg.funcs.annotation("bout_detection")
 def bout_detection(s, e, c, d, **kwargs):
-    d.chunk_dicts = comp_chunk_dicts(s, e, c, **kwargs)
+    chunk_dicts = comp_chunk_dicts(s, e, c, **kwargs)
+    if chunk_dicts :
+        d.chunk_dicts =chunk_dicts
+        d.store(d.chunk_dicts, 'chunk_dicts')
     reg.vprint(f'Completed bout detection.',1)
 
 
@@ -365,6 +369,7 @@ def cycle_curve_dict_multi(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
 @reg.funcs.annotation("interference")
 def compute_interference_data(s, e, c, d, Nbins=64, **kwargs) :
     d.cycle_curves = compute_interference(s=s, e=e, c=c, chunk_dicts=d.chunk_dicts, Nbins=Nbins)
+    d.store(d.cycle_curves, 'cycle_curves')
 
 def compute_interference(s, e, c,d=None, Nbins=64, chunk_dicts=None):
     p_sv, p_fov, p_rov, p_foa, p_b, pau_fov_mu = reg.getPar(['sv', 'fov', 'rov', 'foa', 'b', 'pau_fov_mu'])
@@ -413,6 +418,13 @@ def compute_interference(s, e, c,d=None, Nbins=64, chunk_dicts=None):
             'minus': curves_minus,
             'norm': curves_norm,
         })
+        # pooled_curves[sh] = aux.AttrDict({
+        #     'abs': np.nanquantile(curves_abs, q=0.5, axis=0).tolist(),
+        #     'plus': np.nanquantile(curves_plus, q=0.5, axis=0).tolist(),
+        #     'minus': np.nanquantile(curves_minus, q=0.5, axis=0).tolist(),
+        #     'norm': np.nanquantile(curves_norm, q=0.5, axis=0).tolist(),
+        # })
+
     att0s, att1s = np.min(mean_curves_abs['fov'], axis=1), np.max(mean_curves_abs['fov'], axis=1)
 
     e[aux.nam.max('phi_attenuation')] = x[np.argmax(mean_curves_abs['fov'], axis=1)]

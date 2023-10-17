@@ -148,6 +148,7 @@ class ParamLarvaDataset(param.Parameterized):
         s, e, c = self.data
         try:
             self.cycle_curves = process.annotation.compute_interference(s, e, c,chunk_dicts=self.chunk_dicts, **kwargs)
+            self.comp_pooled_cycle_curves()
             reg.vprint(f'Completed stridecycle interference analysis.', 1)
         except:
             reg.vprint(f'Failed to complete stridecycle interference analysis.', 1)
@@ -155,12 +156,12 @@ class ParamLarvaDataset(param.Parameterized):
     def comp_pooled_cycle_curves(self):
         try :
             self.pooled_cycle_curves = aux.AttrDict({
-                k: np.nanquantile(v, q=0.5, axis=0).tolist() for k, v in self.cycle_curves.items()})
+                k: {mode : np.nanquantile(vs, q=0.5, axis=0).tolist() for mode, vs in dic.items()} for k, dic in self.cycle_curves.items()})
             reg.vprint(f'Computed average curves during stridecycle for diverse parameters.', 1)
         except:
             reg.vprint(f'Failed to compute average curves during stridecycle for diverse parameters.', 1)
 
-    def annotate(self, anot_keys=["bout_detection", "bout_distribution", "interference"],is_last=False):
+    def annotate(self, anot_keys=["bout_detection", "bout_distribution", "interference"],is_last=False, **kwargs):
         if 'bout_detection' in anot_keys:
             self.detect_bouts()
         if 'bout_distribution' in anot_keys:
@@ -890,7 +891,7 @@ class ParamLarvaDataset(param.Parameterized):
             pass
 
     def process(self, proc_keys=['angular', 'spatial'],
-                dsp_starts=[0], dsp_stops=[40, 60], tor_durs=[5, 10, 20], is_last=False):
+                dsp_starts=[0], dsp_stops=[40, 60], tor_durs=[5, 10, 20], is_last=False, **kwargs):
         if 'angular' in proc_keys:
             self.comp_angular()
         if 'spatial' in proc_keys:
@@ -1254,11 +1255,32 @@ class LarvaDataset(BaseLarvaDataset):
         rep = ReplayRun(parameters=parameters, **kwargs)
         rep.run()
 
+    def enrich(self, pre_kws={}, proc_keys=[], anot_keys=[], is_last=True, **kwargs):
+
+
+        warnings.filterwarnings('ignore')
+        self.preprocess(**pre_kws)
+        self.process(proc_keys=proc_keys, is_last=False, **kwargs)
+        self.annotate(anot_keys=anot_keys, is_last=False, **kwargs)
+        # for k, v in pre_kws.items():
+        #     if v:
+        #         ccc = cc
+        #         ccc[k] = v
+        #         reg.funcs.preprocessing[k](**ccc)
+        # for k in proc_keys:
+        #     reg.funcs.processing[k](**cc)
+        # for k in anot_keys:
+        #     reg.funcs.annotating[k](**cc)
+
+        if is_last:
+            self.save()
+        return self
+
     # @property
     # def data_path(self):
     #     return f'{self.data_dir}/data.h5'
 
-    def enrich(self, pre_kws={}, proc_keys=[], anot_keys=[], is_last=True, **kwargs):
+    def enrich2(self, pre_kws={}, proc_keys=[], anot_keys=[], is_last=True, **kwargs):
         cc = {
             'd': self,
             's': self.step_data,
