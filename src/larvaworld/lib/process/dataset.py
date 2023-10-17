@@ -65,7 +65,7 @@ class ParamLarvaDataset(param.Parameterized):
                 pars = aux.SuperList(
                     ps + reg.getPar(ks) + [getattr(c, attr) for attr in config_attrs]).flatten.unique
                 if pars.exist_in(s):
-                    f(*args, **kwargs)
+                    f(self, *args, **kwargs)
                 else:
                     reg.vprint(f'Required columns {pars.nonexisting(s)} not found. Aborting method.', 3)
             return wrapped_f
