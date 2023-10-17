@@ -58,6 +58,21 @@ class ParamLarvaDataset(param.Parameterized):
         self._pooled_epochs = None
         self._cycle_curves = None
 
+    def required(ks=[], ps=[], config_attrs=[]):
+        def wrap(f):
+            def wrapped_f(self, *args, **kwargs):
+                s, e, c = self.data
+                pars = aux.SuperList(
+                    ps + reg.getPar(ks) + [getattr(c, attr) for attr in config_attrs]).flatten.unique
+                if pars.exist_in(s):
+                    f(*args, **kwargs)
+                else:
+                    reg.vprint(f'Required columns {pars.nonexisting(s)} not found. Aborting method.', 3)
+            return wrapped_f
+        return wrap
+
+
+
     @property
     def chunk_dicts(self):
         try:
@@ -101,8 +116,6 @@ class ParamLarvaDataset(param.Parameterized):
         finally:
             return self._cycle_curves
 
-
-
     @cycle_curves.setter
     def cycle_curves(self, d):
         self._cycle_curves = d
@@ -127,41 +140,41 @@ class ParamLarvaDataset(param.Parameterized):
         reg.vprint(f'Completed bout detection.', 1)
 
     def comp_pooled_epochs(self):
-        try :
+        try:
             grouped_epochs = aux.group_epoch_dicts(self.chunk_dicts)
             self.pooled_epochs = util.fit_epochs(grouped_epochs)
             reg.vprint(f'Computed pooled epoch durations.', 1)
         except:
             reg.vprint(f'Failed to compute pooled epoch durations.', 1)
 
-
     def comp_bout_distros(self):
         s, e, c = self.data
-        try :
+        try:
             c.bout_distros = util.get_bout_distros(self.pooled_epochs)
             process.annotation.register_bout_distros(c, e)
             reg.vprint(f'Completed bout distribution analysis.', 1)
         except:
-            reg.vprint(f'Failed to complete bout distribution analysis.',1)
+            reg.vprint(f'Failed to complete bout distribution analysis.', 1)
 
     def comp_interference(self, **kwargs):
         s, e, c = self.data
         try:
-            self.cycle_curves = process.annotation.compute_interference(s, e, c,chunk_dicts=self.chunk_dicts, **kwargs)
+            self.cycle_curves = process.annotation.compute_interference(s, e, c, chunk_dicts=self.chunk_dicts, **kwargs)
             self.comp_pooled_cycle_curves()
             reg.vprint(f'Completed stridecycle interference analysis.', 1)
         except:
             reg.vprint(f'Failed to complete stridecycle interference analysis.', 1)
 
     def comp_pooled_cycle_curves(self):
-        try :
+        try:
             self.pooled_cycle_curves = aux.AttrDict({
-                k: {mode : np.nanquantile(vs, q=0.5, axis=0).tolist() for mode, vs in dic.items()} for k, dic in self.cycle_curves.items()})
+                k: {mode: np.nanquantile(vs, q=0.5, axis=0).tolist() for mode, vs in dic.items()} for k, dic in
+                self.cycle_curves.items()})
             reg.vprint(f'Computed average curves during stridecycle for diverse parameters.', 1)
         except:
             reg.vprint(f'Failed to compute average curves during stridecycle for diverse parameters.', 1)
 
-    def annotate(self, anot_keys=["bout_detection", "bout_distribution", "interference"],is_last=False, **kwargs):
+    def annotate(self, anot_keys=["bout_detection", "bout_distribution", "interference"], is_last=False, **kwargs):
         if 'bout_detection' in anot_keys:
             self.detect_bouts()
         if 'bout_distribution' in anot_keys:
@@ -475,6 +488,7 @@ class ParamLarvaDataset(param.Parameterized):
             ds = aux.loadSoloDics(agent_ids=ids, path=f'{self.config.data_dir}/individuals/{type}.txt')
         return ds
 
+    @required(config_attrs=['contour_xy'])
     @property
     def contour_xy_data_byID(self):
         xy = self.config.contour_xy
@@ -482,32 +496,36 @@ class ParamLarvaDataset(param.Parameterized):
         grouped = self.step_data[xy].groupby('AgentID')
         return aux.AttrDict({id: df.values.reshape([-1, self.config.Ncontour, 2]) for id, df in grouped})
 
+    @required(config_attrs=['midline_xy'])
     @property
     def midline_xy_data_byID(self):
         xy = self.config.midline_xy
-        assert xy.exist_in(self.step_data)
+        # assert xy.exist_in(self.step_data)
         grouped = self.step_data[xy].groupby('AgentID')
         return aux.AttrDict({id: df.values.reshape([-1, self.config.Npoints, 2]) for id, df in grouped})
 
+    @required(config_attrs=['traj_xy'])
     @property
     def traj_xy_data_byID(self):
         s = self.step_data
         xy = self.config.traj_xy
-        if not xy.exist_in(s):
-            xy0 = self.config.point_xy
-            assert xy0.exist_in(s)
-            s[xy] = s[xy0]
-        assert xy.exist_in(s)
+        # if not xy.exist_in(s):
+        #     xy0 = self.config.point_xy
+        #     assert xy0.exist_in(s)
+        #     s[xy] = s[xy0]
+        # assert xy.exist_in(s)
         return self.data_by_ID(s[xy])
 
     def data_by_ID(self, data):
         grouped = data.groupby('AgentID')
         return aux.AttrDict({id: df.values for id, df in grouped})
 
+    @required(config_attrs=['midline_xy'])
     @property
     def midline_xy_data(self):
         return self.step_data[self.config.midline_xy].values.reshape([-1, self.config.Npoints, 2])
 
+    @required(config_attrs=['contour_xy'])
     @property
     def contour_xy_data(self):
         return self.step_data[self.config.contour_xy].values.reshape([-1, self.config.Ncontour, 2])
@@ -602,22 +620,23 @@ class ParamLarvaDataset(param.Parameterized):
         if fov in self.step_ps:
             self.comp_freq(par=fov, fr_range=(0.1, 0.8))
 
+    @required(config_attrs=['midline_xy'])
     def comp_orientations(self, mode='minimal', recompute=False):
         s, e, c = self.data
-        all_vecs=list(c.vector_dict.keys())
-        vecs=all_vecs[:2] if mode=='minimal' else all_vecs
-        pars=aux.nam.orient(vecs)
-        if pars.exist_in(s) and not recompute :
+        all_vecs = list(c.vector_dict.keys())
+        vecs = all_vecs[:2] if mode == 'minimal' else all_vecs
+        pars = aux.nam.orient(vecs)
+        if pars.exist_in(s) and not recompute:
             reg.vprint(
                 'Vector orientations are already computed. If you want to recompute them, set recompute to True', 1)
-        else :
+        else:
             mid = self.midline_xy_data
             for vec, par in zip(vecs, pars):
-                (idx1, idx2)=c.vector_dict[vec]
+                (idx1, idx2) = c.vector_dict[vec]
                 x, y = mid[:, idx2, 0] - mid[:, idx1, 0], mid[:, idx2, 1] - mid[:, idx1, 1]
                 s[par] = np.arctan2(y, x) % 2 * np.pi
 
-        if mode=='full':
+        if mode == 'full':
             mid = self.midline_xy_data
             s[c.seg_orientations] = self.midline_seg_orients_from_mid(mid)
             # or_pars.append(par)
@@ -635,12 +654,13 @@ class ParamLarvaDataset(param.Parameterized):
         if is_last:
             self.save()
 
+
     def comp_bend(self, mode='minimal', recompute=False):
 
-        if 'bend' in self.step_ps and not recompute :
+        if 'bend' in self.step_ps and not recompute:
             reg.vprint(
                 'Vector orientations are already computed. If you want to recompute them, set recompute to True', 1)
-        else :
+        else:
             s, e, c = self.data
             if c.bend == 'from_vectors':
                 reg.vprint(f'Computing bending angle as the difference between front and rear orients')
@@ -724,6 +744,7 @@ class ParamLarvaDataset(param.Parameterized):
         e[csdst] = s[sdst].dropna().groupby('AgentID').sum()
         e[nam.mean(svel)] = s[svel].dropna().groupby('AgentID').mean()
 
+    @required(ps=['x', 'y', 'dst'])
     def comp_tortuosity(self, dur=20, **kwargs):
         from ..process.spatial import rolling_window, straightness_index
         s, e, c = self.data
@@ -735,6 +756,7 @@ class ParamLarvaDataset(param.Parameterized):
         e[nam.mean(p)] = s[p].groupby('AgentID').mean()
         e[nam.std(p)] = s[p].groupby('AgentID').std()
 
+    @required(config_attrs=['traj_xy'])
     def comp_dispersal(self, t0=0, t1=60, **kwargs):
         s, e, c = self.data
         p = reg.getPar(f'dsp_{int(t0)}_{int(t1)}')
@@ -755,27 +777,30 @@ class ParamLarvaDataset(param.Parameterized):
             e[nam.final(p)] = g.last()
             e[nam.cum(p)] = g.sum()
 
+    @required(config_attrs=['centroid_xy'])
     def comp_centroid(self, **kwargs):
         c = self.config
         if c.Ncontour > 0:
             self.step_data[c.centroid_xy] = np.sum(self.contour_xy_data, axis=1) / c.Ncontour
 
-    def comp_length(self,  mode='minimal', recompute=False):
-        if 'length' in self.end_ps and not recompute :
+    @required(config_attrs=['midline_xy'])
+    def comp_length(self, mode='minimal', recompute=False):
+        if 'length' in self.end_ps and not recompute:
             reg.vprint('Length is already computed. If you want to recompute it, set recompute_length to True', 1)
-        else :
-            self.step_data['length'] = np.sum(np.sum(np.diff(self.midline_xy_data, axis=1) ** 2, axis=2) ** (1 / 2), axis=1)
+        else:
+            self.step_data['length'] = np.sum(np.sum(np.diff(self.midline_xy_data, axis=1) ** 2, axis=2) ** (1 / 2),
+                                              axis=1)
             self.endpoint_data['length'] = self.step_data['length'].groupby('AgentID').quantile(q=0.5)
 
     def comp_spatial(self, **kwargs):
         s, e, c = self.data
         self.comp_centroid(**kwargs)
         self.comp_length(**kwargs)
-        if not c.traj_xy.exist_in(s) and c.point_xy.exist_in(s) :
+        if not c.traj_xy.exist_in(s) and c.point_xy.exist_in(s):
             s[c.traj_xy] = s[c.point_xy]
         self.comp_operators(pars=c.traj_xy)
         for point in ['', 'centroid']:
-            self.comp_xy_moments(point,**kwargs)
+            self.comp_xy_moments(point, **kwargs)
 
     def scale_to_length(self, pars=None, keys=None):
         s, e, c = self.data
@@ -798,6 +823,7 @@ class ParamLarvaDataset(param.Parameterized):
         if len(e_pars) > 0:
             e[nam.scal(e_pars)] = (e[e_pars].values.T / l.values).T
 
+    @required(ks=['fo'], config_attrs=['traj_xy'])
     def comp_source_metrics(self):
         s, e, c = self.data
         fo = reg.getPar('fo')
@@ -1276,7 +1302,6 @@ class LarvaDataset(BaseLarvaDataset):
 
     def enrich(self, pre_kws={}, proc_keys=[], anot_keys=[], is_last=True, mode='minimal', recompute=False, **kwargs):
 
-
         warnings.filterwarnings('ignore')
         self.preprocess(**pre_kws, recompute=recompute)
         self.process(proc_keys=proc_keys, is_last=False, mode=mode, recompute=recompute, **kwargs)
@@ -1347,7 +1372,7 @@ class LarvaDataset(BaseLarvaDataset):
     #         return reg.par.get(k=k, d=self, compute=True)
 
     def get_chunk_par(self, chunk, k=None, par=None, min_dur=0, mode='distro'):
-        s,e,c=self.data
+        s, e, c = self.data
         chunk_idx = f'{chunk}_idx'
         chunk_dur = f'{chunk}_dur'
         if par is None:
@@ -1357,9 +1382,9 @@ class LarvaDataset(BaseLarvaDataset):
 
             vs = []
             for id in c.agent_ids:
-                dic =self.chunk_dicts[id]
-                ss=s[par].xs(id, level='AgentID')
-            # for ss, dic in zip(sss, dics):
+                dic = self.chunk_dicts[id]
+                ss = s[par].xs(id, level='AgentID')
+                # for ss, dic in zip(sss, dics):
                 if min_dur == 0:
                     idx = dic[chunk_idx] + 1
                 else:
