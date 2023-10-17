@@ -582,8 +582,7 @@ class ParamLarvaDataset(param.Parameterized):
         Ady = np.diff(Ay)
         return np.arctan2(Ady, Adx) % (2 * np.pi)
 
-    # def comp_seg_orientations(self):
-    #     s, e, c = self.data
+    # def _ self.data
     #     mid = self.midline_xy_data
     #     seg_ors = self.midline_seg_orients_from_mid(mid)
     #     return seg_ors
@@ -603,15 +602,24 @@ class ParamLarvaDataset(param.Parameterized):
         if fov in self.step_ps:
             self.comp_freq(par=fov, fr_range=(0.1, 0.8))
 
-    def comp_orientations(self):
+    def comp_orientations(self, mode='minimal', recompute=False):
         s, e, c = self.data
-        mid = self.midline_xy_data
-        s[c.seg_orientations] = self.midline_seg_orients_from_mid(mid)
-        # or_pars=c.seg_orientations
-        for vec, (idx1, idx2) in c.vector_dict.items():
-            par = aux.nam.orient(vec)
-            x, y = mid[:, idx2, 0] - mid[:, idx1, 0], mid[:, idx2, 1] - mid[:, idx1, 1]
-            s[par] = np.arctan2(y, x) % 2 * np.pi
+        all_vecs=list(c.vector_dict.keys())
+        vecs=all_vecs[:2] if mode=='minimal' else all_vecs
+        pars=aux.nam.orient(vecs)
+        if pars.exist_in(s) and not recompute :
+            reg.vprint(
+                'Vector orientations are already computed. If you want to recompute them, set recompute to True', 1)
+        else :
+            mid = self.midline_xy_data
+            for vec, par in zip(vecs, pars):
+                (idx1, idx2)=c.vector_dict[vec]
+                x, y = mid[:, idx2, 0] - mid[:, idx1, 0], mid[:, idx2, 1] - mid[:, idx1, 1]
+                s[par] = np.arctan2(y, x) % 2 * np.pi
+
+        if mode=='full':
+            mid = self.midline_xy_data
+            s[c.seg_orientations] = self.midline_seg_orients_from_mid(mid)
             # or_pars.append(par)
         # for p in or_pars:
         #     p_unw = aux.nam.unwrap(p)
@@ -620,32 +628,38 @@ class ParamLarvaDataset(param.Parameterized):
         # ss = s[p_unw]
         # e[nam.initial(par)] = s[par].dropna().groupby('AgentID').first()
 
-    def comp_angular(self, is_last=False):
-        self.comp_orientations()
-        self.comp_bend()
-        self.comp_ang_moments()
+    def comp_angular(self, is_last=False, **kwargs):
+        self.comp_orientations(**kwargs)
+        self.comp_bend(**kwargs)
+        self.comp_ang_moments(**kwargs)
         if is_last:
             self.save()
 
-    def comp_bend(self):
-        s, e, c = self.data
-        if c.bend == 'from_vectors':
-            reg.vprint(f'Computing bending angle as the difference between front and rear orients')
-            fo, ro = nam.orient(['front', 'rear'])
-            a = np.remainder(s[fo] - s[ro], 2 * np.pi)
-            a[a > np.pi] -= 2 * np.pi
-        elif c.bend == 'from_angles':
-            reg.vprint(f'Computing bending angle as the sum of the first {c.Nbend_angles} front angles')
-            Ada = np.diff(s[c.seg_orientations]) % (2 * np.pi)
-            Ada[Ada > np.pi] -= 2 * np.pi
-            a = np.sum(Ada[:, :c.Nbend_angles], axis=1)
-            s[c.angles] = Ada
-        else:
-            raise
+    def comp_bend(self, mode='minimal', recompute=False):
 
-        s['bend'] = np.degrees(a)
+        if 'bend' in self.step_ps and not recompute :
+            reg.vprint(
+                'Vector orientations are already computed. If you want to recompute them, set recompute to True', 1)
+        else :
+            s, e, c = self.data
+            if c.bend == 'from_vectors':
+                reg.vprint(f'Computing bending angle as the difference between front and rear orients')
+                fo, ro = nam.orient(['front', 'rear'])
+                a = np.remainder(s[fo] - s[ro], 2 * np.pi)
+                a[a > np.pi] -= 2 * np.pi
+            elif c.bend == 'from_angles':
+                reg.vprint(f'Computing bending angle as the sum of the first {c.Nbend_angles} front angles')
+                Ada = np.diff(s[c.seg_orientations]) % (2 * np.pi)
+                Ada[Ada > np.pi] -= 2 * np.pi
+                a = np.sum(Ada[:, :c.Nbend_angles], axis=1)
+                if mode == 'full':
+                    s[c.angles] = Ada
+            else:
+                raise
 
-    def comp_ang_moments(self, pars=None):
+            s['bend'] = np.degrees(a)
+
+    def comp_ang_moments(self, pars=None, mode='minimal', recompute=False):
         s, e, c = self.data
         if pars is None:
             ho, to, fo, ro = nam.orient(['head', 'tail', 'front', 'rear'])
@@ -680,7 +694,7 @@ class ParamLarvaDataset(param.Parameterized):
             #         e[aux.nam.initial(pp)] = temp.first()
             # s[[aux.nam.min(pp), aux.nam.max(pp)]] = comp_extrema_solo(sss, dt=dt, **kwargs).reshape(-1, 2)
 
-    def comp_xy_moments(self, point=''):
+    def comp_xy_moments(self, point='', **kwargs):
         s, e, c = self.data
         xy = nam.xy(point)
         if not xy.exist_in(s):
@@ -741,22 +755,27 @@ class ParamLarvaDataset(param.Parameterized):
             e[nam.final(p)] = g.last()
             e[nam.cum(p)] = g.sum()
 
-    def comp_centroid(self):
+    def comp_centroid(self, **kwargs):
         c = self.config
         if c.Ncontour > 0:
             self.step_data[c.centroid_xy] = np.sum(self.contour_xy_data, axis=1) / c.Ncontour
 
-    def comp_length(self):
-        self.step_data['length'] = np.sum(np.sum(np.diff(self.midline_xy_data, axis=1) ** 2, axis=2) ** (1 / 2), axis=1)
-        self.endpoint_data['length'] = self.step_data['length'].groupby('AgentID').quantile(q=0.5)
+    def comp_length(self,  mode='minimal', recompute=False):
+        if 'length' in self.end_ps and not recompute :
+            reg.vprint('Length is already computed. If you want to recompute it, set recompute_length to True', 1)
+        else :
+            self.step_data['length'] = np.sum(np.sum(np.diff(self.midline_xy_data, axis=1) ** 2, axis=2) ** (1 / 2), axis=1)
+            self.endpoint_data['length'] = self.step_data['length'].groupby('AgentID').quantile(q=0.5)
 
-    def comp_spatial(self):
-        self.comp_centroid()
-        self.comp_length()
-        self.step_data[self.config.traj_xy] = self.step_data[self.config.point_xy]
-        self.comp_operators(pars=self.config.traj_xy)
+    def comp_spatial(self, **kwargs):
+        s, e, c = self.data
+        self.comp_centroid(**kwargs)
+        self.comp_length(**kwargs)
+        if not c.traj_xy.exist_in(s) and c.point_xy.exist_in(s) :
+            s[c.traj_xy] = s[c.point_xy]
+        self.comp_operators(pars=c.traj_xy)
         for point in ['', 'centroid']:
-            self.comp_xy_moments(point)
+            self.comp_xy_moments(point,**kwargs)
 
     def scale_to_length(self, pars=None, keys=None):
         s, e, c = self.data
@@ -1255,13 +1274,13 @@ class LarvaDataset(BaseLarvaDataset):
         rep = ReplayRun(parameters=parameters, **kwargs)
         rep.run()
 
-    def enrich(self, pre_kws={}, proc_keys=[], anot_keys=[], is_last=True, **kwargs):
+    def enrich(self, pre_kws={}, proc_keys=[], anot_keys=[], is_last=True, mode='minimal', recompute=False, **kwargs):
 
 
         warnings.filterwarnings('ignore')
-        self.preprocess(**pre_kws)
-        self.process(proc_keys=proc_keys, is_last=False, **kwargs)
-        self.annotate(anot_keys=anot_keys, is_last=False, **kwargs)
+        self.preprocess(**pre_kws, recompute=recompute)
+        self.process(proc_keys=proc_keys, is_last=False, mode=mode, recompute=recompute, **kwargs)
+        self.annotate(anot_keys=anot_keys, is_last=False, recompute=recompute, **kwargs)
         # for k, v in pre_kws.items():
         #     if v:
         #         ccc = cc
@@ -1280,29 +1299,29 @@ class LarvaDataset(BaseLarvaDataset):
     # def data_path(self):
     #     return f'{self.data_dir}/data.h5'
 
-    def enrich2(self, pre_kws={}, proc_keys=[], anot_keys=[], is_last=True, **kwargs):
-        cc = {
-            'd': self,
-            's': self.step_data,
-            'e': self.endpoint_data,
-            'c': self.config,
-            **kwargs
-        }
-
-        warnings.filterwarnings('ignore')
-        for k, v in pre_kws.items():
-            if v:
-                ccc = cc
-                ccc[k] = v
-                reg.funcs.preprocessing[k](**ccc)
-        for k in proc_keys:
-            reg.funcs.processing[k](**cc)
-        for k in anot_keys:
-            reg.funcs.annotating[k](**cc)
-
-        if is_last:
-            self.save()
-        return self
+    # def enrich2(self, pre_kws={}, proc_keys=[], anot_keys=[], is_last=True, **kwargs):
+    #     cc = {
+    #         'd': self,
+    #         's': self.step_data,
+    #         'e': self.endpoint_data,
+    #         'c': self.config,
+    #         **kwargs
+    #     }
+    #
+    #     warnings.filterwarnings('ignore')
+    #     for k, v in pre_kws.items():
+    #         if v:
+    #             ccc = cc
+    #             ccc[k] = v
+    #             reg.funcs.preprocessing[k](**ccc)
+    #     for k in proc_keys:
+    #         reg.funcs.processing[k](**cc)
+    #     for k in anot_keys:
+    #         reg.funcs.annotating[k](**cc)
+    #
+    #     if is_last:
+    #         self.save()
+    #     return self
 
     # def get_par(self, par=None, k=None, key='step'):
     #     if par is None and k is not None:
@@ -1328,20 +1347,19 @@ class LarvaDataset(BaseLarvaDataset):
     #         return reg.par.get(k=k, d=self, compute=True)
 
     def get_chunk_par(self, chunk, k=None, par=None, min_dur=0, mode='distro'):
+        s,e,c=self.data
         chunk_idx = f'{chunk}_idx'
         chunk_dur = f'{chunk}_dur'
         if par is None:
             par = reg.getPar(k)
 
-        dic0 = aux.AttrDict(self.read('chunk_dicts'))
-
-        dics = [dic0[id] for id in self.config.agent_ids]
-        sss = [self.step_data[par].xs(id, level='AgentID') for id in self.config.agent_ids]
-
         if mode == 'distro':
 
             vs = []
-            for ss, dic in zip(sss, dics):
+            for id in c.agent_ids:
+                dic =self.chunk_dicts[id]
+                ss=s[par].xs(id, level='AgentID')
+            # for ss, dic in zip(sss, dics):
                 if min_dur == 0:
                     idx = dic[chunk_idx] + 1
                 else:
@@ -1359,7 +1377,9 @@ class LarvaDataset(BaseLarvaDataset):
             return vs
         elif mode == 'extrema':
             cc0s, cc1s, cc01s = [], [], []
-            for ss, dic in zip(sss, dics):
+            for id in c.agent_ids:
+                dic = self.chunk_dicts[id]
+                ss = s[par].xs(id, level='AgentID')
                 epochs = dic[chunk]
                 if min_dur != 0:
                     epochs = epochs[dic[chunk_dur] >= min_dur]
