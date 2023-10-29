@@ -36,79 +36,64 @@ SAMPLING_PARS = aux.bidict(
 )
 
 
+def generate_larvae(base_model, N=None, sample_dict={}):
+    Npars=len(sample_dict)
+    if Npars > 0:
+        if N is None:
+            vs_per_par=[vs for p, vs in sample_dict.items()]
+            Nvs_per_par=[len(vs) for vs in vs_per_par]
+            Ns= aux.SuperList(Nvs_per_par).unique
+            assert len(Ns)==1
+            N=Ns[0]
 
-
-
-def generate_larvae(N, sample_dict, base_model):
-    if len(sample_dict) > 0:
         all_pars = []
         for i in range(N):
             dic = aux.AttrDict({p: vs[i] for p, vs in sample_dict.items()})
             all_pars.append(base_model.get_copy().update_nestdict(dic))
     else:
+        assert N is not None
         all_pars = [base_model] * N
     return all_pars
 
 
-
-def sampleRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=None, Nids=1, parameter_dict={}):
+def sampleRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=[], Nids=1, parameter_dict={}):
     sample_dict = {}
     if m is None:
         m = reg.conf.Model.getID(mID)
-    if sample_ks is None:
-        sample_ks = []
-    modF = m.flatten()
-    sample_ks += [p for p in modF if modF[p] == 'sample']
+    sample_ks += [k for k in m.flatten() if m.flatten()[k] == 'sample']
     Sinv = SAMPLING_PARS.inverse
-    sample_ps = [Sinv[k] for k in sample_ks if k in Sinv]
+    sample_ps = aux.SuperList([Sinv[k] for k in aux.existing_cols(Sinv, sample_ks)]).flatten
 
-    d=refDataset
+    d = refDataset
     if d is None and refID is not None:
         d = reg.conf.Ref.loadRef(refID, load=True, step=False)
     if d is not None:
         refID = d.refID
         m = d.config.get_sample_bout_distros(m.get_copy())
-        sample_dict = {SAMPLING_PARS[p]: vs for p, vs in d.sample_larvagroup(N=Nids, ps=sample_ps).items()}
+        sample_dict = d.sample_larvagroup(N=Nids, ps=sample_ps, codename_dict=SAMPLING_PARS)
 
     sample_dict.update(parameter_dict)
-    return generate_larvae(Nids, sample_dict, m), refID
+    return generate_larvae(m, Nids, sample_dict), refID
 
 
-def imitateRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=None, Nids=1, parameter_dict={}):
+def imitateRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=[], Nids=1, parameter_dict={}):
     d = refDataset
     if d is None:
         if refID is not None:
             d = reg.conf.Ref.loadRef(refID, load=True, step=False)
         else:
             raise
-    if Nids is None:
-        Nids = d.config.N
 
-    e = d.endpoint_data
-    ids = random.sample(e.index.values.tolist(), Nids)
-    sample_dict = {}
-    for p, k in SAMPLING_PARS.items():
-        if p in d.end_ps:
-            pmu = e[p].mean()
-            vs = []
-            for id in ids:
-                v = e[p].loc[id]
-                if np.isnan(v):
-                    v = pmu
-                vs.append(v)
-            sample_dict[k] = vs
 
+    # if Nids is None:
+    #     Nids = d.config.N
+    ids, ps, ors, sample_dict = d.imitate_larvagroup(N=Nids, codename_dict=SAMPLING_PARS)
     sample_dict.update(parameter_dict)
 
     if m is None:
         m = reg.conf.Model.getID(mID)
     m = d.config.get_sample_bout_distros(m.get_copy())
-    ms = generate_larvae(Nids, sample_dict, m)
-    ps = [tuple(e[reg.getPar(['x0','y0'])].loc[id].values) for id in ids]
-    try:
-        ors = [e[reg.getPar('fo0')].loc[id] for id in ids]
-    except:
-        ors = np.random.uniform(low=0, high=2 * np.pi, size=len(ids)).tolist()
+    ms = generate_larvae(m, N=None, sample_dict=sample_dict)
     return ids, ps, ors, ms
 
 
@@ -173,7 +158,7 @@ def sim_models(mIDs, colors=None, dataset_ids=None, lgs=None, data_dir=None, **k
     return ds
 
 
-def sim_model(mID, Nids=1, refID=None, refDataset=None, sample_ks=None, use_LarvaConfDict=False, imitation=False,
+def sim_model(mID, Nids=1, refID=None, refDataset=None, sample_ks=[], use_LarvaConfDict=False, imitation=False,
               tor_durs=[], dsp_starts=[0], dsp_stops=[40], enrichment=True,
               lg=None, env_params={}, dir=None, duration=3, dt=1 / 16, color='blue', dataset_id=None,
               **kwargs):
@@ -191,7 +176,6 @@ def sim_model(mID, Nids=1, refID=None, refDataset=None, sample_ks=None, use_Larv
                                              refDataset=refDataset, sample_ks=sample_ks,
                                              imitation=imitation)
     s, e = sim_multi_agents(Nticks, Nids, ms, dataset_id, dt=dt, ids=ids, p0s=p0s, fo0s=fo0s)
-
 
     c_kws = {
         'dir': dir,

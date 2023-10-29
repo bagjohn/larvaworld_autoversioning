@@ -105,6 +105,8 @@ class NamingRegistry(AttrDict):
 
         self.tex=TexNaming()
 
+
+
     def get_kws(self, k):
         loc_pref = ['final', 'initial', 'cum', 'lin', 'scal', 'abs', 'dst_to', 'bearing_to', 'non']
 
@@ -203,3 +205,5 @@ class NamingRegistry(AttrDict):
             self.at(p, self.stop(chunk)),
             self.chunk_track(chunk, p)
         ]
+
+

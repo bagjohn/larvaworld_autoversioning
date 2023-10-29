@@ -5,6 +5,7 @@ Basic classes for larvaworld-format datasets
 import copy
 import itertools
 import os
+import random
 import shutil
 import numpy as np
 import pandas as pd
@@ -1063,8 +1064,8 @@ class ParamLarvaDataset(param.Parameterized):
                 k = reg.getPar(p=par, to_return='k')
             return reg.par.get(k=k, d=self, compute=True)
 
-    def sample_larvagroup(self, N=1, ps=[]):
-        e=self.endpoint_data
+    def sample_larvagroup(self, N=1, ps=[], codename_dict={}):
+        e = self.endpoint_data
         ps = aux.existing_cols(aux.unique_list(ps), e)
         means = [e[p].mean() for p in ps]
         if len(ps) >= 2:
@@ -1076,8 +1077,28 @@ class ParamLarvaDataset(param.Parameterized):
             vs = np.atleast_2d(np.random.normal(means[0], std, N))
         else:
             return {}
-        dic = {p: v for p, v in zip(ps, vs)}
+        codenames = [codename_dict[p] if p in codename_dict else p for p in ps]
+        dic = {p: v for p, v in zip(codenames, vs)}
         return dic
+
+    def imitate_larvagroup(self, N=None, ps=None, codename_dict={}):
+        if N is None:
+            N = self.config.N
+        e = self.endpoint_data
+        ids = random.sample(e.index.values.tolist(), N)
+        poss = [tuple(e[reg.getPar(['x0', 'y0'])].loc[id].values) for id in ids]
+        try:
+            ors = [e[reg.getPar('fo0')].loc[id] for id in ids]
+        except:
+            ors = np.random.uniform(low=0, high=2 * np.pi, size=len(ids)).tolist()
+
+        if ps is None:
+            ps=list(codename_dict.keys())
+        ps = aux.existing_cols(aux.unique_list(ps), e)
+        codenames = [codename_dict[p] if p in codename_dict else p for p in ps]
+        dic = aux.AttrDict(
+            {codename: [e[p].loc[id] if not np.isnan(e[p].loc[id]) else e[p].mean() for id in ids] for p,codename in zip(ps, codenames)})
+        return ids, poss, ors, dic
 
 
 class BaseLarvaDataset(ParamLarvaDataset):
