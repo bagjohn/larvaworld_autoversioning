@@ -1793,6 +1793,23 @@ class ParamClass:
         kws.update(kwargs)
         self.add(**kws)
 
+    def add_phi(self, k0, **kwargs):
+        b = self.dict[k0]
+        kws = {
+            'p': nam.phi(b.p),
+            'd': nam.phi(b.d),
+            'k': f'phi_{b.k}',
+            'u': reg.units.rad,
+            'sym': nam.tex.sub('Phi', b.sym),
+            'disp': f'{b.disp} phase',
+            'lim': (0, 2*np.pi),
+            # 'disp': f'{b.disp} dominant frequency',
+            # 'required_ks': [k0],
+            # 'func': self.func_dict.freq(b.d)
+        }
+        kws.update(kwargs)
+        self.add(**kws)
+
     def add_dsp(self, range=(0, 40), u=reg.units.m):
         a = 'dispersion'
         k0 = 'dsp'
@@ -1872,7 +1889,7 @@ class ParamClass:
         self.add(**{'p': 'x', 'disp': 'X position', 'sym': 'X', **kws})
         self.add(**{'p': 'y', 'disp': 'Y position', 'sym': 'Y', **kws})
         self.add(
-            **{'p': 'length', 'k': 'l', 'd': 'length', 'disp': 'body length',
+            **{'p': 'length', 'k': 'l', 'd': 'length', 'disp': 'body length','flatname':'body.length',
                'sym': '$l$', 'v0': 0.004 * s, 'lim': (0.0005 * s, 0.01 * s), 'dv': 0.0005 * s, **kws})
 
         self.add(
@@ -1894,6 +1911,9 @@ class ParamClass:
         for k0 in ['l', 'd', 'sd', 'v', 'sv', 'a', 'sa', 'x', 'y']:
             self.add_freq(k0=k0)
             self.add_operators(k0=k0)
+        for k0 in ['v', 'sv', 'a', 'sa']:
+            for k0_ext in [f'{k0}_min', f'{k0}_max']:
+                self.add_phi(k0=k0_ext)
         for k0 in [nam.cum('d')]:
             self.add_scaled(k0=k0)
 
@@ -1934,13 +1954,17 @@ class ParamClass:
         for ii, jj in zip(['C', 'T', 'F'], ['crawler', 'turner', 'feeder']):
             self.add(**{'p': f'brain.locomotor.{jj}.output', 'k': f'A_{ii}', 'd': f'{jj} output',
                         'sym': nam.tex.sub('A', ii)})
-            self.add(
-                **{'p': f'brain.locomotor.{jj}.input', 'k': f'I_{ii}', 'd': f'{jj} input', 'sym': nam.tex.sub('I', ii)})
+            self.add(**{'p': f'brain.locomotor.{jj}.input', 'k': f'I_{ii}', 'd': f'{jj} input', 'sym': nam.tex.sub('I', ii)})
             self.add(**{'p': f'brain.locomotor.{jj}.phi', 'k': f'phi_{ii}', 'd': f'{jj} phase',
                         'sym': nam.tex.sub('Phi', ii)})
-        self.add(**{'p': f'brain.locomotor.interference.cur_attenuation', 'k': f'A_CT', 'd': f'C->T suppression',
-                    'sym': nam.tex.sub('A', 'CT'),
-                    'disp': 'CRAWLER:TURNER interference suppression.'})
+        self.add(**{'p': f'cur_attenuation','codename': f'brain.locomotor.interference.cur_attenuation', 'k': f'A_CT', 'd': f'C->T suppression',
+                    'sym': nam.tex.sub('A', 'CT'),'disp': 'CRAWLER:TURNER interference suppression.'})
+        self.add(**{'p': f'attenuation','codename': f'brain.locomotor.interference.attenuation', 'k': f'A0_CT', 'd': f'C->T baseline suppression',
+                    'sym': nam.tex.sub('A0', 'CT'), 'disp': 'CRAWLER:TURNER baseline interference suppression.'})
+        self.add(**{'p': nam.max('attenuation'),'codename': f'brain.locomotor.interference.attenuation_max', 'k': f'Amax_CT', 'd': f'C->T max suppression',
+                    'sym': nam.tex.sub('Amax', 'CT'), 'disp': 'CRAWLER:TURNER maximum interference suppression.'})
+        self.add(**{'p': aux.nam.phi(nam.max('attenuation')),'codename': f'brain.locomotor.interference.max_attenuation_phase', 'k': f'phi_Amax_CT', 'd': f'C->T max suppression phase',
+                    'sym': nam.tex.sub('Phi_Amax', 'CT'), 'disp': 'CRAWLER:TURNER maximum interference suppression phase.'})
         # self.add(**{'p': 'brain.locomotor.cur_ang_suppression', 'k': 'c_CT', 'd': 'ang_suppression',
         #             'disp': 'angular suppression output', 'sym': sub('c', 'CT'), 'lim': (0.0, 1.0)})
         Im = 'brain.locomotor.intermitter'
@@ -1991,8 +2015,7 @@ class ParamClass:
             self.add(**{'p': nam.dur_ratio(k), 'k': f'{k}_tr', 'lim': (0.0, 1.0), 'disp': f'time fraction {ii} food'})
             self.add(**{'p': f'handedness_score_{k}', 'k': f'tur_H_{k}', 'disp': f'handedness score {ii} food'})
             for kk in ['fov', 'rov', 'foa', 'roa', 'x', 'y', 'fo', 'fou', 'ro', 'rou', 'b', 'bv', 'ba', 'v', 'sv', 'a',
-                       'v_mu', 'sv_mu',
-                       'sa', 'd', 'sd']:
+                       'v_mu', 'sv_mu', 'sa', 'd', 'sd']:
                 b = self.dict[kk]
                 k0 = f'{kk}_{k}'
                 p0 = f'{b.p}_{k}'

@@ -217,13 +217,13 @@ class LarvaGroup(NestedConf):
                 sample_ks = [k for k in m.flatten() if m.flatten()[k] == 'sample']
                 Sinv = util.SAMPLING_PARS.inverse
                 sample_ps = aux.SuperList([Sinv[k] for k in aux.existing_cols(Sinv, sample_ks)]).flatten
-                sample_dict = d.sample_larvagroup(N=Nids, ps=sample_ps, codename_dict=util.SAMPLING_PARS)
+                sample_dict = d.sample_larvagroup(N=Nids, ps=sample_ps)
             else:
                 sample_dict = {}
 
         else:
             assert d is not None
-            ids, ps, ors, sample_dict = d.imitate_larvagroup(N=Nids, codename_dict=util.SAMPLING_PARS)
+            ids, ps, ors, sample_dict = d.imitate_larvagroup(N=Nids)
         sample_dict.update(parameter_dict)
         all_pars = util.generate_larvae(m, N=Nids, sample_dict=sample_dict)
         confs = []

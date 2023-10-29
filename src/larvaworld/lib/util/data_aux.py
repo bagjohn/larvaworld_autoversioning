@@ -3,12 +3,12 @@ from typing import Tuple, List
 import numpy as np
 import param
 
-
 from .. import reg, aux
+from ..aux import nam
 from ..param.param_aux import vpar, get_vfunc
 
-
 __all__ = [
+    'SAMPLING_PARS',
     'init2mdict',
     'gConf',
     'get_ks',
@@ -17,6 +17,7 @@ __all__ = [
     'prepare_LarvaworldParam',
     'build_LarvaworldParam',
 ]
+
 
 def init2mdict(d0):
     def check(D0):
@@ -70,6 +71,7 @@ def get_ks(d0, k0=None, ks=[]):
             ks = get_ks(p, k0=k, ks=ks)
     return ks
 
+
 class LarvaworldParam(param.Parameterized):
     p = param.String(default='', doc='Name of the parameter')
     d = param.String(default='', doc='Dataset name of the parameter')
@@ -77,11 +79,11 @@ class LarvaworldParam(param.Parameterized):
     k = param.String(default='', doc='Key of the parameter')
     sym = param.String(default='', doc='Symbol of the parameter')
     codename = param.String(default='', doc='Name of the parameter in code')
+    flatname = param.String(default=None, doc='Name of the parameter in model configuration')
     dtype = param.Parameter(default=float, doc='Data type of the parameter value')
     mdict = param.Dict(default=None, doc='The parameter dict in case of a dict header', allow_None=True)
     func = param.Callable(default=None, doc='Function to get the parameter from a dataset', allow_None=True)
     required_ks = param.List(default=[], doc='Keys of prerequired parameters for computation in a dataset')
-
 
     @property
     def s(self):
@@ -99,7 +101,7 @@ class LarvaworldParam(param.Parameterized):
     def ulabel(self):
         if self.u == reg.units.dimensionless:
             return ''
-        else :
+        else:
             return '(' + self.unit + ')'
 
     @property
@@ -115,19 +117,18 @@ class LarvaworldParam(param.Parameterized):
             from pint_pandas import PintType
             ustring = f'pint[{self.u}]'
             return PintType(ustring)
-        except :
+        except:
             return self.u
-
 
     @property
     def short(self):
         return self.k
 
-    @ property
+    @property
     def gConf(self):
         if self.mdict is None:
             return None
-        else :
+        else:
             return gConf(self.mdict)
 
     @property
@@ -259,7 +260,7 @@ class LarvaworldParam(param.Parameterized):
             print(f'Function to compute parameter {self.disp} is not defined')
 
     def randomize(self):
-        p=self.parclass
+        p = self.parclass
         if p == param.Number:
             vmin, vmax = self.param.v.bounds
             self.v = self.param.v.crop_to_bounds(np.round(random.uniform(vmin, vmax), self.Ndec))
@@ -313,6 +314,7 @@ class LarvaworldParam(param.Parameterized):
                 vv1 = np.round(np.clip(vv1, a_min=vv0, a_max=vmax), self.Ndec)
                 self.v = (vv0, vv1)
 
+
 def get_LarvaworldParam(vparfunc, v0=None, dv=None, u_name=None, **kws):
     class _LarvaworldParam(LarvaworldParam):
         v = vparfunc
@@ -322,8 +324,28 @@ def get_LarvaworldParam(vparfunc, v0=None, dv=None, u_name=None, **kws):
     return par
 
 
-def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None, symbol=None, codename=None, lab=None, h=None,
-                            u_name=None, mdict=None,
+SAMPLING_PARS = aux.bidict(
+    aux.AttrDict(
+        {
+            'length': 'body.length',
+            nam.freq(nam.scal(nam.vel(''))): 'brain.crawler_params.freq',
+            nam.mean(nam.scal(nam.chunk_track('stride', nam.dst('')))): 'brain.crawler_params.stride_dst_mean',
+            nam.std(nam.scal(nam.chunk_track('stride', nam.dst('')))): 'brain.crawler_params.stride_dst_std',
+            nam.freq('feed'): 'brain.feeder_params.freq',
+            nam.max(nam.chunk_track('stride', nam.scal(nam.vel('')))): 'brain.crawler_params.max_scaled_vel',
+            aux.nam.phi(aux.nam.max(aux.nam.scal(aux.nam.vel('')))): 'brain.crawler_params.max_vel_phase',
+            'attenuation': 'brain.interference_params.attenuation',
+            nam.max('attenuation'): 'brain.interference_params.attenuation_max',
+            nam.freq(nam.vel(nam.orient(('front')))): 'brain.turner_params.freq',
+            aux.nam.phi(nam.max('attenuation')): 'brain.interference_params.max_attenuation_phase',
+        }
+    )
+)
+
+
+def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None, symbol=None, codename=None, lab=None,
+                            h=None,
+                            u_name=None, mdict=None, flatname=None,
                             required_ks=[], u=reg.units.dimensionless, v0=None, v=None, lim=None, dv=None, vs=None,
                             vfunc=None, vparfunc=None, func=None, **kwargs):
     '''
@@ -334,6 +356,13 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
     disp = d if disp is None else disp
     k = k if k is not None else d
     v0 = v if v is not None else v0
+
+    if flatname is None :
+        if p in SAMPLING_PARS:
+            flatname = SAMPLING_PARS[p]
+        else:
+            flatname = p
+
     if sym is None:
         if symbol is not None:
             sym = symbol
@@ -344,7 +373,7 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
         if u == reg.units.dimensionless:
             lab = f'{disp}'
         else:
-            ulab=fr'${u}$'
+            ulab = fr'${u}$'
             lab = fr'{disp} ({ulab})'
     if dv is None and dtype in [float, List[float], List[Tuple[float]], Tuple[float]]:
         dv = 0.01
@@ -352,12 +381,8 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
 
     if vparfunc is None:
 
-
-
-
-
         if vfunc is None:
-            vfunc =get_vfunc(dtype=dtype, lim=lim, vs=vs)
+            vfunc = get_vfunc(dtype=dtype, lim=lim, vs=vs)
         vparfunc = vpar(vfunc, v0, h, lab, lim, dv, vs)
     else:
         vparfunc = vparfunc()
@@ -370,6 +395,7 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
         'disp': disp,
         'sym': sym,
         'codename': codename,
+        'flatname': flatname,
         'dtype': dtype,
         'func': func,
         'u': u,
@@ -383,12 +409,6 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
     })
 
 
-
-def build_LarvaworldParam(p, **kwargs) :
+def build_LarvaworldParam(p, **kwargs):
     pre_p = prepare_LarvaworldParam(p=p, **kwargs)
     return get_LarvaworldParam(**pre_p)
-
-
-
-
-

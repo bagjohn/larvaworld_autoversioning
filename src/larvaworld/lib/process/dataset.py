@@ -1064,7 +1064,7 @@ class ParamLarvaDataset(param.Parameterized):
                 k = reg.getPar(p=par, to_return='k')
             return reg.par.get(k=k, d=self, compute=True)
 
-    def sample_larvagroup(self, N=1, ps=[], codename_dict={}):
+    def sample_larvagroup(self, N=1, ps=[]):
         e = self.endpoint_data
         ps = aux.existing_cols(aux.unique_list(ps), e)
         means = [e[p].mean() for p in ps]
@@ -1077,11 +1077,12 @@ class ParamLarvaDataset(param.Parameterized):
             vs = np.atleast_2d(np.random.normal(means[0], std, N))
         else:
             return {}
-        codenames = [codename_dict[p] if p in codename_dict else p for p in ps]
-        dic = {p: v for p, v in zip(codenames, vs)}
+        flatnames = reg.getPar(d=ps, to_return='flatname')
+        # codenames = [codename_dict[p] if p in codename_dict else p for p in ps]
+        dic = {p: v for p, v in zip(flatnames, vs)}
         return dic
 
-    def imitate_larvagroup(self, N=None, ps=None, codename_dict={}):
+    def imitate_larvagroup(self, N=None, ps=None):
         if N is None:
             N = self.config.N
         e = self.endpoint_data
@@ -1093,11 +1094,12 @@ class ParamLarvaDataset(param.Parameterized):
             ors = np.random.uniform(low=0, high=2 * np.pi, size=len(ids)).tolist()
 
         if ps is None:
-            ps=list(codename_dict.keys())
+            ps=list(util.SAMPLING_PARS.keys())
         ps = aux.existing_cols(aux.unique_list(ps), e)
-        codenames = [codename_dict[p] if p in codename_dict else p for p in ps]
+        flatnames = reg.getPar(p=ps, to_return='flatname')
+        # codenames = [codename_dict[p] if p in codename_dict else p for p in ps]
         dic = aux.AttrDict(
-            {codename: [e[p].loc[id] if not np.isnan(e[p].loc[id]) else e[p].mean() for id in ids] for p,codename in zip(ps, codenames)})
+            {codename: [e[p].loc[id] if not np.isnan(e[p].loc[id]) else e[p].mean() for id in ids] for p,codename in zip(ps, flatnames)})
         return ids, poss, ors, dic
 
 

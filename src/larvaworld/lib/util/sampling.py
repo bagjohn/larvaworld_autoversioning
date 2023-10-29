@@ -2,11 +2,12 @@ import random
 import numpy as np
 import pandas as pd
 
+from . import SAMPLING_PARS
 from .. import reg, aux
-from ..aux import nam
+# from ..aux import nam
 
 __all__ = [
-    'SAMPLING_PARS',
+    # 'SAMPLING_PARS',
     'generate_larvae',
     # 'sample_group',
     'sampleRef',
@@ -17,24 +18,24 @@ __all__ = [
     'sim_models',
 ]
 
-SAMPLING_PARS = aux.bidict(
-    aux.AttrDict(
-        {
-            'length': 'body.length',
-            nam.freq(nam.scal(nam.vel(''))): 'brain.crawler_params.freq',
-            'stride_reoccurence_rate': 'brain.intermitter_params.crawler_reoccurence_rate',
-            nam.mean(nam.scal(nam.chunk_track('stride', nam.dst('')))): 'brain.crawler_params.stride_dst_mean',
-            nam.std(nam.scal(nam.chunk_track('stride', nam.dst('')))): 'brain.crawler_params.stride_dst_std',
-            nam.freq('feed'): 'brain.feeder_params.freq',
-            nam.max(nam.chunk_track('stride', nam.scal(nam.vel('')))): 'brain.crawler_params.max_scaled_vel',
-            'phi_scaled_velocity_max': 'brain.crawler_params.max_vel_phase',
-            'attenuation': 'brain.interference_params.attenuation',
-            'attenuation_max': 'brain.interference_params.attenuation_max',
-            nam.freq(nam.vel(nam.orient(('front')))): 'brain.turner_params.freq',
-            nam.max('phi_attenuation'): 'brain.interference_params.max_attenuation_phase',
-        }
-    )
-)
+# SAMPLING_PARS = aux.bidict(
+#     aux.AttrDict(
+#         {
+#             'length': 'body.length',
+#             nam.freq(nam.scal(nam.vel(''))): 'brain.crawler_params.freq',
+#             'stride_reoccurence_rate': 'brain.intermitter_params.crawler_reoccurence_rate',
+#             nam.mean(nam.scal(nam.chunk_track('stride', nam.dst('')))): 'brain.crawler_params.stride_dst_mean',
+#             nam.std(nam.scal(nam.chunk_track('stride', nam.dst('')))): 'brain.crawler_params.stride_dst_std',
+#             nam.freq('feed'): 'brain.feeder_params.freq',
+#             nam.max(nam.chunk_track('stride', nam.scal(nam.vel('')))): 'brain.crawler_params.max_scaled_vel',
+#             'phi_scaled_velocity_max': 'brain.crawler_params.max_vel_phase',
+#             'attenuation': 'brain.interference_params.attenuation',
+#             'attenuation_max': 'brain.interference_params.attenuation_max',
+#             nam.freq(nam.vel(nam.orient(('front')))): 'brain.turner_params.freq',
+#             nam.max('phi_attenuation'): 'brain.interference_params.max_attenuation_phase',
+#         }
+#     )
+# )
 
 
 def generate_larvae(base_model, N=None, sample_dict={}):
@@ -70,7 +71,7 @@ def sampleRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=[], Nids=
         d = reg.conf.Ref.loadRef(refID, load=True, step=False)
     if d is not None:
         m = d.config.get_sample_bout_distros(m.get_copy())
-        sample_dict = d.sample_larvagroup(N=Nids, ps=sample_ps, codename_dict=SAMPLING_PARS)
+        sample_dict = d.sample_larvagroup(N=Nids, ps=sample_ps)
 
     sample_dict.update(parameter_dict)
     return generate_larvae(m, Nids, sample_dict)
@@ -83,7 +84,7 @@ def imitateRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=[], Nids
             d = reg.conf.Ref.loadRef(refID, load=True, step=False)
         else:
             raise
-    ids, ps, ors, sample_dict = d.imitate_larvagroup(N=Nids, codename_dict=SAMPLING_PARS)
+    ids, ps, ors, sample_dict = d.imitate_larvagroup(N=Nids)
     sample_dict.update(parameter_dict)
 
     if m is None:

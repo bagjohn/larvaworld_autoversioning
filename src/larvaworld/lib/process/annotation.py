@@ -427,8 +427,8 @@ def compute_interference(s, e, c,d=None, Nbins=64, chunk_dicts=None):
 
     att0s, att1s = np.min(mean_curves_abs['fov'], axis=1), np.max(mean_curves_abs['fov'], axis=1)
 
-    e[aux.nam.max('phi_attenuation')] = x[np.argmax(mean_curves_abs['fov'], axis=1)]
-    e[aux.nam.max(f'phi_{p_sv}')] = x[np.argmax(mean_curves_abs['sv'], axis=1)]
+    e[aux.nam.phi(aux.nam.max('attenuation'))] = x[np.argmax(mean_curves_abs['fov'], axis=1)]
+    e[aux.nam.phi(aux.nam.max(p_sv))] = x[np.argmax(mean_curves_abs['sv'], axis=1)]
     e[reg.getPar('str_sv_max')] = np.max(mean_curves_abs['sv'], axis=1)
     try:
         e['attenuation'] = att0s / e[pau_fov_mu]
