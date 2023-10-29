@@ -7,12 +7,11 @@ from ..aux import nam
 
 __all__ = [
     'generate_larvae',
-    'sample_group',
+    # 'sample_group',
     'sampleRef',
     'imitateRef',
     'generate_agentGroup',
     'generate_agentConfs',
-    'get_sample_bout_distros',
     'sim_model',
     'sim_models',
 ]
@@ -37,21 +36,7 @@ SAMPLING_PARS = aux.bidict(
 )
 
 
-def get_sample_bout_distros(model, bout_distros):
-    m = model.get_copy()
-    if m.brain.intermitter_params:
-        Im = m.brain.intermitter_params
-        dic = {
-            'pause_dist': ['pause', 'pause_dur'],
-            'stridechain_dist': ['stride', 'run_count'],
-            'run_dist': ['exec', 'run_dur'],
-        }
-        for d in ['pause_dist', 'stridechain_dist', 'run_dist']:
-            if (d in Im) and (Im[d] is not None) and ('fit' in Im[d]) and (Im[d]['fit']):
-                for sample_d in dic[d]:
-                    if sample_d in bout_distros and bout_distros[sample_d] is not None:
-                        m.brain.intermitter_params[d] = bout_distros[sample_d]
-    return m
+
 
 
 def generate_larvae(N, sample_dict, base_model):
@@ -65,74 +50,45 @@ def generate_larvae(N, sample_dict, base_model):
     return all_pars
 
 
-def sample_group(e, N=1, ps=[]):
-    means = [e[p].mean() for p in ps]
-    if len(ps) >= 2:
-        base = e[ps].dropna().values.T
-        cov = np.cov(base)
-        vs = np.random.multivariate_normal(means, cov, N).T
-    elif len(ps) == 1:
-        std = np.std(e[ps].values)
-        vs = np.atleast_2d(np.random.normal(means[0], std, N))
-    else:
-        return {}
-    dic = {p: v for p, v in zip(ps, vs)}
-    return dic
-
-
-def get_sample_ks(m, sample_ks=None):
-    if sample_ks is None:
-        sample_ks = []
-    modF = m.flatten()
-    sample_ks += [p for p in modF if modF[p] == 'sample']
-    return sample_ks
-
 
 def sampleRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=None, Nids=1, parameter_dict={}):
     sample_dict = {}
     if m is None:
         m = reg.conf.Model.getID(mID)
-    ks = get_sample_ks(m, sample_ks=sample_ks)
+    if sample_ks is None:
+        sample_ks = []
+    modF = m.flatten()
+    sample_ks += [p for p in modF if modF[p] == 'sample']
+    Sinv = SAMPLING_PARS.inverse
+    sample_ps = [Sinv[k] for k in sample_ks if k in Sinv]
 
-    if len(ks) > 0:
-        if refDataset is None:
-            if refID is not None:
-                refDataset = reg.conf.Ref.loadRef(refID, load=True, step=False)
-        if refDataset is not None:
-            m = get_sample_bout_distros(m, refDataset.config.bout_distros)
-            e = refDataset.endpoint_data if hasattr(refDataset, 'endpoint_data') else refDataset.read('end')
-            Sinv = SAMPLING_PARS.inverse
-            sample_ps = []
-            for k in ks:
-                if k in Sinv:
-                    p = Sinv[k]
-                    if p in e.columns:
-                        sample_ps.append(p)
+    d=refDataset
+    if d is None and refID is not None:
+        d = reg.conf.Ref.loadRef(refID, load=True, step=False)
+    if d is not None:
+        refID = d.refID
+        m = d.config.get_sample_bout_distros(m.get_copy())
+        sample_dict = {SAMPLING_PARS[p]: vs for p, vs in d.sample_larvagroup(N=Nids, ps=sample_ps).items()}
 
-            if len(sample_ps) > 0:
-                sample_dict_p = sample_group(N=Nids, ps=sample_ps, e=e)
-                sample_dict = {SAMPLING_PARS[p]: vs for p, vs in sample_dict_p.items()}
-                refID = refDataset.refID
     sample_dict.update(parameter_dict)
     return generate_larvae(Nids, sample_dict, m), refID
 
 
 def imitateRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=None, Nids=1, parameter_dict={}):
-    if refDataset is None:
+    d = refDataset
+    if d is None:
         if refID is not None:
-            refDataset = reg.conf.Ref.loadRef(refID, load=True, step=False)
+            d = reg.conf.Ref.loadRef(refID, load=True, step=False)
         else:
             raise
-    else:
-        refID = refDataset.refID
     if Nids is None:
-        Nids = refDataset.config.N
+        Nids = d.config.N
 
-    e = refDataset.endpoint_data if hasattr(refDataset, 'endpoint_data') else refDataset.read(key='end')
+    e = d.endpoint_data
     ids = random.sample(e.index.values.tolist(), Nids)
     sample_dict = {}
     for p, k in SAMPLING_PARS.items():
-        if p in e.columns:
+        if p in d.end_ps:
             pmu = e[p].mean()
             vs = []
             for id in ids:
@@ -146,11 +102,11 @@ def imitateRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=None, Ni
 
     if m is None:
         m = reg.conf.Model.getID(mID)
-    m = get_sample_bout_distros(m, refDataset.config.bout_distros)
+    m = d.config.get_sample_bout_distros(m.get_copy())
     ms = generate_larvae(Nids, sample_dict, m)
-    ps = [tuple(e[['initial_x', 'initial_y']].loc[id].values) for id in ids]
+    ps = [tuple(e[reg.getPar(['x0','y0'])].loc[id].values) for id in ids]
     try:
-        ors = [e['initial_front_orientation'].loc[id] for id in ids]
+        ors = [e[reg.getPar('fo0')].loc[id] for id in ids]
     except:
         ors = np.random.uniform(low=0, high=2 * np.pi, size=len(ids)).tolist()
     return ids, ps, ors, ms

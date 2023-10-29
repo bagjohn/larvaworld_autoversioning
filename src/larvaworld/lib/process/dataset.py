@@ -114,6 +114,7 @@ class ParamLarvaDataset(param.Parameterized):
                             return wrapped_f
 
                 f(self, *args, **kwargs)
+
             return wrapped_f
 
         return wrap
@@ -204,13 +205,16 @@ class ParamLarvaDataset(param.Parameterized):
             reg.vprint(f'Failed to compute pooled epoch durations.', 1)
 
     def comp_bout_distros(self):
-        s, e, c = self.data
-        try:
-            c.bout_distros = util.get_bout_distros(self.pooled_epochs)
-            self.register_bout_distros()
-            reg.vprint(f'Completed bout distribution analysis.', 1)
-        except:
-            reg.vprint(f'Failed to complete bout distribution analysis.', 1)
+        c = self.config
+        c.bout_distros = {}
+        for k, dic in self.pooled_epochs.items():
+            try:
+                c.bout_distros[k] = dic['best']
+                reg.vprint(f'Completed {k} bout distribution analysis.', 1)
+            except:
+                c.bout_distros[k] = None
+                reg.vprint(f'Failed to complete {k} bout distribution analysis.', 1)
+        self.register_bout_distros()
 
     def register_bout_distros(self):
         s, e, c = self.data
@@ -1059,6 +1063,22 @@ class ParamLarvaDataset(param.Parameterized):
                 k = reg.getPar(p=par, to_return='k')
             return reg.par.get(k=k, d=self, compute=True)
 
+    def sample_larvagroup(self, N=1, ps=[]):
+        e=self.endpoint_data
+        ps = aux.existing_cols(aux.unique_list(ps), e)
+        means = [e[p].mean() for p in ps]
+        if len(ps) >= 2:
+            base = e[ps].dropna().values.T
+            cov = np.cov(base)
+            vs = np.random.multivariate_normal(means, cov, N).T
+        elif len(ps) == 1:
+            std = np.std(e[ps].values)
+            vs = np.atleast_2d(np.random.normal(means[0], std, N))
+        else:
+            return {}
+        dic = {p: v for p, v in zip(ps, vs)}
+        return dic
+
 
 class BaseLarvaDataset(ParamLarvaDataset):
 
@@ -1262,8 +1282,6 @@ class LarvaDataset(BaseLarvaDataset):
         '''
         super().__init__(**kwargs)
 
-
-
     def visualize(self, parameters={}, **kwargs):
         from ..sim.dataset_replay import ReplayRun
         kwargs['dataset'] = self
@@ -1277,12 +1295,9 @@ class LarvaDataset(BaseLarvaDataset):
         self.process(proc_keys=proc_keys, is_last=False, mode=mode, recompute=recompute, **kwargs)
         self.annotate(anot_keys=anot_keys, is_last=False, recompute=recompute, **kwargs)
 
-
         if is_last:
             self.save()
         return self
-
-
 
     def get_chunk_par(self, chunk, k=None, par=None, min_dur=0, mode='distro'):
         s, e, c = self.data

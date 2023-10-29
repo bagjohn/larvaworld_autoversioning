@@ -204,6 +204,7 @@ class LarvaGroup(NestedConf):
             'refID': self.sample,
             'parameter_dict': parameter_dict,
             'Nids': Nids,
+
         }
 
         if not self.imitation:
@@ -287,7 +288,7 @@ class LabFormat(NestedConf):
         return self.import_func(source_dir=source_dir, tracker=self.tracker, filesystem=self.filesystem, **kwargs)
 
     def build_dataset(self, step, end, parent_dir, proc_folder=None, group_id=None, id=None, sample=None,
-                      color='black', epochs=[], age=0.0,refID=None):
+                      color='black', epochs=[], age=0.0, refID=None):
         if group_id is None:
             group_id = parent_dir
         if id is None:
@@ -303,7 +304,8 @@ class LabFormat(NestedConf):
             'id': id,
             'refID': refID,
             'color': color,
-            'larva_groups': gen.LarvaGroup(c=color, sample=sample, mID=None, N=end.index.values.shape[0], life=[age, epochs]).entry(
+            'larva_groups': gen.LarvaGroup(c=color, sample=sample, mID=None, N=end.index.values.shape[0],
+                                           life=[age, epochs]).entry(
                 id=group_id),
             'env_params': self.env_params.nestedConf,
             **self.tracker.nestedConf,
@@ -593,8 +595,9 @@ class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
     sample = reg.conf.Ref.confID_selector()
     filtered_at = OptionalPositiveNumber(default=None)
     rescaled_by = OptionalPositiveNumber(default=None)
-    pooled_cycle_curves=param.Dict(default=None, doc='The average across-larvae curves of diverse parameters during the stridecycle')
-    bout_distros=param.Dict(default=None, doc='The temporal distributions of the diverse types of behavioral bouts')
+    pooled_cycle_curves = param.Dict(default=None,
+                                     doc='The average across-larvae curves of diverse parameters during the stridecycle')
+    bout_distros = param.Dict(default=None, doc='The temporal distributions of the diverse types of behavioral bouts')
     intermitter = param.Dict(default=None, doc='The fitted parameters for the intermittency module')
     EEB_poly1d = param.Parameter(default=None, doc='The polynomial describing the exploration-exploitation balance.')
 
@@ -612,3 +615,19 @@ class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
         a = self.env_params.arena
         vs = BoundedArea(dims=a.dims, geometry=a.geometry).vertices
         return np.array(vs)
+
+    def get_sample_bout_distros(self, m):
+
+        if m.brain.intermitter_params:
+            Im = m.brain.intermitter_params
+            dic = {
+                'pause_dist': ['pause', 'pause_dur'],
+                'stridechain_dist': ['stride', 'run_count'],
+                'run_dist': ['exec', 'run_dur'],
+            }
+            for d in ['pause_dist', 'stridechain_dist', 'run_dist']:
+                if (d in Im) and (Im[d] is not None) and ('fit' in Im[d]) and (Im[d]['fit']):
+                    for sample_d in dic[d]:
+                        if sample_d in self.bout_distros and self.bout_distros[sample_d] is not None:
+                            m.brain.intermitter_params[d] = self.bout_distros[sample_d]
+        return m

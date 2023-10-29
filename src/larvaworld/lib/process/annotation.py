@@ -11,7 +11,7 @@ from .. import reg, aux, util
 
 
 __all__ = [
-    'register_bout_distros',
+    # 'register_bout_distros',
     'stride_interp',
     'detect_pauses',
     'detect_epochs',
@@ -20,32 +20,32 @@ __all__ = [
     'detect_turns',
     'weathervanesNheadcasts',
     'comp_chunk_dicts',
-    'bout_distribution',
-    'bout_detection',
-    'compute_interference_data',
+    # 'bout_distribution',
+    # 'bout_detection',
+    # 'compute_interference_data',
     'compute_interference',
     'turn_mode_annotation',
     'turn_annotation',
     'crawl_annotation',
 ]
 
-def register_bout_distros(c,e):
-    from ..model.modules.intermitter import get_EEB_poly1d
-    try:
-        c.intermitter = {
-            nam.freq('crawl'): e[nam.freq(nam.scal(nam.vel('')))].mean(),
-            nam.freq('feed'): e[nam.freq('feed')].mean() if nam.freq('feed') in e.columns else 2.0,
-            'dt': c.dt,
-            # 'crawl_bouts': True,
-            'feed_bouts': True,
-            'stridechain_dist': c.bout_distros.run_count,
-            'pause_dist': c.bout_distros.pause_dur,
-            'run_dist': c.bout_distros.run_dur,
-            'feeder_reoccurence_rate': None,
-        }
-        c.EEB_poly1d = get_EEB_poly1d(**c.intermitter).c.tolist()
-    except :
-        pass
+# def register_bout_distros(c,e):
+#     from ..model.modules.intermitter import get_EEB_poly1d
+#     try:
+#         c.intermitter = {
+#             nam.freq('crawl'): e[nam.freq(nam.scal(nam.vel('')))].mean(),
+#             nam.freq('feed'): e[nam.freq('feed')].mean() if nam.freq('feed') in e.columns else 2.0,
+#             'dt': c.dt,
+#             # 'crawl_bouts': True,
+#             'feed_bouts': True,
+#             'stridechain_dist': c.bout_distros.run_count,
+#             'pause_dist': c.bout_distros.pause_dur,
+#             'run_dist': c.bout_distros.run_dur,
+#             'feeder_reoccurence_rate': None,
+#         }
+#         c.EEB_poly1d = get_EEB_poly1d(**c.intermitter).c.tolist()
+#     except :
+#         pass
 
 
 
@@ -305,25 +305,25 @@ def comp_chunk_dicts(s, e, c, vel_thr=0.3, strides_enabled=True,turns=True,runs=
     else:
         return None
 
-@reg.funcs.annotation("bout_distribution")
-def bout_distribution(s, e, c, d, **kwargs) :
-    d.chunk_dicts = aux.AttrDict(d.read('chunk_dicts'))
-    d.grouped_epochs = aux.group_epoch_dicts(d.chunk_dicts)
-    d.pooled_epochs = util.fit_epochs(d.grouped_epochs)
-    c.bout_distros = util.get_bout_distros(d.pooled_epochs)
-    register_bout_distros(c, e)
-    d.store(d.pooled_epochs, 'pooled_epochs')
-    # print(d.pooled_epochs)
-    # raise
-    reg.vprint(f'Completed bout distribution analysis.',1)
+# @reg.funcs.annotation("bout_distribution")
+# def bout_distribution(s, e, c, d, **kwargs) :
+#     d.chunk_dicts = aux.AttrDict(d.read('chunk_dicts'))
+#     d.grouped_epochs = aux.group_epoch_dicts(d.chunk_dicts)
+#     d.pooled_epochs = util.fit_epochs(d.grouped_epochs)
+#     c.bout_distros = util.get_bout_distros(d.pooled_epochs)
+#     register_bout_distros(c, e)
+#     d.store(d.pooled_epochs, 'pooled_epochs')
+#     # print(d.pooled_epochs)
+#     # raise
+#     reg.vprint(f'Completed bout distribution analysis.',1)
 
-@reg.funcs.annotation("bout_detection")
-def bout_detection(s, e, c, d, **kwargs):
-    chunk_dicts = comp_chunk_dicts(s, e, c, **kwargs)
-    if chunk_dicts :
-        d.chunk_dicts =chunk_dicts
-        d.store(d.chunk_dicts, 'chunk_dicts')
-    reg.vprint(f'Completed bout detection.',1)
+# @reg.funcs.annotation("bout_detection")
+# def bout_detection(s, e, c, d, **kwargs):
+#     chunk_dicts = comp_chunk_dicts(s, e, c, **kwargs)
+#     if chunk_dicts :
+#         d.chunk_dicts =chunk_dicts
+#         d.store(d.chunk_dicts, 'chunk_dicts')
+#     reg.vprint(f'Completed bout detection.',1)
 
 
 
@@ -366,10 +366,10 @@ def cycle_curve_dict_multi(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
         dic[id]=cycle_curve_dict(ss, dt=dt, shs=shs)
     return aux.AttrDict(dic)
 
-@reg.funcs.annotation("interference")
-def compute_interference_data(s, e, c, d, Nbins=64, **kwargs) :
-    d.cycle_curves = compute_interference(s=s, e=e, c=c, chunk_dicts=d.chunk_dicts, Nbins=Nbins)
-    d.store(d.cycle_curves, 'cycle_curves')
+# @reg.funcs.annotation("interference")
+# def compute_interference_data(s, e, c, d, Nbins=64, **kwargs) :
+#     d.cycle_curves = compute_interference(s=s, e=e, c=c, chunk_dicts=d.chunk_dicts, Nbins=Nbins)
+#     d.store(d.cycle_curves, 'cycle_curves')
 
 def compute_interference(s, e, c,d=None, Nbins=64, chunk_dicts=None):
     p_sv, p_fov, p_rov, p_foa, p_b, pau_fov_mu = reg.getPar(['sv', 'fov', 'rov', 'foa', 'b', 'pau_fov_mu'])
