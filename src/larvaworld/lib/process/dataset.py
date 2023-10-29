@@ -207,10 +207,28 @@ class ParamLarvaDataset(param.Parameterized):
         s, e, c = self.data
         try:
             c.bout_distros = util.get_bout_distros(self.pooled_epochs)
-            process.annotation.register_bout_distros(c, e)
+            self.register_bout_distros()
             reg.vprint(f'Completed bout distribution analysis.', 1)
         except:
             reg.vprint(f'Failed to complete bout distribution analysis.', 1)
+
+    def register_bout_distros(self):
+        s, e, c = self.data
+        from ..model.modules.intermitter import get_EEB_poly1d
+        try:
+            c.intermitter = {
+                nam.freq('crawl'): e[nam.freq(nam.scal(nam.vel('')))].mean(),
+                nam.freq('feed'): e[nam.freq('feed')].mean() if nam.freq('feed') in self.end_ps else 2.0,
+                'dt': c.dt,
+                'feed_bouts': True,
+                'stridechain_dist': c.bout_distros.run_count,
+                'pause_dist': c.bout_distros.pause_dur,
+                'run_dist': c.bout_distros.run_dur,
+                'feeder_reoccurence_rate': None,
+            }
+            c.EEB_poly1d = get_EEB_poly1d(**c.intermitter).c.tolist()
+        except:
+            pass
 
     def comp_interference(self, **kwargs):
         s, e, c = self.data
@@ -234,6 +252,7 @@ class ParamLarvaDataset(param.Parameterized):
         if 'bout_detection' in anot_keys:
             self.detect_bouts()
         if 'bout_distribution' in anot_keys:
+            self.comp_pooled_epochs()
             self.comp_bout_distros()
         if 'interference' in anot_keys:
             self.comp_interference()

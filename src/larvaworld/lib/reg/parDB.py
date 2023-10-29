@@ -3,21 +3,17 @@ import numpy as np
 from typing import List, Tuple
 import sys
 
-
-
-
-
 if sys.version_info >= (3, 8):
     from typing import TypedDict  # pylint: disable=no-name-in-module
 else:
     from typing_extensions import TypedDict
 
 import param
+
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 from ..aux import nam
 from .. import reg, aux, util
-
 
 __all__ = [
     'output_keys',
@@ -51,10 +47,12 @@ output_dict = {
 
     'feeder': {
         'step': ['l', 'f_am', 'EEB', 'on_food', 'fee_reocc', 'beh', 'phi_F'],
-        'endpoint': ['l', 'f_am', 'on_food_tr', 'pau_N', 'str_N', 'run_N', 'fee_N','str_c_N', 'fee_c_N', 'fee_N_success',  'fee_N_fail']
+        'endpoint': ['l', 'f_am', 'on_food_tr', 'pau_N', 'str_N', 'run_N', 'fee_N', 'str_c_N', 'fee_c_N',
+                     'fee_N_success', 'fee_N_fail']
     },
 
-    'gut': {'step': ['sf_am_Vg', 'sf_am_V',  'f_am_V', 'sf_am_A', 'sf_am_M', 'sf_abs_M', 'f_abs_M', 'sf_faeces_M', 'f_faeces_M',
+    'gut': {'step': ['sf_am_Vg', 'sf_am_V', 'f_am_V', 'sf_am_A', 'sf_am_M', 'sf_abs_M', 'f_abs_M', 'sf_faeces_M',
+                     'f_faeces_M',
                      'f_am'],
             'endpoint': ['sf_am_Vg', 'sf_am_V', 'sf_am_A', 'sf_am_M', 'sf_abs_M', 'f_abs_M', 'sf_faeces_M',
                          'f_faeces_M', 'f_am']},
@@ -68,7 +66,8 @@ output_dict = {
     'contour': None,
 }
 
-output_keys=list(output_dict.keys())
+output_keys = list(output_dict.keys())
+
 
 def set_output(collections=None, Npoints=3, Ncontour=0):
     if collections is None:
@@ -87,8 +86,8 @@ def set_output(collections=None, Npoints=3, Ncontour=0):
             if 'tables' in output_dict[c]:
                 tables.update(output_dict[c]['tables'])
     return aux.AttrDict({'step': aux.unique_list(step),
-              'end': aux.unique_list(end),
-              'tables': tables,
+                         'end': aux.unique_list(end),
+                         'tables': tables,
                          })
 
 
@@ -106,7 +105,8 @@ def update_default(name, dic, **kwargs):
                         dic[k][k0] = kwargs[k0]
         return aux.AttrDict(dic)
 
-def get_default(d,key='v') :
+
+def get_default(d, key='v'):
     if d is None:
         return None
     null = aux.AttrDict()
@@ -116,10 +116,8 @@ def get_default(d,key='v') :
         elif 'k' in v or 'h' in v or 'dtype' in v:
             null[k] = None if key not in v else v[key]
         else:
-            null[k] = get_default(v,key)
+            null[k] = get_default(v, key)
     return null
-
-
 
 
 def ConfID_entry(conftype, default=None, k=None, symbol=None, single_choice=True):
@@ -152,8 +150,6 @@ def ConfID_entry(conftype, default=None, k=None, symbol=None, single_choice=True
 
         return func
 
-
-
     if single_choice:
         t = str
         IDstr = 'ID'
@@ -171,6 +167,7 @@ def ConfID_entry(conftype, default=None, k=None, symbol=None, single_choice=True
          'symbol': symbol, 'k': k, 'h': f'The {conftype} configuration {IDstr}',
          'disp': f'{conftype} {IDstr}'}
     return aux.AttrDict(d)
+
 
 def buildInitDict():
     bF, bT = {'dtype': bool, 'v': False}, {'dtype': bool, 'v': True}
@@ -287,9 +284,9 @@ def buildInitDict():
         d['odor'] = {
             'id': pID('odorant', disp='ID'),
             'intensity': {'lim': (0.0, 10.0), 'disp': 'C peak',
-                               'h': 'The peak concentration of the odorant in micromoles.'},
+                          'h': 'The peak concentration of the odorant in micromoles.'},
             'spread': {'lim': (0.0, 10.0), 'disp': 'spread',
-                            'h': 'The spread of the concentration gradient around the peak.'}
+                       'h': 'The spread of the concentration gradient around the peak.'}
         }
         # })
 
@@ -303,7 +300,7 @@ def buildInitDict():
             # 'distribution': {'dtype': str, 'v': 'uniform', 'vs': ['uniform'],
             #                  'h': 'The distribution of food in the grid.'},
             'color': pCol('green', 'food grid'),
-            'substrate' : d['substrate']
+            'substrate': d['substrate']
         }
 
         d['agent'] = {
@@ -326,7 +323,6 @@ def buildInitDict():
             'can_be_displaced': {**bF, 'disp': 'displaceable',
                                  'h': 'Whether the source can be displaced by wind/water.'},
 
-
         }
 
         d['nutrient'] = {
@@ -334,19 +330,19 @@ def buildInitDict():
             'amount': {'v': 0.0, 'lim': (0.0, 10.0), 'h': 'The food amount in the source.'},
             'radius': {'v': 0.003, 'lim': (0.0, 0.1), 'dv': 0.001,
                        'h': 'The spatial radius of the source in meters.'},
-            'substrate' : d['substrate']
+            'substrate': d['substrate']
         }
 
         d['Food'] = {
 
             'amount': {'v': 0.0, 'lim': (0.0, 10.0), 'h': 'The food amount in the source.'},
             **d['source'],
-            'substrate' : d['substrate']
+            'substrate': d['substrate']
         }
 
         d['FoodGroup'] = {
             'distribution': d['spatial_distro'],
-            **{k:v for k,v in d['Food'].items() if k not in ['pos', 'group']}
+            **{k: v for k, v in d['Food'].items() if k not in ['pos', 'group']}
 
         }
 
@@ -401,7 +397,7 @@ def buildInitDict():
             },
         })
         d['spatial_distro'] = {
-            'mode': {'dtype': str, 'v': 'normal', 'vs': ['uniform','normal', 'periphery',  'grid'],
+            'mode': {'dtype': str, 'v': 'normal', 'vs': ['uniform', 'normal', 'periphery', 'grid'],
                      'disp': 'placing',
                      'h': 'The wa to place agents in the distribution shape.'},
             'shape': {'dtype': str, 'v': 'circle', 'vs': ['circle', 'rect', 'oval'],
@@ -420,7 +416,7 @@ def buildInitDict():
                                   'h': 'The range of larva body orientations to sample from, in degrees.'}
         }
 
-        d['source_distro'] =d['spatial_distro']
+        d['source_distro'] = d['spatial_distro']
         return d
 
     def scapeConfs():
@@ -482,13 +478,13 @@ def buildInitDict():
 
             'arena': {
                 'dims': {'dtype': Tuple[float], 'v': (0.1, 0.1), 'lim': (0.0, 2.0), 'dv': 0.01,
-                               'disp': 'X,Y (m)',
-                               'vfunc': param.NumericTuple,
-                               'h': 'The arena dimensions in meters.'},
+                         'disp': 'X,Y (m)',
+                         'vfunc': param.NumericTuple,
+                         'h': 'The arena dimensions in meters.'},
                 'geometry': {'dtype': str, 'v': 'circular', 'vs': ['circular', 'rectangular'],
-                                'disp': 'geometrical shape',
-                                'h': 'The arena geometrical shape.'},
-                'torus':{**bF, 'h': 'Whether to allow a toroidal space.'}
+                             'disp': 'geometrical shape',
+                             'h': 'The arena geometrical shape.'},
+                'torus': {**bF, 'h': 'Whether to allow a toroidal space.'}
             },
 
         })
@@ -512,11 +508,11 @@ def buildInitDict():
                       'h': 'The number of larvae per larva-group.'}
             },
             'sim_params': {
-                'duration': {'v': 5.0,'lim': (0.0, 100000.0), 'h': 'The duration of the simulation in minutes.',
+                'duration': {'v': 5.0, 'lim': (0.0, 100000.0), 'h': 'The duration of the simulation in minutes.',
                              'k': 't'},
                 'dt': {'v': 0.1, 'lim': (0.0, 0.4), 'dv': 0.05,
-                             'h': 'The timestep of the simulation in seconds.',
-                             'k': 'dt'},
+                       'h': 'The timestep of the simulation in seconds.',
+                       'k': 'dt'},
                 'Box2D': {**bF, 'h': 'Whether to use the Box2D physics engine or not.', 'k': 'Box2D'},
                 'store_data': {**bT, 'h': 'Whether to store the simulation data', 'k': 'no_store'},
                 'offline': {**bF, 'h': 'Whether to exec a full LarvaworldSim environment', 'k': 'offline'},
@@ -549,7 +545,7 @@ def buildInitDict():
         d = aux.AttrDict()
 
         d['ang_definition'] = {
-            'bend': {'dtype': str, 'v': 'from_vectors', 'vs': ['from_vectors','from_angles'],
+            'bend': {'dtype': str, 'v': 'from_vectors', 'vs': ['from_vectors', 'from_angles'],
                      'h': 'Whether bending angle is computed as a sum of sequential segmental angles or as the angle between front and rear body vectors.'},
             'front_vector': {'dtype': Tuple[int], 'v': (1, 2), 'lim': (-12, 12), 'vfunc': param.Tuple,
                              'h': 'The initial & final segment of the front body vector.'},
@@ -635,7 +631,8 @@ def buildInitDict():
             'media_name': {'dtype': str,
                            'h': 'Filename for the saved video/image. File extension mp4/png sutomatically added.',
                            'k': 'media'},
-            'intro_text': {'dtype': bool, 'v': False, 'h': 'Display an introductory screen before launching the simulation'},
+            'intro_text': {'dtype': bool, 'v': False,
+                           'h': 'Display an introductory screen before launching the simulation'},
         }
         d['draw'] = {
             'draw_head': {'dtype': bool, 'v': False, 'h': 'Draw the larva head'},
@@ -691,13 +688,14 @@ def buildInitDict():
             },
             'physics': {
                 'torque_coef': {'v': 0.5, 'lim': (0.1, 1.0), 'dv': 0.01, 'label': 'torque coefficient',
-                                'symbol': nam.tex.sub('c', 'T'), 'u_name': nam.tex.sup('sec', '-2'), 'u': reg.units.s ** -2,
+                                'symbol': nam.tex.sub('c', 'T'), 'u_name': nam.tex.sup('sec', '-2'),
+                                'u': reg.units.s ** -2,
                                 'h': 'Conversion coefficient from TURNER output to torque-per-inertia-unit.'},
                 'ang_vel_coef': {'v': 1.0, 'lim': (0.0, 5.0), 'dv': 0.01,
                                  'label': 'angular velocity coefficient',
                                  'h': 'Conversion coefficient from TURNER output to angular velocity.'},
                 'ang_damping': {'v': 1.0, 'lim': (0.1, 2.0), 'label': 'angular damping', 'symbol': 'z',
-                                'u_name': nam.tex.sup('sec',' -1'), 'u': reg.units.s ** -1,
+                                'u_name': nam.tex.sup('sec', ' -1'), 'u': reg.units.s ** -1,
                                 'h': 'Angular damping exerted on angular velocity.'},
                 'lin_damping': {'v': 1.0, 'lim': (0.0, 10.0), 'label': 'linear damping', 'symbol': 'zl',
                                 'u_name': nam.tex.sup('sec', '-1'), 'u': reg.units.s ** -1,
@@ -718,11 +716,11 @@ def buildInitDict():
                          'label': 'crawler waveform',
                          'h': 'The waveform of the repetitive crawling oscillator (CRAWLER) module.'},
                 'freq': {'v': 1.418, 'lim': (0.5, 2.5), 'dv': 0.1, 'aux_vs': ['sample'],
-                                 'disp': 'initial',
-                                 'k': 'f_C0',
-                                 'label': 'crawling frequency', 'symbol': nam.tex.sub('f', 'C'), 'u': reg.units.Hz,
-                                 'combo': 'frequency', 'codename': 'scaled_velocity_freq',
-                                 'h': 'The initial frequency of the repetitive crawling behavior.'},
+                         'disp': 'initial',
+                         'k': 'f_C0',
+                         'label': 'crawling frequency', 'symbol': nam.tex.sub('f', 'C'), 'u': reg.units.Hz,
+                         'combo': 'frequency', 'codename': 'scaled_velocity_freq',
+                         'h': 'The initial frequency of the repetitive crawling behavior.'},
                 'max_scaled_vel': {'v': 0.6, 'lim': (0.0, 1.5), 'label': 'maximum scaled velocity',
                                    'codename': 'stride_scaled_velocity_max', 'k': 'sstr_v_max', 'dv': 0.1,
                                    'symbol': nam.tex.sub(nam.tex.mathring('v'), 'max'), 'u': reg.units.s ** -1,
@@ -731,20 +729,22 @@ def buildInitDict():
                 'stride_dst_mean': {'v': 0.224, 'lim': (0.0, 1.0), 'dv': 0.01, 'aux_vs': ['sample'],
                                     'disp': 'mean',
                                     'k': 'sstr_d_mu',
-                                    'label': r'stride distance mean', 'symbol': nam.tex.sub(nam.tex.bar(nam.tex.mathring('d')), 'S'),
+                                    'label': r'stride distance mean',
+                                    'symbol': nam.tex.sub(nam.tex.bar(nam.tex.mathring('d')), 'S'),
                                     'u_name': '$body-lengths$',
                                     'combo': 'scaled distance / stride', 'codename': 'scaled_stride_dst_mean',
                                     'h': 'The mean displacement achieved in a single peristaltic stride as a fraction of the body length.'},
                 'stride_dst_std': {'v': 0.033, 'lim': (0.0, 1.0), 'aux_vs': ['sample'], 'disp': 'std',
                                    'k': 'sstr_d_std',
-                                   'label': 'stride distance std', 'symbol': nam.tex.sub(nam.tex.tilde(nam.tex.mathring('d')), 'S'),
+                                   'label': 'stride distance std',
+                                   'symbol': nam.tex.sub(nam.tex.tilde(nam.tex.mathring('d')), 'S'),
                                    'u_name': '$body-lengths$',
                                    'combo': 'scaled distance / stride', 'codename': 'scaled_stride_dst_std',
                                    'h': 'The standard deviation of the displacement achieved in a single peristaltic stride as a fraction of the body length.'},
                 'amp': {'lim': (0.0, 2.0), 'combo': 'amplitude', 'k': 'A_C0',
-                                'label': 'crawler amplitude', 'dv': 0.1,
-                                'symbol': nam.tex.subsup('A', 'C', '0'),
-                                'h': 'The initial amplitude of the CRAWLER-generated forward velocity if this is hardcoded (e.g. constant waveform).'},
+                        'label': 'crawler amplitude', 'dv': 0.1,
+                        'symbol': nam.tex.subsup('A', 'C', '0'),
+                        'h': 'The initial amplitude of the CRAWLER-generated forward velocity if this is hardcoded (e.g. constant waveform).'},
                 'noise': {'v': 0.0, 'lim': (0.0, 1.0), 'dv': 0.01, 'disp': 'noise', 'combo': 'amplitude',
                           'k': 'A_Cnoise', 'symbol': nam.tex.subsup('A', 'C', 'noise'),
                           'label': 'crawler output noise',
@@ -828,9 +828,9 @@ def buildInitDict():
                                'combo': 'frequency',
                                'h': 'The frequency range of the repetitive feeding behavior.'},
                 'freq': {'v': 2.0, 'lim': (0.0, 4.0), 'disp': 'initial', 'combo': 'frequency',
-                                 'k': 'f_F0',
-                                 'label': 'feeding frequency', 'symbol': nam.tex.sub('f', 'F'), 'u': reg.units.Hz,
-                                 'h': 'The initial default frequency of the repetitive feeding behavior'},
+                         'k': 'f_F0',
+                         'label': 'feeding frequency', 'symbol': nam.tex.sub('f', 'F'), 'u': reg.units.Hz,
+                         'h': 'The initial default frequency of the repetitive feeding behavior'},
                 'feed_radius': {'v': 0.1, 'lim': (0.1, 10.0), 'symbol': nam.tex.sub('rad', 'F'),
                                 'label': 'feeding radius', 'k': 'rad_F',
                                 'h': 'The radius around the mouth in which food is consumable as a fraction of the body length.'},
@@ -939,14 +939,14 @@ def buildInitDict():
 
         d['sinusoidal_turner'] = {
             'amp': {'v': 19.27, 'lim': (0.0, 100.0), 'disp': 'initial',
-                            'combo': 'amplitude',
-                            'label': 'output amplitude', 'symbol': '$A_{T}^{0}$', 'k': 'A_T0',
-                            'h': 'The initial activity amplitude of the TURNER module.'},
+                    'combo': 'amplitude',
+                    'label': 'output amplitude', 'symbol': '$A_{T}^{0}$', 'k': 'A_T0',
+                    'h': 'The initial activity amplitude of the TURNER module.'},
             'freq': {'v': 0.58, 'lim': (0.01, 2.0), 'dv': 0.01, 'disp': 'initial', 'combo': 'frequency',
-                             'k': 'f_T0',
-                             'label': 'bending frequency', 'symbol': nam.tex.sub('f', 'T'), 'u_name': '$Hz$',
-                             'u': reg.units.Hz,
-                             'h': 'The initial frequency of the repetitive lateral bending behavior if this is hardcoded (e.g. sinusoidal mode).'},
+                     'k': 'f_T0',
+                     'label': 'bending frequency', 'symbol': nam.tex.sub('f', 'T'), 'u_name': '$Hz$',
+                     'u': reg.units.Hz,
+                     'h': 'The initial frequency of the repetitive lateral bending behavior if this is hardcoded (e.g. sinusoidal mode).'},
             'freq_range': {'dtype': Tuple[float], 'lim': (0.01, 2.0), 'dv': 0.01, 'disp': 'range',
                            'combo': 'frequency',
                            'label': 'bending frequency range', 'k': 'f_T_r', 'v': (0.1, 0.8),
@@ -956,8 +956,8 @@ def buildInitDict():
 
         d['constant_turner'] = {
             'amp': {'lim': (0.1, 20.0), 'disp': 'initial', 'combo': 'amplitude', 'k': 'A_T0',
-                            'label': 'output amplitude', 'symbol': '$A_{T}^{0}$', 'u_name': None,
-                            'h': 'The initial activity amplitude of the TURNER module.'},
+                    'label': 'output amplitude', 'symbol': '$A_{T}^{0}$', 'u_name': None,
+                    'h': 'The initial activity amplitude of the TURNER module.'},
         }
 
         d['base_turner'] = {
@@ -1004,9 +1004,9 @@ def buildInitDict():
 
         d['body'] = {
             'length': {'v': 0.004, 'lim': (0.0, 0.01), 'dv': 0.0001, 'aux_vs': ['sample'],
-                               'disp': 'initial',
-                               'label': 'length', 'symbol': '$l$', 'u': reg.units.m, 'k': 'l0',
-                               'combo': 'length', 'h': 'The initial body length.'},
+                       'disp': 'initial',
+                       'label': 'length', 'symbol': '$l$', 'u': reg.units.m, 'k': 'l0',
+                       'combo': 'length', 'h': 'The initial body length.'},
             'length_std': {'v': 0.0, 'lim': (0.0, 0.001), 'dv': 0.0001, 'u': reg.units.m, 'aux_vs': ['sample'],
                            'disp': 'std', 'k': 'l_std',
                            'combo': 'length', 'h': 'The standard deviation of the initial body length.'},
@@ -1122,7 +1122,7 @@ def buildInitDict():
             'hunger_gain': {'v': 0.0, 'lim': (0.0, 1.0), 'symbol': nam.tex.sub('G', 'H'),
                             'k': 'G_H', 'label': 'hunger sensitivity to reserve reduction',
                             'h': 'The sensitivy of the hunger drive in deviations of the DEB reserve density.'},
-            'assimilation_mode': {'dtype': str, 'v': 'gut', 'vs': ['gut','sim', 'deb'],
+            'assimilation_mode': {'dtype': str, 'v': 'gut', 'vs': ['gut', 'sim', 'deb'],
                                   'symbol': nam.tex.sub('m', 'ass'), 'k': 'ass_mod',
                                   'h': 'The method used to calculate the DEB assimilation energy flow.'},
             'DEB_dt': {'lim': (0.0, 1000.0), 'disp': 'DEB timestep (sec)',
@@ -1157,7 +1157,6 @@ def buildInitDict():
             'Box2D_params': d['Box2D_params'],
         }
 
-
         return d
 
     def Ga0(d):
@@ -1188,8 +1187,7 @@ def buildInitDict():
                                    'h': 'The target data to derive from the reference dataset for evaluation'},
             'fitness_func_name': {'dtype': str, 'h': 'The method for fitness evaluation'},
             'exclude_func_name': {'dtype': str,
-                             'h': 'The method for real-time excluding agents'},
-
+                                  'h': 'The method for real-time excluding agents'},
 
         }
 
@@ -1200,9 +1198,9 @@ def buildInitDict():
 
             'scene': {'dtype': str, 'v': 'no_boxes', 'h': 'The name of the scene to load'},
             'multicore': {**bF, 'h': 'Whether to use multiple cores', 'k': 'multicore'},
-            'env_params': ConfID_entry('Env',default='arena_200mm'),
+            'env_params': ConfID_entry('Env', default='arena_200mm'),
             'sim_params': d['sim_params'],
-            'experiment': ConfID_entry('Ga',default='exploration'),
+            'experiment': ConfID_entry('Ga', default='exploration'),
             'ga_eval_kws': d['ga_eval_kws'],
             # 'ga_space_kws': d['ga_space_kws'],
             'ga_select_kws': d['ga_select_kws'],
@@ -1260,13 +1258,12 @@ def buildInitDict():
         })
         d.update(d0)
         d['Batch'] = {'exp': {'dtype': str},
-                           'space_search': d['space_search'],
-                           'optimization': d['optimization'],
-                           'exp_kws': {'dtype': dict, 'v': {'enrichment': d['enrichment']},
-                                       'h': 'Keywords for the exp exec.'},
-                           }
+                      'space_search': d['space_search'],
+                      'optimization': d['optimization'],
+                      'exp_kws': {'dtype': dict, 'v': {'enrichment': d['enrichment']},
+                                  'h': 'Keywords for the exp exec.'},
+                      }
         return d
-
 
     def conftypes(d):
         d['Body'] = {
@@ -1315,12 +1312,12 @@ def buildInitDict():
             'enrichment': d['enrichment'],
         }
         d['Env'] = {'arena': d['arena'],
-                         'border_list': {'dtype': dict, 'v': {}},
-                         'food_params': d['food_params'],
-                         'odorscape': {'dtype': dict},
-                         'windscape': {'dtype': dict},
-                         'thermoscape': {'dtype': dict},
-                         }
+                    'border_list': {'dtype': dict, 'v': {}},
+                    'food_params': d['food_params'],
+                    'odorscape': {'dtype': dict},
+                    'windscape': {'dtype': dict},
+                    'thermoscape': {'dtype': dict},
+                    }
 
         d['Exp'] = {
             'env_params': ConfID_entry('Env'),
@@ -1336,8 +1333,8 @@ def buildInitDict():
         d['reference_dataset'] = {
             'refID': ConfID_entry('Ref', default=None),
             'dataset_dir': {'dtype': str, 'symbol': 'dataset_dir',
-                    'k': 'dataset_dir',
-                    'h': 'The path to the stored dataset relative to Root/data. Alternative to providing refID'}
+                            'k': 'dataset_dir',
+                            'h': 'The path to the stored dataset relative to Root/data. Alternative to providing refID'}
         }
 
         d['Replay'] = {
@@ -1347,7 +1344,8 @@ def buildInitDict():
                               'h': 'Whether to transpose the dataset spatial coordinates.'},
             'agent_ids': {'dtype': List[int], 'symbol': 'ids', 'k': 'ids',
                           'h': 'Whether to only display some larvae of the dataset, defined by their indexes.'},
-            'dynamic_color': {'dtype': str, 'vs': [None, 'lin_color', 'ang_color'], 'symbol': nam.tex.sub('color', 'dyn'),
+            'dynamic_color': {'dtype': str, 'vs': [None, 'lin_color', 'ang_color'],
+                              'symbol': nam.tex.sub('color', 'dyn'),
                               'k': 'dyn_col',
                               'h': 'Whether to display larva tracks according to the instantaneous forward or angular velocity.'},
             'time_range': {'dtype': Tuple[float], 'lim': (0.0, 1000.0), 'dv': 1.0, 'symbol': nam.tex.sub('t', 'range'),
@@ -1381,7 +1379,7 @@ def buildInitDict():
 
     def larvaGroup(d):
         d['LarvaGroup'] = {
-             'model': ConfID_entry('Model', default='explorer'),
+            'model': ConfID_entry('Model', default='explorer'),
             'sample': {'dtype': str, 'v': 'None.150controls', 'h': 'The reference dataset to sample from.'},
             'color': pCol('black', 'larva group'),
             'imitation': {**bF, 'h': 'Whether to imitate the reference dataset.'},
@@ -1392,7 +1390,6 @@ def buildInitDict():
 
         return d
 
-
     dic = {
         'vis': init_vis,
         'xy': xy_distros,
@@ -1402,16 +1399,17 @@ def buildInitDict():
         'enrich': enrConfs,
         'model': init_mods,
     }
-    dic0={}
+    dic0 = {}
     d = {}
-    for k,f in dic.items() :
-        dic0[k]=f()
+    for k, f in dic.items():
+        dic0[k] = f()
         d.update(dic0[k])
 
-    for f in [food,life,larvaGroup,batch,conftypes,Ga0,Ga1]:
+    for f in [food, life, larvaGroup, batch, conftypes, Ga0, Ga1]:
         dic0 = f(d)
         d.update(dic0)
     return aux.AttrDict(d)
+
 
 def buildDefaultDict(d0):
     dic = {}
@@ -1421,12 +1419,11 @@ def buildDefaultDict(d0):
 
 
 class ParamClass:
-    def __init__(self,func_dict,in_rad=True, in_m=True):
+    def __init__(self, func_dict, in_rad=True, in_m=True):
         self.func_dict = func_dict
         self.dict_entries = self.build(in_rad=in_rad, in_m=in_m)
 
         self.kdict = self.finalize_dict(self.dict_entries)
-
 
     def build(self, in_rad=True, in_m=True):
         self.dict = aux.AttrDict()
@@ -1442,26 +1439,26 @@ class ParamClass:
     def build_initial(self):
         kws = {'u': reg.units.s}
         self.add(
-            **{'p': 't', 'k': 't', 'd': 't', 'sym': '$t$', 'lim':(0.0, None), 'dv': 0.01, 'v0': 0.0,
+            **{'p': 't', 'k': 't', 'd': 't', 'sym': '$t$', 'lim': (0.0, None), 'dv': 0.01, 'v0': 0.0,
                **kws})
         self.add_operators(k0='t')
         self.add(
             **{'p': 'num_ts', 'k': 'N_ts', 'sym': nam.tex.sub('N', 'ts'), 'dtype': int, 'lim': (0, None), 'dv': 1})
         self.add(
-            **{'p': 'tick', 'k': 'tick', 'd': 'tick', 'sym': '$tick$', 'lim': (0, None), 'v0': 0,'dtype': int,
+            **{'p': 'tick', 'k': 'tick', 'd': 'tick', 'sym': '$tick$', 'lim': (0, None), 'v0': 0, 'dtype': int,
                **kws})
         self.add_operators(k0='tick')
         self.add(
-            **{'p': 'num_ticks', 'k': 'N_ticks', 'sym': nam.tex.sub('N', 'ticks'), 'dtype': int, 'lim': (0, None), 'dv': 1})
+            **{'p': 'num_ticks', 'k': 'N_ticks', 'sym': nam.tex.sub('N', 'ticks'), 'dtype': int, 'lim': (0, None),
+               'dv': 1})
 
         self.add(
             **{'p': 'model.dt', 'k': 'dt', 'd': 'dt', 'sym': '$dt$', 'lim': (0.01, 0.5), 'dv': 0.01, 'v0': 0.1,
                **kws})
         self.add(
-            **{'p': 'cum_dur', 'k': nam.cum('t'), 'sym': nam.tex.sub('t', 'cum'), 'lim': (0.0, None), 'dv': 0.1, 'v0': 0.0,
+            **{'p': 'cum_dur', 'k': nam.cum('t'), 'sym': nam.tex.sub('t', 'cum'), 'lim': (0.0, None), 'dv': 0.1,
+               'v0': 0.0,
                **kws})
-
-
 
     def add(self, **kwargs):
         prepar = util.prepare_LarvaworldParam(**kwargs)
@@ -1521,10 +1518,12 @@ class ParamClass:
         max_kws = {'d': nam.max(b.d), 'p': nam.max(b.p), 'sym': nam.tex.sub(b.sym, 'max'), 'disp': f'maximum {b.disp}',
                    'func': funcs.max(b.d), 'k': f'{b.k}_max'}
 
-        fin_kws = {'d': nam.final(b.d), 'p': nam.final(b.p), 'sym': nam.tex.sub(b.sym, 'fin'), 'disp': f'final {b.disp}',
+        fin_kws = {'d': nam.final(b.d), 'p': nam.final(b.p), 'sym': nam.tex.sub(b.sym, 'fin'),
+                   'disp': f'final {b.disp}',
                    'func': funcs.final(b.d), 'k': f'{b.k}_fin'}
 
-        init_kws = {'d': nam.initial(b.d), 'p': nam.initial(b.p), 'sym': nam.tex.sub(b.sym, '0'), 'disp': f'initial {b.disp}',
+        init_kws = {'d': nam.initial(b.d), 'p': nam.initial(b.p), 'sym': nam.tex.sub(b.sym, '0'),
+                    'disp': f'initial {b.disp}',
                     'func': funcs.initial(b.d), 'k': f'{b.k}0'}
 
         if k0 == 'd':
@@ -1536,7 +1535,7 @@ class ParamClass:
         cum_kws = {'d': nam.cum(b.d), 'p': nam.cum(b.p), 'sym': nam.tex.sub(b.sym, 'cum'), 'disp': disp,
                    'func': funcs.cum(b.d), 'k': nam.cum(b.k)}
 
-        for kws in [mu_kws, std_kws,var_kws, min_kws, max_kws, fin_kws, init_kws, cum_kws]:
+        for kws in [mu_kws, std_kws, var_kws, min_kws, max_kws, fin_kws, init_kws, cum_kws]:
             self.add(**kws, **kws0)
 
     def add_chunk(self, pc, kc, func=None, required_ks=[]):
@@ -1651,8 +1650,8 @@ class ParamClass:
             'sym': nam.tex.sub(nam.tex.Delta(b.sym), kc),
             **kws
         }
-        if kws01['k']=='tur_fou':
-            kws01['disp']='turn amplitude'
+        if kws01['k'] == 'tur_fou':
+            kws01['disp'] = 'turn amplitude'
 
         self.add(**kws0)
         self.add(**kws1)
@@ -1683,7 +1682,7 @@ class ParamClass:
         if func_v is None:
             def func_v(d):
                 s, e, c = d.data
-                s[d_v]=aux.apply_per_level(s[b.d], aux.rate, dt=c.dt).flatten()
+                s[d_v] = aux.apply_per_level(s[b.d], aux.rate, dt=c.dt).flatten()
                 # s[d_v]=aux.comp_rate(s[b.d], c.dt)
 
         self.add(
@@ -1729,7 +1728,6 @@ class ParamClass:
             in_deg = False
         else:
             raise
-
 
         kws = {
             'p': nam.unwrap(b.p),
@@ -1816,7 +1814,8 @@ class ParamClass:
         k0 = 'tor'
         k = f'{k0}{dur}'
         self.add(
-            **{'p': f'{p0}_{dur}', 'k': k, 'lim': (0.0, 1.0), 'sym': nam.tex.sub(k0, str(dur)), 'disp': f"{p0} over {dur}''",
+            **{'p': f'{p0}_{dur}', 'k': k, 'lim': (0.0, 1.0), 'sym': nam.tex.sub(k0, str(dur)),
+               'disp': f"{p0} over {dur}''",
                'func': self.func_dict.tor(dur)})
         self.add_operators(k0=k)
 
@@ -1829,7 +1828,8 @@ class ParamClass:
             amax = 180
         kws = {'dv': np.round(amax / 180, 2), 'u': u, 'v0': 0.0}
         self.add(
-            **{'p': 'bend','codename': 'body_bend', 'k': 'b', 'sym': nam.tex.theta('b', sep='_'), 'disp': 'bending angle', 'lim': (-amax, amax), **kws})
+            **{'p': 'bend', 'codename': 'body_bend', 'k': 'b', 'sym': nam.tex.theta('b', sep='_'),
+               'disp': 'bending angle', 'lim': (-amax, amax), **kws})
         self.add_velNacc(k0='b', sym_v=nam.tex.omega('b', sep='_'), disp_v='bending angular velocity',
                          disp_a='bending angular acceleration')
 
@@ -1859,7 +1859,8 @@ class ParamClass:
 
     def build_spatial(self, in_m=True):
         tor_durs = [1, 2, 5, 10, 20, 60, 120, 240, 300, 600]
-        dsp_ranges = [(0, 40), (0, 60),(0, 70),(0, 80),(10, 60),(10, 70),(10, 80),(20, 60),(20, 70),(20, 80), (10, 100),(20, 100), (0, 120), (0, 240), (0, 300), (0, 600), (60, 120), (60, 300)]
+        dsp_ranges = [(0, 40), (0, 60), (0, 70), (0, 80), (10, 60), (10, 70), (10, 80), (20, 60), (20, 70), (20, 80),
+                      (10, 100), (20, 100), (0, 120), (0, 240), (0, 300), (0, 600), (60, 120), (60, 300)]
         if in_m:
             u = reg.units.m
             s = 1
@@ -1885,7 +1886,8 @@ class ParamClass:
                          func_v=self.func_dict.vel(d_d, d_v))
         for k0 in ['x', 'y', 'd']:
             self.add_scaled(k0=k0)
-        self.add_velNacc(k0='sd', k_v='sv', k_a='sa', p_v=d_sv, d_v=d_sv, p_a=d_sa, d_a=d_sa, sym_v=nam.tex.mathring('v'),
+        self.add_velNacc(k0='sd', k_v='sv', k_a='sa', p_v=d_sv, d_v=d_sv, p_a=d_sa, d_a=d_sa,
+                         sym_v=nam.tex.mathring('v'),
                          disp_v='scaled crawling speed',
                          disp_a='scaled crawling acceleration',
                          func_v=self.func_dict.vel(d_sd, d_sv))
@@ -1925,20 +1927,28 @@ class ParamClass:
                       'sa', 'd', 'sd']:
                 self.add_chunk_track(kc=kc, k=k)
             self.add(**{'p': f'handedness_score_{kc}', 'k': f'tur_H_{kc}'})
+            if kc == 'fee':
+                self.add_freq(k0=kc)
 
     def build_sim_pars(self):
         for ii, jj in zip(['C', 'T', 'F'], ['crawler', 'turner', 'feeder']):
-            self.add(**{'p': f'brain.locomotor.{jj}.output', 'k': f'A_{ii}', 'd': f'{jj} output', 'sym': nam.tex.sub('A', ii)})
-            self.add(**{'p': f'brain.locomotor.{jj}.input', 'k': f'I_{ii}', 'd': f'{jj} input', 'sym': nam.tex.sub('I', ii)})
-            self.add(**{'p': f'brain.locomotor.{jj}.phi', 'k': f'phi_{ii}', 'd': f'{jj} phase', 'sym': nam.tex.sub('Phi', ii)})
-        self.add(**{'p': f'brain.locomotor.interference.cur_attenuation', 'k': f'A_CT', 'd': f'C->T suppression', 'sym': nam.tex.sub('A', 'CT'),
-                    'disp' : 'CRAWLER:TURNER interference suppression.'})
+            self.add(**{'p': f'brain.locomotor.{jj}.output', 'k': f'A_{ii}', 'd': f'{jj} output',
+                        'sym': nam.tex.sub('A', ii)})
+            self.add(
+                **{'p': f'brain.locomotor.{jj}.input', 'k': f'I_{ii}', 'd': f'{jj} input', 'sym': nam.tex.sub('I', ii)})
+            self.add(**{'p': f'brain.locomotor.{jj}.phi', 'k': f'phi_{ii}', 'd': f'{jj} phase',
+                        'sym': nam.tex.sub('Phi', ii)})
+        self.add(**{'p': f'brain.locomotor.interference.cur_attenuation', 'k': f'A_CT', 'd': f'C->T suppression',
+                    'sym': nam.tex.sub('A', 'CT'),
+                    'disp': 'CRAWLER:TURNER interference suppression.'})
         # self.add(**{'p': 'brain.locomotor.cur_ang_suppression', 'k': 'c_CT', 'd': 'ang_suppression',
         #             'disp': 'angular suppression output', 'sym': sub('c', 'CT'), 'lim': (0.0, 1.0)})
-        Im='brain.locomotor.intermitter'
-        self.add(**{'p': f'{Im}.EEB', 'k': 'EEB', 'd': 'exploitVSexplore_balance', 'lim': (0.0, 1.0),'sym': 'EEB'})
-        self.add(**{'p': f'{Im}.feeder_reoccurence_rate', 'k': 'fee_reocc', 'd': 'feeder_reoccurence_rate', 'lim': (0.0, 1.0),'sym': 'fee_reocc'})
-        self.add(**{'p': f'{Im}.cur_state', 'k': 'beh','d': 'behavioral_state', 'vs': ['exec','pause', 'feed'],'sym': 'beh'})
+        Im = 'brain.locomotor.intermitter'
+        self.add(**{'p': f'{Im}.EEB', 'k': 'EEB', 'd': 'exploitVSexplore_balance', 'lim': (0.0, 1.0), 'sym': 'EEB'})
+        self.add(**{'p': f'{Im}.feeder_reoccurence_rate', 'k': 'fee_reocc', 'd': 'feeder_reoccurence_rate',
+                    'lim': (0.0, 1.0), 'sym': 'fee_reocc'})
+        self.add(**{'p': f'{Im}.cur_state', 'k': 'beh', 'd': 'behavioral_state', 'vs': ['exec', 'pause', 'feed'],
+                    'sym': 'beh'})
         self.add(**{'p': f'{Im}.Nfeeds_success', 'k': 'fee_N_success',
                     'd': 'successful_feeds', 'dtype': int,
                     'disp': '# successful feeds', 'sym': 'fee_N_success'})
@@ -1967,7 +1977,8 @@ class ParamClass:
                         'disp': f'{jj} sensor perception', 'sym': nam.tex.sub(nam.tex.Delta('Temp'), ii)})
 
         for ii, jj in zip(['olf', 'tou', 'wind', 'therm'], ['olfactor', 'toucher', 'windsensor', 'thermosensor']):
-            self.add(**{'p': f'brain.{jj}.output', 'k': f'A_{ii}', 'd': f'{jj} output', 'lim': (0.0, 1.0),'sym': nam.tex.sub('A', ii)})
+            self.add(**{'p': f'brain.{jj}.output', 'k': f'A_{ii}', 'd': f'{jj} output', 'lim': (0.0, 1.0),
+                        'sym': nam.tex.sub('A', ii)})
 
         self.add_rate(k_num='Ltur_N', k_den='tur_N', k='tur_H', p='handedness_score',
                       disp=f'handedness score ({nam.tex.sub("N", "Lturns")} / {nam.tex.sub("N", "turns")})',
@@ -1999,7 +2010,6 @@ class ParamClass:
         for k, p, d, disp in zip(ks, ps, ds, disps):
             self.add(**{'p': p, 'k': k, 'd': d, 'disp': disp})
 
-
     def finalize_dict(self, entries):
         dic = aux.AttrDict()
         for prepar in entries:
@@ -2015,11 +2025,10 @@ class ParamRegistry:
 
         self.dict = None
 
-
-    def null(self,name, key='v', **kwargs):
+    def null(self, name, key='v', **kwargs):
         if key != 'v':
             raise
-        d0=self.DEF[name]
+        d0 = self.DEF[name]
         return d0.update_nestdict(kwargs)
 
     def get_null(self, name, key='v', **kwargs):
@@ -2028,9 +2037,8 @@ class ParamRegistry:
         # return update_default(name, aux.copyDict(self.DEF[name]), **kwargs)
         return update_default(name, self.DEF[name].get_copy(), **kwargs)
 
-
     def get(self, k, d, compute=True):
-        if k not in self.kdict :
+        if k not in self.kdict:
             raise ValueError(f'parameter key "{k}" not in database')
         p = self.kdict[k]
         res = p.exists(d)
@@ -2075,7 +2083,7 @@ class ParamRegistry:
         elif p is not None:
             d0 = aux.AttrDict({p.p: p for k, p in self.kdict.items()})
             k0 = p
-        else :
+        else:
             raise
 
         if type(k0) == str:
@@ -2105,7 +2113,7 @@ class ParamRegistry:
 
     @property
     def kdict(self):
-        if self.dict is None :
+        if self.dict is None:
             self.dict = ParamClass(func_dict=reg.funcs.param_computing).kdict
         return self.dict
 
@@ -2114,10 +2122,8 @@ class ParamRegistry:
         return [p.d for k, p in self.kdict.items()]
 
     def valid_pkeys(self, ps):
-        valid=self.pkeys
+        valid = self.pkeys
         return [p for p in ps if p in valid]
-
-
 
     def df_to_pint(self, df):
         '''
@@ -2126,13 +2132,13 @@ class ParamRegistry:
 
         '''
         from pint_pandas.pint_array import PintType
-        valid_pars=self.valid_pkeys(df.columns)
-        valid_pars= [col for col in valid_pars if not isinstance(df.dtypes[col], PintType)]
+        valid_pars = self.valid_pkeys(df.columns)
+        valid_pars = [col for col in valid_pars if not isinstance(df.dtypes[col], PintType)]
         pint_dtypes = {par: self.getPar(d=par, to_return='upint') for par in valid_pars}
         df_pint = df.astype(dtype=pint_dtypes)
         return df_pint
 
-    def output_reporters(self,ks, agents):
+    def output_reporters(self, ks, agents):
         D = self.kdict
         dic = {}
         for k in ks:
@@ -2145,7 +2151,7 @@ class ParamRegistry:
                     pass
         return dic
 
-    def get_reporters(self,agents, **kwargs):
+    def get_reporters(self, agents, **kwargs):
         ks = set_output(**kwargs)
         return aux.AttrDict({
             "step": self.output_reporters(ks=ks['step'], agents=agents),
