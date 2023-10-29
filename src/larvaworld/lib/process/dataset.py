@@ -33,19 +33,19 @@ class ParamLarvaDataset(param.Parameterized):
     config2 = ClassDict(default=aux.AttrDict(), item_type=None, doc='Additional dataset metadata')
 
     def __init__(self, **kwargs):
-        if 'config' not in kwargs.keys():
+        if 'config' not in kwargs:
             kws = aux.AttrDict()
             for k in reg.generators.DatasetConfig().param_keys:
-                if k in kwargs.keys():
+                if k in kwargs:
                     kws[k] = kwargs[k]
                     kwargs.pop(k)
             kwargs['config'] = reg.generators.DatasetConfig(**kws)
-        assert 'config2' not in kwargs.keys()
+        assert 'config2' not in kwargs
 
         ks = list(kwargs.keys())
         kws2 = aux.AttrDict()
         for k in ks:
-            if k not in self.param.objects().keys():
+            if k not in self.param.objects():
                 kws2[k] = kwargs[k]
                 kwargs.pop(k)
         kwargs['config2'] = aux.AttrDict(kws2)
@@ -538,7 +538,7 @@ class ParamLarvaDataset(param.Parameterized):
         if ids is None:
             ids = self.config.agent_ids
         ds0 = self.larva_dicts
-        if type in ds0 and all([id in ds0[type].keys() for id in ids]):
+        if type in ds0 and all([id in ds0[type] for id in ids]):
             ds = [ds0[type][id] for id in ids]
         else:
             ds = aux.loadSoloDics(agent_ids=ids, path=f'{self.config.data_dir}/individuals/{type}.txt')
@@ -861,10 +861,9 @@ class ParamLarvaDataset(param.Parameterized):
 
     def scale_to_length(self, pars=None, keys=None):
         s, e, c = self.data
-        l_par = 'length'
-        if l_par not in e.keys():
+        if 'length' not in self.end_ps:
             self.comp_length()
-        l = e[l_par]
+        l = e['length']
         if pars is None:
             if keys is not None:
                 pars = reg.getPar(keys)
@@ -975,13 +974,13 @@ class ParamLarvaDataset(param.Parameterized):
 
     def comp_dataPI(self):
         s, e, c = self.data
-        if 'x' in e.keys():
+        if 'x' in self.end_ps:
             xs = e['x'].values
-        elif nam.final('x') in e.keys():
+        elif nam.final('x') in self.end_ps:
             xs = e[nam.final('x')].values
-        elif 'x' in s.keys():
+        elif 'x' in self.step_ps:
             xs = s['x'].dropna().groupby('AgentID').last().values
-        elif 'centroid_x' in s.keys():
+        elif 'centroid_x' in self.step_ps:
             xs = s['centroid_x'].dropna().groupby('AgentID').last().values
         else:
             raise ValueError('No x coordinate found')
@@ -1244,112 +1243,7 @@ class LarvaDataset(BaseLarvaDataset):
         '''
         super().__init__(**kwargs)
 
-    # def set_data(self, step=None, end=None, agents=None):
-    #     c=self.config
-    #     if step is not None:
-    #         assert step.index.names == ['Step', 'AgentID']
-    #         s = step.sort_index(level=['Step', 'AgentID'])
-    #         self.Nticks = s.index.unique('Step').size
-    #         # c.t0 = int(s.index.unique('Step')[0])
-    #         c.Nticks = self.Nticks
-    #         c.duration = c.dt * c.Nticks/60
-    #         # if 'quality' not in c.keys():
-    #         #     try:
-    #         #         df = s[aux.aux.nam.xy(c.point)[0]].values.flatten()
-    #         #         valid = np.count_nonzero(~np.isnan(df))
-    #         #         c.quality = np.round(valid / df.shape[0], 2)
-    #         #     except:
-    #         #         pass
-    #
-    #         self.step_data = s
-    #
-    #     if end is not None:
-    #         self.set_endpoint_data(end)
-    #
-    #     if agents is not None :
-    #         self.larva_dicts = aux.get_larva_dicts(agents, validIDs=self.agent_ids)
 
-    # def _load_step(self, h5_ks=None):
-    #     s = self.read('step')
-    #     if h5_ks is None :
-    #         h5_ks=list(self.h5_kdic.keys())
-    #     for h5_k in h5_ks:
-    #         ss = self.read(h5_k)
-    #         if ss is not None :
-    #             ps = aux.nonexisting_cols(ss.columns.values,s)
-    #             if len(ps) > 0:
-    #                 s = s.join(ss[ps])
-    #     return s
-    #
-    #
-    # def load(self, step=True, h5_ks=None):
-    #     s = self._load_step(h5_ks=h5_ks) if step else None
-    #     e = self.read('end')
-    #     self.set_data(step=s, end=e)
-    #
-    #
-    # def _save_step(self, s):
-    #     s = s.loc[:, ~s.columns.duplicated()]
-    #     stored_ps = []
-    #     for h5_k,ps in self.h5_kdic.items():
-    #         pps = aux.unique_list(aux.existing_cols(ps,s))
-    #         if len(pps) > 0:
-    #             self.store(s[pps], h5_k)
-    #             stored_ps += pps
-    #
-    #     self.store(s.drop(stored_ps, axis=1, errors='ignore'), 'step')
-    #
-    # def save(self, refID=None):
-    #     if hasattr(self, 'step_data'):
-    #         self._save_step(s=self.step_data)
-    #     if hasattr(self, 'endpoint_data'):
-    #         self.store(self.endpoint_data, 'end')
-    #     self.save_config(refID=refID)
-    #     reg.vprint(f'***** Dataset {self.id} stored.-----', 1)
-    #
-    # def store(self, df, key, file='data'):
-    #     path=f'{self.data_dir}/{file}.h5'
-    #     if not isinstance(df, pd.DataFrame):
-    #         pd.DataFrame(df).to_hdf(path, key)
-    #     else :
-    #         df.to_hdf(path, key)
-    #
-    #
-    # def read(self, key, file='data'):
-    #     path=f'{self.data_dir}/{file}.h5'
-    #     try :
-    #         return pd.read_hdf(path, key)
-    #     except:
-    #         return None
-    #
-    #
-    #
-    #
-    # def load_traj(self, mode='default'):
-    #     key=f'traj.{mode}'
-    #     df = self.read(key)
-    #     if df is None :
-    #         if mode=='default':
-    #             df = self._load_step(h5_ks=[])[['x', 'y']]
-    #         elif mode in ['origin', 'center']:
-    #             s = self._load_step(h5_ks=['contour', 'midline'])
-    #             df=reg.funcs.preprocessing["transposition"](s, c=self.config, replace=False, transposition=mode)[['x', 'y']]
-    #         else :
-    #             raise ValueError('Not implemented')
-    #         self.store(df,key)
-    #     return df
-    #
-    #
-    #
-    # def load_dicts(self, type, ids=None):
-    #     if ids is None:
-    #         ids = self.agent_ids
-    #     ds0 = self.larva_dicts
-    #     if type in ds0 and all([id in ds0[type].keys() for id in ids]):
-    #         ds = [ds0[type][id] for id in ids]
-    #     else:
-    #         ds= aux.loadSoloDics(agent_ids=ids, path=f'{self.data_dir}/individuals/{type}.txt')
-    #     return ds
 
     def visualize(self, parameters={}, **kwargs):
         from ..sim.dataset_replay import ReplayRun
@@ -1363,70 +1257,13 @@ class LarvaDataset(BaseLarvaDataset):
         self.preprocess(**pre_kws, recompute=recompute)
         self.process(proc_keys=proc_keys, is_last=False, mode=mode, recompute=recompute, **kwargs)
         self.annotate(anot_keys=anot_keys, is_last=False, recompute=recompute, **kwargs)
-        # for k, v in pre_kws.items():
-        #     if v:
-        #         ccc = cc
-        #         ccc[k] = v
-        #         reg.funcs.preprocessing[k](**ccc)
-        # for k in proc_keys:
-        #     reg.funcs.processing[k](**cc)
-        # for k in anot_keys:
-        #     reg.funcs.annotating[k](**cc)
+
 
         if is_last:
             self.save()
         return self
 
-    # @property
-    # def data_path(self):
-    #     return f'{self.data_dir}/data.h5'
 
-    # def enrich2(self, pre_kws={}, proc_keys=[], anot_keys=[], is_last=True, **kwargs):
-    #     cc = {
-    #         'd': self,
-    #         's': self.step_data,
-    #         'e': self.endpoint_data,
-    #         'c': self.config,
-    #         **kwargs
-    #     }
-    #
-    #     warnings.filterwarnings('ignore')
-    #     for k, v in pre_kws.items():
-    #         if v:
-    #             ccc = cc
-    #             ccc[k] = v
-    #             reg.funcs.preprocessing[k](**ccc)
-    #     for k in proc_keys:
-    #         reg.funcs.processing[k](**cc)
-    #     for k in anot_keys:
-    #         reg.funcs.annotating[k](**cc)
-    #
-    #     if is_last:
-    #         self.save()
-    #     return self
-
-    # def get_par(self, par=None, k=None, key='step'):
-    #     if par is None and k is not None:
-    #         par=reg.getPar(k)
-    #
-    #     if key == 'end':
-    #         if not hasattr(self, 'endpoint_data'):
-    #             self.load(step=False)
-    #         df=self.endpoint_data
-    #
-    #     elif key == 'step':
-    #         if not hasattr(self, 'step_data'):
-    #             self.load()
-    #         df=self.step_data
-    #     else :
-    #         raise
-    #
-    #     if par in df.columns :
-    #         return df[par]
-    #     else :
-    #         if k is None :
-    #             k = reg.getPar(p=par, to_return='k')
-    #         return reg.par.get(k=k, d=self, compute=True)
 
     def get_chunk_par(self, chunk, k=None, par=None, min_dur=0, mode='distro'):
         s, e, c = self.data
@@ -1441,7 +1278,6 @@ class LarvaDataset(BaseLarvaDataset):
             for id in c.agent_ids:
                 dic = self.chunk_dicts[id]
                 ss = s[par].xs(id, level='AgentID')
-                # for ss, dic in zip(sss, dics):
                 if min_dur == 0:
                     idx = dic[chunk_idx] + 1
                 else:
@@ -1659,7 +1495,7 @@ class LarvaDatasetCollection:
                 # 'model': gConf.model,
 
             }
-            if 'larva_groups' in config0.keys():
+            if 'larva_groups' in config0:
                 gConf = config0.larva_groups[gID]
                 kws.update(**{
                     'larva_groups': {gID: gConf},

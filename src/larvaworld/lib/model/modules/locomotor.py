@@ -90,7 +90,7 @@ class DefaultLocomotor(Locomotor):
                     kwargs[k] = self.param[k].class_(**m)
                 else:
                     mode = m.mode
-                    mm = {k: m[k] for k in m.keys() if k != 'mode'}
+                    mm = {k: m[k] for k in m if k != 'mode'}
                     kwargs[k] = self.param[k].class_.select(mode)(**mm)
                     # kws = {kw: getattr(self, kw) for kw in D[k].kwargs.keys()}
                     # func = D[k].mode[mode].class_func

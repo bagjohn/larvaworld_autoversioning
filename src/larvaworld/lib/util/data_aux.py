@@ -24,14 +24,14 @@ def init2mdict(d0):
         for kk, vv in D0.items():
             if not isinstance(vv, dict):
                 pass
-            elif 'dtype' in vv.keys() and vv['dtype'] == dict:
+            elif 'dtype' in vv and vv['dtype'] == dict:
                 mdict = check(vv)
-                vv0 = {kkk: vvv for kkk, vvv in vv.items() if kkk not in mdict.keys()}
-                if 'v0' not in vv0.keys():
+                vv0 = {kkk: vvv for kkk, vvv in vv.items() if kkk not in mdict}
+                if 'v0' not in vv0:
                     vv0['v0'] = gConf(mdict)
                 D[kk] = build_LarvaworldParam(p=kk, mdict=mdict, **vv0)
 
-            elif any([a in vv.keys() for a in ['symbol', 'h', 'label', 'disp', 'k']]):
+            elif any([a in vv for a in ['symbol', 'h', 'label', 'disp', 'k']]):
                 D[kk] = build_LarvaworldParam(p=kk, **vv)
 
             else:
@@ -235,7 +235,7 @@ class LarvaworldParam(param.Parameterized):
                 dic.end = True
 
         c = d.config
-        if 'aux_pars' in c.keys():
+        if 'aux_pars' in c:
             for k, ps in c.aux_pars.items():
                 dic[k] = par in ps
         return dic

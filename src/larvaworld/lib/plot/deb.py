@@ -201,7 +201,7 @@ def plot_debs(deb_dicts=None, name=None, save_to=None, mode='full', roversVSsitt
             'birth'], np.array(d['age'])
         t00 = 0
         epochs = np.array(d['epochs'])
-        if 'epoch_qs' in d.keys():
+        if 'epoch_qs' in d:
             epoch_qs = np.array(d['epoch_qs'])
         else:
             epoch_qs = np.zeros(len(epochs))

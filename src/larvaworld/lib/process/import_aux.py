@@ -387,7 +387,7 @@ def match_larva_ids_including_by_length(s, e, pars=['head_x', 'head_y'], wl=100,
             Nidx += 1
     while len(common_member(list(pairs.keys()), list(pairs.values()))) > 0:
         for id0, id1 in pairs.items():
-            if id1 in pairs.keys():
+            if id1 in pairs:
                 pairs[id0] = pairs[id1]
                 break
     s.rename(index=pairs, inplace=True)

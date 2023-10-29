@@ -84,7 +84,7 @@ def Env_dict() :
         elif o == 'G':
             o = gen.GaussianValueLayer()
         if w is not None:
-            if 'puffs' in w.keys():
+            if 'puffs' in w:
                 for id, args in w['puffs'].items():
                     w['puffs'][id] = reg.par.get_null('air_puff', **args)
             else:

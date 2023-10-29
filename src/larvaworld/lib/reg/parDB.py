@@ -84,7 +84,7 @@ def set_output(collections=None, Npoints=3, Ncontour=0):
         else:
             step += output_dict[c]['step']
             end += output_dict[c]['endpoint']
-            if 'tables' in list(output_dict[c].keys()):
+            if 'tables' in output_dict[c]:
                 tables.update(output_dict[c]['tables'])
     return aux.AttrDict({'step': aux.unique_list(step),
               'end': aux.unique_list(end),
@@ -94,16 +94,15 @@ def set_output(collections=None, Npoints=3, Ncontour=0):
 
 def update_default(name, dic, **kwargs):
     if name not in ['visualization', 'enrichment']:
-        # aux.update_nestdict(dic, kwargs)
         dic.update(kwargs)
         return dic
     else:
         for k, v in dic.items():
-            if k in list(kwargs.keys()):
+            if k in kwargs:
                 dic[k] = kwargs[k]
             elif isinstance(v, dict):
                 for k0, v0 in v.items():
-                    if k0 in list(kwargs.keys()):
+                    if k0 in kwargs:
                         dic[k][k0] = kwargs[k0]
         return aux.AttrDict(dic)
 
@@ -114,8 +113,8 @@ def get_default(d,key='v') :
     for k, v in d.items():
         if not isinstance(v, dict):
             null[k] = v
-        elif 'k' in v.keys() or 'h' in v.keys() or 'dtype' in v.keys():
-            null[k] = None if key not in v.keys() else v[key]
+        elif 'k' in v or 'h' in v or 'dtype' in v:
+            null[k] = None if key not in v else v[key]
         else:
             null[k] = get_default(v,key)
     return null
@@ -2031,7 +2030,7 @@ class ParamRegistry:
 
 
     def get(self, k, d, compute=True):
-        if k not in self.kdict.keys() :
+        if k not in self.kdict :
             raise ValueError(f'parameter key "{k}" not in database')
         p = self.kdict[k]
         res = p.exists(d)
@@ -2137,7 +2136,7 @@ class ParamRegistry:
         D = self.kdict
         dic = {}
         for k in ks:
-            if k in D.keys():
+            if k in D:
                 d, p = D[k].d, D[k].codename
                 try:
                     temp = [aux.rgetattr(l, p) for l in agents]

@@ -55,7 +55,7 @@ class Oscillator(Timer):
     phi = RandomizedPhase(precedence=-1,label='oscillation phase', doc='The phase of the oscillation.')
 
     def __init__(self, random_phi=True, **kwargs):
-        if 'phi' not in kwargs.keys() and not random_phi:
+        if 'phi' not in kwargs and not random_phi:
             kwargs['phi'] = 0.0
         super().__init__(**kwargs)
         self.initial_freq = self.freq

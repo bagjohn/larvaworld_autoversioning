@@ -111,7 +111,7 @@ class DefaultBrain(Brain):
 
             mm = conf['memory_params'].get_copy()
             # FIXME
-            if 'mode' not in mm.keys():
+            if 'mode' not in mm:
                 mm['mode'] = 'RL'
             modality_classes = memory_modes[mm['mode']]
             modality = mm['modality']

@@ -86,20 +86,20 @@ def plot_bouts(name=None, plot_fits='',print_fits=False, turns=False, stridechai
         }
 
         if not turns:
-            if 'pause_dur' in v.keys() and v.pause_dur is not None:
+            if 'pause_dur' in v and v.pause_dur is not None:
                 plot_single_bout(fit_dic=v.pause_dur, discr=False, bout='pauses', ax=P.axs[1], **kws)
                 valid_labs[id] = kws['color']
-            if stridechain_duration and 'run_dur' in v.keys() and v.run_dur is not None:
+            if stridechain_duration and 'run_dur' in v and v.run_dur is not None:
                 plot_single_bout(fit_dic=v.run_dur, discr=False, bout='runs', ax=P.axs[0], **kws)
                 valid_labs[id] = kws['color']
-            elif not stridechain_duration and 'run_count' in v.keys() and v.run_count is not None:
+            elif not stridechain_duration and 'run_count' in v and v.run_count is not None:
                 plot_single_bout(fit_dic=v.run_count, discr=True, bout='stridechains', xlabel='# strides', ax=P.axs[0], **kws)
                 valid_labs[id] = kws['color']
         else:
-            if 'turn_dur' in v.keys() and v.turn_dur is not None:
+            if 'turn_dur' in v and v.turn_dur is not None:
                 plot_single_bout(fit_dic=v.turn_dur, discr=False, bout='turn duration', ax=P.axs[0], **kws)
                 valid_labs[id] = kws['color']
-            if 'turn_amp' in v.keys() and v.turn_amp is not None:
+            if 'turn_amp' in v and v.turn_amp is not None:
                 plot_single_bout(fit_dic=v.turn_amp, discr=False, bout='turn amplitude', xlabel='angle (deg)',
                                  xlim=(10 ** -0.5, 10 ** 3), ax=P.axs[1], **kws)
                 valid_labs[id] = kws['color']

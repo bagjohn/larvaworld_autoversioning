@@ -17,7 +17,7 @@ def get_exp_condition(exp):
         'keep_the_flag': KeepFlagCondition,
         'capture_the_flag': CaptureFlagCondition,
     }
-    return d[exp] if exp in d.keys() else None
+    return d[exp] if exp in d else None
 
 
 class PrefTrainCondition:

@@ -1,11 +1,8 @@
 import os
-
-import numpy as np
 import param
 
-
 from .. import reg, aux, util
-from ..param import ClassDict,OptionalSelector, ClassAttr
+from ..param import ClassDict, OptionalSelector, ClassAttr
 
 __all__ = [
     'next_idx',
@@ -14,29 +11,21 @@ __all__ = [
     'conf',
     'resetConfs',
 ]
+
+
 def next_idx(id, conftype='Exp'):
     f = f'{reg.CONF_DIR}/SimIdx.txt'
     if not os.path.isfile(f):
         d = aux.AttrDict({k: {} for k in ['Exp', 'Batch', 'Essay', 'Eval', 'Ga']})
     else:
         d = aux.load_dict(f)
-
-    if not conftype in d.keys():
-        d[conftype] = {}
-    if not id in d[conftype].keys():
+    if conftype not in d:
+        d[conftype] = aux.AttrDict()
+    if id not in d[conftype]:
         d[conftype][id] = 0
     d[conftype][id] += 1
     aux.save_dict(d, f)
     return d[conftype][id]
-
-
-# def build_GroupTypeSubkeys():
-#     d0 = {k: {} for k in reg.GROUPTYPES}
-#     d1 = {
-#         'LarvaGroup': {'Model'}
-#     }
-#     d0.update(d1)
-#     return aux.AttrDict(d0)
 
 
 class ConfType(param.Parameterized):
@@ -72,7 +61,7 @@ class ConfType(param.Parameterized):
         self.load()
 
     def getID(self, id):
-        if id in self.dict.keys():
+        if id in self.dict:
             return self.dict[id]
         else:
             reg.vprint(f'{self.conftype} Configuration {id} does not exist', 1)
@@ -115,7 +104,7 @@ class ConfType(param.Parameterized):
         reg.vprint(f'{self.conftype}  configurations : {Nnew} added , {Nup} updated,{Ncur} now existing', 1)
 
     def setID(self, id, conf, mode='overwrite'):
-        if id in self.dict.keys() and mode == 'update':
+        if id in self.dict and mode == 'update':
             self.dict[id] = self.dict[id].update_nestdict(conf.flatten())
         else:
             self.dict[id] = conf
@@ -124,14 +113,14 @@ class ConfType(param.Parameterized):
 
     def delete(self, id=None):
         if id is not None:
-            if id in self.dict.keys():
+            if id in self.dict:
                 self.dict.pop(id, None)
                 self.save()
                 reg.vprint(f'Deleted {self.conftype} configuration under the id : {id}', 1)
 
     def expand(self, id=None, conf=None):
         if conf is None:
-            if id in self.dict.keys():
+            if id in self.dict:
                 conf = self.dict[id]
             else:
                 return None
@@ -162,9 +151,9 @@ class ConfType(param.Parameterized):
         else:
             return param.ListSelector(**kws)
 
-    def confIDorNew(self):
-        return ClassAttr(class_=(self.confID_selector(), self.conf_class()), default=None,
-                         doc='Accepts either an existing ID or a new configuration')
+    # def confIDorNew(self):
+    #     return ClassAttr(class_=(self.confID_selector(), self.conf_class()), default=None,
+    #                      doc='Accepts either an existing ID or a new configuration')
 
     @property
     def confIDs(self):
@@ -175,7 +164,7 @@ class ConfType(param.Parameterized):
         c = self.conftype
         if c is None:
             return None
-        elif c in reg.gen.keys():
+        elif c in reg.gen:
             return reg.gen[c]
         else:
             return aux.AttrDict
@@ -199,14 +188,14 @@ class RefType(ConfType):
         path = self.path_to_Ref(id=id, dir=dir)
         assert os.path.isfile(path)
         c = aux.load_dict(path)
-        assert 'id' in c.keys()
+        assert 'id' in c
         reg.vprint(f'Loaded existing conf {c.id}', 1)
         return c
 
     def setRef(self, c, id=None, dir=None):
         path = self.path_to_Ref(id=id, dir=dir)
         aux.save_dict(c, path)
-        assert 'id' in c.keys()
+        assert 'id' in c
         reg.vprint(f'Saved conf under ID {c.id}', 1)
 
     def path_to_Ref(self, id=None, dir=None):
@@ -229,7 +218,6 @@ class RefType(ConfType):
             dataset = self.loadRef(load=load, **kwargs)
         return dataset
 
-    @property
     def cleanRefIDs(self):
         ids = self.confIDs
         for id in ids:

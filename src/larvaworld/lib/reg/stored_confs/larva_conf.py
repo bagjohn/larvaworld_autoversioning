@@ -58,7 +58,7 @@ def brain(ks, nengo=False, OD=None, **kwargs):
         p = f'{k}_params'
         if not v:
             d[p] = None
-        elif k in list(kwargs.keys()):
+        elif k in kwargs:
             d[p] = kwargs[k]
         elif k == 'interference':
             d[p] = base_coupling

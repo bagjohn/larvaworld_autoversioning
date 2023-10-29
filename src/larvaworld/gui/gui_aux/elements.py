@@ -446,7 +446,7 @@ class SelectionList(GuiElement):
         if all:
             for i in range(5):
                 k = f'{self.k0}{i}'
-                if k in w.AllKeysDict.keys():
+                if k in w.AllKeysDict:
                     w[k].update(values=values, value=id)
 
     def save(self, conf):
@@ -1187,7 +1187,7 @@ class PadDict(PadElement):
         combos = {}
         l = []
         for k, args in self.type_dict.items():
-            subconfkws = self.subconfs[k] if k in self.subconfs.keys() else {}
+            subconfkws = self.subconfs[k] if k in self.subconfs else {}
             if args['dtype'] in [dict, TypedDict]:
                 k0 = f'{name}_{k}'
                 subkws = {
@@ -1455,7 +1455,7 @@ class ButtonGraphList(GraphList):
             return {}
         kws = dict(zip(signature.args[-len(vs):], vs))
         for k in ['datasets', 'labels', 'save_to', 'save_as', 'return_fig', 'deb_dicts']:
-            if k in kws.keys():
+            if k in kws:
                 del kws[k]
         return kws
 

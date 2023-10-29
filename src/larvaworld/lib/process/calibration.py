@@ -133,7 +133,7 @@ def fit_metric_definition(str_var, df_corr, c) :
     best_combo_max = np.max(best_combo)
 
     md=c.metric_definition
-    if not 'spatial' in md.keys():
+    if not 'spatial' in md:
         md.spatial=aux.AttrDict()
     idx=md.spatial.point_idx=int(str_var['point_idx'].iloc[best_idx])
     md.spatial.use_component_vel=bool(str_var['use_component_vel'].iloc[best_idx])
@@ -142,7 +142,7 @@ def fit_metric_definition(str_var, df_corr, c) :
     except:
         p = 'centroid'
     c.point = p
-    if not 'angular' in md.keys():
+    if not 'angular' in md:
         md.angular=aux.AttrDict()
     md.angular.best_combo = str(best_combo)
     md.angular.front_body_ratio = best_combo_max / Nangles

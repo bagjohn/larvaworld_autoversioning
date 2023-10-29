@@ -72,7 +72,7 @@ class GAevaluation(Evaluation):
 
         if self.exclusion_mode:
             self.fit_func = None
-        elif self.fitness_func_name and self.fitness_func_name in fitness_funcs.keys():
+        elif self.fitness_func_name and self.fitness_func_name in fitness_funcs:
 
             def func(robot):
                 return fitness_funcs[self.fitness_func_name](robot, **self.fit_kws)
@@ -178,7 +178,7 @@ class GAselector(NestedConf):
 
     def crossover(self, g1, g2):
         g = {}
-        for k in g1.keys():
+        for k in g1:
             if np.random.uniform(0, 1, 1) >= 0.5:
                 g[k] = g1[k]
             else:

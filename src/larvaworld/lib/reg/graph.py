@@ -24,7 +24,7 @@ class GraphRegistry:
             return False
 
     def group_exists(self, gID):
-        if isinstance(gID, str) and gID in self.graphgroups.keys():
+        if isinstance(gID, str) and gID in self.graphgroups:
             return True
         else:
             return False
@@ -39,7 +39,7 @@ class GraphRegistry:
         if isinstance(groups, list):
             ds = aux.AttrDict()
             for gg in groups:
-                if isinstance(gg, str) and gg in self.graphgroups.keys():
+                if isinstance(gg, str) and gg in self.graphgroups:
                     gg = {gg: self.graphgroups[gg]}
                 assert isinstance(gg, dict)
                 assert len(gg) == 1

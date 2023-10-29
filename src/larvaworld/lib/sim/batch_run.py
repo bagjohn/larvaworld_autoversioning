@@ -60,7 +60,7 @@ class BatchRun(reg.generators.SimConfiguration,ap.Experiment):
         self.exp_conf = reg.conf.Exp.expand(exp) if isinstance(exp, str) else exp
         self.exp_conf.update(**exp_kws)
         if optimization is not None:
-            optimization['ranges'] = np.array([space_search[k]['range'] for k in space_search.keys() if 'range' in space_search[k].keys()])
+            optimization['ranges'] = np.array([space_search[k]['range'] for k in space_search if 'range' in space_search[k].keys()])
         self.optimization = optimization
         ap.Experiment.__init__(self, model_class=ExpRun, sample = space_search_sample(space_search, **space_kws),
                          store_data=False, **kwargs)
@@ -168,13 +168,13 @@ class BatchRun(reg.generators.SimConfiguration,ap.Experiment):
 def space_search_sample(space_dict,n=1, **kwargs):
     dic={}
     for p, args in space_dict.items() :
-        if not isinstance(args, dict) or ('values' not in args.keys() and 'range' not in args.keys()) :
+        if not isinstance(args, dict) or ('values' not in args and 'range' not in args) :
             dic[p] = args
         elif args['values'] is not None :
             dic[p]=ap.Values(*args['values'])
         else :
             r0,r1=args['range']
-            if 'Ngrid' in args.keys() :
+            if 'Ngrid' in args:
                 vs = np.linspace(r0, r1, args['Ngrid'])
                 if type(r0) == int and type(r1) == int:
                     vs = vs.astype(int)

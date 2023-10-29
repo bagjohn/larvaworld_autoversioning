@@ -130,7 +130,7 @@ def stride_cycle(name=None, shorts=['sv', 'fov', 'rov', 'foa', 'b'], modes=None,
 
         for d in P.datasets:
             c = d.config
-            col = c.color if 'color' in c.keys() else d.color
+            col = c.color
             if individuals:
                 if d.cycle_curves not in [None, {}]:
                     df = d.cycle_curves[sh][mode]

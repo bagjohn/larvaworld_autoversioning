@@ -645,16 +645,16 @@ def comp_PI(arena_xdim, xs, return_num=False):
 
 @reg.funcs.proc("PI")
 def comp_dataPI(s,e,c, **kwargs):
-    if 'x' in e.keys():
+    if 'x' in e.columns:
         px = 'x'
         xs = e[px].values
-    elif nam.final('x') in e.keys():
+    elif nam.final('x') in e.columns:
         px = nam.final('x')
         xs = e[px].values
-    elif 'x' in s.keys():
+    elif 'x' in s.columns:
         px = 'x'
         xs = s[px].dropna().groupby('AgentID').last().values
-    elif 'centroid_x' in s.keys():
+    elif 'centroid_x' in s.columns:
         px = 'centroid_x'
         xs = s[px].dropna().groupby('AgentID').last().values
     else:
@@ -671,7 +671,7 @@ def comp_dataPI(s,e,c, **kwargs):
 
 def scale_to_length(s, e, c=None, pars=None, keys=None):
     l_par = 'length'
-    if l_par not in e.keys():
+    if l_par not in e.columns:
         comp_length(s, e, c=c, mode='minimal', recompute=True)
     l = e[l_par]
     if pars is None:

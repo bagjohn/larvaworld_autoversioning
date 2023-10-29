@@ -82,7 +82,7 @@ class BasicABModel:
 
     def _set_var_ignore(self):
         """Store current attributes to separate them from custom variables"""
-        self._var_ignore = [k for k in self.__dict__.keys() if k[0] != '_']
+        self._var_ignore = [k for k in self.__dict__ if k[0] != '_']
 
     # Class Methods --------------------------------------------------------- #
 
@@ -344,7 +344,7 @@ class BasicABModel:
             obj_types = {}
             for obj_type, log_subdict in log_dict.items():
 
-                if obj_type not in obj_types.keys():
+                if obj_type not in obj_types:
                     obj_types[obj_type] = {}
 
                 for obj_id, log in log_subdict.items():

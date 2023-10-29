@@ -110,15 +110,15 @@ def RSS_dic(dd, d):
 
     def RSS1(ff, f, sh):
         dic = {}
-        for mode in f[sh].keys():
+        for mode in f[sh]:
             dic[mode] = RSS0(ff, f, sh, mode)
         return dic
 
     dic = {}
-    for sh in f.keys():
+    for sh in f:
         dic[sh] = RSS1(ff, f, sh)
 
-    stat = np.round(np.mean([dic[sh]['norm'] for sh in f.keys() if sh != 'sv']), 2)
+    stat = np.round(np.mean([dic[sh]['norm'] for sh in f if sh != 'sv']), 2)
     dd.pooled_cycle_curves_errors = aux.AttrDict({'dict': dic, 'stat': stat})
     return stat
 
@@ -129,7 +129,7 @@ def eval_RSS(rss, rss_target, rss_sym, mode='1:pooled'):
     for id, rrss in rss.items():
         RSS_dic[id] = {}
         for p, sym in rss_sym.items():
-            if p in rrss.keys():
+            if p in rrss:
                 RSS_dic[id][sym] = RSS(rrss[p], rss_target[p])
     return RSS_dic
 

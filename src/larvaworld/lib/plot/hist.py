@@ -38,7 +38,7 @@ def module_endpoint_hists(mkey='crawler', mode='realistic',e=None, refID=None, N
         Nbins = int(e.index.values.shape[0] / 10)
 
     var_mdict = reg.model.variable_mdict(mkey, mode=mode)
-    N = len(list(var_mdict.keys()))
+    N = len(var_mdict)
 
     P = plot.AutoBasePlot(name=f'{mkey}_endpoint_hists',build_kws={'Ncols':N,'w':7, 'h':6, 'sharey': True}, **kwargs)
 

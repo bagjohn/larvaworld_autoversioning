@@ -992,12 +992,12 @@ class ModelRegistry:
         ks = aux.unique_list(aux.flatten_list([m.keylist for m in ms]))
 
         for k in ks:
-            entry = {dID: m[k] if k in m.keys() else None for dID, m in zip(dIDs, ms)}
+            entry = {dID: m[k] if k in m else None for dID, m in zip(dIDs, ms)}
             l = list(entry.values())
             if all([a == l[0] for a in l]):
                 continue
             else:
-                if k in self.full_dict.keys():
+                if k in self.full_dict:
                     k0 = self.full_dict[k].disp
                 else:
                     k0 = k.split('.')[-1]

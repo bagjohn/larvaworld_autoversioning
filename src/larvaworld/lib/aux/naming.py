@@ -122,7 +122,7 @@ class NamingRegistry(AttrDict):
         kws = {}
         if k in loc_pref:
             kws['loc'] = 'pref'
-        if k in key_pairs.keys():
+        if k in key_pairs:
             kws['s'] = key_pairs[k]
         else:
             kws['s'] = k

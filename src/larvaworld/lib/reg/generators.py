@@ -107,15 +107,15 @@ class SimConfigurationParams(SimConfiguration):
                     raise ValueError(f'Experiment {experiment} not available in {runtype} configuration dictionary')
                 else:
                     parameters = ct.expand(experiment)
-            elif runtype in reg.gen.keys():
+            elif runtype in reg.gen:
                 parameters = reg.gen[runtype]().nestedConf
             else:
                 pass
-        elif experiment is None and 'experiment' in parameters.keys():
+        elif experiment is None and 'experiment' in parameters:
             experiment = parameters['experiment']
         if parameters is not None:
             for k in set(parameters).intersection(set(SimOps().nestedConf)):
-                if k in kwargs.keys():
+                if k in kwargs:
                     parameters[k] = kwargs[k]
                 else:
                     kwargs[k] = parameters[k]

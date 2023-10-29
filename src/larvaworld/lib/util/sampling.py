@@ -37,29 +37,20 @@ SAMPLING_PARS = aux.bidict(
 )
 
 
-def get_sample_bout_distros(model, sample):
-    def get_sample_bout_distros0(Im, bout_distros):
+def get_sample_bout_distros(model, bout_distros):
+    m = model.get_copy()
+    if m.brain.intermitter_params:
+        Im = m.brain.intermitter_params
         dic = {
             'pause_dist': ['pause', 'pause_dur'],
             'stridechain_dist': ['stride', 'run_count'],
             'run_dist': ['exec', 'run_dur'],
         }
-
-        ds = [ii for ii in ['pause_dist', 'stridechain_dist', 'run_dist'] if
-              (ii in Im.keys()) and (Im[ii] is not None) and ('fit' in Im[ii].keys()) and (Im[ii]['fit'])]
-        for d in ds:
-            for sample_d in dic[d]:
-                if sample_d in bout_distros.keys() and bout_distros[sample_d] is not None:
-                    Im[d] = bout_distros[sample_d]
-        return Im
-
-    if sample in [None, {}]:
-        return model
-    m = model.get_copy()
-    if m.brain.intermitter_params:
-        m.brain.intermitter_params = get_sample_bout_distros0(Im=m.brain.intermitter_params,
-                                                              bout_distros=sample.bout_distros)
-
+        for d in ['pause_dist', 'stridechain_dist', 'run_dist']:
+            if (d in Im) and (Im[d] is not None) and ('fit' in Im[d]) and (Im[d]['fit']):
+                for sample_d in dic[d]:
+                    if sample_d in bout_distros and bout_distros[sample_d] is not None:
+                        m.brain.intermitter_params[d] = bout_distros[sample_d]
     return m
 
 
@@ -108,12 +99,12 @@ def sampleRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=None, Nid
             if refID is not None:
                 refDataset = reg.conf.Ref.loadRef(refID, load=True, step=False)
         if refDataset is not None:
-            m = get_sample_bout_distros(m, refDataset.config)
+            m = get_sample_bout_distros(m, refDataset.config.bout_distros)
             e = refDataset.endpoint_data if hasattr(refDataset, 'endpoint_data') else refDataset.read('end')
             Sinv = SAMPLING_PARS.inverse
             sample_ps = []
             for k in ks:
-                if k in Sinv.keys():
+                if k in Sinv:
                     p = Sinv[k]
                     if p in e.columns:
                         sample_ps.append(p)
@@ -155,7 +146,7 @@ def imitateRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=None, Ni
 
     if m is None:
         m = reg.conf.Model.getID(mID)
-    m = get_sample_bout_distros(m, refDataset.config)
+    m = get_sample_bout_distros(m, refDataset.config.bout_distros)
     ms = generate_larvae(Nids, sample_dict, m)
     ps = [tuple(e[['initial_x', 'initial_y']].loc[id].values) for id in ids]
     try:
@@ -169,7 +160,6 @@ def generate_agentGroup(gID, Nids, imitation=False, distribution=None, **kwargs)
     from ..param import generate_xyNor_distro
 
     if not imitation:
-
         if distribution is not None:
             ps, ors = generate_xyNor_distro(distribution)
         else:

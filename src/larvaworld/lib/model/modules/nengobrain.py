@@ -258,7 +258,7 @@ class NengoBrain(Network, Brain):
                 self.probe_dict.update({k: Probe(v) for k, v in
                                     zip(['angFr', 'linFr', 'linFrIn', 'angFrIn'],
                                         [angFr, linFr, linFrIn, angFrIn])})
-                self.dict = {k: [] for k in self.probe_dict.keys()}
+                self.dict = {k: [] for k in self.probe_dict}
             else :
                 self.dict=None
 

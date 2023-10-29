@@ -300,7 +300,7 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
                     coeff = 1000
                 else:
                     coeff = 1
-                if k in klabels.keys():
+                if k in klabels:
                     p.disp = klabels[k]
                 dfs = aux.AttrDict()
                 # dics = aux.AttrDict()

@@ -357,7 +357,7 @@ def modelConf_analysis(d, avgVSvar=False, mods3=False):
     c = d.config
     e = d.endpoint_data
     refID = c.refID
-    if 'modelConfs' not in c.keys():
+    if 'modelConfs' not in c:
         c.modelConfs = aux.AttrDict({'average': {}, 'variable': {}, 'individual': {}, '3modules': {}})
     if avgVSvar:
         entries_avg, mIDs_avg = adapt_6mIDs(refID=c.refID, e=e, c=c)

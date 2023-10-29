@@ -662,11 +662,11 @@ def deb_default(id='DEB model', epochs={}, age=None, **kwargs):
 
     if N == 0:
         epochs = {0: Epoch().nestedConf}
-    elif str(N - 1) in epochs.keys():
+    elif str(N - 1) in epochs:
         t1 = epochs[str(N - 1)].age_range[1]
         if t1 is not None:
             epochs.update({N: Epoch(age_range=(t1, None)).nestedConf})
-    elif N - 1 in epochs.keys():
+    elif N - 1 in epochs:
         t1 = epochs[N - 1].age_range[1]
         if t1 is not None:
             epochs.update({N: Epoch(age_range=(t1, None)).nestedConf})
@@ -746,7 +746,7 @@ def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=Fals
 
 
 def test_substrates():
-    for s in substrate_dict.keys():
+    for s in substrate_dict:
         try:
             q = 1
             deb0 = DEB(substrate={'quality': q, 'type': s}, assimilation_mode='sim', steps_per_day=24 * 60)

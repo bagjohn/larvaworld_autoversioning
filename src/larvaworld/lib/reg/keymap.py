@@ -35,7 +35,7 @@ def get_pygame_key(key):
         'parenright': 'RIGHTPAREN',
         'asterisk': 'ASTERISK',
     })
-    return f'K_{pygame_keys[key]}' if key in list(pygame_keys.keys()) else f'K_{key}'
+    return f'K_{pygame_keys[key]}' if key in pygame_keys else f'K_{key}'
 
 
 def init_shortcuts():

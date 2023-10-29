@@ -721,7 +721,7 @@ def define_end_ks(ks=None, mode='basic'):
 
             ]
         }
-        if mode in dic.keys():
+        if mode in dic:
             ks = dic[mode]
         else:
             raise ValueError('Provide parameter shortcuts or define a mode')

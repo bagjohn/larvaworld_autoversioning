@@ -335,7 +335,7 @@ def plot_foraging(**kwargs):
         for d in P.datasets:
             foodtypes = d.config['foodtypes']
             dics = d.load_dicts('foraging')
-            dic0 = {ft: [d[ft][k] for d in dics] for ft in foodtypes.keys()}
+            dic0 = {ft: [d[ft][k] for d in dics] for ft in foodtypes}
             df = pd.DataFrame.from_dict(dic0)
             df['Group'] = d.id
             dfs.append(df)

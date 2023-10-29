@@ -119,9 +119,10 @@ def fit_epochs(grouped_epochs):
 def get_bout_distros(fitted_epochs):
     d = {}
     for k, dic in fitted_epochs.items():
-        if isinstance(dic, dict) and 'best' in dic.keys():
+        try:
+        # if isinstance(dic, dict) and 'best' in dic:
             d[k] = dic['best']
-        else:
+        except:
             d[k] = None
     return aux.AttrDict(d)
 
