@@ -196,23 +196,36 @@ class LarvaGroup(NestedConf):
     def __call__(self, parameter_dict={}):
         Nids = self.distribution.N
         if self.model is not None:
-            m = reg.conf.Model.getID(self.model)
+            if isinstance(self.model, str):
+                m = reg.conf.Model.getID(self.model)
+            elif isinstance(self.model, dict):
+                m = self.model
+            else:
+                raise
         else:
-            m = None
-        kws = {
-            'm': m,
-            'refID': self.sample,
-            'parameter_dict': parameter_dict,
-            'Nids': Nids,
-
-        }
-
+            raise
+        if self.sample is not None:
+            d = reg.conf.Ref.loadRef(self.sample, load=True, step=False)
+            m = d.config.get_sample_bout_distros(m.get_copy())
+        else:
+            d = None
         if not self.imitation:
             ps, ors = generate_xyNor_distro(self.distribution)
             ids = [f'{self.id}_{i}' for i in range(Nids)]
-            all_pars, refID = util.sampleRef(**kws)
+
+            if d is not None:
+                sample_ks = [k for k in m.flatten() if m.flatten()[k] == 'sample']
+                Sinv = util.SAMPLING_PARS.inverse
+                sample_ps = aux.SuperList([Sinv[k] for k in aux.existing_cols(Sinv, sample_ks)]).flatten
+                sample_dict = d.sample_larvagroup(N=Nids, ps=sample_ps, codename_dict=util.SAMPLING_PARS)
+            else:
+                sample_dict = {}
+
         else:
-            ids, ps, ors, all_pars = util.imitateRef(**kws)
+            assert d is not None
+            ids, ps, ors, sample_dict = d.imitate_larvagroup(N=Nids, codename_dict=util.SAMPLING_PARS)
+        sample_dict.update(parameter_dict)
+        all_pars = util.generate_larvae(m, N=Nids, sample_dict=sample_dict)
         confs = []
         for id, p, o, pars in zip(ids, ps, ors, all_pars):
             conf = {

@@ -6,6 +6,7 @@ from .. import reg, aux
 from ..aux import nam
 
 __all__ = [
+    'SAMPLING_PARS',
     'generate_larvae',
     # 'sample_group',
     'sampleRef',
@@ -68,12 +69,11 @@ def sampleRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=[], Nids=
     if d is None and refID is not None:
         d = reg.conf.Ref.loadRef(refID, load=True, step=False)
     if d is not None:
-        refID = d.refID
         m = d.config.get_sample_bout_distros(m.get_copy())
         sample_dict = d.sample_larvagroup(N=Nids, ps=sample_ps, codename_dict=SAMPLING_PARS)
 
     sample_dict.update(parameter_dict)
-    return generate_larvae(m, Nids, sample_dict), refID
+    return generate_larvae(m, Nids, sample_dict)
 
 
 def imitateRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=[], Nids=1, parameter_dict={}):
@@ -83,10 +83,6 @@ def imitateRef(mID=None, m=None, refID=None, refDataset=None, sample_ks=[], Nids
             d = reg.conf.Ref.loadRef(refID, load=True, step=False)
         else:
             raise
-
-
-    # if Nids is None:
-    #     Nids = d.config.N
     ids, ps, ors, sample_dict = d.imitate_larvagroup(N=Nids, codename_dict=SAMPLING_PARS)
     sample_dict.update(parameter_dict)
 
@@ -107,7 +103,7 @@ def generate_agentGroup(gID, Nids, imitation=False, distribution=None, **kwargs)
             ps = [(0.0, 0.0) for j in range(Nids)]
             ors = [0.0 for j in range(Nids)]
         ids = [f'{gID}_{i}' for i in range(Nids)]
-        all_pars, refID = sampleRef(Nids=Nids, **kwargs)
+        all_pars = sampleRef(Nids=Nids, **kwargs)
     else:
         ids, ps, ors, all_pars = imitateRef(Nids=Nids, **kwargs)
     return ids, ps, ors, all_pars
