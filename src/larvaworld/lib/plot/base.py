@@ -498,7 +498,7 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
             vs = self.vdict[k]
             if self.ranges:
                 r = self.ranges[i]
-                r0, r1 = r, r
+                r0, r1 = -r, r
             else:
                 r0, r1 = np.min([np.min(v) for v in vs]), np.max([np.max(v) for v in vs])
             if self.absolute:
