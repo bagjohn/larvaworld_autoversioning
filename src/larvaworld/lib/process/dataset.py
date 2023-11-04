@@ -296,13 +296,13 @@ class ParamLarvaDataset(param.Parameterized):
 
     @property
     def s(self):
-        if not self.step_data:
+        if self.step_data is None:
             self.load()
         return self.step_data
 
     @property
     def e(self):
-        if not self.endpoint_data:
+        if self.endpoint_data is None:
             self.load(step=False)
         return self.endpoint_data
 
@@ -477,9 +477,7 @@ class ParamLarvaDataset(param.Parameterized):
 
     @property
     def data(self):
-        if not self.step_data or not self.endpoint_data:
-            self.load()
-        return self.step_data, self.endpoint_data, self.config
+        return self.s, self.e, self.config
 
     def path_to_file(self, file='data'):
         return f'{self.config.data_dir}/{file}.h5'
@@ -683,11 +681,6 @@ class ParamLarvaDataset(param.Parameterized):
         Adx = np.diff(Ax)
         Ady = np.diff(Ay)
         return np.arctan2(Ady, Adx) % (2 * np.pi)
-
-    # def _ self.data
-    #     mid = self.midline_xy_data
-    #     seg_ors = self.midline_seg_orients_from_mid(mid)
-    #     return seg_ors
 
     def comp_freq(self, par, fr_range=(0.0, +np.inf)):
         s, e, c = self.data
