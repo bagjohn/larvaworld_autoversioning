@@ -2142,11 +2142,11 @@ class ParamRegistry:
 
     @property
     def pkeys(self):
-        return [p.d for k, p in self.kdict.items()]
+        return aux.SuperList([p.d for k, p in self.kdict.items()]).sorted
 
-    def valid_pkeys(self, ps):
-        valid = self.pkeys
-        return [p for p in ps if p in valid]
+    @property
+    def ks(self):
+        return aux.SuperList(self.kdict.keys()).sorted
 
     def df_to_pint(self, df):
         '''
@@ -2155,8 +2155,7 @@ class ParamRegistry:
 
         '''
         from pint_pandas.pint_array import PintType
-        valid_pars = self.valid_pkeys(df.columns)
-        valid_pars = [col for col in valid_pars if not isinstance(df.dtypes[col], PintType)]
+        valid_pars = [col for col in self.pkeys.existing(df.columns) if not isinstance(df.dtypes[col], PintType)]
         pint_dtypes = {par: self.getPar(d=par, to_return='upint') for par in valid_pars}
         df_pint = df.astype(dtype=pint_dtypes)
         return df_pint

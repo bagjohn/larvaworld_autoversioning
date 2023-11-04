@@ -15,7 +15,7 @@ class GraphRegistry:
 
     @property
     def ks(self):
-        return sorted(list(self.dict.keys()))
+        return aux.SuperList(self.dict.keys()).sorted
 
     def exists(self, ID):
         if isinstance(ID, str) and ID in self.ks:

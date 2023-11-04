@@ -296,19 +296,23 @@ class ParamLarvaDataset(param.Parameterized):
 
     @property
     def s(self):
+        if not self.step_data:
+            self.load()
         return self.step_data
 
     @property
     def e(self):
+        if not self.endpoint_data:
+            self.load(step=False)
         return self.endpoint_data
 
     @property
     def end_ps(self):
-        return aux.SuperList(self.endpoint_data.columns).sorted
+        return aux.SuperList(self.e.columns).sorted
 
     @property
     def step_ps(self):
-        return aux.SuperList(self.step_data.columns).sorted
+        return aux.SuperList(self.s.columns).sorted
 
     @property
     def end_ks(self):
@@ -473,7 +477,7 @@ class ParamLarvaDataset(param.Parameterized):
 
     @property
     def data(self):
-        if self.step_data is None or self.endpoint_data is None:
+        if not self.step_data or not self.endpoint_data:
             self.load()
         return self.step_data, self.endpoint_data, self.config
 
@@ -1035,7 +1039,6 @@ class ParamLarvaDataset(param.Parameterized):
             self.save()
 
     def get_par(self, par=None, k=None, key='step'):
-        s, e = self.step_data, self.endpoint_data
         if par is None and k is not None:
             par = reg.getPar(k)
 
@@ -1044,19 +1047,17 @@ class ParamLarvaDataset(param.Parameterized):
             if res is not None:
                 return res
 
-        if key == 'end':
-            if e is not None and par in e.columns:
-                return e[par]
-        if key == 'step':
-            if s is not None and par in s.columns:
-                return s[par]
-            else:
-                for h5_k, ps in self.config.h5_kdic.items():
-                    if par in ps:
-                        try:
-                            return read_key(h5_k, par)
-                        except:
-                            pass
+        if key == 'end' and par in self.end_ps:
+            return self.e[par]
+        if key == 'step' and par in self.step_ps:
+            return self.s[par]
+            # else:
+            #     for h5_k, ps in self.config.h5_kdic.items():
+            #         if par in ps:
+            #             try:
+            #                 return read_key(h5_k, par)
+            #             except:
+            #                 pass
         try:
             return read_key(key, par)
         except:

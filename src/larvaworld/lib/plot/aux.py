@@ -39,7 +39,6 @@ __all__ = [
 ]
 
 
-
 def plot_quantiles(df, x=None, **kwargs):
     """
     Plot quantiles or confidence intervals along with the mean.
@@ -659,6 +658,7 @@ def configure_subplot_grid(N=None, wh=None, w=8, h=8, sharex=False, sharey=False
     - kws: dict
         A dictionary of keyword arguments for configuring subplots.
     """
+
     # print(figsize,wh,w,h)
     def calculate_grid_dimensions(N, Ncols, Nrows):
         if N:
@@ -676,7 +676,6 @@ def configure_subplot_grid(N=None, wh=None, w=8, h=8, sharex=False, sharey=False
         Nrows *= Nrows_coef
     Nrows, Ncols = calculate_grid_dimensions(N, Ncols, Nrows)
     figsize = figsize or (wh * Ncols, wh * Nrows) if wh else (w * Ncols, h * Nrows)
-    # print(figsize, 'dd')
     kws = {
         'sharex': sharex,
         'sharey': sharey,
@@ -686,10 +685,6 @@ def configure_subplot_grid(N=None, wh=None, w=8, h=8, sharex=False, sharey=False
         **kwargs
     }
     return kws
-
-
-
-
 
 
 def define_end_ks(ks=None, mode='basic'):

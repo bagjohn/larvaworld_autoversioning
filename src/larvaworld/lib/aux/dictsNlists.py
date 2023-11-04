@@ -249,7 +249,7 @@ class SuperList(list):
 
     @property
     def sorted(self):
-        return sorted(self)
+        return SuperList(sorted(self))
 
     @property
     def flatten(self):

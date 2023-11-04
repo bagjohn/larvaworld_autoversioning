@@ -39,7 +39,7 @@ class BasePlot:
                  return_fig=False, show=False,
                  subplot_kw={}, build_kws={}, **kwargs):
         if save_as is None:
-            if pref is not None:
+            if pref:
                 name = f'{pref}_{name}'
             save_as = name
         self.filename = f'{save_as}.{suf}'
@@ -47,8 +47,8 @@ class BasePlot:
         self.fit_ind = None
         self.fit_df = None
 
-        if save_to is not None:
-            if subfolder is not None:
+        if save_to:
+            if subfolder:
                 save_to = f'{save_to}/{subfolder}'
             os.makedirs(save_to, exist_ok=True)
         self.save_to = save_to
@@ -86,8 +86,7 @@ class BasePlot:
                 ax = Axes3D(self.fig, azim=azim, elev=elev)
                 self.axs = [ax]
             else:
-                fig_kws = plot.configure_subplot_grid(**self.build_kws)
-                self.fig, axs = plt.subplots(**fig_kws)
+                self.fig, axs = plt.subplots(**plot.configure_subplot_grid(**self.build_kws))
                 self.axs = axs.ravel() if isinstance(axs, np.ndarray) else [axs]
 
     @property
@@ -240,9 +239,8 @@ class BasePlot:
         self.fig = fig
 
     def get(self):
-        if self.fit_df is not None and self.save_to is not None:
-            ff = os.path.join(self.save_to, self.fit_filename)
-            self.fit_df.to_csv(ff, index=True, header=True)
+        if self.fit_df and self.save_to:
+            self.fit_df.to_csv(os.path.join(self.save_to, self.fit_filename), index=True, header=True)
         return plot.process_plot(self.fig, self.save_to, self.filename, self.return_fig, self.show)
 
     def conf_fig(self, adjust_kws=None, align=None, title=None, title_kws={}):
@@ -291,17 +289,17 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
         self.pdict = aux.AttrDict()
         self.vdict = aux.AttrDict()
 
-        for k in ks:
-            try:
-                p = reg.par.kdict[k]
-                if p.u == reg.units.m and space_unit == 'mm':
-                    p.u = reg.units.millimeter
-                    coeff = 1000
-                else:
-                    coeff = 1
-                if k in klabels:
-                    p.disp = klabels[k]
+        for k in reg.par.ks.existing(ks):
+            p = reg.par.kdict[k]
+            if p.u == reg.units.m and space_unit == 'mm':
+                p.u = reg.units.millimeter
+                coeff = 1000
+            else:
+                coeff = 1
+            if k in klabels:
+                p.disp = klabels[k]
 
+            try:
                 dfs = self.datasets.get_par(k=k, key=key) * coeff
 
                 def get_vs_from_df(df):
