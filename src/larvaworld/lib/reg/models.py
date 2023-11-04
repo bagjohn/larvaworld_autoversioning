@@ -824,7 +824,7 @@ class ModelRegistry:
                             kkws.update(**kws)
                         E.update(self.larvaConf(**kkws))
         e1 = self.larvaConf(mID='loco_default', **kws)
-        kws2 = {'modkws': {'interference': {'attenuation': 0.0}}}
+        kws2 = {'modkws': {'interference': {'attenuation': 0.0}, 'intermitter': {'run_mode': 'exec'}}}
         e2 = self.larvaConf(mID='Levy', modes={'crawler': 'constant', 'turner': 'sinusoidal', 'interference': 'default',
                                                'intermitter': 'default'}, **kws2)
         e3 = self.larvaConf(mID='NEU_Levy', modes={'crawler': 'constant', 'turner': 'neural', 'interference': 'default',

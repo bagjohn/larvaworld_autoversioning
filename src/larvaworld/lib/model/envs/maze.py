@@ -1,12 +1,12 @@
 import random
 
-
 from shapely.geometry import LineString
 
 __all__ = [
     'Cell',
     'Maze',
 ]
+
 
 class Cell:
     """A cell in the maze.
@@ -35,7 +35,6 @@ class Cell:
 
         self.walls[wall] = False
         other.walls[Cell.wall_pairs[wall]] = False
-
 
 
 class Maze:

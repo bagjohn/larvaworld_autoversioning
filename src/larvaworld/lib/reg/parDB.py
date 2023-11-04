@@ -1875,9 +1875,9 @@ class ParamClass:
             self.add_operators(k0=k0)
 
     def build_spatial(self, in_m=True):
-        tor_durs = [1, 2, 5, 10, 20, 60, 120, 240, 300, 600]
-        dsp_ranges = [(0, 40), (0, 60), (0, 70), (0, 80), (10, 60), (10, 70), (10, 80), (20, 60), (20, 70), (20, 80),
-                      (10, 100), (20, 100), (0, 120), (0, 240), (0, 300), (0, 600), (60, 120), (60, 300)]
+        # tor_durs = [1, 2, 5, 10, 20, 60, 120, 240, 300, 600]
+        # dsp_ranges = [(0, 40), (0, 60), (0, 70), (0, 80), (10, 60), (10, 70), (10, 80), (20, 60), (20, 70), (20, 80),
+        #               (10, 100), (20, 100), (0, 120), (0, 240), (0, 300), (0, 600), (60, 120), (60, 300)]
         if in_m:
             u = reg.units.m
             s = 1
@@ -1917,10 +1917,11 @@ class ParamClass:
         for k0 in [nam.cum('d')]:
             self.add_scaled(k0=k0)
 
-        for i in dsp_ranges:
+        for i in [(0, 40), (0, 60), (0, 70), (0, 80), (10, 60), (10, 70), (10, 80), (20, 60), (20, 70), (20, 80),
+                      (10, 100), (20, 100), (0, 120), (0, 240), (0, 300), (0, 600), (60, 120), (60, 300)]:
             self.add_dsp(range=i, u=u)
         self.add(**{'p': 'tortuosity', 'k': 'tor', 'lim': (0.0, 1.0), 'sym': 'tor'})
-        for dur in tor_durs:
+        for dur in [1, 2, 5, 10, 20, 60, 120, 240, 300, 600]:
             self.add_tor(dur=dur)
         self.add(**{'p': 'anemotaxis', 'sym': 'anemotaxis'})
 
@@ -1951,23 +1952,27 @@ class ParamClass:
                 self.add_freq(k0=kc)
 
     def build_sim_pars(self):
+        L = 'brain.locomotor'
+        IF= f'{L}.interference'
+        Im = f'{L}.intermitter'
+
         for ii, jj in zip(['C', 'T', 'F'], ['crawler', 'turner', 'feeder']):
-            self.add(**{'p': f'brain.locomotor.{jj}.output', 'k': f'A_{ii}', 'd': f'{jj} output',
+            self.add(**{'p': f'{L}.{jj}.output', 'k': f'A_{ii}', 'd': f'{jj} output',
                         'sym': nam.tex.sub('A', ii)})
-            self.add(**{'p': f'brain.locomotor.{jj}.input', 'k': f'I_{ii}', 'd': f'{jj} input', 'sym': nam.tex.sub('I', ii)})
-            self.add(**{'p': f'brain.locomotor.{jj}.phi', 'k': f'phi_{ii}', 'd': f'{jj} phase',
+            self.add(**{'p': f'{L}.{jj}.input', 'k': f'I_{ii}', 'd': f'{jj} input', 'sym': nam.tex.sub('I', ii)})
+            self.add(**{'p': f'{L}.{jj}.phi', 'k': f'phi_{ii}', 'd': f'{jj} phase',
                         'sym': nam.tex.sub('Phi', ii)})
-        self.add(**{'p': f'cur_attenuation','codename': f'brain.locomotor.interference.cur_attenuation', 'k': f'A_CT', 'l': f'C->T suppression',
+        self.add(**{'p': f'cur_attenuation','codename': f'{IF}.cur_attenuation', 'k': f'A_CT', 'l': f'C->T suppression',
                     'sym': nam.tex.sub('A', 'CT'),'disp': 'CRAWLER:TURNER interference suppression.'})
-        self.add(**{'p': f'attenuation','codename': f'brain.locomotor.interference.attenuation', 'k': f'A0_CT', 'l': f'C->T baseline suppression',
+        self.add(**{'p': f'attenuation','codename': f'{IF}.attenuation', 'k': f'A0_CT', 'l': f'C->T baseline suppression',
                     'sym': nam.tex.sub('A0', 'CT'), 'disp': 'CRAWLER:TURNER baseline interference suppression.'})
-        self.add(**{'p': nam.max('attenuation'),'codename': f'brain.locomotor.interference.attenuation_max', 'k': f'Amax_CT', 'l': f'C->T max suppression',
+        self.add(**{'p': nam.max('attenuation'),'codename': f'{IF}.attenuation_max', 'k': f'Amax_CT', 'l': f'C->T max suppression',
                     'sym': nam.tex.sub('Amax', 'CT'), 'disp': 'CRAWLER:TURNER maximum interference suppression.'})
-        self.add(**{'p': aux.nam.phi(nam.max('attenuation')),'codename': f'brain.locomotor.interference.max_attenuation_phase', 'k': f'phi_Amax_CT', 'l': f'C->T max suppression phase',
+        self.add(**{'p': aux.nam.phi(nam.max('attenuation')),'codename': f'{IF}.max_attenuation_phase', 'k': f'phi_Amax_CT', 'l': f'C->T max suppression phase',
                     'sym': nam.tex.sub('Phi_Amax', 'CT'), 'disp': 'CRAWLER:TURNER maximum interference suppression phase.'})
         # self.add(**{'p': 'brain.locomotor.cur_ang_suppression', 'k': 'c_CT', 'd': 'ang_suppression',
         #             'disp': 'angular suppression output', 'sym': sub('c', 'CT'), 'lim': (0.0, 1.0)})
-        Im = 'brain.locomotor.intermitter'
+
         self.add(**{'p': f'{Im}.EEB', 'k': 'EEB', 'd': 'exploitVSexplore_balance', 'lim': (0.0, 1.0), 'sym': 'EEB'})
         self.add(**{'p': f'{Im}.feeder_reoccurence_rate', 'k': 'fee_reocc', 'd': 'feeder_reoccurence_rate',
                     'lim': (0.0, 1.0), 'sym': 'fee_reocc'})

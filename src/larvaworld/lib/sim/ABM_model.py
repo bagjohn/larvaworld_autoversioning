@@ -18,6 +18,7 @@ from agentpy.tools import make_list, InfoStr
 # from ..model import Object
 from .. import reg, aux
 
+
 __all__ = [
     'BasicABModel',
     'ABModel',
@@ -425,6 +426,7 @@ class ABModel(BasicABModel, reg.generators.SimConfigurationParams):
             **kwargs: Arguments passed to the setup method
         """
         reg.generators.SimConfigurationParams.__init__(self, **kwargs)
+        # self.parameters.larva_groups = update_larva_groups(self.parameters.larva_groups, mIDs=mIDs, N=5)
         self.parameters.steps = self.Nsteps
         self.parameters.agentpy_output_kws = {'exp_name': self.experiment, 'exp_id': self.id,
                                               'path': f'{self.dir}/agentpy_output'}

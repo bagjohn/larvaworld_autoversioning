@@ -374,7 +374,6 @@ class Viewer(ScreenAreaPygame):
         else:
             image = pygame.surfarray.array3d(self._window)
         if self.vid_writer:
-
             self.vid_writer.append_data(np.flipud(np.rot90(image)))
         if self.img_writer:
             self.img_writer.append_data(np.flipud(np.rot90(image)))

@@ -95,7 +95,8 @@ class SimConfiguration(RuntimeOps, SimMetricOps, SimOps):
 class SimConfigurationParams(SimConfiguration):
     parameters = param.Parameter(default=None)
 
-    def __init__(self, runtype='Exp', experiment=None, parameters=None, **kwargs):
+    def __init__(self, runtype='Exp', experiment=None, parameters=None,
+                 N=None, mIDs=None, dIDs=None, sample=None,**kwargs):
         # print(experiment)
         if parameters is None:
             if runtype in reg.CONFTYPES:
@@ -119,6 +120,12 @@ class SimConfigurationParams(SimConfiguration):
                     parameters[k] = kwargs[k]
                 else:
                     kwargs[k] = parameters[k]
+
+        try:
+            from ...cli.argparser import update_larva_groups
+            parameters.larva_groups = update_larva_groups(parameters.larva_groups, mIDs=mIDs,dIDs=dIDs, N=N, sample=sample)
+        except:
+            pass
         super().__init__(runtype=runtype, experiment=experiment, parameters=parameters, **kwargs)
 
 
@@ -532,6 +539,10 @@ class ExpConf(SimOps):
             lg = LarvaGroup(**gConf, id=gID)
             confs += lg(parameter_dict=self.parameter_dict)
         return confs
+
+    def update_larva_groups(self, N=None, mIDs=None, dIDs=None, sample=None):
+        from ...cli.argparser import update_larva_groups
+        self.larva_groups=update_larva_groups(self.larva_groups, N=N, mIDs=mIDs,dIDs=dIDs,sample=sample, expand_models=False)
 
 
 gen.Exp = ExpConf

@@ -1,3 +1,4 @@
+import copy
 from typing import List
 from argparse import ArgumentParser
 import param
@@ -567,7 +568,7 @@ class SimModeParser:
             r.run()
 
 
-def update_larva_groups(lgs, N=None, mIDs=None, dIDs=None, sample=None):
+def update_larva_groups(lgs, N=None, mIDs=None, dIDs=None, sample=None, expand_models=True):
     """
     Modifies the experiment's configuration larvagroups.
 
@@ -587,13 +588,17 @@ def update_larva_groups(lgs, N=None, mIDs=None, dIDs=None, sample=None):
         Nm = len(mIDs)
         gConfs = list(lgs.values())
         if len(lgs) != Nm:
-            gConfs = [gConfs[0]] * Nm
+            gConfs = [gConfs[0].get_copy() for i in range(Nm)]
             for gConf, col in zip(gConfs, aux.N_colors(Nm)):
                 gConf.color = col
         lgs = aux.AttrDict({dID: {} for dID in dIDs})
         for dID, mID, gConf in zip(dIDs, mIDs, gConfs):
             lgs[dID] = gConf
-            lgs[dID].model = reg.conf.Model.getID(mID)
+            if expand_models:
+                lgs[dID].model = reg.conf.Model.getID(mID)
+            else:
+                lgs[dID].model = mID
+
 
     if N is not None:
         for gID, gConf in lgs.items():
