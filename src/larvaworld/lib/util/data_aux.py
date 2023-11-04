@@ -217,29 +217,8 @@ class LarvaworldParam(param.Parameterized):
         else:
             return None
 
-    # @property
-    # def get_ParsArg(self):
-    #     from cli.parser import build_ParsArg
-    #     return build_ParsArg(name=self.name, k=self.k, h=self.help, dtype=self.dtype, v=self.initial_value, vs=None)
-
     def exists(self, dataset):
-        par = self.d
-        d = dataset
-        dic = aux.AttrDict({'step': False, 'end': False})
-        if hasattr(d, 'step_data'):
-            s = d.step_data
-            if par in s.columns:
-                dic.step = True
-        if hasattr(d, 'endpoint_data'):
-            e = d.endpoint_data
-            if par in e.columns:
-                dic.end = True
-
-        c = d.config
-        if 'aux_pars' in c:
-            for k, ps in c.aux_pars.items():
-                dic[k] = par in ps
-        return dic
+        return aux.AttrDict({'step': self.d in dataset.step_ps, 'end': self.d in dataset.end_ps})
 
     def get(self, dataset, compute=True):
         res = self.exists(dataset)

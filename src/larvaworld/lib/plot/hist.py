@@ -60,7 +60,7 @@ def module_endpoint_hists(mkey='crawler', mode='realistic',e=None, refID=None, N
 
 @reg.funcs.graph('angular pars', required={'ks':['b', 'bv', 'ba', 'fov', 'foa','rov', 'roa']})
 def plot_ang_pars(absolute=False, include_rear=False, name='ang_pars', half_circles=True,kde=True, subfolder='turn',
-                  Npars=5, Nbins=100,type='sns.hist', **kwargs):
+                  Npars=5, Nbins=100,hist_type='sns.hist', **kwargs):
     if Npars == 5:
         ks = ['b', 'bv', 'ba', 'fov', 'foa']
         rs = [100, 200, 2000, 200, 2000]
@@ -75,7 +75,7 @@ def plot_ang_pars(absolute=False, include_rear=False, name='ang_pars', half_circ
         rs += [200, 2000]
 
     P = plot.AutoPlot(ks=ks,ranges=rs, absolute=absolute, name=name, subfolder=subfolder, build_kws={'Ncols':'Nks', 'wh':8, 'sharey': True}, **kwargs)
-    P.plot_hist(type=type, kde=kde, half_circles=half_circles, alpha=0.8, linewidth=3,nbins=Nbins)
+    P.plot_hist(hist_type=hist_type, kde=kde, half_circles=half_circles, alpha=0.8, linewidth=3,nbins=Nbins)
     P.adjust((0.1, 0.95), (0.15, 0.95), 0.01)
     return P.get()
 
@@ -163,9 +163,9 @@ def plot_distros(name=None,ks=['v', 'a','sv', 'sa', 'b', 'bv', 'ba', 'fov', 'foa
 
 @reg.funcs.graph('crawl pars', required={'ks':['str_N', 'run_tr', 'cum_sd']})
 def plot_crawl_pars(ks=['str_N', 'run_tr', 'cum_sd'],subfolder='endpoint',name='crawl_pars',
-                    type='sns.hist',kde=True,  **kwargs):
+                    hist_type='sns.hist',kde=True,  **kwargs):
     P = plot.AutoPlot(ks=ks,key='end',name=name, subfolder=subfolder, build_kws={'Ncols':'Nks', 'wh':7, 'sharey': True}, **kwargs)
-    P.plot_hist(type=type,kde=kde)
+    P.plot_hist(hist_type=hist_type,kde=kde)
     P.adjust((0.1, 0.95), (0.15, 0.95), 0.1)
     return P.get()
 

@@ -4,8 +4,7 @@ import os
 
 
 from ...lib import reg
-from ...gui import gui_aux
-from ...gui.tabs import DrawBodyTab
+from ...gui import gui_aux,tabs
 
 __all__ = [
     'ModelTab',
@@ -145,7 +144,7 @@ class ModelTab(gui_aux.GuiTab):
         l01, c1 = self.build_module_tab()
         l1=[[l00, l01]]
         l2, g2 = self.build_architecture_tab()
-        self.draw_tab = DrawBodyTab(name='body', gui=self.gui, conftype='Body')
+        self.draw_tab = tabs.body_draw.DrawBodyTab(name='body', gui=self.gui, conftype='Body')
         l3, c3, g3, d3 = self.draw_tab.build()
         self.selectionlists[self.draw_tab.conftype] = self.draw_tab.selectionlists[self.draw_tab.conftype]
 

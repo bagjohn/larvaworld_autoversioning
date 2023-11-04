@@ -16,7 +16,7 @@ def test_import_Schleyer():
     kws1 = {
         'parent_dir': 'exploration',
         'merged': True,
-        'color': 'blue',
+        'color': 'green',
         'max_Nagents': N,
         'min_duration_in_sec': 60,
         'id': f'{N}controls',
@@ -39,7 +39,8 @@ def test_import_Schleyer():
     for kws in [kws1, kws2]:
         d = g.import_dataset(**kws)
         assert isinstance(d,LarvaDataset)
-        d.process()
+        d.process(is_last=False)
+        d.annotate(is_last=True)
         d.save()
         s = d.step_data
         assert isinstance(s, pd.DataFrame)

@@ -1,9 +1,5 @@
 import pandas as pd
-import panel as pn
-import numpy as np
-import holoviews as hv
 
-pn.extension()
 
 from ...lib import reg, aux
 from ...lib.process.dataset import LarvaDatasetCollection
@@ -16,6 +12,8 @@ class TrackViewer(LarvaDatasetCollection):
 
     def __init__(self, size=600, **kwargs):
         super().__init__(**kwargs)
+
+
         self.size = size
 
         self.xy_data = self.build_data()
@@ -43,6 +41,11 @@ class TrackViewer(LarvaDatasetCollection):
         return data
 
     def get_app(self):
+        import panel as pn
+        import numpy as np
+        import holoviews as hv
+
+        pn.extension()
 
         cb_IDs = pn.widgets.CheckBoxGroup(value=self.labels, options=self.labels)
         cb_vis = pn.widgets.CheckBoxGroup(value=['Positions', 'Disperal circle'],

@@ -32,7 +32,6 @@ __all__ = [
 ]
 
 __displayname__ = 'Registry'
-
 VERBOSE = 2
 
 
@@ -77,9 +76,7 @@ par = parDB.ParamRegistry()
 
 vprint("Initializing configuration registry")
 from .config import conf
-
 from .generators import gen
-
 from . import config, generators, models, graph
 
 model = models.ModelRegistry()
@@ -92,9 +89,6 @@ def getPar(k=None, p=None, d=None, to_return='d'):
 
 def loadRef(id, **kwargs):
     return conf.Ref.loadRef(id=id, **kwargs)
-
-
-
 
 
 def define_default_refID_by_running_test():
@@ -113,7 +107,8 @@ def define_default_refID_by_running_test():
 def define_default_refID():
     if len(conf.Ref.confIDs) == 0:
 
-        vprint('No reference datasets are available.Automatically importing one from the raw experimental data folder.', 2)
+        vprint('No reference datasets are available.Automatically importing one from the raw experimental data folder.',
+               2)
 
         if 'Schleyer' not in conf.LabFormat.confIDs:
             config.resetConfs(conftypes=['LabFormat'])

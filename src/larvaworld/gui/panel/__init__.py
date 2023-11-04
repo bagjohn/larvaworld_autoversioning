@@ -2,6 +2,8 @@
 Visualization dashboards
 """
 
-from .track_viewer import TrackViewer
+
+from . import track_viewer
+# from .track_viewer import TrackViewer
 
 __displayname__ = 'Dashboards'

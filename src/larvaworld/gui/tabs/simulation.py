@@ -4,8 +4,7 @@ import PySimpleGUI as sg
 
 from ...lib import reg, aux, sim
 
-from ...gui import gui_aux
-from ...gui.tabs import DrawEnvTab, EnvTab
+from ...gui import gui_aux,tabs
 
 __all__ = [
     'SimTab',
@@ -29,7 +28,7 @@ class SimTab(gui_aux.GuiTab):
     def build(self):
         l0, l1, c1, g1, d1 = self.build_conf()
         l2, c2, g2, d2 = self.build_RUN()
-        self.draw_tab = DrawEnvTab(name='draw', gui=self.gui)
+        self.draw_tab = tabs.env_draw.DrawEnvTab(name='draw', gui=self.gui)
         l3, c3, g3, d3 = self.draw_tab.build()
 
 
@@ -53,7 +52,7 @@ class SimTab(gui_aux.GuiTab):
         s1 = gui_aux.PadTable('larva_groups', buttons=['add', 'remove'], index='Group ID', col_widths=[10, 3, 7, 10],
                               heading_dict={'N': 'distribution.N', 'color': 'color', 'model': 'model'},
                               dict_name='LarvaGroup')
-        self.envtab = EnvTab(name='environment', gui=self.gui, conftype='Env')
+        self.envtab = tabs.env.EnvTab(name='environment', gui=self.gui, conftype='Env')
         tab1_l, tab1_c, tab1_g, tab1_d = self.envtab.build()
         sl1 = self.envtab.selectionlists[self.envtab.conftype]
         self.selectionlists[sl1.conftype] = sl1

@@ -79,7 +79,7 @@ class ConfType(param.Parameterized):
 
     def reset(self, init=False):
 
-        dd = reg.funcs.stored_confs[self.conftype]()
+
 
         if os.path.isfile(self.path_to_dict):
             if init:
@@ -89,6 +89,7 @@ class ConfType(param.Parameterized):
         else:
             d = {}
 
+        dd = reg.funcs.stored_confs[self.conftype]()
         N0, N1 = len(d), len(dd)
 
         d.update(dd)
