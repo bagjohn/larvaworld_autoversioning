@@ -24,7 +24,7 @@ __all__ = [
 ]
 
 
-def traj_1group(d, unit='mm', title=None, single_color=False,time_range=None, **kwargs):
+def traj_1group(d, unit='mm', title=None, single_color=False, time_range=None, **kwargs):
     xy = d.timeseries_slice(time_range=time_range)[d.c.traj_xy]
     c = d.config
     color = c.color if single_color else None
@@ -32,14 +32,13 @@ def traj_1group(d, unit='mm', title=None, single_color=False,time_range=None, **
     P = plot.AutoBasePlot(name=f'trajectories', **kwargs)
     ax = P.axs[0]
     tank = c.arena_vertices * scale
-    for id,xy0 in d.data_by_ID(xy).items():
-        xy0*=scale
-        ax.plot(xy0[:, 0], xy0[:, 1], color=color)
+    for xy0 in d.data_by_ID(xy).values():
+        ax.plot(xy0[:, 0] * scale, xy0[:, 1] * scale, color=color)
 
     ax.fill(tank[:, 0], tank[:, 1], fill=True, color='lightgrey', edgecolor='black', linewidth=4)
-    for sid, sdic in c.env_params.food_params.source_units.items():
-        px, py = sdic['pos']
-        circle = plt.Circle((px * scale, py * scale), sdic['radius'] * scale, color=sdic['default_color'])
+    for sdic in c.env_params.food_params.source_units.values():
+        px, py = sdic.pos
+        circle = plt.Circle((px * scale, py * scale), sdic.radius * scale, color=sdic.color)
         ax.add_patch(circle)
     P.conf_ax(xMaxN=3, yMaxN=3, title=title, titlefontsize=25, xlab=f'X ({unit})', ylab=f'Y ({unit})',
               equal_aspect=True)
@@ -55,7 +54,8 @@ def traj_grouped(unit='mm', name=None, subfolder='trajectories',
     P = plot.AutoPlot(name=name, subfolder=subfolder,  # subplot_kw=dict(projection='polar'),
                       build_kws={'Ncols': 'Ndatasets', 'wh': 5, 'sharex': True, 'sharey': True}, **kwargs)
     for ii, (l, d) in enumerate(P.data_dict.items()):
-        _ = traj_1group(d=d, unit=unit, fig=P.fig, axs=P.axs[ii], title=l, single_color=single_color, save_to=None, time_range=range)
+        _ = traj_1group(d=d, unit=unit, fig=P.fig, axs=P.axs[ii], title=l, single_color=single_color, save_to=None,
+                        time_range=range)
         if ii != 0:
             P.axs[ii].yaxis.set_visible(False)
     P.adjust((0.1, 0.9), (0.2, 0.9), 0.1, 0.01)
@@ -428,7 +428,7 @@ def plot_sample_tracks(mode=['strides', 'turns'], agent_idx=0, agent_id=None, sl
                 ho = nam.orient('front')
                 hov = nam.vel(ho)
                 p, ylab, ylim = reg.getPar('fov', to_return=['d', 'l', 'lim'])
-            else :
+            else:
                 raise
 
             handles = [patches.Patch(color=col, label=n) for n, col in zip(chunks, chunk_cols)]

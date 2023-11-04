@@ -214,6 +214,15 @@ class RefType(ConfType):
         reg.vprint(f'Loaded stored reference dataset : {id}', 1)
         return d
 
+    def loadRefs(self, ids=None, dirs=None, **kwargs):
+        if ids is None :
+            assert dirs is not None
+            ids= [None]*len(dirs)
+        if dirs is None:
+            assert ids is not None
+            dirs= [None]*len(ids)
+        return aux.ItemList([self.loadRef(id=id, dir=dir, **kwargs) for id, dir in zip(ids,dirs)])
+
     def retrieve_dataset(self, dataset=None, load=True, **kwargs):
         if dataset is None:
             dataset = self.loadRef(load=load, **kwargs)

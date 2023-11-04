@@ -12,7 +12,7 @@ def xx_test_plots():
     assert os.path.exists(dcol.dir)
     kws = {'save_to': f'{reg.ROOT_DIR}/../../tests/plots', 'show': True}
 
-    graphIDs = ['trajectories', 'pathlength','dispersal','angular pars','endpoint box', 'epochs', 'fft multi', 'dispersal summary',
+    graphIDs = ['trajectories', 'pathlength','dispersal','angular pars','endpoint box', 'epochs', 'freq powerspectrum', 'dispersal summary',
                 'kinematic analysis',  'crawl pars', 'stride cycle',
                 'stride cycle multi', 'ethogram'][:3]
 

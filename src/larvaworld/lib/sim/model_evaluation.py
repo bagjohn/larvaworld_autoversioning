@@ -224,7 +224,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
             self.figs.epochs.turn = GD['epochs'](turns=True, **kws)
             self.figs.epochs.runNpause = GD['epochs'](stridechain_duration=True, **kws)
         if 'fft' in plots:
-            self.figs.loco.fft = GD['fft multi'](**kws)
+            self.figs.loco.fft = GD['freq powerspectrum'](**kws)
         if 'hists' in plots:
             self.figs.hist.ang = GD['angular pars'](half_circles=False, absolute=False, Nbins=100, Npars=3,
                                                     include_rear=False, **kws1)

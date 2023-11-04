@@ -90,6 +90,9 @@ def getPar(k=None, p=None, d=None, to_return='d'):
 def loadRef(id, **kwargs):
     return conf.Ref.loadRef(id=id, **kwargs)
 
+def loadRefs(ids, **kwargs):
+    return conf.Ref.loadRefs(ids=ids, **kwargs)
+
 
 def define_default_refID_by_running_test():
     if len(conf.Ref.confIDs) == 0:

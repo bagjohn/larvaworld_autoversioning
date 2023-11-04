@@ -17,23 +17,21 @@ __all__ = [
     # 'plot_stridesNpauses',
 ]
 
-def plot_single_bout(x0, bout, color, label, ax, fit_dic=None, plot_fits='best',print_fits=False,
+def plot_single_bout(x0, bout, color, label, ax, fit_dic=None, plot_fits='best',
                      marker='.', legend_outside=False,xlabel = 'time (sec)',xlim=None, **kwargs):
     distro_ls = ['powerlaw', 'exponential', 'lognormal', 'lognorm-pow', 'levy', 'normal', 'uniform']
     distro_cs = ['c', 'g', 'm', 'k', 'orange', 'brown', 'purple']
-    num_distros = len(distro_ls)
-    lws = [2] * num_distros
+    lws = [2] * len(distro_ls)
 
     if fit_dic is None:
-        xmin, xmax = np.min(x0), np.max(x0)
-        fit_dic = util.fit_bout_distros(x0, xmin, xmax, dataset_id='test', bout=bout,print_fits=print_fits, **kwargs)
+        fit_dic = util.fit_bout_distros(x0, bout=bout, **kwargs)
     idx_Kmax = fit_dic['idx_Kmax']
     xrange, du2, c2, y = fit_dic['values']
     lws[idx_Kmax] = 4
-    ddfs = fit_dic['cdfs']
-    for ii in ddfs:
-        if ii is not None:
-            ii /= ii[0]
+    # ddfs = fit_dic['cdfs']
+    # for ii in ddfs:
+    #     if ii is not None:
+    #         ii /= ii[0]
     ax.loglog(xrange, y, marker, color=color, alpha=0.7, label=label)
     ax.set_title(bout)
     ax.set_xlabel(xlabel)
@@ -41,9 +39,11 @@ def plot_single_bout(x0, bout, color, label, ax, fit_dic=None, plot_fits='best',
     if xlim is not None :
         ax.set_xlim(xlim)
     distro_ls0, distro_cs0 = [], []
-    for z, (l, col, lw, ddf) in enumerate(zip(distro_ls, distro_cs, lws, ddfs)):
+    for z, (l, col, ddf) in enumerate(zip(distro_ls, distro_cs, fit_dic['cdfs'])):
         if ddf is None:
             continue
+        else:
+            ddf /= ddf[0]
         if plot_fits == 'best' and z == idx_Kmax:
             cc = color
         elif plot_fits == 'all' or l in plot_fits:
@@ -52,7 +52,7 @@ def plot_single_bout(x0, bout, color, label, ax, fit_dic=None, plot_fits='best',
             cc = col
         else:
             continue
-        ax.loglog(xrange, ddf, color=cc, lw=lw, label=l)
+        ax.loglog(xrange, ddf, color=cc, lw=lws[z], label=l)
     if len(distro_ls0) > 1:
         if legend_outside:
             plot.dataset_legend(distro_ls0, distro_cs0, ax=ax, loc='center left', fontsize=25, anchor=(1.0, 0.5))
