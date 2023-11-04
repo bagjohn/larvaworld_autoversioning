@@ -466,7 +466,7 @@ def concat_datasets(ddic, key='end', unit='sec'):
     df0 = pd.concat(dfs)
     if key == 'step':
         df0.reset_index(level='Step', drop=False, inplace=True)
-        dts = np.unique([d.config['dt'] for l, d in ddic.items()])
+        dts = np.unique([d.config.dt for l, d in ddic.items()])
         if len(dts) == 1:
             dt = dts[0]
             dic = {'sec': 1, 'min': 60, 'hour': 60 * 60, 'day': 24 * 60 * 60}

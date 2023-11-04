@@ -497,15 +497,17 @@ def process_plot(fig, save_to, filename, return_fig=False, show=False):
     - save_to (if return_fig=True)
     - filename (if return_fig=True)
     """
+
     if show:
         plt.show()
+
     if hasattr(fig, 'patch'):
         fig.patch.set_visible(False)
 
     if return_fig:
         return fig, save_to, filename
     else:
-        if save_to is not None:
+        if save_to:
             os.makedirs(save_to, exist_ok=True)
             filepath = os.path.join(save_to, filename)
             save_plot(fig, filepath, filename)
@@ -657,7 +659,7 @@ def configure_subplot_grid(N=None, wh=None, w=8, h=8, sharex=False, sharey=False
     - kws: dict
         A dictionary of keyword arguments for configuring subplots.
     """
-
+    # print(figsize,wh,w,h)
     def calculate_grid_dimensions(N, Ncols, Nrows):
         if N:
             if Nrows:
@@ -674,7 +676,7 @@ def configure_subplot_grid(N=None, wh=None, w=8, h=8, sharex=False, sharey=False
         Nrows *= Nrows_coef
     Nrows, Ncols = calculate_grid_dimensions(N, Ncols, Nrows)
     figsize = figsize or (wh * Ncols, wh * Nrows) if wh else (w * Ncols, h * Nrows)
-
+    # print(figsize, 'dd')
     kws = {
         'sharex': sharex,
         'sharey': sharey,
@@ -684,6 +686,10 @@ def configure_subplot_grid(N=None, wh=None, w=8, h=8, sharex=False, sharey=False
         **kwargs
     }
     return kws
+
+
+
+
 
 
 def define_end_ks(ks=None, mode='basic'):

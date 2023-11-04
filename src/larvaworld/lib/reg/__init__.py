@@ -108,11 +108,9 @@ def define_default_refID_by_running_test():
 
 
 def define_default_refID():
+    conf.Ref.cleanRefIDs()
     if len(conf.Ref.confIDs) == 0:
-
-        vprint('No reference datasets are available.Automatically importing one from the raw experimental data folder.',
-               2)
-
+        vprint('No reference datasets available.Automatically importing one from the experimental data folder.', 2)
         if 'Schleyer' not in conf.LabFormat.confIDs:
             config.resetConfs(conftypes=['LabFormat'])
         g = conf.LabFormat.get('Schleyer')

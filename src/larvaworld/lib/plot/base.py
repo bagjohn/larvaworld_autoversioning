@@ -58,9 +58,9 @@ class BasePlot:
         build_kws['subplot_kw'] = subplot_kw
         self.build_kws = build_kws
         for k, v in self.build_kws.items():
-            if v == 'Ndatasets' and hasattr(self,'Ndatasets'):
+            if v == 'Ndatasets' and hasattr(self, 'Ndatasets'):
                 self.build_kws[k] = self.Ndatasets
-            elif v == 'Nks' and hasattr(self,'Nks'):
+            elif v == 'Nks' and hasattr(self, 'Nks'):
                 self.build_kws[k] = self.Nks
 
     def build(self, fig=None, axs=None, dim3=False, azim=115, elev=15):
@@ -288,7 +288,6 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
         self.key = key
         self.ks = []
         self.kkdict = aux.AttrDict()
-        # self.kdict = aux.AttrDict()
         self.pdict = aux.AttrDict()
         self.vdict = aux.AttrDict()
 
@@ -303,9 +302,7 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
                 if k in klabels:
                     p.disp = klabels[k]
 
-                dfs=self.datasets.get_par(k=k, key=key)* coeff
-
-
+                dfs = self.datasets.get_par(k=k, key=key) * coeff
 
                 def get_vs_from_df(df):
                     assert df is not None
@@ -313,29 +310,17 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
                     if absolute:
                         v = np.abs(v)
                     if rad2deg:
+                        # if p.u == reg.units.rad:
+                        #     p.u = reg.units.deg
                         v = np.rad2deg(v)
+                    # else:
+                        # if p.u == reg.units.deg:
+                        #     p.u = reg.units.rad
+                        #     v = np.deg2rad(v)
                     return v
 
                 self.vdict[k] = [get_vs_from_df(df) for df in dfs]
                 self.kkdict[k] = aux.AttrDict(zip(self.labels, dfs))
-
-                # dfs = aux.AttrDict()
-                # dics = aux.AttrDict()
-                # vs = []
-                # for l, d, col in self.data_palette:
-                #     df = d.get_par(k=k, key=key) * coeff
-                #     assert df is not None
-                #     v = df.dropna().values
-                #     if absolute:
-                #         v = np.abs(v)
-                #     if rad2deg:
-                #         v = np.rad2deg(v)
-                #     dfs[l] = df
-                    # dics[l]=aux.AttrDict({'df': v, 'col': col})
-                    # vs.append(v)
-                # self.kkdict[k] = dfs
-                # self.kdict[k] = dics
-                # self.vdict[k] = vs
                 self.pdict[k] = p
                 self.ks.append(k)
             except:
@@ -368,7 +353,6 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
                 else:
                     t = -1
                 self.fit_df.loc[ind, k] = [t, st, np.round(pv, 11)]
-
 
     def plot_all_half_circles(self):
         if self.fit_df is None:
@@ -498,7 +482,10 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
             vs = self.vdict[k]
             if self.ranges:
                 r = self.ranges[i]
-                r0, r1 = -r, r
+                if isinstance(r, tuple):
+                    r0, r1 = r
+                else:
+                    r0, r1 = -r, r
             else:
                 r0, r1 = np.min([np.min(v) for v in vs]), np.max([np.max(v) for v in vs])
             if self.absolute:

@@ -756,7 +756,7 @@ class ParamLarvaDataset(param.Parameterized):
             else:
                 raise
 
-            s['bend'] = np.degrees(a)
+            s['bend'] = a
 
     def comp_ang_moments(self, pars=None, mode='minimal', recompute=False):
         s, e, c = self.data
