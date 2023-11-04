@@ -2,7 +2,6 @@ import os
 from .. import reg, aux, plot
 
 __all__ = [
-    # 'graphs',
     'GraphRegistry',
 ]
 
@@ -31,9 +30,10 @@ class GraphRegistry:
 
     def eval_graphgroups(self, graphgroups, save_to=None, **kws):
         kws.update({'subfolder': None})
-        d=self.grouplist_to_dict(graphgroups)
-        return aux.AttrDict({gID : self.eval_entries(entries,save_to=f'{save_to}/{gID}' if save_to is not None else None, **kws) for gID, entries in d.items()})
-
+        d = self.grouplist_to_dict(graphgroups)
+        return aux.AttrDict(
+            {gID: self.eval_entries(entries, save_to=f'{save_to}/{gID}' if save_to is not None else None, **kws) for
+             gID, entries in d.items()})
 
     def grouplist_to_dict(self, groups):
         if isinstance(groups, list):
@@ -123,7 +123,6 @@ class GraphRegistry:
                                      min_dur=dur, chunk=chunk, source_ID=ID, **kwargs))
         return aux.AttrDict({gID: d0})
 
-
     def get_analysis_graphgroups(self, exp, sources, **kwargs):
         groups = ["traj", "general"]
         groups += [self.source_graphgroup(id, pos=pos, **kwargs) for id, pos in sources.items()]
@@ -151,7 +150,6 @@ class GraphRegistry:
 
         return groups
 
-    # @property
     def build_graphgroups(self):
         d = aux.AttrDict({
             'tactile': [
@@ -295,4 +293,3 @@ class GraphRegistry:
         })
         return d
 
-# graphs = GraphRegistry()

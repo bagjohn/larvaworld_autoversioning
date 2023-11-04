@@ -239,7 +239,7 @@ class BasePlot:
         self.fig = fig
 
     def get(self):
-        if self.fit_df and self.save_to:
+        if self.fit_df is not None and self.save_to is not None:
             self.fit_df.to_csv(os.path.join(self.save_to, self.fit_filename), index=True, header=True)
         return plot.process_plot(self.fig, self.save_to, self.filename, self.return_fig, self.show)
 
@@ -289,7 +289,7 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
         self.pdict = aux.AttrDict()
         self.vdict = aux.AttrDict()
 
-        for k in reg.par.ks.existing(ks):
+        for k in aux.SuperList(ks).existing(reg.par.ks):
             p = reg.par.kdict[k]
             if p.u == reg.units.m and space_unit == 'mm':
                 p.u = reg.units.millimeter

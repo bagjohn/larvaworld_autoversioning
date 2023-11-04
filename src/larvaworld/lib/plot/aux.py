@@ -513,7 +513,7 @@ def process_plot(fig, save_to, filename, return_fig=False, show=False):
         return fig
 
 
-def prob_hist(vs, colors, labels, bins, ax, hist_type='plt.hist', kde=False, sns_kws={}, plot_fit=True, **kwargs):
+def prob_hist(vs, colors, labels, bins, ax, hist_type='sns.hist', kde=False, sns_kws={}, plot_fit=True, **kwargs):
     """
     Create a probability histogram or distribution plot for multiple datasets.
 

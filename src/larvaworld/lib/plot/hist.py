@@ -60,8 +60,7 @@ def module_endpoint_hists(e, mkey='crawler', mode='realistic', Nbins=None, show_
 
 @reg.funcs.graph('angular pars', required={'ks': ['b', 'bv', 'ba', 'fov', 'foa', 'rov', 'roa']})
 def plot_ang_pars(absolute=False, rad2deg=True, include_rear=False, name='ang_pars', half_circles=True, kde=True,
-                  subfolder='turn',
-                  Npars=5, Nbins=100, hist_type='sns.hist', **kwargs):
+                  Npars=5, Nbins=100, **kwargs):
     if Npars == 5:
         ks = ['b', 'bv', 'ba', 'fov', 'foa']
         rs = [100, 200, 2000, 200, 2000]
@@ -78,11 +77,9 @@ def plot_ang_pars(absolute=False, rad2deg=True, include_rear=False, name='ang_pa
     if not rad2deg:
         rs = np.deg2rad(rs).tolist()
 
-    P = plot.AutoPlot(ks=ks, ranges=rs, absolute=absolute, rad2deg=rad2deg, name=name, subfolder=subfolder,
-                      build_kws={'Ncols': 'Nks', 'wh': 8, 'sharey': True}, **kwargs)
-    P.plot_hist(hist_type=hist_type, kde=kde, half_circles=half_circles, alpha=0.8, linewidth=3, nbins=Nbins)
-    P.adjust((0.1, 0.95), (0.15, 0.95), 0.01)
-    return P.get()
+    return plot_step_params(type='hist', ks=ks, name=name, Ncols='Nks',
+                            plot_kws={'kde': kde, 'half_circles': half_circles, 'nbins': Nbins},
+                            ranges=rs, absolute=absolute, rad2deg=rad2deg, **kwargs)
 
 
 # ks=['v', 'a','sv', 'sa', 'b', 'bv', 'ba', 'fov', 'foa']
@@ -168,14 +165,19 @@ def plot_distros(name=None, ks=['v', 'a', 'sv', 'sa', 'b', 'bv', 'ba', 'fov', 'f
     return P.get()
 
 
+# @reg.funcs.graph('crawl pars', required={'ks': ['str_N', 'run_tr', 'cum_sd']})
+# def plot_crawl_pars(ks=['str_N', 'run_tr', 'cum_sd'], subfolder='endpoint', name='crawl_pars',
+#                     hist_type='sns.hist', kde=True, **kwargs):
+#     P = plot.AutoPlot(ks=ks, key='end', name=name, subfolder=subfolder,
+#                       build_kws={'Ncols': 'Nks', 'wh': 7, 'sharey': True}, **kwargs)
+#     P.plot_hist(hist_type=hist_type, kde=kde)
+#     P.adjust((0.1, 0.95), (0.15, 0.95), 0.1)
+#     return P.get()
+
 @reg.funcs.graph('crawl pars', required={'ks': ['str_N', 'run_tr', 'cum_sd']})
-def plot_crawl_pars(ks=['str_N', 'run_tr', 'cum_sd'], subfolder='endpoint', name='crawl_pars',
-                    hist_type='sns.hist', kde=True, **kwargs):
-    P = plot.AutoPlot(ks=ks, key='end', name=name, subfolder=subfolder,
-                      build_kws={'Ncols': 'Nks', 'wh': 7, 'sharey': True}, **kwargs)
-    P.plot_hist(hist_type=hist_type, kde=kde)
-    P.adjust((0.1, 0.95), (0.15, 0.95), 0.1)
-    return P.get()
+def plot_crawl_pars(kde=True, **kwargs):
+    return plot_endpoint_params(type='hist', ks=['str_N', 'run_tr', 'cum_sd'], name='crawl_pars', plot_kws={'kde': kde},
+                                **kwargs)
 
 
 @reg.funcs.graph('turn amplitude VS Y pos', required={'ks': ['tur_y0']})
@@ -327,6 +329,7 @@ def plot_endpoint_box(**kwargs):
 def plot_endpoint_params(type, mode='basic', **kwargs):
     return plot_params(key='end', type=type, mode=mode, **kwargs)
 
+
 @reg.funcs.graph('step hist', required={'ks': []})
 def plot_step_hist(**kwargs):
     return plot_step_params(type='hist', **kwargs)
@@ -341,7 +344,7 @@ def plot_step_params(type, ks=['v', 'a', 'sv', 'sa', 'b', 'bv', 'ba', 'fov', 'fo
     return plot_params(key='step', type=type, ks=ks, **kwargs)
 
 
-def plot_params(key, type, name=None, mode=None, ks=None, Ncols=None, **kwargs):
+def plot_params(key, type, name=None, mode=None, ks=None, Ncols=None, plot_kws={}, **kwargs):
     if name is None:
         name = f'{key}_{type}_{mode}'
     if type == 'hist':
@@ -362,8 +365,8 @@ def plot_params(key, type, name=None, mode=None, ks=None, Ncols=None, **kwargs):
     P = plot.AutoPlot(ks=ks, key=key, name=name, subfolder=subfolder,
                       build_kws={'N': 'Nks', 'Ncols': Ncols, 'wh': 7, 'sharex': sharex, 'sharey': sharey}, **kwargs)
     if type == 'hist':
-        P.plot_hist(nbins=20)
+        P.plot_hist(**plot_kws)
     elif type == 'box':
-        P.boxplots()
+        P.boxplots(**plot_kws)
     P.conf_fig(align=True, adjust_kws={'LR': (0.1, 0.95), 'BT': (0.15, 0.9), 'W': W, 'H': H})
     return P.get()
