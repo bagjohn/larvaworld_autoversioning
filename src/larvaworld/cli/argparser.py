@@ -479,21 +479,28 @@ class SimModeParser:
             kw.mode = 'batch'
             kw.run_externally = False
             kw.conf = reg.conf.Batch.getID(a.experiment)
-            kw.conf.exp = reg.conf.Exp.expand(kw.conf.exp)
-            kw.conf.exp.experiment = kw.conf.exp
-            kw.conf.exp.larva_groups = update_larva_groups(
-                kw.conf.exp.larva_groups, N=a.Nagents, mIDs=a.group_model_ids, dIDs=a.group_disp_ids)
+            kw.conf.N = a.Nagents
+            kw.conf.mIDs = a.group_model_ids
+            kw.conf.dIDs = a.group_disp_ids
 
-            if kw.duration is None:
-                kw.duration = kw.conf.exp.sim_params.duration
+            # kw.conf.exp = reg.conf.Exp.expand(kw.conf.exp)
+            # kw.conf.exp.experiment = kw.conf.exp
+            # kw.conf.exp.larva_groups = update_larva_groups(
+            #     kw.conf.exp.larva_groups, N=a.Nagents, mIDs=a.group_model_ids, dIDs=a.group_disp_ids)
+            #
+            # if kw.duration is None:
+            #     kw.duration = kw.conf.exp.sim_params.duration
             self.run = sim.Exec(**kw)
         elif m == 'Exp':
-            kw.parameters = reg.conf.Exp.expand(kw.experiment)
-            kw.parameters.experiment = kw.experiment
-            kw.parameters.larva_groups = update_larva_groups(
-                kw.parameters.larva_groups, N=a.Nagents, mIDs=a.group_model_ids, dIDs=a.group_disp_ids)
-            if kw.duration is None:
-                kw.duration = kw.parameters.sim_params.duration
+            kw.N=a.Nagents
+            kw.mIDs=a.group_model_ids
+            kw.dIDs=a.group_disp_ids
+            # kw.parameters = reg.conf.Exp.expand(kw.experiment)
+            # kw.parameters.experiment = kw.experiment
+            # kw.parameters.larva_groups = update_larva_groups(
+            #     kw.parameters.larva_groups, N=a.Nagents, mIDs=a.group_model_ids, dIDs=a.group_disp_ids)
+            # if kw.duration is None:
+            #     kw.duration = kw.parameters.sim_params.duration
 
             kw.screen_kws = {'vis_kwargs': sp.visualization}
             self.run = sim.ExpRun(**kw)
