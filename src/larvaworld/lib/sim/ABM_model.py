@@ -15,7 +15,7 @@ from agentpy.sample import Range, Values
 
 from agentpy.tools import make_list, InfoStr
 
-from ..model import Object
+# from ..model import Object
 from .. import reg, aux
 
 __all__ = [
@@ -430,3 +430,6 @@ class ABModel(BasicABModel, reg.generators.SimConfigurationParams):
                                               'path': f'{self.dir}/agentpy_output'}
         BasicABModel.__init__(self, parameters=self.parameters, id=self.id)
 
+# if __name__ == "__main__":
+#     m=ABModel(id='my_model')
+#     print(m.id)

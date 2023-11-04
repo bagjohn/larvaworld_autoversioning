@@ -362,18 +362,19 @@ class ScreenAreaPygame(ScreenAreaZoomable):
 class Viewer(ScreenAreaPygame):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
         self.vid_writer = self.manager.new_video_writer(fps=self.manager._fps)
         self.img_writer = self.manager.new_image_writer()
 
     def render(self):
         if self.manager.show_display:
+
             pygame.display.flip()
             image = pygame.surfarray.pixels3d(self._window)
             self._t.tick(self.manager._fps)
         else:
             image = pygame.surfarray.array3d(self._window)
         if self.vid_writer:
+
             self.vid_writer.append_data(np.flipud(np.rot90(image)))
         if self.img_writer:
             self.img_writer.append_data(np.flipud(np.rot90(image)))

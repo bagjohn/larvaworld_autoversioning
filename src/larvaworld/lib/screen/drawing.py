@@ -176,6 +176,7 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
             'manager': self,
 
         })
+        # print(self.active, self.mode, self.show_display)
 
     def increase_fps(self):
         if self._fps < 60:

@@ -28,6 +28,8 @@ version = importlib.metadata.version("larvaworld")
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    # 'recommonmark',
+    # 'm2r2',
     "sphinx.ext.autodoc",  # automatically generate documentation for modules
     "sphinx.ext.napoleon",  # to read Google-style or Numpy-style docstrings
     "sphinx.ext.viewcode",  # to allow vieing the source code in the web page
@@ -45,9 +47,9 @@ extensions = [
     "myst_nb",
     "myst_parser",
     "autoapi.extension",
-    - 'sphinx.ext.autodoc'
-    - 'sphinx.ext.autosummary'
-      "nbsphinx",
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    "nbsphinx",
     "sphinx_gallery.load_style",
     # "autodocsumm",  # to generate tables of functions, attributes, methods, etc.
 ]
@@ -165,3 +167,11 @@ gen.DocumentPackages(larvaworld,
                      # extra=extra,
                     )
 '''
+
+# github_doc_root = 'https://github.com/rtfd/recommonmark/tree/master/doc/'
+# def setup(app):
+#     app.add_config_value('recommonmark_config', {
+#             'url_resolver': lambda url: github_doc_root + url,
+#             'auto_toc_tree_section': 'Contents',
+#             }, True)
+#     app.add_transform(AutoStructify)
