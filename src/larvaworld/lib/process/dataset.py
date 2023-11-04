@@ -1378,27 +1378,25 @@ class LarvaDataset(BaseLarvaDataset):
 
 class LarvaDatasetCollection:
     def __init__(self, labels=None, add_samples=False, config=None, **kwargs):
-        datasets = self.get_datasets(**kwargs)
+        ds = self.get_datasets(**kwargs)
 
-        for d in datasets:
+        for d in ds:
             assert isinstance(d, BaseLarvaDataset)
         if labels is None:
-            labels = [d.id for d in datasets]
+            labels = ds.id
 
         if add_samples:
-            targetIDs = aux.unique_list([d.config.sample for d in datasets])
-            targets = [reg.conf.Ref.loadRef(id) for id in targetIDs if id in reg.conf.Ref.confIDs]
-            datasets += targets
-            if labels is not None:
-                labels += targetIDs
+            targetIDs = aux.SuperList(ds.config.sample).unique.existing(reg.conf.Ref.confIDs)
+            ds += reg.conf.Ref.loadRefs(ids=targetIDs)
+            labels += targetIDs
         self.config = config
-        self.datasets = datasets
+        self.datasets = ds
         self.labels = labels
-        self.Ndatasets = len(datasets)
+        self.Ndatasets = len(ds)
         self.colors = self.get_colors()
         assert self.Ndatasets == len(self.labels)
 
-        self.group_ids = aux.unique_list([d.config.group_id for d in self.datasets])
+        self.group_ids = aux.SuperList(ds.config.group_id).unique
         self.Ngroups = len(self.group_ids)
         self.dir = self.set_dir()
 
@@ -1437,12 +1435,12 @@ class LarvaDatasetCollection:
         if datasets:
             pass
         elif refIDs:
-            datasets = [reg.conf.Ref.loadRef(refID) for refID in refIDs]
+            datasets = reg.conf.Ref.loadRefs(refIDs)
         elif dirs:
             datasets = [LarvaDataset(dir=f'{reg.DATA_DIR}/{dir}', load_data=False) for dir in dirs]
         elif group_id:
             datasets = reg.conf.Ref.loadRefGroup(group_id, to_return='list')
-        return datasets
+        return aux.ItemList(datasets)
 
     def get_colors(self):
         colors = []

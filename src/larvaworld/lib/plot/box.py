@@ -21,6 +21,7 @@ __all__ = [
     'lineplot',
 ]
 
+
 # @reg.funcs.graph('endpoint box')
 # def boxplots(name=None,mode='basic', ks=None, subfolder='endpoint',**kwargs):
 #     ks = plot.define_end_ks(ks, mode)
@@ -77,55 +78,44 @@ __all__ = [
 #     return P.get()
 
 
-@reg.funcs.graph('boxplot (grouped)', required={'ks':[]})
+@reg.funcs.graph('boxplot (grouped)', required={'ks': []})
 def boxplot(ks, sort_labels=False, name=None, xlabel=None, pair_ids=None, common_ids=None, coupled_labels=None,
             **kwargs):
     Npars = len(ks)
     if name is None:
         name = ks[0]
     P = plot.AutoPlot(name=name, build_kws={'N': Npars, 'Nrows': int(np.ceil(Npars / 3)), 'w': 8, 'h': 7}, **kwargs)
+    gIDs=P.group_ids
+    grouped_ds = aux.AttrDict({gID: aux.ItemList([d for d in P.datasets if d.config.group_id == gID]) for gID in gIDs})
+
 
     if common_ids is None:
-        common_ids = aux.unique_list([l.split('_')[-1] for l in P.group_ids])
+        common_ids = aux.unique_list([l.split('_')[-1] for l in gIDs])
     Ncommon = len(common_ids)
     if pair_ids is None:
-        pair_ids = aux.unique_list([l.split('_')[0] for l in P.group_ids])
+        pair_ids = aux.unique_list([l.split('_')[0] for l in gIDs])
     Npairs = len(pair_ids)
-    if coupled_labels is None:
-        coupled_labels = True if P.Ngroups == Npairs * Ncommon else False
+
     if sort_labels:
         common_ids = sorted(common_ids)
         pair_ids = sorted(pair_ids)
 
-    for ii, k in enumerate(P.ks):
-        p = P.pdict[k]
-        all_vs = []
-        all_vs_dict = {}
-        for group_id in P.group_ids:
-            group_ds = [d for d in P.datasets if d.config['group_id'] == group_id]
-            vs = [d.get_par(k=k,key='end') for d in group_ds]
-            all_vs.append(vs)
-            all_vs_dict[group_id] = vs
-        all_vs = aux.flatten_list(all_vs)
-        if coupled_labels:
-            colors = aux.N_colors(Ncommon)
-            palette = {id: c for id, c in zip(common_ids, colors)}
-            pair_dfs = []
-            for pair_id in pair_ids:
-                paired_group_ids = [f'{pair_id}_{common_id}' for common_id in common_ids]
-                pair_vs = [all_vs_dict[id] for id in paired_group_ids]
-                pair_vs = aux.flatten_list(pair_vs)
-                pair_array = aux.boolean_indexing(pair_vs).T
-                pair_df = pd.DataFrame(pair_array, columns=common_ids).assign(Trial=pair_id)
-                pair_dfs.append(pair_df)
-                cdf = pd.concat(pair_dfs)  # CONCATENATE
+    if coupled_labels is None:
+        coupled_labels = True if P.Ngroups == Npairs * Ncommon else False
 
+
+
+    for ii, k in enumerate(P.ks):
+        # all_vs_dict = aux.AttrDict({gID: gds.get_par(k=k, key='end') for gID, gds in grouped_ds.items()})
+        # all_vs = aux.flatten_list(list(all_vs_dict.values()))
+
+        p = P.pdict[k]
+        if coupled_labels:
+            palette = {id: c for id, c in zip(common_ids, aux.N_colors(Ncommon))}
+            cdf = pd.concat([pd.DataFrame(aux.boolean_indexing(aux.flatten_list([grouped_ds[id].get_par(k=k, key='end') for id in [f'{pair_id}_{common_id}' for common_id in common_ids]])).T, columns=common_ids).assign(Trial=pair_id) for pair_id in pair_ids])
         else:
-            colors = aux.N_colors(P.Ngroups)
-            palette = {id: c for id, c in zip(P.group_ids, colors)}
-            array = aux.boolean_indexing(all_vs).T
-            df = pd.DataFrame(array, columns=P.group_ids).assign(Trial=1)
-            cdf = pd.concat([df])  # CONCATENATE
+            palette = {id: c for id, c in zip(gIDs, aux.N_colors(P.Ngroups))}
+            cdf = pd.concat([pd.DataFrame(aux.boolean_indexing(aux.flatten_list(P.datasets.get_par(k=k, key='end'))).T, columns=gIDs).assign(Trial=1)])  # CONCATENATE
         mdf = pd.melt(cdf, id_vars=['Trial'], var_name=['Group'])  # MELT
 
         kws = {
@@ -141,6 +131,7 @@ def boxplot(ks, sort_labels=False, name=None, xlabel=None, pair_ids=None, common
         P.conf_ax(ii, xlab=xlabel, ylab=p.l, ylim=p.lim)
     P.adjust((0.1, 0.95), (0.15, 0.9), 0.3, 0.3)
     return P.get()
+
 
 @reg.funcs.graph('PI (combo)')
 def boxplot_PI(sort_labels=False, xlabel='Trials', **kwargs):
@@ -204,6 +195,7 @@ def boxplot_PI(sort_labels=False, xlabel='Trials', **kwargs):
     P.adjust((0.2, 0.9), (0.15, 0.9), 0.05, 0.005)
     return P.get()
 
+
 @reg.funcs.graph('PI (simple)')
 def PIboxplot(df, exp, save_to, ylabel, ylim=None, show=False, suf=''):
     f = f'{save_to}/{exp}{suf}.pdf'
@@ -224,7 +216,8 @@ def PIboxplot(df, exp, save_to, ylabel, ylim=None, show=False, suf=''):
         plt.show()
     plt.close()
 
-@reg.funcs.graph('double patch', required={'ks':[]})
+
+@reg.funcs.graph('double patch', required={'ks': []})
 def boxplot_double_patch(ks=None, xlabel='substrate', show_ns=False, stripplot=False, title=True, **kwargs):
     if ks is None:
         ks = ['v_mu', 'tur_N_mu', 'pau_tr', 'tur_H', 'cum_d', 'on_food_tr']
@@ -244,8 +237,6 @@ def boxplot_double_patch(ks=None, xlabel='substrate', show_ns=False, stripplot=F
                 'colors': [f'xkcd:{Cmods[mID]} {Csubs[subID]}', f'xkcd:{Cmods[mID]} cyan']} for mID in mIDs
         } for subID in subIDs
     })
-
-
 
     # Nmods = len(mIDs)
     # ks = ['v_mu', 'tur_N_mu', 'pau_tr', 'tur_H', 'cum_d', 'on_food_tr']
@@ -283,7 +274,7 @@ def boxplot_double_patch(ks=None, xlabel='substrate', show_ns=False, stripplot=F
             'ax': ax,
             'color': 'black',
         }
-        plot.single_boxplot(stripplot=stripplot, show_ns=show_ns,width=0.5, **kws)
+        plot.single_boxplot(stripplot=stripplot, show_ns=show_ns, width=0.5, **kws)
         cols = []
         if not agar:
             for subID, RvSdic in DataDic.items():
@@ -327,9 +318,9 @@ def boxplot_double_patch(ks=None, xlabel='substrate', show_ns=False, stripplot=F
     return P.get()
 
 
-@reg.funcs.graph('foraging', required={'ks':['on_food_tr', 'sf_am']})
+@reg.funcs.graph('foraging', required={'ks': ['on_food_tr', 'sf_am']})
 def plot_foraging(**kwargs):
-    P = plot.AutoPlot(name='foraging', build_kws={'Ncols': 2, 'w': 8, 'h': 10, 'sharex':True}, **kwargs)
+    P = plot.AutoPlot(name='foraging', build_kws={'Ncols': 2, 'w': 8, 'h': 10, 'sharex': True}, **kwargs)
     for j, k in enumerate(['on_food_tr', 'sf_am']):
         dfs = []
         for d in P.datasets:
@@ -357,7 +348,8 @@ def plot_foraging(**kwargs):
     P.adjust((0.1, 0.95), (0.15, 0.92), 0.2, 0.005)
     P.get()
 
-@reg.funcs.graph('lineplot', required={'ks':[]})
+
+@reg.funcs.graph('lineplot', required={'ks': []})
 def lineplot(markers, ks=['f_am'], name=None, coupled_labels=None, xlabel=None, ylabel=None, leg_cols=None,
              scale=1.0,
              **kwargs):

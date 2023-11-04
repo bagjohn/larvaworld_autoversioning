@@ -265,10 +265,10 @@ class RefType(ConfType):
         if to_return == 'dict':
             return aux.AttrDict({id: self.loadRef(dir=dir, **kwargs) for id, dir in d.items()})
         elif to_return == 'list':
-            return [self.loadRef(dir=dir, **kwargs) for id, dir in d.items()]
+            return aux.ItemList([self.loadRef(dir=dir, **kwargs) for id, dir in d.items()])
         elif to_return == 'collection':
             from ..process.dataset import LarvaDatasetCollection
-            return LarvaDatasetCollection(datasets=[self.loadRef(dir=dir, **kwargs) for id, dir in d.items()])
+            return LarvaDatasetCollection(datasets=aux.ItemList([self.loadRef(dir=dir, **kwargs) for id, dir in d.items()]))
 
 
 conf = aux.AttrDict({k: ConfType(conftype=k) for k in reg.CONFTYPES if k != 'Ref'})

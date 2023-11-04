@@ -33,6 +33,8 @@ def plot_turn_Dbearing(name=None, min_angle=30.0, max_angle=180.0, ref_angle=Non
     P = plot.AutoPlot(name=name, subfolder=subfolder,subplot_kw=dict(projection='polar'),
                  build_kws={'Nrows':'Ndatasets','Ncols':Nplots, 'wh':5, 'sharey':True}, **kwargs)
 
+    # for k, (chunk, side) in enumerate(zip(['Lturn', 'Rturn'], ['left', 'right'])):
+    #     b0_par, b1_par, bd_par = nam.atStartStopChunk(p, chunk)
 
 
 
@@ -80,8 +82,6 @@ def plot_turn_Dbearing(name=None, min_angle=30.0, max_angle=180.0, ref_angle=Non
     for ax in P.axs:
         ax.set_xticklabels([0, '', +90, '', 180, '', -90, ''], fontsize=15)
     P.data_leg(0,loc='upper center', anchor=(0.5, 0.99),bbox_transform=P.fig.transFigure)
-    # dataset_legend(P.labels, P.colors, ax=P.axs[0], loc='upper center', anchor=(0.5, 0.99),
-    #                bbox_transform=P.fig.transFigure)
     P.adjust((0.0, 1.0), (0.15, 0.9), 0.0, 0.35)
     return P.get()
 
@@ -98,7 +98,6 @@ def plot_chunk_Dorient2source(source_ID, datasets,name=None,subfolder='bouts', c
 
     Ncols = int(np.ceil(np.sqrt(N)))
 
-    # Nrows = Ncols - 1 if N < Ncols ** 2 - Ncols else Ncols
     if name is None:
         name = f'{chunk}_Dorient_to_{source_ID}'
 

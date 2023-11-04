@@ -113,10 +113,8 @@ def stride_cycle(name=None, shorts=['sv', 'fov', 'rov', 'foa', 'b'], modes=None,
                  Nbins=64, individuals=False, pooled=True,title='Stride cycle analysis', **kwargs):
     from ..process.annotation import compute_interference
     if name is None:
-        if individuals:
-            name = f'stride_cycle_curves_all_larvae'
-        else:
-            name = f'stride_cycle_curves'
+        name = f'stride_cycle_curves_all_larvae' if individuals else f'stride_cycle_curves'
+
     Nsh = len(shorts)
     P = plot.AutoPlot(name=name, subfolder=subfolder, build_kws={'N': Nsh, 'w': 8, 'h': 5, 'sharex': True},
                  **kwargs)
@@ -279,20 +277,20 @@ def plot_stride_Dorient(name='stride_orient_change',absolute=True, subfolder='st
 def plot_interference(mode='orientation', agent_idx=None, subfolder='interference', **kwargs):
     name = f'interference_{mode}' if agent_idx is None else f'interference_{mode}_agent_idx_{agent_idx}'
 
-    shorts = ['sv']
+    ks = ['sv']
     if mode == 'orientation':
-        shorts.append('fov')
+        ks.append('fov')
     elif mode == 'orientation_x2':
-        shorts.append('fov')
-        shorts.append('rov')
+        ks.append('fov')
+        ks.append('rov')
     elif mode == 'bend':
-        shorts.append('bv')
+        ks.append('bv')
     elif mode == 'spinelength':
-        shorts.append('l')
+        ks.append('l')
 
-    Npars = len(shorts)
+    Npars = len(ks)
 
-    pars, ylabs = reg.getPar(shorts, to_return=['d', 'l'])
+    pars, ylabs = reg.getPar(ks, to_return=['d', 'l'])
     P = plot.AutoPlot(name=name, subfolder=subfolder, Nrows=Npars, figsize=(10, Npars * 5), sharex=True, **kwargs)
 
     ylim = [0, 60] if mode in ['bend', 'orientation', 'orientation_x2'] else None

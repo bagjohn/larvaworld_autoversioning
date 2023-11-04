@@ -302,23 +302,40 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
                     coeff = 1
                 if k in klabels:
                     p.disp = klabels[k]
-                dfs = aux.AttrDict()
-                # dics = aux.AttrDict()
-                vs = []
-                for l, d, col in self.data_palette:
-                    df = d.get_par(k=k, key=key) * coeff
+
+                dfs=self.datasets.get_par(k=k, key=key)* coeff
+
+
+
+                def get_vs_from_df(df):
                     assert df is not None
                     v = df.dropna().values
                     if absolute:
                         v = np.abs(v)
                     if rad2deg:
                         v = np.rad2deg(v)
-                    dfs[l] = df
+                    return v
+
+                self.vdict[k] = [get_vs_from_df(df) for df in dfs]
+                self.kkdict[k] = aux.AttrDict(zip(self.labels, dfs))
+
+                # dfs = aux.AttrDict()
+                # dics = aux.AttrDict()
+                # vs = []
+                # for l, d, col in self.data_palette:
+                #     df = d.get_par(k=k, key=key) * coeff
+                #     assert df is not None
+                #     v = df.dropna().values
+                #     if absolute:
+                #         v = np.abs(v)
+                #     if rad2deg:
+                #         v = np.rad2deg(v)
+                #     dfs[l] = df
                     # dics[l]=aux.AttrDict({'df': v, 'col': col})
-                    vs.append(v)
-                self.kkdict[k] = dfs
+                    # vs.append(v)
+                # self.kkdict[k] = dfs
                 # self.kdict[k] = dics
-                self.vdict[k] = vs
+                # self.vdict[k] = vs
                 self.pdict[k] = p
                 self.ks.append(k)
             except:
@@ -350,10 +367,8 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
                     t = 1
                 else:
                     t = -1
-                # print([t, st, np.round(pv, 11)])
                 self.fit_df.loc[ind, k] = [t, st, np.round(pv, 11)]
 
-        # print(self.fit_df)
 
     def plot_all_half_circles(self):
         if self.fit_df is None:
