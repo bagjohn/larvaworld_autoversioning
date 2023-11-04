@@ -28,12 +28,12 @@ __all__ = [
 ]
 
 @reg.funcs.graph('module hists')
-def module_endpoint_hists(mkey='crawler', mode='realistic',e=None, refID=None, Nbins=None, show_median=True, **kwargs):
+def module_endpoint_hists(e, mkey='crawler', mode='realistic', Nbins=None, show_median=True, **kwargs):
 
-    if e is None and refID is not None:
-        d = reg.conf.Ref.loadRef(refID)
-        d.load(step=False)
-        e = d.endpoint_data
+    # if e is None and refID is not None:
+    #     d = reg.conf.Ref.loadRef(refID)
+    #     d.load(step=False)
+    #     e = d.endpoint_data
     if Nbins is None:
         Nbins = int(e.index.values.shape[0] / 10)
 
@@ -42,15 +42,14 @@ def module_endpoint_hists(mkey='crawler', mode='realistic',e=None, refID=None, N
 
     P = plot.AutoBasePlot(name=f'{mkey}_endpoint_hists',build_kws={'Ncols':N,'w':7, 'h':6, 'sharey': True}, **kwargs)
 
-    for i, (k,p) in enumerate(var_mdict.items()):
-        # p=d00.args[k]
-        vs = e[p.codename]
-        P.axs[i].hist(vs.values, bins=Nbins)
+    for i, p in enumerate(var_mdict.values()):
+        vs = e[p.codename].dropna().values
+        P.axs[i].hist(vs, bins=Nbins)
         P.conf_ax(i, xlab=p.label, ylab='# larvae' if i == 0 else None, xMaxN=3, xlabelfontsize=18,
                   xticklabelsize=18,yvis=False if i != 0 else True)
 
         if show_median:
-            v_mu = vs.median()
+            v_mu = np.median(vs)
             text = f'{p.symbol} = {np.round(v_mu, 2)}'
             P.axs[i].axvline(v_mu, color='red', alpha=1, linestyle='dashed', linewidth=3)
             P.axs[i].annotate(text, rotation=0, fontsize=15, va='center', ha='left',
@@ -73,6 +72,8 @@ def plot_ang_pars(absolute=False, include_rear=False, name='ang_pars', half_circ
     if include_rear:
         ks += ['rov', 'roa']
         rs += [200, 2000]
+
+
 
     P = plot.AutoPlot(ks=ks,ranges=rs, absolute=absolute, name=name, subfolder=subfolder, build_kws={'Ncols':'Nks', 'wh':8, 'sharey': True}, **kwargs)
     P.plot_hist(hist_type=hist_type, kde=kde, half_circles=half_circles, alpha=0.8, linewidth=3,nbins=Nbins)

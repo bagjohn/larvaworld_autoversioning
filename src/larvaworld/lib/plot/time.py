@@ -21,7 +21,6 @@ __all__ = [
 def plot_ethogram(subfolder='timeplots', **kwargs):
     P = plot.AutoPlot(name='ethogram', subfolder=subfolder,build_kws={'Nrows': 'Ndatasets', 'Ncols': 2, 'sharex': True}, **kwargs)
     Cbouts = {
-        # 'lin': {'stridechain': 'green',
         'lin': {'exec': 'green',
                 'pause': 'red',
                 'feedchain': 'blue'},
@@ -31,12 +30,10 @@ def plot_ethogram(subfolder='timeplots', **kwargs):
     }
     for i, (d, dlab) in enumerate(zip(P.datasets, P.labels)):
         c=d.config
-        d.chunk_dicts = aux.AttrDict(d.read('chunk_dicts'))
-        dic0 = d.chunk_dicts
-        for j, (id, dic) in enumerate(dic0.items()):
+        for j, dic in enumerate(d.chunk_dicts.values()):
             for k, (n, title) in enumerate(zip(['lin', 'ang'], [r'$\bf{runs & pauses}$', r'$\bf{left & right turns}$'])):
                 idx = 2 * i + k
-                ax = P.axs[idx]
+                # ax = P.axs[idx]
 
                 for b, bcol in Cbouts[n].items():
                     try :
@@ -45,7 +42,7 @@ def plot_ethogram(subfolder='timeplots', **kwargs):
 
                         lines = [[(b0, j + 1), (b1, j + 1)] for b0, b1 in zip(b0s, b1s)]
                         lc = mc.LineCollection(lines, colors=bcol, linewidths=2)
-                        ax.add_collection(lc)
+                        P.axs[idx].add_collection(lc)
 
                     except:
                         pass
@@ -208,24 +205,17 @@ def plot_navigation_index(subfolder='source', **kwargs):
     P = plot.AutoPlot(name='nav_index', subfolder=subfolder, build_kws={'Nrows': 2, 'w': 20, 'h': 10,'sharex':True, 'sharey':True}, **kwargs)
 
     for l, d, c in P.data_palette:
-        dt = 1 / d.fr
-        Nticks = P.Nticks
-        Nsec = int(Nticks * dt)
-        s=d.load_traj(mode='default')
-
-        vxs = []
-        vys = []
-        for id in d.agent_ids:
-            s0 = s.xs(id, level='AgentID').values
+        Nsec = int(P.Nticks * d.config.dt)
+        trange=np.linspace(0, Nsec, P.Nticks)
+        vxs,vys = [], []
+        for s0 in d.traj_xy_data_byID.values():
             dxy = np.diff(s0, axis=0)
             rads = np.arctan2(dxy[:, 1], dxy[:, 0])
             rads = np.insert(rads, 0, 0)
             vxs.append(np.cos(rads))
             vys.append(-np.sin(rads))
-        vx0 = np.nanmean(np.array(vxs), axis=0)
-        vy0 = np.nanmean(np.array(vys), axis=0)
-        P.axs[0].plot(np.linspace(0, Nsec, Nticks), vx0, color=c, label=l)
-        P.axs[1].plot(np.linspace(0, Nsec, Nticks), vy0, color=c, label=l)
+        P.axs[0].plot(trange, np.nanmean(np.array(vxs), axis=0), color=c, label=l)
+        P.axs[1].plot(trange, np.nanmean(np.array(vys), axis=0), color=c, label=l)
     P.adjust((0.1, 0.95), (0.2, 0.98), H=0.15)
     P.conf_ax(0, ylab='X index', leg_loc='upper right')
     P.conf_ax(1, xlab='time (sec)', ylab='Y index', xlim=[0, Nsec], ylim=[-1.0, 1.0])

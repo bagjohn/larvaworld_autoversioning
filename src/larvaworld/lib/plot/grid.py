@@ -77,7 +77,7 @@ def model_summary(mID, refID=None, refDataset=None, Nids=1, model_table=False, *
         refDataset = d
     refDataset.color = 'red'
     refDataset.config.color = 'red'
-    e, c = refDataset.endpoint_data, refDataset.config
+    s, e, c = refDataset.data
 
     dd = util.sim_model(mID=mID, refDataset=refDataset, duration=c.Nticks * c.dt / 60, dt=c.dt, Nids=Nids, color='blue',
                    dataset_id='model')
