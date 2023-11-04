@@ -1957,13 +1957,13 @@ class ParamClass:
             self.add(**{'p': f'brain.locomotor.{jj}.input', 'k': f'I_{ii}', 'd': f'{jj} input', 'sym': nam.tex.sub('I', ii)})
             self.add(**{'p': f'brain.locomotor.{jj}.phi', 'k': f'phi_{ii}', 'd': f'{jj} phase',
                         'sym': nam.tex.sub('Phi', ii)})
-        self.add(**{'p': f'cur_attenuation','codename': f'brain.locomotor.interference.cur_attenuation', 'k': f'A_CT', 'd': f'C->T suppression',
+        self.add(**{'p': f'cur_attenuation','codename': f'brain.locomotor.interference.cur_attenuation', 'k': f'A_CT', 'l': f'C->T suppression',
                     'sym': nam.tex.sub('A', 'CT'),'disp': 'CRAWLER:TURNER interference suppression.'})
-        self.add(**{'p': f'attenuation','codename': f'brain.locomotor.interference.attenuation', 'k': f'A0_CT', 'd': f'C->T baseline suppression',
+        self.add(**{'p': f'attenuation','codename': f'brain.locomotor.interference.attenuation', 'k': f'A0_CT', 'l': f'C->T baseline suppression',
                     'sym': nam.tex.sub('A0', 'CT'), 'disp': 'CRAWLER:TURNER baseline interference suppression.'})
-        self.add(**{'p': nam.max('attenuation'),'codename': f'brain.locomotor.interference.attenuation_max', 'k': f'Amax_CT', 'd': f'C->T max suppression',
+        self.add(**{'p': nam.max('attenuation'),'codename': f'brain.locomotor.interference.attenuation_max', 'k': f'Amax_CT', 'l': f'C->T max suppression',
                     'sym': nam.tex.sub('Amax', 'CT'), 'disp': 'CRAWLER:TURNER maximum interference suppression.'})
-        self.add(**{'p': aux.nam.phi(nam.max('attenuation')),'codename': f'brain.locomotor.interference.max_attenuation_phase', 'k': f'phi_Amax_CT', 'd': f'C->T max suppression phase',
+        self.add(**{'p': aux.nam.phi(nam.max('attenuation')),'codename': f'brain.locomotor.interference.max_attenuation_phase', 'k': f'phi_Amax_CT', 'l': f'C->T max suppression phase',
                     'sym': nam.tex.sub('Phi_Amax', 'CT'), 'disp': 'CRAWLER:TURNER maximum interference suppression phase.'})
         # self.add(**{'p': 'brain.locomotor.cur_ang_suppression', 'k': 'c_CT', 'd': 'ang_suppression',
         #             'disp': 'angular suppression output', 'sym': sub('c', 'CT'), 'lim': (0.0, 1.0)})
@@ -2109,17 +2109,17 @@ class ParamRegistry:
         else:
             raise
 
-        if type(k0) == str:
+        if isinstance(k0, str):
             par = d0[k0]
-            if type(to_return) == list:
+            if isinstance(to_return, list):
                 return [getattr(par, i) for i in to_return]
-            elif type(to_return) == str:
+            elif isinstance(to_return, str):
                 return getattr(par, to_return)
-        elif type(k0) == list:
+        elif isinstance(k0, list):
             pars = [d0[i] for i in k0]
-            if type(to_return) == list:
+            if isinstance(to_return, list):
                 return [[getattr(par, i) for par in pars] for i in to_return]
-            elif type(to_return) == str:
+            elif isinstance(to_return, str):
                 return [getattr(par, to_return) for par in pars]
 
     def runtime_pars(self):

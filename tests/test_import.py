@@ -42,8 +42,7 @@ def test_import_Schleyer():
         d.process(is_last=False)
         d.annotate(is_last=True)
         d.save()
-        s = d.step_data
-        assert isinstance(s, pd.DataFrame)
+        assert isinstance(d.s, pd.DataFrame)
 
 
 def xx_test_import_Jovanic():

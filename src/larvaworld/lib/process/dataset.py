@@ -316,11 +316,11 @@ class ParamLarvaDataset(param.Parameterized):
 
     @property
     def end_ks(self):
-        return aux.SuperList(reg.getPar(self.end_ps, to_return='k')).sorted
+        return aux.SuperList(reg.getPar(d=self.end_ps, to_return='k')).sorted
 
     @property
     def step_ks(self):
-        return aux.SuperList(reg.getPar(self.step_ps, to_return='k')).sorted
+        return aux.SuperList(reg.getPar(d=self.step_ps, to_return='k')).sorted
 
     @property
     def c(self):
@@ -570,7 +570,6 @@ class ParamLarvaDataset(param.Parameterized):
             ds = aux.loadSoloDics(agent_ids=ids, path=f'{self.config.data_dir}/individuals/{type}.txt')
         return ds
 
-    # @required(config_attrs=['contour_xy'])
     @property
     def contour_xy_data_byID(self):
         xy = self.config.contour_xy
@@ -578,7 +577,6 @@ class ParamLarvaDataset(param.Parameterized):
         grouped = self.step_data[xy].groupby('AgentID')
         return aux.AttrDict({id: df.values.reshape([-1, self.config.Ncontour, 2]) for id, df in grouped})
 
-    # @required(config_attrs=['midline_xy'])
     @property
     def midline_xy_data_byID(self):
         xy = self.config.midline_xy
@@ -586,7 +584,6 @@ class ParamLarvaDataset(param.Parameterized):
         grouped = self.step_data[xy].groupby('AgentID')
         return aux.AttrDict({id: df.values.reshape([-1, self.config.Npoints, 2]) for id, df in grouped})
 
-    # @required(config_attrs=['traj_xy'])
     @property
     def traj_xy_data_byID(self):
         s = self.step_data
@@ -602,12 +599,10 @@ class ParamLarvaDataset(param.Parameterized):
         grouped = data.groupby('AgentID')
         return aux.AttrDict({id: df.values for id, df in grouped})
 
-    # @required(config_attrs=['midline_xy'])
     @property
     def midline_xy_data(self):
         return self.step_data[self.config.midline_xy].values.reshape([-1, self.config.Npoints, 2])
 
-    # @required(config_attrs=['contour_xy'])
     @property
     def contour_xy_data(self):
         return self.step_data[self.config.contour_xy].values.reshape([-1, self.config.Ncontour, 2])
@@ -854,14 +849,12 @@ class ParamLarvaDataset(param.Parameterized):
             e[nam.cum(p)] = g.sum()
 
     @valid(required={'config_attrs': ['contour_xy']}, returned={'config_attrs': ['centroid_xy']})
-    # @required(config_attrs=['centroid_xy'])
     def comp_centroid(self, **kwargs):
         c = self.config
         if c.Ncontour > 0:
             self.step_data[c.centroid_xy] = np.sum(self.contour_xy_data, axis=1) / c.Ncontour
 
     @valid(required={'config_attrs': ['midline_xy']}, returned={'eks': ['l']})
-    # @required(config_attrs=['midline_xy'])
     def comp_length(self, mode='minimal', recompute=False):
         if 'length' in self.end_ps and not recompute:
             reg.vprint('Length is already computed. If you want to recompute it, set recompute_length to True', 1)
@@ -1044,13 +1037,6 @@ class ParamLarvaDataset(param.Parameterized):
             return self.e[par]
         if key == 'step' and par in self.step_ps:
             return self.s[par]
-            # else:
-            #     for h5_k, ps in self.config.h5_kdic.items():
-            #         if par in ps:
-            #             try:
-            #                 return read_key(h5_k, par)
-            #             except:
-            #                 pass
         try:
             return read_key(key, par)
         except:
@@ -1088,12 +1074,13 @@ class ParamLarvaDataset(param.Parameterized):
             ors = np.random.uniform(low=0, high=2 * np.pi, size=len(ids)).tolist()
 
         if ps is None:
-            ps=list(util.SAMPLING_PARS.keys())
+            ps = list(util.SAMPLING_PARS.keys())
         ps = aux.existing_cols(aux.unique_list(ps), e)
         flatnames = reg.getPar(p=ps, to_return='flatname')
         # codenames = [codename_dict[p] if p in codename_dict else p for p in ps]
         dic = aux.AttrDict(
-            {codename: [e[p].loc[id] if not np.isnan(e[p].loc[id]) else e[p].mean() for id in ids] for p,codename in zip(ps, flatnames)})
+            {codename: [e[p].loc[id] if not np.isnan(e[p].loc[id]) else e[p].mean() for id in ids] for p, codename in
+             zip(ps, flatnames)})
         return ids, poss, ors, dic
 
 
@@ -1172,9 +1159,6 @@ class BaseLarvaDataset(ParamLarvaDataset):
         elif step is not None or end is not None:
             self.set_data(step=step, end=end, agents=agents)
 
-    # def set_data(self, step=None, end=None,**kwargs):
-    #     pass
-
     def generate_config(self, **kwargs):
         c0 = aux.AttrDict({'id': 'unnamed',
                            'group_id': None,
@@ -1223,44 +1207,6 @@ class BaseLarvaDataset(ParamLarvaDataset):
         reg.vprint(f'Generated new conf {c0.id}', 1)
         return c0
 
-    # @property
-    # def data_dir(self):
-    #     return f'{self.config.dir}/data'
-    #
-    # @property
-    # def plot_dir(self):
-    #     return f'{self.config.dir}/plots'
-
-    # def save_config(self, refID=None):
-    #     c = self.config
-    #     if refID is not None:
-    #         c.refID = refID
-    #     if c.refID is not None:
-    #         reg.conf.Ref.setID(c.refID, c.dir)
-    #         reg.vprint(f'Saved reference dataset under : {c.refID}', 1)
-    #     try:
-    #         for k, v in c.items():
-    #             if isinstance(v, np.ndarray):
-    #                 c[k] = v.tolist()
-    #     except:
-    #         pass
-    #     try:
-    #         aux.save_dict(c, f'{self.data_dir}/conf.txt')
-    #     except:
-    #         aux.save_dict(c.nestedConf, f'{self.data_dir}/conf.txt')
-
-    # @property
-    # def Nangles(self):
-    #     return np.clip(self.config.Npoints - 2, a_min=0, a_max=None)
-
-    # @property
-    # def points(self):
-    #     return aux.aux.nam.midline(self.config.Npoints, type='point')
-
-    # @property
-    # def contour(self):
-    #     return aux.aux.nam.contour(self.config.Ncontour)
-
     def delete(self):
         shutil.rmtree(self.config.dir)
         reg.vprint(f'Dataset {self.id} deleted', 2)
@@ -1270,15 +1216,6 @@ class BaseLarvaDataset(ParamLarvaDataset):
         self.config.id = id
         if save:
             self.save_config()
-
-    # def set_endpoint_data(self,end):
-    #     self.endpoint_data = end.sort_index()
-    #     self.agent_ids = self.endpoint_data.index.values
-    #     self.config.agent_ids = list(self.agent_ids)
-    #     self.config.N = len(self.agent_ids)
-
-    # def load(self, **kwargs):
-    #     pass
 
 
 class LarvaDataset(BaseLarvaDataset):
@@ -1362,12 +1299,6 @@ class LarvaDataset(BaseLarvaDataset):
             cc1s = np.concatenate(cc1s)
             cc01s = cc1s - cc0s
             return cc0s, cc1s, cc01s
-
-    # @property
-    # def data(self):
-    #     s=self.step_data if hasattr(self, 'step_data') else None
-    #     e=self.endpoint_data if hasattr(self, 'endpoint_data') else None
-    #     return s, e, self.config
 
 
 class LarvaDatasetCollection:
