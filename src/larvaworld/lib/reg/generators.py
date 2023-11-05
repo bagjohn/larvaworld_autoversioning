@@ -129,7 +129,7 @@ class SimConfigurationParams(SimConfiguration):
 
         if 'larva_groups' in parameters:
             parameters.larva_groups = update_larva_groups(parameters.larva_groups, modelIDs=modelIDs, groupIDs=groupIDs,
-                                                          Ns=N,sample=sample)
+                                                          Ns=N, sample=sample)
         super().__init__(runtype=runtype, experiment=experiment, parameters=parameters, **kwargs)
 
 
@@ -192,7 +192,7 @@ def update_larva_groups(lgs, **kwargs):
     """
     Nold = len(lgs)
     gIDs = list(lgs)
-    confs = prepare_larvagroup_args(default_Nlgs=Nold,**kwargs)
+    confs = prepare_larvagroup_args(default_Nlgs=Nold, **kwargs)
     new_lgs = aux.AttrDict()
     for i, conf in enumerate(confs):
         gID = gIDs[i % Nold]
@@ -200,24 +200,26 @@ def update_larva_groups(lgs, **kwargs):
         gConf.group_id = gID
         lg = LarvaGroup(**gConf)
         new_lg = lg.new_group(**conf)
-        new_lgs[new_lg.group_id] = new_lg.entry(as_entry=False, expand=True)
+        new_lgs[new_lg.group_id] = new_lg.entry(as_entry=False, expand=False)
 
     return new_lgs
 
+
 class LarvaGroupMutator(NestedConf):
     modelIDs = reg.conf.Model.confID_selector(single=False)
-    groupIDs = param.List(default=None,allow_None=True, item_type=str, doc='The ids for the generated datasets')
+    groupIDs = param.List(default=None, allow_None=True, item_type=str, doc='The ids for the generated datasets')
     N = PositiveInteger(5, label='# agents/group', doc='Number of agents per model ID')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-def prepare_larvagroup_args(Ns=None, modelIDs=None, groupIDs=None, colors=None,default_Nlgs=1, **kwargs):
-    temp=[len(a) for a in [Ns, modelIDs, groupIDs, colors] if isinstance(a, list)]
-    if len(temp)>0:
+
+def prepare_larvagroup_args(Ns=None, modelIDs=None, groupIDs=None, colors=None, default_Nlgs=1, **kwargs):
+    temp = [len(a) for a in [Ns, modelIDs, groupIDs, colors] if isinstance(a, list)]
+    if len(temp) > 0:
         Nlgs = int(np.max(temp))
     else:
-        Nlgs =default_Nlgs
+        Nlgs = default_Nlgs
     if modelIDs is not None:
         if isinstance(modelIDs, str):
             modelIDs = [copy.deepcopy(modelIDs) for i in range(Nlgs)]
@@ -242,10 +244,11 @@ def prepare_larvagroup_args(Ns=None, modelIDs=None, groupIDs=None, colors=None,d
     if colors is not None:
         assert isinstance(colors, list) and len(colors) == Nlgs
     elif Nlgs == default_Nlgs:
-        colors = [None]*Nlgs
+        colors = [None] * Nlgs
     else:
         colors = aux.N_colors(Nlgs)
-    return [{'N': Ns[i], 'model': modelIDs[i], 'group_id': groupIDs[i], 'color': colors[i], **kwargs} for i in range(Nlgs)]
+    return [{'N': Ns[i], 'model': modelIDs[i], 'group_id': groupIDs[i], 'color': colors[i], **kwargs} for i in
+            range(Nlgs)]
 
 
 class LarvaGroup(NestedConf):
@@ -272,22 +275,25 @@ class LarvaGroup(NestedConf):
         else:
             return conf
 
-    def __call__(self, parameter_dict={}):
-        Nids = self.distribution.N
-        if self.model is not None:
-            if isinstance(self.model, str):
-                m = reg.conf.Model.getID(self.model)
-            elif isinstance(self.model, dict):
-                m = self.model
-            else:
-                raise
+    @property
+    def expanded_model(self):
+        assert self.model is not None
+        if isinstance(self.model, dict):
+            return self.model
+        elif isinstance(self.model, str):
+            return reg.conf.Model.getID(self.model)
         else:
             raise
+
+    def generate_agent_attrs(self, parameter_dict={}):
+        m = self.expanded_model
+        Nids = self.distribution.N
         if self.sample is not None:
             d = reg.conf.Ref.loadRef(self.sample, load=True, step=False)
             m = d.config.get_sample_bout_distros(m.get_copy())
         else:
             d = None
+
         if not self.imitation:
             ps, ors = generate_xyNor_distro(self.distribution)
             ids = [f'{self.group_id}_{i}' for i in range(Nids)]
@@ -304,7 +310,19 @@ class LarvaGroup(NestedConf):
             assert d is not None
             ids, ps, ors, sample_dict = d.imitate_larvagroup(N=Nids)
         sample_dict.update(parameter_dict)
-        all_pars = util.generate_larvae(m, N=Nids, sample_dict=sample_dict)
+
+        all_pars = [m.get_copy() for i in range(Nids)]
+        if len(sample_dict) > 0:
+            for i, mm in enumerate(all_pars):
+                dic = aux.AttrDict({p: vs[i] for p, vs in sample_dict.items()})
+                mm.update_nestdict(dic)
+        return ids, ps, ors, all_pars
+
+    def __call__(self, parameter_dict={}):
+        ids, ps, ors, all_pars = self.generate_agent_attrs(parameter_dict)
+        return self.generate_agent_confs(ids, ps, ors, all_pars)
+
+    def generate_agent_confs(self, ids, ps, ors, all_pars):
         confs = []
         for id, p, o, pars in zip(ids, ps, ors, all_pars):
             conf = {
@@ -341,7 +359,7 @@ class LarvaGroup(NestedConf):
         if not as_dict:
             return lg_list
         else:
-            return aux.AttrDict({lg.group_id: lg.entry(as_entry=False, expand=True) for lg in lg_list})
+            return aux.AttrDict({lg.group_id: lg.entry(as_entry=False, expand=False) for lg in lg_list})
 
 
 gen.LarvaGroup = class_generator(LarvaGroup)

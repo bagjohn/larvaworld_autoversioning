@@ -31,7 +31,7 @@ class ExpRun(BaseRun):
 
         self.sim_epochs = self.p.trials.epochs
         for ep in self.sim_epochs:
-            t1,t2=ep.age_range
+            t1, t2 = ep.age_range
             ep['start'] = int(t1 * 60 / self.dt)
             ep['stop'] = int(t2 * 60 / self.dt)
         self.build_env(self.p.env_params)
@@ -84,7 +84,11 @@ class ExpRun(BaseRun):
 
     def build_agents(self, larva_groups, parameter_dict={}):
         reg.vprint(f'--- Simulation {self.id} : Generating agent groups!--- ', 1)
-        confs = util.generate_agentConfs(larva_groups=larva_groups, parameter_dict=parameter_dict)
+        confs = []
+        for gID, gConf in larva_groups.items():
+            lg = reg.generators.LarvaGroup(**gConf)
+            confs += lg(parameter_dict=parameter_dict)
+        # confs = util.generate_agentConfs(larva_groups=larva_groups, parameter_dict=parameter_dict)
         self.place_agents(confs)
 
     def eliminate_overlap(self):
@@ -159,9 +163,9 @@ class ExpRun(BaseRun):
         return df1
 
     @classmethod
-    def from_ID(cls, id, simulate=True,**kwargs):
+    def from_ID(cls, id, simulate=True, **kwargs):
         assert id in reg.conf.Exp.confIDs
-        r= cls(experiment=id,**kwargs)
+        r = cls(experiment=id, **kwargs)
         if simulate:
-            _=r.simulate()
+            _ = r.simulate()
         return r

@@ -9,6 +9,7 @@ __all__ = [
     'get_bout_distros',
     'fit_bout_distros',
     'BoutGenerator',
+    'test_boutGens',
     'exp_bout',
     'critical_bout',
 ]

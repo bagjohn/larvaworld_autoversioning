@@ -20,13 +20,13 @@ __all__ = [
     'EvalRun',
     'eval_model_graphs',
     'add_var_mIDs',
-    'adapt_6mIDs',
-    'adapt_3modules',
+    # 'adapt_6mIDs',
+    # 'adapt_3modules',
     'modelConf_analysis',
 ]
 
 
-class EvalConf(reg.generators.LarvaGroupMutator,DataEvaluation):
+class EvalConf(reg.generators.LarvaGroupMutator, DataEvaluation):
 
     def __init__(self, dataset=None, **kwargs):
         super().__init__(dataset=dataset, **kwargs)
@@ -36,9 +36,6 @@ class EvalConf(reg.generators.LarvaGroupMutator,DataEvaluation):
         self.target.config.color = 'grey'
         kwargs['dt'] = self.target.config.dt
         kwargs['duration'] = self.target.config.Nticks * kwargs['dt'] / 60
-
-
-
 
 
 class EvalRun(EvalConf, reg.generators.SimConfiguration):
@@ -56,48 +53,39 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
             **kwargs: Arguments passed to parent class
         '''
         super().__init__(runtype='Eval', **kwargs)
-
         self.screen_kws = screen_kws
         self.enrichment = enrichment
-
         self.figs = aux.AttrDict({'errors': {}, 'hist': {}, 'boxplot': {}, 'stride_cycle': {}, 'loco': {}, 'epochs': {},
                                   'models': {'table': {}, 'summary': {}}})
-
         self.error_plot_dir = f'{self.plot_dir}/errors'
 
     def simulate(self):
-        Nm = len(self.modelIDs)
         kws = {
             'dt': self.dt,
             'duration': self.duration,
         }
         c = self.target.config
 
-        lgs = c.larva_group.new_groups(Ns=self.N, modelIDs=self.modelIDs, groupIDs=self.groupIDs, sample=self.refID,
-                                       as_dict=True)
-
+        Nm = len(self.modelIDs)
         if self.offline is None:
+            from ..model.agents.larva_offline import sim_models
             print(f'Simulating offline {Nm} models : {self.groupIDs} with {self.N} larvae each')
-            tor_durs = np.unique(
-                [int(ii[len('tortuosity') + 1:]) for ii in self.s_pars + self.e_pars if ii.startswith('tortuosity')])
+            temp = self.s_pars + self.e_pars
+            tor_durs = np.unique([int(ii[len('tortuosity') + 1:]) for ii in temp if ii.startswith('tortuosity')])
             dsp = reg.getPar('dsp')
-            dsp_temp = [ii[len(dsp) + 1:].split('_') for ii in self.s_pars + self.e_pars if ii.startswith(f'{dsp}_')]
+            dsp_temp = [ii[len(dsp) + 1:].split('_') for ii in temp if ii.startswith(f'{dsp}_')]
             dsp_starts = np.unique([int(ii[0]) for ii in dsp_temp]).tolist()
             dsp_stops = np.unique([int(ii[1]) for ii in dsp_temp]).tolist()
-
-            self.datasets = util.sim_models(modelIDs=self.modelIDs, tor_durs=tor_durs,
-                                            dsp_starts=dsp_starts, dsp_stops=dsp_stops,
-                                            groupIDs=self.groupIDs, lgs=lgs,
-                                            enrichment=self.enrichment,
-                                            Nids=self.N, env_params=c.env_params,
-                                            refDataset=self.target, data_dir=self.data_dir, **kws)
+            lgs = c.larva_group.new_groups(Ns=self.N, modelIDs=self.modelIDs, groupIDs=self.groupIDs, sample=self.refID)
+            self.datasets = sim_models(modelIDs=self.modelIDs, tor_durs=tor_durs,
+                                       dsp_starts=dsp_starts, dsp_stops=dsp_stops,
+                                       groupIDs=self.groupIDs, lgs=lgs,
+                                       enrichment=self.enrichment,
+                                       Nids=self.N, env_params=c.env_params,
+                                       refDataset=self.target, data_dir=self.data_dir, **kws)
         else:
-            from larvaworld.lib.sim.single_run import ExpRun
+            from .single_run import ExpRun
             print(f'Simulating {Nm} models : {self.groupIDs} with {self.N} larvae each')
-
-            # conf.larva_groups=self.larva_groups
-            # if self.enrichment is None:
-            #     conf.enrichment = None
             kws0 = aux.AttrDict({
                 'dir': self.dir,
                 'store_data': self.store_data,
@@ -113,8 +101,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
                 **kws
             })
             run = ExpRun(**kws0)
-            run.simulate()
-            self.datasets = run.datasets
+            self.datasets = run.simulate()
         self.analyze()
         if self.store_data:
             self.store()
@@ -234,128 +221,104 @@ def eval_model_graphs(refID, mIDs, groupIDs=None, id=None, dir=None, N=10,
     return evrun
 
 
-def add_var_mIDs(refID, e=None, c=None, mID0s=None, mIDs=None, sample_ks=None):
-    if e is None or c is None:
-        d = reg.conf.Ref.loadRef(refID)
-        d.load(step=False)
-        e, c = d.endpoint_data, d.config
-
-    if mID0s is None:
-        mID0s = list(c.modelConfs.average.keys())
+def add_var_mIDs(mID0s, mIDs=None):
     if mIDs is None:
         mIDs = [f'{mID0}_var' for mID0 in mID0s]
-    if sample_ks is None:
-        sample_ks = [
-            'brain.crawler_params.stride_dst_mean',
-            'brain.crawler_params.stride_dst_std',
-            'brain.crawler_params.max_scaled_vel',
-            'brain.crawler_params.max_vel_phase',
-            'brain.crawler_params.freq',
-        ]
+    sample_ks = [
+        'brain.crawler_params.stride_dst_mean',
+        'brain.crawler_params.stride_dst_std',
+        'brain.crawler_params.max_scaled_vel',
+        'brain.crawler_params.max_vel_phase',
+        'brain.crawler_params.freq',
+    ]
     kwargs = {k: 'sample' for k in sample_ks}
     entries = {}
     for mID0, mID in zip(mID0s, mIDs):
         m0 = reg.conf.Model.getID(mID0).get_copy()
-        # m0 = reg.stored.getModel(mID0).get_copy()
-        m = m0.update_existingnestdict(kwargs)
-        reg.conf.Model.setID(mID, m)
-        entries[mID] = m
+        entries[mID] = m0.update_existingnestdict(kwargs)
+        reg.conf.Model.setID(mID, entries[mID])
     return entries
 
 
-def adapt_6mIDs(refID, e=None, c=None):
-    d = reg.conf.Ref.loadRef(refID)
-    if e is None or c is None:
-        d.load(step=False)
-        e, c = d.endpoint_data, d.config
-
-    fit_kws = {
-        'eval_metrics': {
-            'angular kinematics': ['b', 'fov', 'foa'],
-            'spatial displacement': ['v_mu', 'pau_v_mu', 'run_v_mu', 'v', 'a',
-                                     'dsp_0_40_max', 'dsp_0_60_max'],
-            'temporal dynamics': ['fsv', 'ffov', 'run_tr', 'pau_tr'],
-        },
-        'cycle_curves': ['fov', 'foa', 'b']
-    }
-
-    # fit_dict = GA_optimization(d = d, fit_kws=fit_kws)
-    entries = {}
-    mIDs = []
-    for Tmod in ['NEU', 'SIN']:
-        for Ifmod in ['PHI', 'SQ', 'DEF']:
-            mID0 = f'RE_{Tmod}_{Ifmod}_DEF'
-            mID = f'{Ifmod}on{Tmod}'
-            entry = reg.model.adapt_mID(refID=refID, mID0=mID0, mID=mID, e=e, c=c,
-                                        space_mkeys=['turner', 'interference'], **fit_kws)
-            entries.update(entry)
-            mIDs.append(mID)
-    return entries, mIDs
+# def adapt_6mIDs(**kwargs):
+#     entries = {}
+#     mIDs = []
+#     for Tmod in ['NEU', 'SIN']:
+#         for Ifmod in ['PHI', 'SQ', 'DEF']:
+#             mID0 = f'RE_{Tmod}_{Ifmod}_DEF'
+#             mID = f'{Ifmod}on{Tmod}'
+#             entry = reg.model.adapt_mID(mID0=mID0, mID=mID, space_mkeys=['turner', 'interference'], **kwargs)
+#             entries.update(entry)
+#             mIDs.append(mID)
+#     return entries, mIDs
 
 
-def adapt_3modules(refID, e=None, c=None):
-    d = reg.conf.Ref.loadRef(refID)
-    if e is None or c is None:
-        d.load(step=False)
-        e, c = d.endpoint_data, d.config
-
-    fit_kws = {
-        'eval_metrics': {
-            'angular kinematics': ['b', 'fov', 'foa'],
-            'spatial displacement': ['v_mu', 'pau_v_mu', 'run_v_mu', 'v', 'a',
-                                     'dsp_0_40_max', 'dsp_0_60_max'],
-            'temporal dynamics': ['fsv', 'ffov', 'run_tr', 'pau_tr'],
-        },
-        'cycle_curves': ['fov', 'foa', 'b']
-    }
-
-    # fit_dict = GA_optimization(d = d, fit_kws=fit_kws)
-    entries = {}
-    mIDs = []
-    for Cmod in ['RE', 'SQ', 'GAU', 'CON']:
-        for Tmod in ['NEU', 'SIN', 'CON']:
-            for Ifmod in ['PHI', 'SQ', 'DEF']:
-                mID0 = f'{Cmod}_{Tmod}_{Ifmod}_DEF'
-                mID = f'{mID0}_fit'
-                entry = reg.model.adapt_mID(refID=refID, mID0=mID0, mID=mID, e=e, c=c,
-                                            space_mkeys=['crawler', 'turner', 'interference'], **fit_kws)
-                entries.update(entry)
-                mIDs.append(mID)
-    return entries, mIDs
+# def adapt_3modules(**kwargs):
+#     entries = {}
+#     mIDs = []
+#     for Cmod in ['RE', 'SQ', 'GAU', 'CON']:
+#         for Tmod in ['NEU', 'SIN', 'CON']:
+#             for Ifmod in ['PHI', 'SQ', 'DEF']:
+#                 mID0 = f'{Cmod}_{Tmod}_{Ifmod}_DEF'
+#                 mID = f'{mID0}_fit'
+#                 entry = reg.model.adapt_mID(mID0=mID0, mID=mID, space_mkeys=['crawler', 'turner', 'interference'],
+#                                             **kwargs)
+#                 entries.update(entry)
+#                 mIDs.append(mID)
+#     return entries, mIDs
 
 
-def modelConf_analysis(d, avgVSvar=False, mods3=False):
+def modelConf_analysis(d):
     warnings.filterwarnings('ignore')
+    M=reg.model
+
+    mods = aux.AttrDict({
+        'C': ['RE', 'SQ', 'GAU', 'CON'],
+        'T': ['NEU', 'SIN', 'CON'],
+        'If': ['PHI', 'SQ', 'DEF'],
+    })
+
+    fit_kws = {
+        'eval_metrics': {
+            'angular kinematics': ['b', 'fov', 'foa'],
+            'spatial displacement': ['v_mu', 'pau_v_mu', 'run_v_mu', 'v', 'a',
+                                     'dsp_0_40_max', 'dsp_0_60_max'],
+            'temporal dynamics': ['fsv', 'ffov', 'run_tr', 'pau_tr'],
+        },
+        'cycle_curves': ['fov', 'foa', 'b']
+    }
+
     c = d.config
-    e = d.endpoint_data
-    refID = c.refID
+    kws = {'refID': c.refID}
+    kws1 = {'N': 10, **kws}
+    kws2 = {'e': d.e, 'c': c, **kws, **fit_kws}
     if 'modelConfs' not in c:
         c.modelConfs = aux.AttrDict({'average': {}, 'variable': {}, 'individual': {}, '3modules': {}})
-    if avgVSvar:
-        entries_avg, mIDs_avg = adapt_6mIDs(refID=c.refID, e=e, c=c)
-        c.modelConfs.average = entries_avg
+    for Tmod in mods.T[:2]:
+        for Ifmod in mods.If:
+            entry = M.adapt_mID(mID0=f'RE_{Tmod}_{Ifmod}_DEF', mID=f'{Ifmod}on{Tmod}', space_mkeys=['turner', 'interference'], **kws2)
+            c.modelConfs.average.update(entry)
 
-        reg.graphs.store_model_graphs(mIDs_avg, d.dir)
-        eval_model_graphs(refID, mIDs=mIDs_avg, id='6mIDs_avg', N=10)
-
-        entries_var = add_var_mIDs(refID=c.refID, e=e, c=c, mID0s=mIDs_avg)
-        mIDs_var = list(entries_var.keys())
-        c.modelConfs.variable = entries_var
-        eval_model_graphs(refID, mIDs=mIDs_var, id='6mIDs_var', N=10)
-        eval_model_graphs(refID, mIDs=mIDs_avg[:3] + mIDs_var[:3], id='3mIDs_avgVSvar1',
-                          N=10)
-        eval_model_graphs(refID, mIDs=mIDs_avg[3:] + mIDs_var[3:], id='3mIDs_avgVSvar2',
-                          N=10)
-    if mods3:
-        entries_3m, mIDs_3m = adapt_3modules(refID=c.refID, e=e, c=c)
-        c.modelConfs['3modules'] = entries_3m
-        reg.graphs.store_model_graphs(mIDs_3m, d.dir)
-
-        dIDs = ['NEU', 'SIN', 'CON']
-        for Cmod in ['RE', 'SQ', 'GAU', 'CON']:
-            for Ifmod in ['PHI', 'SQ', 'DEF']:
-                mIDs = [f'{Cmod}_{Tmod}_{Ifmod}_DEF_fit' for Tmod in dIDs]
-                id = f'Tmod_variable_Cmod_{Cmod}_Ifmod_{Ifmod}'
-                eval_model_graphs(mIDs=mIDs, groupIDs=dIDs, id=id, N=10)
+    mIDs_avg = list(c.modelConfs.average)
+    eval_model_graphs(mIDs=mIDs_avg, id='6mIDs_avg', **kws1)
+    mIDs_var = [f'{mID0}_var' for mID0 in mIDs_avg]
+    c.modelConfs.variable = add_var_mIDs(mIDs=mIDs_var, mID0s=mIDs_avg)
+    eval_model_graphs(mIDs=mIDs_var, id='6mIDs_var', **kws1)
+    eval_model_graphs(mIDs=mIDs_avg[:3] + mIDs_var[:3], id='3mIDs_avgVSvar1', **kws1)
+    eval_model_graphs(mIDs=mIDs_avg[3:] + mIDs_var[3:], id='3mIDs_avgVSvar2', **kws1)
+    for Cmod in mods.C:
+        for Ifmod in mods.If:
+            mIDsx3=[]
+            for Tmod in mods.T:
+                mID0 = f'{Cmod}_{Tmod}_{Ifmod}_DEF'
+                mID = f'{mID0}_fit'
+                mIDsx3.append(mID)
+                entry = M.adapt_mID(mID0=mID0, mID=mID, space_mkeys=['crawler', 'turner', 'interference'],
+                                **kws2)
+                c.modelConfs['3modules'].update(entry)
+            eval_model_graphs(mIDs=mIDsx3, groupIDs=mods.T, id=f'Tmod_variable_Cmod_{Cmod}_Ifmod_{Ifmod}', **kws1)
+    mIDs_3m = list(c.modelConfs['3modules'])
+    reg.graphs.store_model_graphs(mIDs_avg, d.dir)
+    reg.graphs.store_model_graphs(mIDs_3m, d.dir)
     d.config = c
     d.save_config()

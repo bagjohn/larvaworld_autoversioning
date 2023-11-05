@@ -8,7 +8,8 @@ import numpy as np
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 
-from .. import reg, aux, plot,util
+from .. import reg, aux, plot, util
+from ..model.agents.larva_offline import sim_model
 
 __all__ = [
     'calibration_plot',
@@ -79,7 +80,7 @@ def model_summary(mID, refID=None, refDataset=None, Nids=1, model_table=False, *
     refDataset.config.color = 'red'
     s, e, c = refDataset.data
 
-    dd = util.sim_model(mID=mID, refDataset=refDataset, duration=c.Nticks * c.dt / 60, dt=c.dt, Nids=Nids, color='blue',
+    dd = sim_model(mID=mID, refDataset=refDataset, duration=c.Nticks * c.dt / 60, dt=c.dt, Nids=Nids, color='blue',
                    dataset_id='model')
 
     if model_table:
@@ -116,8 +117,6 @@ def model_summary(mID, refID=None, refDataset=None, Nids=1, model_table=False, *
 
 @reg.funcs.graph('velocity definition')
 def velocity_definition(dataset, save_to=None, save_as='vel_definition.pdf', component_vels=True, **kwargs):
-    from larvaworld.lib.plot.metric import plot_segmentation_definition, plot_stride_variability
-
     if save_to is None:
         save_to = dataset.plot_dir
 
@@ -130,12 +129,12 @@ def velocity_definition(dataset, save_to=None, save_as='vel_definition.pdf', com
 
     ''' Create the linear velocity figure'''
     ax1 = fig.add_subplot(gs[:, :w2])
-    _ = plot_stride_variability(datasets=[dataset], fig=fig, axs=ax1, component_vels=component_vels)
+    _ = plot.metric.plot_stride_variability(datasets=[dataset], fig=fig, axs=ax1, component_vels=component_vels)
 
     ''' Create the angular velocity figure'''
     ax2 = fig.add_subplot(gs[:h2, w2 + dw:])
     ax3 = fig.add_subplot(gs[h2 + dh:, w2 + dw:])
-    _ = plot_segmentation_definition(datasets=[dataset], fig=fig, axs=[ax2, ax3])
+    _ = plot.metric.plot_segmentation_definition(datasets=[dataset], fig=fig, axs=[ax2, ax3])
 
     fig.text(0.01, 0.91, r'$\bf{A}$', fontsize=30)
 
@@ -259,7 +258,6 @@ def DoublePatch_summary(datasets, title, mdiff_df,ks=None,name=None, **kwargs):
         'save_to': None,
         'subfolder': None,
         'show': False,
-        # 'title': False,
 
     }
     axs1 = P.add(w=w, x0=True, N=(3, 2), share_h=True, share_w=True, h=h1exp - 18, h0=h0, dh=3, dw=4)
@@ -350,14 +348,12 @@ def result_summary(datasets, target, **kwargs):
 
 @reg.funcs.graph('sample track')
 def model_sample_track(mID=None, m=None, dur=2 / 3, dt=1 / 16, Nids=1, min_turn_amp=20, d=None, **kwargs):
-    from larvaworld.lib.plot.traj import track_annotated
     if d is None:
-        d = util.sim_model(mID=mID, m=m, duration=dur, dt=dt, Nids=Nids, enrichment=False)
+        d = sim_model(mID=mID, m=m, duration=dur, dt=dt, Nids=Nids, enrichment=False)
     kws0 = aux.AttrDict({
         'datasets': [d],
-        # 'labels' : [d],
     })
-    s, e, c = d.step_data, d.endpoint_data, d.config
+    s, e, c = d.data
     Nticks = int(dur * 60 / dt)
     ss = s.xs(c.agent_ids[0], level='AgentID').loc[:Nticks]
     a_sv = ss[reg.getPar('sv')].values
@@ -382,7 +378,7 @@ def model_sample_track(mID=None, m=None, dur=2 / 3, dt=1 / 16, Nids=1, min_turn_
     min_amps = [None] * 2 + [min_turn_amp] * 3
 
     for i, (p, l, ep, a, a2, extr, min_amp) in enumerate(zip(pars, labs, epochs, aas, a2s, extrs, min_amps)):
-        track_annotated(epoch=ep, a=a, a2plot=a2, axs=P.axs[i], min_amp=min_amp, show_extrema=extr, ylab=l, **kws1)
+        plot.traj.track_annotated(epoch=ep, a=a, a2plot=a2, axs=P.axs[i], min_amp=min_amp, show_extrema=extr, ylab=l, **kws1)
         P.conf_ax(i, xvis=True if i == Nrows - 1 else False)
     P.adjust((0.1, 0.95), (0.15, 0.95), 0.01, 0.05)
     P.fig.align_ylabels(P.axs[:])
