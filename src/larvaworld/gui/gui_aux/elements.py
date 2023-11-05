@@ -655,7 +655,7 @@ class DataList(NamedList):
                     gui_aux.save_ref_window(d0[kks[0]])
                 exp_conf = reg.generators.ExpConf.imitation_exp(refID=d0[kks[0]].config['refID']).nestedConf
                 # exp_conf = reg.config.imitation_exp(d0[kks[0]].config['refID'])
-                exp_conf.screen_kws['vis_kwargs'] = self.tab.gui.get_vis_kwargs(v)
+                # exp_conf.screen_kws['vis_kwargs'] = self.tab.gui.get_vis_kwargs(v)
                 self.tab.imitate(exp_conf)
         elif e == f'ADD_REF {n}':
             dds = gui_aux.add_ref_window()

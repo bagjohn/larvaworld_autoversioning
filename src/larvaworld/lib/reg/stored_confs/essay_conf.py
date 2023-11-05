@@ -7,14 +7,11 @@ __all__ = [
 ]
 
 class Essay:
-    def __init__(self, type,essay_id=None, N=5, enrichment=None, collections=['pose'], video=False, show=False,
+    def __init__(self, type,essay_id=None, N=5, enrichment=None, collections=['pose'], screen_kws={},show=False,
                  **kwargs):
         if enrichment is None:
             enrichment = reg.gen.EnrichConf().nestedConf
-        if video:
-            self.vis_kwargs = reg.par.get_null('visualization', mode='video', video_speed=60)
-        else:
-            self.vis_kwargs = reg.par.get_null('visualization', mode=None)
+        self.screen_kws = screen_kws
         self.N = N
         self.show = show
         self.type = type
@@ -43,7 +40,7 @@ class Essay:
         print(f'Running essay "{self.essay_id}"')
         for exp, cs in self.exp_dict.items():
             print(f'Running {len(cs)} versions of experiment {exp}')
-            self.datasets[exp] = [ExpRun(parameters=c, screen_kws={'vis_kwargs': self.vis_kwargs}).simulate() for c in cs]
+            self.datasets[exp] = [ExpRun(parameters=c, screen_kws=self.screen_kws).simulate() for c in cs]
 
         return self.datasets
 
