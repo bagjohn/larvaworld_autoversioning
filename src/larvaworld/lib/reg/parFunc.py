@@ -31,8 +31,7 @@ __all__ = [
 @funcs.param("track_par")
 def track_par_func(chunk, par):
     def func(d):
-        from ..process.annotation import track_par_in_chunk
-        track_par_in_chunk(d, chunk, par)
+        d.track_par_in_chunk(chunk, par)
 
     return func
 

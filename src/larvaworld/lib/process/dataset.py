@@ -228,6 +228,22 @@ class ParamLarvaDataset(param.Parameterized):
     def pooled_cycle_curves(self, d):
         self.config.pooled_cycle_curves = d
 
+    def track_par_in_chunk(self, chunk, par):
+        s, e, c = self.data
+        A = self.empty_df(dim3=3)
+        d0=self.epoch_dicts[chunk]
+        for i, id in enumerate(c.agent_ids):
+            epochs = d0[id]
+            ss = s[par].xs(id, level='AgentID')
+            if epochs.shape[0] > 0:
+                t0s, t1s = epochs[:, 0], epochs[:, 1]
+                b0s = ss.loc[t0s].values
+                b1s = ss.loc[t1s].values
+                A[t0s, i, 0] = b0s
+                A[t1s, i, 1] = b1s
+                A[t1s, i, 2] = b1s - b0s
+        s[aux.nam.atStartStopChunk(par, chunk)] = A.reshape([-1, 3])
+
     def detect_bouts(self, vel_thr=0.3, strides_enabled=True, castsNweathervanes=True):
         s, e, c = self.data
         aux.fft_freqs(s, e, c)

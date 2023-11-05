@@ -561,17 +561,3 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
     return crawl_dict
 
 
-def track_par_in_chunk(d, chunk, par):
-    s, e, c = d.data
-    A = np.zeros([c.Nticks, c.N, 3]) * np.nan
-    for i, id in enumerate(c.agent_ids):
-        epochs = d.chunk_dicts[id][chunk]
-        ss = s[par].xs(id, level='AgentID')
-        if epochs.shape[0] > 0:
-            t0s, t1s = epochs[:, 0], epochs[:, 1]
-            b0s = ss.loc[t0s].values
-            b1s = ss.loc[t1s].values
-            A[t0s, i, 0] = b0s
-            A[t1s, i, 1] = b1s
-            A[t1s, i, 2] = b1s - b0s
-    s[aux.nam.atStartStopChunk(par, chunk)] = A.reshape([-1, 3])
