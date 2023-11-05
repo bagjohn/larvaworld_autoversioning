@@ -58,7 +58,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
 
 
 
-    def __init__(self,show=False,enrichment=True,  **kwargs):
+    def __init__(self,show=False,enrichment=True,screen_kws={}, **kwargs):
         '''
         Simulation mode 'Eval' compares/evaluates different models against a reference dataset obtained by a real or simulated experiment.
 
@@ -73,6 +73,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
         super().__init__(runtype='Eval',**kwargs)
 
 
+        self.screen_kws = screen_kws
         self.show = show
         self.enrichment = enrichment
 
@@ -126,6 +127,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
                 'id': self.id,
                 'offline': self.offline,
                 'parameters': conf,
+                'screen_kws': self.screen_kws,
                 **kws
             })
             run = ExpRun(**kws0)

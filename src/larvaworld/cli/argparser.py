@@ -2,7 +2,7 @@ import copy
 from typing import List
 from argparse import ArgumentParser
 import param
-from ..lib import reg, aux, sim
+from ..lib import reg, aux, sim, screen
 from ..lib.param.custom import ClassAttr, ClassDict
 
 __all__ = [
@@ -139,9 +139,10 @@ def parser_entry_from_param(k, p):
         'key': k,
         'short': k,
         'help': p.doc,
+        'default': p.default,
     })
-    if v is not None:
-        d.default = v
+    # if v is not None:
+    #     d.default = v
     if c == param.Boolean:
         d.action = 'store_true' if not v else 'store_false'
     elif c == param.String:
@@ -386,6 +387,7 @@ class SimModeParser:
         """
         ks=aux.SuperList(self.dict.values()).flatten.unique +['sim_params']
         self.parsers = aux.AttrDict({k:ParserArgumentDict.from_dict(reg.par.PI[k]) for k in ks})
+        self.parsers.screen_kws=ParserArgumentDict.from_param(d0=screen.BaseScreenManager)
         self.cli_parser = self.build_cli_parser()
         self.mode = None
         self.run = None
@@ -463,6 +465,7 @@ class SimModeParser:
         :return: A dictionary of parsed values.
         """
         d = aux.AttrDict()
+        d.screen_kws = self.eval_parser('screen_kws')
         if self.mode not in ['Replay', 'Eval']:
             d.sim_params = self.eval_parser('sim_params')
         for k in self.dict[self.mode]:
