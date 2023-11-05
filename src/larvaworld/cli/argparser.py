@@ -433,9 +433,9 @@ class SimModeParser:
             sp.add_argument('experiment', choices=reg.conf[m].confIDs, help='The experiment mode')
         if m in ['Exp', 'Batch']:
             sp.add_argument('-N', '--Nagents', type=int, help='The number of simulated larvae in each larva group')
-            sp.add_argument('-mIDs', '--group_model_ids', type=str, nargs='+',
+            sp.add_argument('-mIDs', '--models', type=str, nargs='+',
                             help='The larva models to use for creating the simulation larva groups')
-            sp.add_argument('-dIDs', '--group_disp_ids', type=str, nargs='+',
+            sp.add_argument('-dIDs', '--group_ids', type=str, nargs='+',
                             help='The displayed IDs of the simulation larva groups')
         if m in ['Exp', 'Batch', 'Eval']:
             sp.add_argument('-a', '--analysis', action='store_true', default=False,
@@ -485,13 +485,13 @@ class SimModeParser:
             kw.run_externally = False
             kw.conf = reg.conf.Batch.getID(a.experiment)
             kw.conf.N = a.Nagents
-            kw.conf.mIDs = a.group_model_ids
-            kw.conf.dIDs = a.group_disp_ids
+            kw.conf.models = a.models
+            kw.conf.group_ids = a.group_ids
             self.run = sim.Exec(**kw)
         elif m == 'Exp':
             kw.N = a.Nagents
-            kw.mIDs = a.group_model_ids
-            kw.dIDs = a.group_disp_ids
+            kw.models = a.models
+            kw.group_ids = a.group_ids
             self.run = sim.ExpRun(**kw)
         elif m == 'Ga':
             p = reg.conf.Ga.expand(kw.experiment)

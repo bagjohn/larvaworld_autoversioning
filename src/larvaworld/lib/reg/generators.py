@@ -98,7 +98,7 @@ class SimConfigurationParams(SimConfiguration):
     parameters = param.Parameter(default=None)
 
     def __init__(self, runtype='Exp', experiment=None, parameters=None,
-                 N=None, mIDs=None, dIDs=None, sample=None, **kwargs):
+                 N=None, models=None, group_ids=None, sample=None, **kwargs):
         if parameters is None:
             if runtype in reg.CONFTYPES:
                 ct = reg.conf[runtype]
@@ -108,13 +108,17 @@ class SimConfigurationParams(SimConfiguration):
                 elif experiment not in ct.confIDs:
                     raise ValueError(f'Experiment {experiment} not available in {runtype} configuration dictionary')
                 else:
-                    parameters = ct.expand(experiment)
+                    parameters = ct.getID(experiment)
             elif runtype in reg.gen:
                 parameters = reg.gen[runtype]().nestedConf
             else:
                 pass
         elif experiment is None and 'experiment' in parameters:
             experiment = parameters['experiment']
+
+        if 'env_params' in parameters and isinstance(parameters.env_params, str):
+            parameters.env_params = reg.conf.Env.getID(parameters.env_params)
+
         if parameters is not None:
             for k in set(parameters).intersection(set(SimOps().nestedConf)):
                 if k in kwargs:
@@ -123,7 +127,8 @@ class SimConfigurationParams(SimConfiguration):
                     kwargs[k] = parameters[k]
 
         if 'larva_groups' in parameters:
-            parameters.larva_groups = update_larva_groups(parameters.larva_groups, mIDs=mIDs, dIDs=dIDs, N=N,
+            parameters.larva_groups = update_larva_groups(parameters.larva_groups, models=models, group_ids=group_ids,
+                                                          Ns=N,
                                                           sample=sample)
         super().__init__(runtype=runtype, experiment=experiment, parameters=parameters, **kwargs)
 
@@ -171,46 +176,66 @@ class EnvConf(NestedConf):
         BaseRun.visualize_Env(envConf=self.nestedConf, envID=self.name, **kwargs)
 
 
-def update_larva_groups(lgs, N=None, mIDs=None, dIDs=None, sample=None, expand_models=True):
+def update_larva_groups(lgs, **kwargs):
     """
     Modifies the experiment's configuration larvagroups.
 
     Args:
         lgs (dict): The existing larvagroups in the experiment configuration.
         N (int):: Overwrite the number of agents per larva group.
-        mIDs (list): Overwrite the larva models used in the experiment. If not None, a larva group per model ID will be simulated.
+        models (list): Overwrite the larva models used in the experiment. If not None, a larva group per model ID will be simulated.
         dIDs (list): The displayed IDs of the groups. If None, the model IDs (mIDs) are used.
         sample: The reference dataset.
 
     Returns:
         The experiment's configuration larvagroups.
     """
-    if mIDs is not None:
-        if dIDs is None:
-            dIDs = mIDs
-        Nm = len(mIDs)
-        gConfs = list(lgs.values())
-        if len(lgs) != Nm:
-            gConfs = [gConfs[0].get_copy() for i in range(Nm)]
-            for gConf, col in zip(gConfs, aux.N_colors(Nm)):
-                gConf.color = col
-        lgs = aux.AttrDict({dID: {} for dID in dIDs})
-        for dID, mID, gConf in zip(dIDs, mIDs, gConfs):
-            lgs[dID] = gConf
-            if expand_models:
-                lgs[dID].model = reg.conf.Model.getID(mID)
-            else:
-                lgs[dID].model = mID
+    confs = prepare_larvagroup_args(**kwargs)
+    Nnew = len(confs)
+    Nold = len(lgs)
+    gIDs = list(lgs)
+    new_lgs = aux.AttrDict()
+    for i, conf in enumerate(confs):
+        gID = gIDs[i % Nold]
+        gConf = lgs[gID]
+        gConf.group_id = gID
+        lg = LarvaGroup(**gConf)
+        new_lg = lg.new_group(**conf)
+        new_lgs[new_lg.group_id] = new_lg.entry(as_entry=False, expand=True)
 
-    if N is not None:
-        for gID, gConf in lgs.items():
-            gConf.distribution.N = N
+    return new_lgs
 
-    if sample is not None:
-        for gID, gConf in lgs.items():
-            gConf.sample = sample
 
-    return lgs
+def prepare_larvagroup_args(Ns=None, models=None, group_ids=None, colors=None, **kwargs):
+    Nlgs = int(np.max([len(a) for a in [Ns, models, group_ids, colors] if isinstance(a, list)]))
+    if models is not None:
+        if isinstance(models, str):
+            models = [copy.deepcopy(models) for i in range(Nlgs)]
+        elif isinstance(models, list):
+            assert len(models) == Nlgs
+        else:
+            raise
+    else:
+        models = [None] * Nlgs
+    if group_ids is not None:
+        assert isinstance(group_ids, list) and len(group_ids) == Nlgs
+    else:
+        group_ids = models
+    assert len(group_ids) == Nlgs
+    if Ns is not None:
+        if isinstance(Ns, list):
+            assert len(Ns) == Nlgs
+        elif isinstance(Ns, int):
+            Ns = [Ns for i in range(Nlgs)]
+    else:
+        Ns = [None] * Nlgs
+    if colors is not None:
+        assert isinstance(colors, list) and len(colors) == Nlgs
+    elif Nlgs == 1:
+        colors = [None]
+    else:
+        colors = aux.N_colors(Nlgs)
+    return [{'N': Ns[i], 'model': models[i], 'group_id': group_ids[i], 'color': colors[i], **kwargs} for i in range(Nlgs)]
 
 
 class LarvaGroup(NestedConf):
@@ -286,54 +311,27 @@ class LarvaGroup(NestedConf):
         return confs
 
     def new_group(self, N=None, model=None, group_id=None, color=None, **kwargs):
-        lg_kws = self.nestedConf
+        kws = self.nestedConf
         if N is not None:
-            lg_kws.distribution.N = N
+            kws.distribution.N = N
         if model is not None:
-            lg_kws.model = model
+            kws.model = model
             if group_id is None:
                 group_id = model
         if group_id is not None:
-            lg_kws.group_id = group_id
+            kws.group_id = group_id
         if color is not None:
-            lg_kws.color = color
-        lg_kws.update(**kwargs)
-        return LarvaGroup(**lg_kws)
+            kws.color = color
+        kws.update(**kwargs)
+        return LarvaGroup(**kws)
 
-    def new_groups(self, Ns=None, models=None, group_ids=None, colors=None,as_dict=False, **kwargs):
-        Nlgs = int(np.max([len(a) for a in [Ns, models, group_ids, colors] if isinstance(a, list)]))
-        if models is not None:
-            if isinstance(models, str):
-                models = [copy.deepcopy(models) for i in range(Nlgs)]
-            elif isinstance(models, list):
-                assert len(models) == Nlgs
-            else:
-                raise
-        else:
-            models = [copy.deepcopy(self.model) for i in range(Nlgs)]
-        if group_ids is not None:
-            assert isinstance(group_ids, list) and len(group_ids) == Nlgs
-        else:
-            group_ids = models
-        assert len(group_ids) == Nlgs
-        if Ns is not None:
-            if isinstance(Ns, list):
-                assert len(Ns) == Nlgs
-            elif isinstance(Ns, int):
-                Ns = [Ns for i in range(Nlgs)]
-        else:
-            Ns = [None] * Nlgs
-        if colors is not None:
-            assert isinstance(colors, list) and len(colors) == Nlgs
-        else:
-            colors = [self.color] if Nlgs == 1 else aux.N_colors(Nlgs)
-        lg_list= aux.ItemList(
-            [self.new_group(N=Ns[i], model=models[i], group_id=group_ids[i], color=colors[i], **kwargs) for i in
-             range(Nlgs)])
+    def new_groups(self, as_dict=False, **kwargs):
+        confs = prepare_larvagroup_args(**kwargs)
+        lg_list = aux.ItemList([self.new_group(**conf) for conf in confs])
         if not as_dict:
             return lg_list
         else:
-            return aux.AttrDict({lg.group_id : lg.entry(as_entry=False, expand=True) for lg in lg_list})
+            return aux.AttrDict({lg.group_id: lg.entry(as_entry=False, expand=True) for lg in lg_list})
 
 
 gen.LarvaGroup = class_generator(LarvaGroup)
@@ -411,8 +409,9 @@ class LabFormat(NestedConf):
             'id': id,
             'refID': refID,
             'color': color,
-            'larva_group': gen.LarvaGroup(group_id=group_id, c=color, sample=sample, mID=None, N=end.index.values.shape[0],
-                                           life=[age, epochs]).nestedConf,
+            'larva_group': gen.LarvaGroup(group_id=group_id, c=color, sample=sample, mID=None,
+                                          N=end.index.values.shape[0],
+                                          life=[age, epochs]).nestedConf,
             'env_params': self.env_params.nestedConf,
             **self.tracker.nestedConf,
             'step': step,
@@ -623,8 +622,6 @@ class ExpConf(SimOps):
             lg = LarvaGroup(**gConf, id=gID)
             confs += lg(parameter_dict=self.parameter_dict)
         return confs
-
-
 
 
 gen.Exp = ExpConf

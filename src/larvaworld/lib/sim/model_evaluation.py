@@ -3,7 +3,6 @@ import warnings
 
 import param
 
-
 from ..param import NestedConf, PositiveInteger, class_generator
 from ..process.evaluation import DataEvaluation
 
@@ -15,9 +14,7 @@ import itertools
 import numpy as np
 import pandas as pd
 
-
 from .. import reg, aux, plot, util
-
 
 __all__ = [
     'EvalRun',
@@ -28,10 +25,11 @@ __all__ = [
     'modelConf_analysis',
 ]
 
+
 class EvalDataConf(DataEvaluation):
 
-    def __init__(self,dataset=None, **kwargs):
-        super().__init__(dataset =dataset, **kwargs)
+    def __init__(self, dataset=None, **kwargs):
+        super().__init__(dataset=dataset, **kwargs)
         self.target.id = 'experiment'
         self.target.config.id = 'experiment'
         self.target.color = 'grey'
@@ -40,25 +38,18 @@ class EvalDataConf(DataEvaluation):
         kwargs['duration'] = self.target.config.Nticks * kwargs['dt'] / 60
 
 
-
-
 class EvalConf(EvalDataConf):
     modelIDs = reg.conf.Model.confID_selector(single=False)
     dataset_ids = param.List([], item_type=str, doc='The ids for the generated datasets')
     N = PositiveInteger(5, label='# agents/group', doc='Number of agents per model ID')
 
-
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-
 
 
 class EvalRun(EvalConf, reg.generators.SimConfiguration):
 
-
-
-    def __init__(self,enrichment=True,screen_kws={}, **kwargs):
+    def __init__(self, enrichment=True, screen_kws={}, **kwargs):
         '''
         Simulation mode 'Eval' compares/evaluates different models against a reference dataset obtained by a real or simulated experiment.
 
@@ -70,8 +61,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
             experiment: The type of experiment. Defaults to 'dispersion'
             **kwargs: Arguments passed to parent class
         '''
-        super().__init__(runtype='Eval',**kwargs)
-
+        super().__init__(runtype='Eval', **kwargs)
 
         self.screen_kws = screen_kws
         self.enrichment = enrichment
@@ -79,43 +69,38 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
         self.figs = aux.AttrDict({'errors': {}, 'hist': {}, 'boxplot': {}, 'stride_cycle': {}, 'loco': {}, 'epochs': {},
                                   'models': {'table': {}, 'summary': {}}})
 
-
         self.error_plot_dir = f'{self.plot_dir}/errors'
-
 
     def simulate(self):
         # conf = reg.conf.Exp.expand(self.experiment)
         # conf.larva_groups = reg.generators.update_larva_groups(conf.larva_groups, N=self.N, mIDs=self.modelIDs, dIDs=self.dataset_ids,
         #                                         sample=self.refID)
 
-
-
-
-        Nm=len(self.modelIDs)
-        kws={
+        Nm = len(self.modelIDs)
+        kws = {
             'dt': self.dt,
             'duration': self.duration,
         }
         c = self.target.config
 
-        lgs = c.larva_group.new_groups(Ns=self.N, models=self.modelIDs, group_ids=self.dataset_ids,sample=self.refID,as_dict=True)
-
+        lgs = c.larva_group.new_groups(Ns=self.N, models=self.modelIDs, group_ids=self.dataset_ids, sample=self.refID,
+                                       as_dict=True)
 
         if self.offline is None:
             print(f'Simulating offline {Nm} models : {self.dataset_ids} with {self.N} larvae each')
-            tor_durs = np.unique([int(ii[len('tortuosity') + 1:]) for ii in self.s_pars + self.e_pars if ii.startswith('tortuosity')])
+            tor_durs = np.unique(
+                [int(ii[len('tortuosity') + 1:]) for ii in self.s_pars + self.e_pars if ii.startswith('tortuosity')])
             dsp = reg.getPar('dsp')
             dsp_temp = [ii[len(dsp) + 1:].split('_') for ii in self.s_pars + self.e_pars if ii.startswith(f'{dsp}_')]
             dsp_starts = np.unique([int(ii[0]) for ii in dsp_temp]).tolist()
             dsp_stops = np.unique([int(ii[1]) for ii in dsp_temp]).tolist()
 
-
             self.datasets = util.sim_models(mIDs=self.modelIDs, tor_durs=tor_durs,
-                                        dsp_starts=dsp_starts, dsp_stops=dsp_stops,
-                                        dataset_ids=self.dataset_ids,lgs=lgs,
-                                        enrichment=self.enrichment,
-                                        Nids=self.N, env_params=c.env_params,
-                                        refDataset=self.target, data_dir=self.data_dir, **kws)
+                                            dsp_starts=dsp_starts, dsp_stops=dsp_stops,
+                                            dataset_ids=self.dataset_ids, lgs=lgs,
+                                            enrichment=self.enrichment,
+                                            Nids=self.N, env_params=c.env_params,
+                                            refDataset=self.target, data_dir=self.data_dir, **kws)
         else:
             from larvaworld.lib.sim.single_run import ExpRun
             print(f'Simulating {Nm} models : {self.dataset_ids} with {self.N} larvae each')
@@ -158,7 +143,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
             df0 = pd.DataFrame.from_dict({k: df.mean(axis=1) for i, (k, df) in enumerate(d.items())})
             kws = {
                 'save_to': f'{self.error_plot_dir}/{norm}',
-                'show' : self.show
+                'show': self.show
             }
             bars = {}
             tabs = {}
@@ -172,24 +157,18 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
             dic[norm] = {'tables': tabs, 'barplots': bars}
         return aux.AttrDict(dic)
 
-
-
     def analyze(self, **kwargs):
         print('Evaluating all models')
         os.makedirs(self.plot_dir, exist_ok=True)
 
         for mode in self.eval_modes:
-
-            d = self.eval_datasets(self.datasets, mode=mode,**kwargs)
+            d = self.eval_datasets(self.datasets, mode=mode, **kwargs)
             self.figs.errors[mode] = self.get_error_plots(d, mode)
             self.error_dicts[mode] = d
 
     def store(self):
         aux.save_dict(self.error_dicts, f'{self.data_dir}/error_dicts.txt')
         reg.vprint(f'Results saved at {self.data_dir}')
-
-
-
 
     def plot_models(self, **kwargs):
         GD = reg.graphs.dict
@@ -201,15 +180,14 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
     def plot_results(self, plots=['hists', 'trajectories', 'dispersion', 'bouts', 'fft', 'boxplots'], **kwargs):
         GD = reg.graphs.dict
 
-
         self.target.load(h5_ks=['epochs', 'angular', 'dspNtor'])
         kws = {
             'datasets': [self.target] + self.datasets,
             'save_to': self.plot_dir,
             **kwargs
         }
-        kws1={
-            'subfolder' : None,
+        kws1 = {
+            'subfolder': None,
             **kws
         }
 
@@ -221,7 +199,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
         }
         self.figs.summary = GD['eval summary'](**kws2)
         self.figs.stride_cycle.norm = GD['stride cycle'](shorts=['sv', 'fov', 'rov', 'foa', 'b'],
-                                                         individuals=True,**kws)
+                                                         individuals=True, **kws)
         if 'dispersion' in plots:
             for r0, r1 in itertools.product(self.dsp_starts, self.dsp_stops):
                 self.figs.loco[f'dsp_{r0}_{r1}'] = aux.AttrDict({
@@ -246,13 +224,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
             # self.figs.boxplot.step = self.plot_data(mode='step', type='box')
 
 
-
-
-
-
-
-
-reg.gen.Eval=class_generator(EvalConf)
+reg.gen.Eval = class_generator(EvalConf)
 
 
 def eval_model_graphs(refID, mIDs, dIDs=None, id=None, dir=None, N=10,
@@ -262,7 +234,7 @@ def eval_model_graphs(refID, mIDs, dIDs=None, id=None, dir=None, N=10,
     if dir is None:
         dir = f'{reg.conf.Ref.getID(refID)}/model/evaluation'
 
-    parameters =reg.gen.Eval(refID=refID, modelIDs=mIDs,dataset_ids=dIDs,N=N).nestedConf
+    parameters = reg.gen.Eval(refID=refID, modelIDs=mIDs, dataset_ids=dIDs, N=N).nestedConf
 
     evrun = EvalRun(parameters=parameters, id=id,
                     dir=dir, **kwargs)
@@ -300,12 +272,12 @@ def add_var_mIDs(refID, e=None, c=None, mID0s=None, mIDs=None, sample_ks=None):
         entries[mID] = m
     return entries
 
+
 def adapt_6mIDs(refID, e=None, c=None):
     d = reg.conf.Ref.loadRef(refID)
     if e is None or c is None:
         d.load(step=False)
         e, c = d.endpoint_data, d.config
-
 
     fit_kws = {
         'eval_metrics': {
@@ -325,10 +297,11 @@ def adapt_6mIDs(refID, e=None, c=None):
             mID0 = f'RE_{Tmod}_{Ifmod}_DEF'
             mID = f'{Ifmod}on{Tmod}'
             entry = reg.model.adapt_mID(refID=refID, mID0=mID0, mID=mID, e=e, c=c,
-                                   space_mkeys=['turner', 'interference'],**fit_kws)
+                                        space_mkeys=['turner', 'interference'], **fit_kws)
             entries.update(entry)
             mIDs.append(mID)
     return entries, mIDs
+
 
 def adapt_3modules(refID, e=None, c=None):
     d = reg.conf.Ref.loadRef(refID)
@@ -355,7 +328,7 @@ def adapt_3modules(refID, e=None, c=None):
                 mID0 = f'{Cmod}_{Tmod}_{Ifmod}_DEF'
                 mID = f'{mID0}_fit'
                 entry = reg.model.adapt_mID(refID=refID, mID0=mID0, mID=mID, e=e, c=c,
-                                       space_mkeys=['crawler', 'turner', 'interference'],**fit_kws)
+                                            space_mkeys=['crawler', 'turner', 'interference'], **fit_kws)
                 entries.update(entry)
                 mIDs.append(mID)
     return entries, mIDs
@@ -375,10 +348,10 @@ def modelConf_analysis(d, avgVSvar=False, mods3=False):
         reg.graphs.store_model_graphs(mIDs_avg, d.dir)
         eval_model_graphs(refID, mIDs=mIDs_avg, id='6mIDs_avg', N=10)
 
-        entries_var = add_var_mIDs(refID=c.refID, e=e, c=c,mID0s=mIDs_avg)
+        entries_var = add_var_mIDs(refID=c.refID, e=e, c=c, mID0s=mIDs_avg)
         mIDs_var = list(entries_var.keys())
         c.modelConfs.variable = entries_var
-        eval_model_graphs(refID, mIDs=mIDs_var,  id='6mIDs_var', N=10)
+        eval_model_graphs(refID, mIDs=mIDs_var, id='6mIDs_var', N=10)
         eval_model_graphs(refID, mIDs=mIDs_avg[:3] + mIDs_var[:3], id='3mIDs_avgVSvar1',
                           N=10)
         eval_model_graphs(refID, mIDs=mIDs_avg[3:] + mIDs_var[3:], id='3mIDs_avgVSvar2',
