@@ -157,7 +157,7 @@ class ParamLarvaDataset(param.Parameterized):
         except AssertionError:
             self._epoch_dicts = aux.AttrDict(self.read('epoch_dicts'))
         except KeyError:
-            self.detect_bouts()
+            self.comp_pooled_epochs()
         finally:
             return self._epoch_dicts
 
@@ -189,7 +189,7 @@ class ParamLarvaDataset(param.Parameterized):
         except AssertionError:
             self._pooled_epochs = aux.AttrDict(self.read('pooled_epochs'))
         except KeyError:
-            self.detect_bouts()
+            self.comp_pooled_epochs()
 
         finally:
             return self._pooled_epochs
@@ -228,16 +228,24 @@ class ParamLarvaDataset(param.Parameterized):
     def pooled_cycle_curves(self, d):
         self.config.pooled_cycle_curves = d
 
-    def detect_bouts(self,castsNweathervanes=True, **kwargs):
+    def detect_bouts(self, vel_thr=0.3, strides_enabled=True, castsNweathervanes=True):
         s, e, c = self.data
-        self.chunk_dicts=process.annotation.comp_epochs_byID(s, e, c, **kwargs)
-        epoch_ks=aux.SuperList([list(dic.keys()) for dic in self.chunk_dicts.values()]).flatten.unique
-        self.epoch_dicts = aux.AttrDict({k: {id: self.chunk_dicts[id][k] for id in c.agent_ids} for k in epoch_ks})
+        aux.fft_freqs(s, e, c)
+        turn_dict = process.annotation.turn_annotation(s, e, c)
+        crawl_dict = process.annotation.crawl_annotation(s, e, c, strides_enabled=strides_enabled, vel_thr=vel_thr)
+        self.chunk_dicts= aux.AttrDict({id: {**turn_dict[id], **crawl_dict[id]} for id in c.agent_ids})
+        if castsNweathervanes:
+            process.annotation.turn_mode_annotation(e, self.chunk_dicts)
+        reg.vprint(f'Completed bout detection.', 1)
+
+    def comp_pooled_epochs(self):
+        d0=self.chunk_dicts
+        epoch_ks=aux.SuperList([list(dic.keys()) for dic in d0.values()]).flatten.unique
+        self.epoch_dicts = aux.AttrDict({k: {id: d0[id][k] for id in list(d0)} for k in epoch_ks})
         self.pooled_epochs = aux.AttrDict(
             {k: np.array(aux.SuperList(dic.values()).flatten) for k, dic in self.epoch_dicts.items()})
         # reg.vprint(f'Computed pooled epoch durations.', 1)
-        if castsNweathervanes:
-            process.annotation.turn_mode_annotation(e, self.chunk_dicts)
+
         reg.vprint(f'Completed bout detection.', 1)
 
 
@@ -259,7 +267,7 @@ class ParamLarvaDataset(param.Parameterized):
 
     def comp_bout_distros(self):
         c = self.config
-        c.bout_distros = {}
+        c.bout_distros =aux.AttrDict()
         for k, dic in self.fitted_epochs.items():
             try:
                 c.bout_distros[k] = dic['best']
@@ -308,6 +316,7 @@ class ParamLarvaDataset(param.Parameterized):
     def annotate(self, anot_keys=["bout_detection", "bout_distribution", "interference"], is_last=False, **kwargs):
         if 'bout_detection' in anot_keys:
             self.detect_bouts()
+            self.comp_pooled_epochs()
         if 'bout_distribution' in anot_keys:
             self.fit_pooled_epochs()
             self.comp_bout_distros()

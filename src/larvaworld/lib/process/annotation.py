@@ -18,7 +18,7 @@ __all__ = [
     'detect_strides',
     'detect_turns',
     'weathervanesNheadcasts',
-    'comp_epochs_byID',
+    # 'comp_epochs_byID',
     # 'bout_distribution',
     # 'bout_detection',
     # 'compute_interference_data',
@@ -273,11 +273,7 @@ def weathervanesNheadcasts(run_idx, pause_idx, turn_slices, Tamps):
     return wvane_min, wvane_max, cast_min, cast_max
 
 
-def comp_epochs_byID(s, e, c, vel_thr=0.3, strides_enabled=True):
-    aux.fft_freqs(s, e, c)
-    turn_dict = turn_annotation(s, e, c)
-    crawl_dict = crawl_annotation(s, e, c, strides_enabled=strides_enabled, vel_thr=vel_thr)
-    return aux.AttrDict({id: {**turn_dict[id], **crawl_dict[id]} for id in c.agent_ids})
+
 
 
 def stride_interp(a, strides, Nbins=64):
