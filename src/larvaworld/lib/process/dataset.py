@@ -230,8 +230,9 @@ class ParamLarvaDataset(param.Parameterized):
 
     def detect_bouts(self,castsNweathervanes=True, **kwargs):
         s, e, c = self.data
-        self.epoch_dicts=process.annotation.comp_epoch_dicts(s, e, c, **kwargs)
-        self.chunk_dicts = aux.AttrDict({id: {**self.epoch_dicts[id]} for id in c.agent_ids})
+        self.chunk_dicts=process.annotation.comp_epochs_byID(s, e, c, **kwargs)
+        epoch_ks=aux.SuperList([list(dic.keys()) for dic in self.chunk_dicts.values()]).flatten.unique
+        self.epoch_dicts = aux.AttrDict({k: {id: self.chunk_dicts[id][k] for id in c.agent_ids} for k in epoch_ks})
         self.pooled_epochs = aux.AttrDict(
             {k: np.array(aux.SuperList(dic.values()).flatten) for k, dic in self.epoch_dicts.items()})
         # reg.vprint(f'Computed pooled epoch durations.', 1)
