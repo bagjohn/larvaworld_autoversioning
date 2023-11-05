@@ -97,7 +97,6 @@ class SimConfigurationParams(SimConfiguration):
 
     def __init__(self, runtype='Exp', experiment=None, parameters=None,
                  N=None, mIDs=None, dIDs=None, sample=None,**kwargs):
-        # print(experiment)
         if parameters is None:
             if runtype in reg.CONFTYPES:
                 ct = reg.conf[runtype]
@@ -121,11 +120,8 @@ class SimConfigurationParams(SimConfiguration):
                 else:
                     kwargs[k] = parameters[k]
 
-        try:
-            from ...cli.argparser import update_larva_groups
+        if 'larva_groups' in parameters:
             parameters.larva_groups = update_larva_groups(parameters.larva_groups, mIDs=mIDs,dIDs=dIDs, N=N, sample=sample)
-        except:
-            pass
         super().__init__(runtype=runtype, experiment=experiment, parameters=parameters, **kwargs)
 
 
@@ -170,6 +166,48 @@ class EnvConf(NestedConf):
 
         from ..sim.base_run import BaseRun
         BaseRun.visualize_Env(envConf=self.nestedConf, envID=self.name, **kwargs)
+
+def update_larva_groups(lgs, N=None, mIDs=None, dIDs=None, sample=None, expand_models=True):
+    """
+    Modifies the experiment's configuration larvagroups.
+
+    Args:
+        lgs (dict): The existing larvagroups in the experiment configuration.
+        N (int):: Overwrite the number of agents per larva group.
+        mIDs (list): Overwrite the larva models used in the experiment. If not None, a larva group per model ID will be simulated.
+        dIDs (list): The displayed IDs of the groups. If None, the model IDs (mIDs) are used.
+        sample: The reference dataset.
+
+    Returns:
+        The experiment's configuration larvagroups.
+    """
+    if mIDs is not None:
+        if dIDs is None:
+            dIDs = mIDs
+        Nm = len(mIDs)
+        gConfs = list(lgs.values())
+        if len(lgs) != Nm:
+            gConfs = [gConfs[0].get_copy() for i in range(Nm)]
+            for gConf, col in zip(gConfs, aux.N_colors(Nm)):
+                gConf.color = col
+        lgs = aux.AttrDict({dID: {} for dID in dIDs})
+        for dID, mID, gConf in zip(dIDs, mIDs, gConfs):
+            lgs[dID] = gConf
+            if expand_models:
+                lgs[dID].model = reg.conf.Model.getID(mID)
+            else:
+                lgs[dID].model = mID
+
+
+    if N is not None:
+        for gID, gConf in lgs.items():
+            gConf.distribution.N = N
+
+    if sample is not None:
+        for gID, gConf in lgs.items():
+            gConf.sample = sample
+
+    return lgs
 
 
 class LarvaGroup(NestedConf):
@@ -503,9 +541,7 @@ class LabFormat(NestedConf):
 class ExpConf(SimOps):
     env_params = ClassAttr(gen.Env, doc='The environment configuration')
     experiment = reg.conf.Exp.confID_selector()
-    trials = param.Dict(default=aux.AttrDict({'epochs': aux.ItemList()}),
-                        doc='Dictionary of temporal epochs of the experiment')
-    # trials = reg.conf.Trial.confID_selector('default')
+    trials = param.Dict(default=aux.AttrDict({'epochs': aux.ItemList()}), doc='Temporal epochs of the experiment')
     collections = param.ListSelector(default=['pose'], objects=reg.parDB.output_keys,
                                      doc='The data to collect as output')
     larva_groups = ClassDict(item_type=gen.LarvaGroup, doc='The larva groups')
@@ -541,7 +577,6 @@ class ExpConf(SimOps):
         return confs
 
     def update_larva_groups(self, N=None, mIDs=None, dIDs=None, sample=None):
-        from ...cli.argparser import update_larva_groups
         self.larva_groups=update_larva_groups(self.larva_groups, N=N, mIDs=mIDs,dIDs=dIDs,sample=sample, expand_models=False)
 
 

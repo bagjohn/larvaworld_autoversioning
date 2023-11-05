@@ -8,7 +8,7 @@ __all__ = [
     'SingleParserArgument',
     'ParserArgumentDict',
     'SimModeParser',
-    'update_larva_groups',
+    # 'update_larva_groups',
 ]
 
 __displayname__ = 'CLI argument parsing classes'
@@ -189,30 +189,30 @@ def parser_entry_from_dict(name, k=None, h='', dtype=float, v=None, vs=None, **k
     """
     if k is None:
         k = name
-    d = {
+    d = aux.AttrDict({
         'key': name,
         'short': k,
         'help': h,
-    }
+    })
     if dtype == bool:
-        d['action'] = 'store_true' if not v else 'store_false'
+        d.action = 'store_true' if not v else 'store_false'
     elif dtype == List[str]:
-        d['type'] = str
-        d['nargs'] = '+'
+        d.type = str
+        d.nargs = '+'
         if vs is not None:
-            d['choices'] = vs
+            d.choices = vs
     elif dtype == List[int]:
-        d['type'] = int
-        d['nargs'] = '+'
+        d.type = int
+        d.nargs = '+'
         if vs is not None:
-            d['choices'] = vs
+            d.choices = vs
     else:
-        d['type'] = dtype
+        d.type = dtype
         if vs is not None:
-            d['choices'] = vs
+            d.choices = vs
         if v is not None:
-            d['default'] = v
-            d['nargs'] = '?'
+            d.default = v
+            d.nargs = '?'
     return d
 
 
@@ -322,6 +322,8 @@ def parser_dict_from_param(d0):
     """
     d = aux.AttrDict()
     for k, p in d0.param.objects().items():
+        if k=='name' or p.readonly :
+            continue
         if p.__class__ not in param.Parameterized.__subclasses__():
             d[k] = SingleParserArgument.from_param(k, p)
         else:
@@ -368,8 +370,12 @@ class SimModeParser:
             'Ga': ['ga_select_kws', 'ga_eval_kws', 'reference_dataset'],
             'Replay': ['Replay']
         })
-        self.parser_keys = aux.unique_list(aux.flatten_list(list(self.dict.values())))
-        self.parsers = self.init_parsers()
+
+        """
+        Initialize parsers for different simulation modes.
+        """
+        ks=aux.SuperList(self.dict.values()).flatten.unique +['sim_params']
+        self.parsers = aux.AttrDict({k:ParserArgumentDict.from_dict(reg.par.PI[k]) for k in ks})
         self.cli_parser = self.build_cli_parser()
         self.mode = None
         self.run = None
@@ -383,15 +389,8 @@ class SimModeParser:
         """
         self.args = aux.AttrDict(vars(self.cli_parser.parse_args()))
 
-    def init_parsers(self):
-        """
-        Initialize parsers for different simulation modes.
-        """
-        d = aux.AttrDict()
-        d.sim_params = ParserArgumentDict.from_dict(reg.par.PI['sim_params'])
-        for k in self.parser_keys:
-            d[k] = ParserArgumentDict.from_dict(reg.par.PI[k])
-        return d
+
+
 
     def populate_mode_subparser(self, sp, m):
         """
@@ -575,45 +574,5 @@ class SimModeParser:
             r.run()
 
 
-def update_larva_groups(lgs, N=None, mIDs=None, dIDs=None, sample=None, expand_models=True):
-    """
-    Modifies the experiment's configuration larvagroups.
 
-    Args:
-        lgs (dict): The existing larvagroups in the experiment configuration.
-        N (int):: Overwrite the number of agents per larva group.
-        mIDs (list): Overwrite the larva models used in the experiment. If not None, a larva group per model ID will be simulated.
-        dIDs (list): The displayed IDs of the groups. If None, the model IDs (mIDs) are used.
-        sample: The reference dataset.
-
-    Returns:
-        The experiment's configuration larvagroups.
-    """
-    if mIDs is not None:
-        if dIDs is None:
-            dIDs = mIDs
-        Nm = len(mIDs)
-        gConfs = list(lgs.values())
-        if len(lgs) != Nm:
-            gConfs = [gConfs[0].get_copy() for i in range(Nm)]
-            for gConf, col in zip(gConfs, aux.N_colors(Nm)):
-                gConf.color = col
-        lgs = aux.AttrDict({dID: {} for dID in dIDs})
-        for dID, mID, gConf in zip(dIDs, mIDs, gConfs):
-            lgs[dID] = gConf
-            if expand_models:
-                lgs[dID].model = reg.conf.Model.getID(mID)
-            else:
-                lgs[dID].model = mID
-
-
-    if N is not None:
-        for gID, gConf in lgs.items():
-            gConf.distribution.N = N
-
-    if sample is not None:
-        for gID, gConf in lgs.items():
-            gConf.sample = sample
-
-    return lgs
 

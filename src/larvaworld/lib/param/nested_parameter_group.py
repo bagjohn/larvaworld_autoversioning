@@ -45,7 +45,7 @@ class NestedConf(param.Parameterized):
         d = aux.AttrDict(self.param.values())
         d.pop('name')
         for k, p in self.param.objects().items():
-            if k in d and p.readonly == True:
+            if k in d and p.readonly:
                 d.pop(k)
             elif k in d and d[k] is not None:
                 if type(p) == ClassAttr:
@@ -62,16 +62,16 @@ class NestedConf(param.Parameterized):
         :return: A dictionary containing the configuration entry.
         """
         d = self.nestedConf
-        if 'distribution' in d.keys():
-            if 'group' in d.keys():
+        if 'distribution' in d:
+            if 'group' in d:
                 if id is not None:
                     d.group = id
                 elif d.group is not None:
                     id = d.group
-            if 'model' in d.keys():
+            if 'model' in d:
                 if id is None:
                     id = d.model
-        elif 'unique_id' in d.keys():
+        elif 'unique_id' in d:
             if id is None and d.unique_id is not None:
                 id = d.unique_id
                 d.pop('unique_id')

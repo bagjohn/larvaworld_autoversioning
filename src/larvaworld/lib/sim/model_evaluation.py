@@ -87,8 +87,6 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
                                                 sample=self.refID)
 
 
-        # mIDs = self.modelIDs
-        # dIDs=self.dataset_ids
         Nm=len(self.modelIDs)
         kws={
             'dt': self.dt,

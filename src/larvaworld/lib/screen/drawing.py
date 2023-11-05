@@ -24,6 +24,7 @@ __all__ = [
     'MediaDrawOps',
     'AgentDrawOps',
     'ColorDrawOps',
+    'ScreenOps',
     'BaseScreenManager',
     'GA_ScreenManager',
     'ScreenManager',
