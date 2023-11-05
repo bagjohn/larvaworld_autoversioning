@@ -3,9 +3,11 @@ import warnings
 
 import param
 
-from larvaworld.cli.argparser import update_larva_groups
-from larvaworld.lib.param import NestedConf, PositiveInteger, class_generator
-from larvaworld.lib.process.evaluation import DataEvaluation
+
+from ..param import NestedConf, PositiveInteger, class_generator
+from ..process.evaluation import DataEvaluation
+
+# from src.larvaworld.lib.reg.generators import update_larva_groups
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -14,7 +16,7 @@ import numpy as np
 import pandas as pd
 
 
-from larvaworld.lib import reg, aux, plot, util
+from .. import reg, aux, plot, util
 
 
 __all__ = [
@@ -83,7 +85,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
 
     def simulate(self):
         conf = reg.conf.Exp.expand(self.experiment)
-        conf.larva_groups = update_larva_groups(conf.larva_groups, N=self.N, mIDs=self.modelIDs, dIDs=self.dataset_ids,
+        conf.larva_groups = reg.generators.update_larva_groups(conf.larva_groups, N=self.N, mIDs=self.modelIDs, dIDs=self.dataset_ids,
                                                 sample=self.refID)
 
 

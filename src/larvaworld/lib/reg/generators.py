@@ -27,6 +27,7 @@ __all__ = [
     'ExpConf',
     'GTRvsS',
     'DatasetConfig',
+    'update_larva_groups',
 ]
 
 gen = aux.AttrDict({
@@ -96,7 +97,7 @@ class SimConfigurationParams(SimConfiguration):
     parameters = param.Parameter(default=None)
 
     def __init__(self, runtype='Exp', experiment=None, parameters=None,
-                 N=None, mIDs=None, dIDs=None, sample=None,**kwargs):
+                 N=None, mIDs=None, dIDs=None, sample=None, **kwargs):
         if parameters is None:
             if runtype in reg.CONFTYPES:
                 ct = reg.conf[runtype]
@@ -121,7 +122,8 @@ class SimConfigurationParams(SimConfiguration):
                     kwargs[k] = parameters[k]
 
         if 'larva_groups' in parameters:
-            parameters.larva_groups = update_larva_groups(parameters.larva_groups, mIDs=mIDs,dIDs=dIDs, N=N, sample=sample)
+            parameters.larva_groups = update_larva_groups(parameters.larva_groups, mIDs=mIDs, dIDs=dIDs, N=N,
+                                                          sample=sample)
         super().__init__(runtype=runtype, experiment=experiment, parameters=parameters, **kwargs)
 
 
@@ -167,6 +169,7 @@ class EnvConf(NestedConf):
         from ..sim.base_run import BaseRun
         BaseRun.visualize_Env(envConf=self.nestedConf, envID=self.name, **kwargs)
 
+
 def update_larva_groups(lgs, N=None, mIDs=None, dIDs=None, sample=None, expand_models=True):
     """
     Modifies the experiment's configuration larvagroups.
@@ -197,7 +200,6 @@ def update_larva_groups(lgs, N=None, mIDs=None, dIDs=None, sample=None, expand_m
                 lgs[dID].model = reg.conf.Model.getID(mID)
             else:
                 lgs[dID].model = mID
-
 
     if N is not None:
         for gID, gConf in lgs.items():
@@ -577,7 +579,8 @@ class ExpConf(SimOps):
         return confs
 
     def update_larva_groups(self, N=None, mIDs=None, dIDs=None, sample=None):
-        self.larva_groups=update_larva_groups(self.larva_groups, N=N, mIDs=mIDs,dIDs=dIDs,sample=sample, expand_models=False)
+        self.larva_groups = update_larva_groups(self.larva_groups, N=N, mIDs=mIDs, dIDs=dIDs, sample=sample,
+                                                expand_models=False)
 
 
 gen.Exp = ExpConf

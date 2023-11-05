@@ -326,15 +326,16 @@ def parser_dict_from_param(d0):
 
     d = aux.AttrDict()
     for k, p in d0.param.objects().items():
+        #print(k)
         if k=='name' or p.readonly :
             continue
         elif p.__class__ in param.Parameterized.__subclasses__():
             d[k] = parser_dict_from_param(p)
         # elif k in dv0 and dv0[k] is not None:
-        elif type(p) == ClassAttr:
-            d[k] = parser_dict_from_param(p.class_)
-        elif type(p) == ClassDict:
-            d[k] = parser_dict_from_param(p.item_type)
+        # elif type(p) == ClassAttr:
+        #     d[k] = parser_dict_from_param(p.class_)
+        # elif type(p) == ClassDict:
+        #     d[k] = parser_dict_from_param(p.item_type)
         else:
             d[k] = SingleParserArgument.from_param(k, p)
     return d.flatten()
