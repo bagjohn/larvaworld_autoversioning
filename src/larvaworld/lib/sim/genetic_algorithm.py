@@ -224,6 +224,8 @@ class GAlauncher(BaseRun):
         else:
             self.progress_bar = None
             temp = 'unlimited'
+        self.gen_progressbar=progressbar.ProgressBar(self.Nsteps)
+        self.gen_progressbar.start()
         reg.vprint(
             f'Launching {temp} generations of {self.duration} minutes, with {self.selector.Nagents} agents each!', 2)
         self.p.collections = ['pose']
@@ -253,6 +255,7 @@ class GAlauncher(BaseRun):
         reg.vprint(f'Generation {self.generation_num} started', 1)
         if self.progress_bar:
             self.progress_bar.update(self.generation_num)
+        self.gen_progressbar.start()
 
     def eval_robots(self, ds, Ngen, genome_dict):
         reg.vprint(f'Evaluating generation {Ngen}', 1)
@@ -332,9 +335,11 @@ class GAlauncher(BaseRun):
         self.delete_agents()
         self._logs = {}
         self.t = 0
+        self.gen_progressbar.finish()
 
     def update(self):
         self.agents.nest_record(self.collectors['step'])
+        self.gen_progressbar.update(self.t)
 
     def finalize(self):
         self.running = False
@@ -402,8 +407,8 @@ class GA_thread(threading.Thread):
 
 
 def optimize_mID(mID0, mID1=None, refID=None, space_mkeys=['turner', 'interference'], init='model',
-                 experiment='exploration',dataset=None,
-                 id=None, dt=1 / 16, dur=0.5, dir=None, Nagents=30, Nelits=6, Ngenerations=20,
+                 experiment='exploration',dataset=None,multicore=False,
+                 id=None, dt=1 / 16, dur=0.5, dir=None, Nagents=20, Nelits=4, Ngenerations=5,
                  **kwargs):
     warnings.filterwarnings('ignore')
     if mID1 is None:
@@ -417,7 +422,7 @@ def optimize_mID(mID0, mID1=None, refID=None, space_mkeys=['turner', 'interferen
                         experiment=experiment).nestedConf
 
     gaconf.env_params = reg.conf.Env.getID(gaconf.env_params)
-    GA = GAlauncher(parameters=gaconf, dir=dir, id=id, duration=dur, dt=dt, dataset=dataset)
+    GA = GAlauncher(parameters=gaconf, dir=dir, id=id, duration=dur, dt=dt, dataset=dataset,multicore=multicore)
     best_genome = GA.simulate()
     return {mID1: best_genome.mConf}
 

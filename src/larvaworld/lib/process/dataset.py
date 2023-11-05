@@ -82,7 +82,7 @@ class ParamLarvaDataset(param.Parameterized):
     #     return wrap
 
     def valid(required=None, returned=None):
-        _verbose = 1
+        _verbose = 3
 
         def wrap(f):
             def wrapped_f(self, *args, **kwargs):

@@ -261,29 +261,31 @@ class LarvaworldParam(param.Parameterized):
 
     def mutate(self, Pmut, Cmut):
         if random.random() < Pmut:
-            if self.parclass == param.Number:
+            if self.parclass in param.Magnitude.__subclasses__():
+                v0 = self.v if self.v is not None else 0.5
+                vv = random.gauss(v0, Cmut)
+                self.v = self.param.v.crop_to_bounds(np.round(vv, self.Ndec))
+                # self.v = np.round(self.v, self.Ndec)
+            elif self.parclass in param.Integer.__subclasses__():
+                vmin, vmax = self.param.v.bounds
+                vr = np.abs(vmax - vmin)
+                v0 = self.v if self.v is not None else int(vmin + vr / 2)
+                vv = random.gauss(v0, Cmut * vr)
+                self.v = self.param.v.crop_to_bounds(int(vv))
+            elif self.parclass in param.Number.__subclasses__():
 
                 vmin, vmax = self.param.v.bounds
                 vr = np.abs(vmax - vmin)
                 v0 = self.v if self.v is not None else vmin + vr / 2
                 vv = random.gauss(v0, Cmut * vr)
                 self.v = self.param.v.crop_to_bounds(np.round(vv, self.Ndec))
-            elif self.parclass == param.Integer:
-                vmin, vmax = self.param.v.bounds
-                vr = np.abs(vmax - vmin)
-                v0 = self.v if self.v is not None else int(vmin + vr / 2)
-                vv = random.gauss(v0, Cmut * vr)
-                self.v = self.param.v.crop_to_bounds(int(vv))
-            elif self.parclass == param.Magnitude:
-                v0 = self.v if self.v is not None else 0.5
-                vv = random.gauss(v0, Cmut)
-                self.v = self.param.v.crop_to_bounds(np.round(vv, self.Ndec))
-                # self.v = np.round(self.v, self.Ndec)
-            elif self.parclass == param.Selector:
+
+
+            elif self.parclass in param.Selector.__subclasses__():
                 self.v = random.choice(self.param.v.objects)
             elif self.parclass == param.Boolean:
                 self.v = random.choice([True, False])
-            elif self.parclass == param.Range:
+            elif self.parclass in param.Range.__subclasses__():
                 vmin, vmax = self.param.v.bounds
                 vr = np.abs(vmax - vmin)
                 v0, v1 = self.v if self.v is not None else (vmin, vmax)
