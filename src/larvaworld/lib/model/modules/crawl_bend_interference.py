@@ -37,11 +37,14 @@ class Coupling(param.Parameterized):
         else:
             raise
 
-    def check_crawler(self, crawler):
+    def check_module(self, obj, module):
         self.cur_attenuation = self.attenuation
 
-    def check_feeder(self, feeder):
-        self.cur_attenuation = self.attenuation
+    # def check_crawler(self, crawler):
+    #     self.cur_attenuation = self.attenuation
+    #
+    # def check_feeder(self, feeder):
+    #     self.cur_attenuation = self.attenuation
 
     @ staticmethod
     def select(mode):
@@ -66,17 +69,17 @@ class SquareCoupling(Coupling):
     feeder_phi_range = PhaseRange(label='feeder suppression relief phase interval',
                                   doc='FEEDER phase range for TURNER suppression lift.')
 
-    def check_crawler(self, crawler):
+    def check_module(self, obj, module):
         A = self.attenuation
-        if hasattr(crawler, 'phi') and crawler.suppresion_relief(self.crawler_phi_range):
+        if module=='Crawler':
+            r=self.crawler_phi_range
+        elif module=='Feeder':
+            r=self.feeder_phi_range
+        if hasattr(obj, 'phi') and module.suppresion_relief(r):
             A += self.attenuation_max
         self.cur_attenuation = A
 
-    def check_feeder(self, feeder):
-        A = self.attenuation
-        if hasattr(feeder, 'phi') and feeder.suppresion_relief(self.feeder_phi_range):
-            A += self.attenuation_max
-        self.cur_attenuation = A
+
 
 
 class PhasicCoupling(Coupling):
@@ -95,13 +98,11 @@ class PhasicCoupling(Coupling):
             A = 0
         return A
 
-    def check_crawler(self, crawler):
-        x = crawler.phi if hasattr(crawler, 'phi') else 0
+    def check_module(self, obj, module):
+        x = obj.phi if hasattr(obj, 'phi') else 0
         self.cur_attenuation = self.get(x)
 
-    def check_feeder(self, feeder):
-        x = feeder.phi
-        self.cur_attenuation = self.get(x)
+
 
 
 

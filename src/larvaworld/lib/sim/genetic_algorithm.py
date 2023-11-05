@@ -224,8 +224,8 @@ class GAlauncher(BaseRun):
         else:
             self.progress_bar = None
             temp = 'unlimited'
-        self.gen_progressbar=progressbar.ProgressBar(self.Nsteps)
-        self.gen_progressbar.start()
+        # self.gen_progressbar=progressbar.ProgressBar(self.Nsteps)
+        # self.gen_progressbar.start()
         reg.vprint(
             f'Launching {temp} generations of {self.duration} minutes, with {self.selector.Nagents} agents each!', 2)
         self.p.collections = ['pose']
@@ -240,6 +240,9 @@ class GAlauncher(BaseRun):
         return self.best_genome
 
     def build_generation(self, sorted_genomes=None):
+        self.prestart_generation_time = aux.TimeUtil.current_time_sec()
+        self.generation_num += 1
+        # reg.vprint(f'Generation {self.generation_num} loading', 1)
         self.genome_dict = self.selector.create_generation(sorted_genomes)
         # confs = [{'larva_pars': g.mConf, 'unique_id': str(id), 'genome': g} for id, g in self.genome_dict.items()]
         confs = [{'larva_pars': g.mConf, 'unique_id': str(id), 'genome': g, 'color' : aux.Color.random_bright()} for id, g in self.genome_dict.items()]
@@ -249,13 +252,16 @@ class GAlauncher(BaseRun):
             self.threads = self.build_threads(self.agents)
         else:
             self.threads = None
-        self.generation_num += 1
+
         # self.generation_step_num = 0
-        self.start_generation_time = aux.TimeUtil.current_time_millis()
-        reg.vprint(f'Generation {self.generation_num} started', 1)
+
+
         if self.progress_bar:
             self.progress_bar.update(self.generation_num)
-        self.gen_progressbar.start()
+        # self.gen_progressbar.start()
+        self.start_generation_time = aux.TimeUtil.current_time_sec()
+        gen_load_dur = np.round(self.start_generation_time - self.prestart_generation_time)
+        reg.vprint(f'Generation {self.generation_num} started in {gen_load_dur} sec', 2)
 
     def eval_robots(self, ds, Ngen, genome_dict):
         reg.vprint(f'Evaluating generation {Ngen}', 1)
@@ -278,7 +284,7 @@ class GAlauncher(BaseRun):
             sorted_gs = [valid_gs[i] for i in
                          sorted(list(valid_gs.keys()), key=lambda i: valid_gs[i].fitness, reverse=True)]
             self.store(sorted_gs, Ngen)
-            reg.vprint(f'Generation {Ngen} evaluated', 1)
+            # reg.vprint(f'Generation {Ngen} evaluated', 1)
             return sorted_gs
 
     def store(self, sorted_gs, Ngen):
@@ -328,6 +334,9 @@ class GAlauncher(BaseRun):
 
 
     def end(self):
+        self.end_generation_time = aux.TimeUtil.current_time_sec()
+        gen_dur=self.end_generation_time-self.start_generation_time
+        reg.vprint(f'Generation {self.generation_num} completed in {gen_dur} sec', 2)
         self.agents.nest_record(self.collectors['end'])
         self.create_output()
         self.data_collection = larvaworld.lib.LarvaDatasetCollection.from_agentpy_output(self.output)
@@ -335,11 +344,14 @@ class GAlauncher(BaseRun):
         self.delete_agents()
         self._logs = {}
         self.t = 0
-        self.gen_progressbar.finish()
+        # self.gen_progressbar.finish()
+        self.end_generation_eval_time = aux.TimeUtil.current_time_sec()
+        gen_eval_dur = self.end_generation_eval_time - self.end_generation_time
+        reg.vprint(f'Generation {self.generation_num} evaluated in {gen_eval_dur} sec', 2)
 
     def update(self):
         self.agents.nest_record(self.collectors['step'])
-        self.gen_progressbar.update(self.t)
+        # self.gen_progressbar.update(self.t)
 
     def finalize(self):
         self.running = False
@@ -372,23 +384,23 @@ class GAlauncher(BaseRun):
         N = multiprocessing.cpu_count()
         threads = []
         N_per_cpu = math.floor(len(robots) / N)
-        reg.vprint(f'num_robots_per_cpu: {N_per_cpu}', 2)
+        reg.vprint(f'num_robots_per_cpu: {N_per_cpu}', 0)
 
         for i in range(N - 1):
             p0 = i * N_per_cpu
             p1 = (i + 1) * N_per_cpu
-            reg.vprint(f'core: {i + 1} positions: {p0} : {p1}', 1)
+            reg.vprint(f'core: {i + 1} positions: {p0} : {p1}', 0)
             thread = GA_thread(robots[p0:p1])
             thread.start()
-            reg.vprint(f'thread {i + 1} started', 1)
+            reg.vprint(f'thread {i + 1} started', 0)
             threads.append(thread)
 
         # last sublist of robots
         p0 = (N - 1) * N_per_cpu
-        reg.vprint(f'last core, start_pos {p0}', 1)
+        reg.vprint(f'last core, start_pos {p0}', 0)
         thread = GA_thread(robots[p0:])
         thread.start()
-        reg.vprint(f'last thread started', 1)
+        reg.vprint(f'last thread started', 0)
         threads.append(thread)
 
         for t in threads:

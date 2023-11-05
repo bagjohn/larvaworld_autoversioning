@@ -77,12 +77,12 @@ def init_brain_modules():
         return aux.AttrDict(d)
 
     def Cr0():
-        str_kws = {'stride_dst_mean': {'v0': 0.23, 'lim': (0.0, 1.0), 'dv': 0.01,
+        str_kws = {'stride_dst_mean': {'v0': 0.23, 'lim': (0.0, 1.1), 'dv': 0.01,
                                        'k': 'str_sd_mu',
                                        'disp': r'stride distance mean', 'sym': nam.tex.sub(nam.tex.bar(nam.tex.mathring('d')), 'S'),
                                        'u_name': '$body-lengths$', 'codename': 'stride_scaled_dst_mean',
                                        'h': 'The mean displacement achieved in a single peristaltic stride as a fraction of the body length.'},
-                   'stride_dst_std': {'v0': 0.04, 'lim': (0.0, 1.0),
+                   'stride_dst_std': {'v0': 0.04, 'lim': (0.0, 0.5),
                                       'k': 'str_sd_std',
                                       'disp': 'stride distance std', 'sym': nam.tex.sub(nam.tex.tilde(nam.tex.mathring('d')), 'S'),
                                       'u_name': '$body-lengths$', 'codename': 'stride_scaled_dst_std',

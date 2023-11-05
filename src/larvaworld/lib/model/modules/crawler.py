@@ -35,7 +35,7 @@ class Crawler(StepEffector):
 class StrideOscillator(Crawler, StepOscillator) :
     freq = PositiveNumber(1.42, bounds=(0.5, 3.0))
     stride_dst_mean = PositiveNumber(0.23,softmax=1.0, step=0.01, label='stride distance mean', doc='The mean displacement achieved in a single peristaltic stride as a fraction of the body length.')
-    stride_dst_std = PositiveNumber(0.04,softmax=1.0, step=0.01, label='stride distance std', doc='The standard deviation of the displacement achieved in a single peristaltic stride as a fraction of the body length.')
+    stride_dst_std = PositiveNumber(0.04,softmax=1.0, step=0.001, label='stride distance std', doc='The standard deviation of the displacement achieved in a single peristaltic stride as a fraction of the body length.')
 
 
     def __init__(self, **kwargs):

@@ -109,11 +109,11 @@ class DefaultLocomotor(Locomotor):
         if F:
             F.step()
             if F.active and If:
-                If.check_feeder(F)
+                If.check_module(F, 'Feeder')
         if C:
             lin = C.step() * length
             if C.active and If:
-                If.check_crawler(C)
+                If.check_module(C, 'Crawler')
         else:
             lin = 0
         self.step_intermitter(stride_completed=self.stride_completed, feed_motion=self.feed_motion, on_food=on_food)

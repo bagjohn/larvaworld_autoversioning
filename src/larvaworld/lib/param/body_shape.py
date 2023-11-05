@@ -75,6 +75,7 @@ class ShapeMobile(LineClosed, MobileVector):
 class ShapeViewable(ShapeMobile, Viewable):
 
     def draw(self, v, **kwargs):
+        # self.update_vertices()
         v.draw_polygon(self.vertices, filled=True, color=self.color)
 
 

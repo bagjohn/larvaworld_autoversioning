@@ -304,7 +304,6 @@ class LarvaSim(LarvaMotile, BaseController):
         """
 
         dt=self.model.dt
-        sf = self.model.scaling_factor
         hp0, ho0 = self.head.get_pose()
         hr0 = self.head.rear_end
         l0 = self.head.length
@@ -323,27 +322,22 @@ class LarvaSim(LarvaMotile, BaseController):
         ho1 = ho0 + ang_vel * dt
         k = np.array([np.cos(ho1), np.sin(ho1)])
         d = lin_vel * dt
-        hp1 = hr0 + k * (d * sf + l0 / 2)
+        hp1 = hr0 + k * (d * self.model.scaling_factor + l0 / 2)
         self.head.update_all(hp1, ho1, lin_vel, ang_vel)
         self.dst = d
 
 
 
         if self.Nsegs > 1:
-            delta_ro = self.compute_delta_rear_angle(self.body_bend, self.dst, self.length)
-            d_or = delta_ro / (self.Nsegs - 1)
+            d_or = self.compute_delta_rear_angle(self.body_bend, self.dst, self.length) / (self.Nsegs - 1)
             for i, seg in enumerate(self.segs[1:]):
-                o1 = seg.get_orientation() + d_or
-                k = np.array([np.cos(o1), np.sin(o1)])
-                p1 = self.segs[i].rear_end - k * seg.length / 2
-                seg.update_pose(p1, o1)
+                seg.drag_to_front(fp=self.segs[i].rear_end, d_or=d_or)
 
-        self.set_position(tuple(self.global_midspine_of_body))
-        self.set_orientation(self.head.get_orientation())
-        self.set_angularvelocity(self.head.get_angularvelocity())
-        self.set_linearvelocity(self.head.get_linearvelocity())
-        self.trajectory.append(self.get_position())
-        self.orientation_trajectory.append(self.get_orientation())
-        self.model.space.move_to(self, np.array(self.get_position()))
+        pos=tuple(self.global_midspine_of_body)
+        self.update_all(pos,ho1, lin_vel, ang_vel)
+        self.trajectory.append(pos)
+        self.orientation_trajectory.append(ho1)
+        self.model.space.move_to(self, np.array(pos))
         self.cum_dst += self.dst
         self.compute_body_bend()
+

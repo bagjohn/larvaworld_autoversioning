@@ -9,12 +9,18 @@ __all__ = [
 
 ]
 
+import numpy as np
+
 
 class TimeUtil:
 
     @staticmethod
     def current_time_millis():
         return int(round(time.time() * 1000))
+
+    @staticmethod
+    def current_time_sec():
+        return int(round(time.time()))
 
     @staticmethod
     def format_time_seconds(seconds):

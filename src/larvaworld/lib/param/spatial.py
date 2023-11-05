@@ -168,6 +168,13 @@ class MobileVector(MobilePoint):
     def rear_end(self):
         return self.translate((-self.length / 2, 0))
 
+    def drag_to_front(self, fp, d_or=0):
+        o = self.get_orientation() + d_or
+        k = np.array([np.cos(o), np.sin(o)])
+        p = fp - k * self.length / 2
+        self.update_pose(p, o)
+
+
 
 class LineExtended(NestedConf):
     width = PositiveNumber(0.001, softmax=10.0, doc='The width of the line vertices')
