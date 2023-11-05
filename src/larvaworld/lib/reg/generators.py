@@ -190,10 +190,9 @@ def update_larva_groups(lgs, **kwargs):
     Returns:
         The experiment's configuration larvagroups.
     """
-    confs = prepare_larvagroup_args(**kwargs)
-    Nnew = len(confs)
     Nold = len(lgs)
     gIDs = list(lgs)
+    confs = prepare_larvagroup_args(default_Nlgs=Nold,**kwargs)
     new_lgs = aux.AttrDict()
     for i, conf in enumerate(confs):
         gID = gIDs[i % Nold]
@@ -206,8 +205,12 @@ def update_larva_groups(lgs, **kwargs):
     return new_lgs
 
 
-def prepare_larvagroup_args(Ns=None, models=None, group_ids=None, colors=None, **kwargs):
-    Nlgs = int(np.max([len(a) for a in [Ns, models, group_ids, colors] if isinstance(a, list)]))
+def prepare_larvagroup_args(Ns=None, models=None, group_ids=None, colors=None,default_Nlgs=1, **kwargs):
+    temp=[len(a) for a in [Ns, models, group_ids, colors] if isinstance(a, list)]
+    if len(temp)>0:
+        Nlgs = int(np.max(temp))
+    else:
+        Nlgs =default_Nlgs
     if models is not None:
         if isinstance(models, str):
             models = [copy.deepcopy(models) for i in range(Nlgs)]
@@ -231,8 +234,8 @@ def prepare_larvagroup_args(Ns=None, models=None, group_ids=None, colors=None, *
         Ns = [None] * Nlgs
     if colors is not None:
         assert isinstance(colors, list) and len(colors) == Nlgs
-    elif Nlgs == 1:
-        colors = [None]
+    elif Nlgs == default_Nlgs:
+        colors = [None]*Nlgs
     else:
         colors = aux.N_colors(Nlgs)
     return [{'N': Ns[i], 'model': models[i], 'group_id': group_ids[i], 'color': colors[i], **kwargs} for i in range(Nlgs)]

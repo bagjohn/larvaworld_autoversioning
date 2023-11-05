@@ -352,7 +352,7 @@ class ClassAttr(param.ClassSelector):
             cc = class_
         else:
             cc = class_[0]
-        if 'default' not in kwargs.keys():
+        if 'default' not in kwargs:
             kwargs['default'] = cc()
         elif kwargs['default'] is None:
             kwargs['default'] = None
