@@ -3,7 +3,8 @@ from typing import List
 from argparse import ArgumentParser
 import param
 from ..lib import reg, aux, sim, screen
-from ..lib.param.custom import ClassAttr, ClassDict
+from ..lib.param import SimOps
+#from ..lib.param.custom import ClassAttr, ClassDict
 
 __all__ = [
     'SingleParserArgument',
@@ -385,9 +386,10 @@ class SimModeParser:
         """
         Initialize parsers for different simulation modes.
         """
-        ks=aux.SuperList(self.dict.values()).flatten.unique +['sim_params']
+        ks=aux.SuperList(self.dict.values()).flatten.unique
         self.parsers = aux.AttrDict({k:ParserArgumentDict.from_dict(reg.par.PI[k]) for k in ks})
         self.parsers.screen_kws=ParserArgumentDict.from_param(d0=screen.ScreenOps)
+        self.parsers.SimOps=ParserArgumentDict.from_param(d0=SimOps)
         self.cli_parser = self.build_cli_parser()
         self.mode = None
         self.run = None
@@ -414,7 +416,7 @@ class SimModeParser:
         """
         sp = self.parsers.screen_kws.add(sp)
         if m not in ['Replay', 'Eval']:
-            sp = self.parsers.sim_params.add(sp)
+            sp = self.parsers.SimOps.add(sp)
         for k in self.dict[m]:
             sp = self.parsers[k].add(sp)
         return sp
@@ -436,6 +438,10 @@ class SimModeParser:
                             help='The larva models to use for creating the simulation larva groups')
             sp.add_argument('-dIDs', '--group_disp_ids', type=str, nargs='+',
                             help='The displayed IDs of the simulation larva groups')
+            sp.add_argument('-a', '--analysis', action='store_true', default=False,
+                           help='Whether to run data-analysis after the simulation')
+            sp.add_argument('-show', '--show_analysis', action='store_true', default=False,
+                            help='Whether to show the plots generated during data-analysis')
         return sp
 
     def build_cli_parser(self):
@@ -469,7 +475,7 @@ class SimModeParser:
         d = aux.AttrDict()
         d.screen_kws = self.eval_parser('screen_kws')
         if self.mode not in ['Replay', 'Eval']:
-            d.sim_params = self.eval_parser('sim_params')
+            d.SimOps = self.eval_parser('SimOps')
         for k in self.dict[self.mode]:
             d[k] = self.eval_parser(k)
         return d
@@ -488,7 +494,7 @@ class SimModeParser:
         kw.screen_kws =sp.screen_kws
 
         if m not in ['Replay', 'Eval']:
-            kw.update(**sp.sim_params)
+            kw.update(**sp.SimOps)
             kw.experiment = a.experiment
         if m == 'Batch':
             kw.mode = 'batch'
@@ -497,27 +503,11 @@ class SimModeParser:
             kw.conf.N = a.Nagents
             kw.conf.mIDs = a.group_model_ids
             kw.conf.dIDs = a.group_disp_ids
-
-            # kw.conf.exp = reg.conf.Exp.expand(kw.conf.exp)
-            # kw.conf.exp.experiment = kw.conf.exp
-            # kw.conf.exp.larva_groups = update_larva_groups(
-            #     kw.conf.exp.larva_groups, N=a.Nagents, mIDs=a.group_model_ids, dIDs=a.group_disp_ids)
-            #
-            # if kw.duration is None:
-            #     kw.duration = kw.conf.exp.sim_params.duration
             self.run = sim.Exec(**kw)
         elif m == 'Exp':
             kw.N=a.Nagents
             kw.mIDs=a.group_model_ids
             kw.dIDs=a.group_disp_ids
-            # kw.parameters = reg.conf.Exp.expand(kw.experiment)
-            # kw.parameters.experiment = kw.experiment
-            # kw.parameters.larva_groups = update_larva_groups(
-            #     kw.parameters.larva_groups, N=a.Nagents, mIDs=a.group_model_ids, dIDs=a.group_disp_ids)
-            # if kw.duration is None:
-            #     kw.duration = kw.parameters.sim_params.duration
-
-            # kw.screen_kws = {'vis_kwargs': sp.visualization}
             self.run = sim.ExpRun(**kw)
         elif m == 'Ga':
             p = reg.conf.Ga.expand(kw.experiment)
@@ -529,9 +519,6 @@ class SimModeParser:
 
             if sp.reference_dataset.refID is not None:
                 p.refID = sp.reference_dataset.refID
-
-            if kw.duration is None:
-                kw.duration = p.sim_params.duration
             kw.parameters = p
             self.run = sim.GAlauncher(**kw)
         elif m == 'Eval':
@@ -544,7 +531,7 @@ class SimModeParser:
             self.show_args()
         return self.run
 
-    def show_args(self, nested=True, flat_nested=False, input=False, default=False, run_args=True):
+    def show_args(self, nested=True, flat_nested=False, input=False, run_args=True):
         """
         Show parsed arguments.
 
@@ -579,7 +566,7 @@ class SimModeParser:
         elif m == 'Exp':
             _ = r.simulate()
             if self.args.analysis:
-                r.analyze(show=self.args.show)
+                r.analyze(show=self.args.show_analysis)
         elif m == 'Ga':
             _ = r.simulate()
         elif m == 'Eval':
