@@ -377,7 +377,7 @@ class SimModeParser:
         self.dict = aux.AttrDict({
             'Batch': [],
             'Eval': ['Eval'],
-            'Exp': ['visualization'],
+            'Exp': [],
             'Ga': ['ga_select_kws', 'ga_eval_kws', 'reference_dataset'],
             'Replay': ['Replay']
         })
@@ -443,6 +443,7 @@ class SimModeParser:
         Build the command line argument parser.
         """
         p = ArgumentParser()
+        p.add_argument('-parsargs', '--show_parser_args', action = 'store_true', default=False,help='Whether to show the parser argument namespace')
         subparsers = p.add_subparsers(dest='sim_mode', help='The simulation mode to launch')
         for m in reg.SIMTYPES:
             sp = subparsers.add_parser(m)
@@ -484,6 +485,7 @@ class SimModeParser:
         self.mode = m = a.sim_mode
         self.parser_args = sp = self.eval_parsers()
         kw = aux.AttrDict({'id': a.id})
+        kw.screen_kws =sp.screen_kws
 
         if m not in ['Replay', 'Eval']:
             kw.update(**sp.sim_params)
@@ -515,7 +517,7 @@ class SimModeParser:
             # if kw.duration is None:
             #     kw.duration = kw.parameters.sim_params.duration
 
-            kw.screen_kws = {'vis_kwargs': sp.visualization}
+            # kw.screen_kws = {'vis_kwargs': sp.visualization}
             self.run = sim.ExpRun(**kw)
         elif m == 'Ga':
             p = reg.conf.Ga.expand(kw.experiment)
