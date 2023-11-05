@@ -305,25 +305,6 @@ def comp_chunk_dicts(s, e, c, vel_thr=0.3, strides_enabled=True,turns=True,runs=
     else:
         return None
 
-# @reg.funcs.annotation("bout_distribution")
-# def bout_distribution(s, e, c, d, **kwargs) :
-#     d.chunk_dicts = aux.AttrDict(d.read('chunk_dicts'))
-#     d.grouped_epochs = aux.group_epoch_dicts(d.chunk_dicts)
-#     d.pooled_epochs = util.fit_epochs(d.grouped_epochs)
-#     c.bout_distros = util.get_bout_distros(d.pooled_epochs)
-#     register_bout_distros(c, e)
-#     d.store(d.pooled_epochs, 'pooled_epochs')
-#     # print(d.pooled_epochs)
-#     # raise
-#     reg.vprint(f'Completed bout distribution analysis.',1)
-
-# @reg.funcs.annotation("bout_detection")
-# def bout_detection(s, e, c, d, **kwargs):
-#     chunk_dicts = comp_chunk_dicts(s, e, c, **kwargs)
-#     if chunk_dicts :
-#         d.chunk_dicts =chunk_dicts
-#         d.store(d.chunk_dicts, 'chunk_dicts')
-#     reg.vprint(f'Completed bout detection.',1)
 
 
 
@@ -359,6 +340,11 @@ def cycle_curve_dict(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
 
 
 def cycle_curve_dict_multi(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
+    #ssv=s[reg.getPar('sv')]
+    #sfov=s[reg.getPar('fov')]
+    # ps=reg.getPar(shs)
+    #sshs=aux.AttrDict({sh:s[reg.getPar(sh)] for sh in shs})
+
     ids = s.index.unique('AgentID').values
     dic={}
     for id in ids:

@@ -1024,8 +1024,8 @@ class ModelRegistry:
         for d, p in mdict.items():
             if isinstance(p, param.Parameterized) and p.codename in e.columns:
                 crawler_conf[d] = np.round(e[p.codename].dropna().median(), 2)
-            else:
-                raise
+            # else:
+            #     raise
         return crawler_conf
 
     def adapt_intermitter(self, refID=None, e=None, c=None, mode='default', conf=None):
@@ -1062,21 +1062,24 @@ class ModelRegistry:
 
     def adapt_mID(self, dataset,mID0, mID=None, space_mkeys=['turner', 'interference'], dir=None, **kwargs):
         s,e,c=dataset.data
-
+        CM=reg.conf.Model
         if mID is None:
             mID = f'{mID0}_fitted'
         print(f'Adapting {mID0} on {c.refID} as {mID} fitting {space_mkeys} modules')
         if dir is None:
             dir = f'{c.dir}/model/GAoptimization'
-        m0 = reg.conf.Model.getID(mID0)
+        m0 = CM.getID(mID0)
         if 'crawler' not in space_mkeys:
             m0.brain.crawler_params = self.adapt_crawler(e=e, mode=m0.brain.crawler_params.mode)
         if 'intermitter' not in space_mkeys:
             m0.brain.intermitter_params = self.adapt_intermitter(e=e, c=c, mode=m0.brain.intermitter_params.mode,
                                                                  conf=m0.brain.intermitter_params)
         m0.body.length = np.round(e[reg.getPar('l')].dropna().median(), 5)
-        reg.conf.Model.setID(mID, m0)
-        from ..sim.genetic_algorithm import optimize_mID
+        CM.setID(mID, m0)
+
+        from ..sim.genetic_algorithm import optimize_mID,GAselector
+        GAselector.param.objects()['base_model'].objects = CM.confIDs
+        reg.generators.LarvaGroupMutator.param.objects()['modelIDs'].objects = CM.confIDs
         return optimize_mID(mID0=mID, space_mkeys=space_mkeys, dt=c.dt, refID=c.refID,
                             dataset=dataset,id=mID, dir=dir, **kwargs)
 

@@ -110,6 +110,8 @@ class ConfType(param.Parameterized):
         else:
             self.dict[id] = conf
         self.save()
+        # self.update_dict()
+        # self.load()
         reg.vprint(f'{self.conftype} Configuration saved under the id : {id}', 1)
 
     def delete(self, id=None):
@@ -139,6 +141,7 @@ class ConfType(param.Parameterized):
 
         return conf
 
+    @param.depends('confIDs','dict', watch=True)
     def confID_selector(self, default=None, single=True):
         kws = {
             'default': default,

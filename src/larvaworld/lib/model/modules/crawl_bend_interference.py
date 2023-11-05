@@ -75,7 +75,7 @@ class SquareCoupling(Coupling):
             r=self.crawler_phi_range
         elif module=='Feeder':
             r=self.feeder_phi_range
-        if hasattr(obj, 'phi') and module.suppresion_relief(r):
+        if hasattr(obj, 'phi') and obj.suppresion_relief(r):
             A += self.attenuation_max
         self.cur_attenuation = A
 
@@ -83,7 +83,6 @@ class SquareCoupling(Coupling):
 
 
 class PhasicCoupling(Coupling):
-    # mode = param.Selector(default='phasic', readonly=True)
     max_attenuation_phase = Phase(3.4, label='max relief phase', doc='CRAWLER phase of minimum TURNER suppression.')
 
     def get(self, x):

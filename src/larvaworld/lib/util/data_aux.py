@@ -261,7 +261,6 @@ class LarvaworldParam(param.Parameterized):
 
     def mutate(self, Pmut, Cmut):
         if random.random() < Pmut:
-            print(self.p, self.parclass)
             if self.parclass in [param.Magnitude] +param.Magnitude.__subclasses__():
                 v0 = self.v if self.v is not None else 0.5
                 vv = random.gauss(v0, Cmut)
@@ -280,8 +279,6 @@ class LarvaworldParam(param.Parameterized):
                 v0 = self.v if self.v is not None else vmin + vr / 2
                 vv = random.gauss(v0, Cmut * vr)
                 self.v = self.param.v.crop_to_bounds(np.round(vv, self.Ndec))
-
-
             elif self.parclass in [param.Selector] +param.Selector.__subclasses__():
                 self.v = random.choice(self.param.v.objects)
             elif self.parclass == param.Boolean:
