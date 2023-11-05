@@ -269,6 +269,7 @@ def add_var_mIDs(mID0s, mIDs=None):
 
 
 def modelConf_analysis(d):
+    from collections import ChainMap
     warnings.filterwarnings('ignore')
     M=reg.model
 
@@ -292,33 +293,31 @@ def modelConf_analysis(d):
     kws = {'refID': c.refID}
     kws1 = {'N': 10, **kws}
     kws2 = {'e': d.e, 'c': c, **kws, **fit_kws}
-    if 'modelConfs' not in c:
-        c.modelConfs = aux.AttrDict({'average': {}, 'variable': {}, 'individual': {}, '3modules': {}})
-    for Tmod in mods.T[:2]:
-        for Ifmod in mods.If:
-            entry = M.adapt_mID(mID0=f'RE_{Tmod}_{Ifmod}_DEF', mID=f'{Ifmod}on{Tmod}', space_mkeys=['turner', 'interference'], **kws2)
-            c.modelConfs.average.update(entry)
+    D = aux.AttrDict({'average': {}, 'variable': {}, 'individual': {}, '3modules': {}})
+    ee = []
+    for tt in mods.T[:2]:
+        for ii in mods.If:
+            ee.append(M.adapt_mID(mID0=f'RE_{tt}_{ii}_DEF', mID=f'{ii}on{tt}', space_mkeys=['turner', 'interference'], **kws2))
+    D.average=dict(ChainMap(*ee))
 
-    mIDs_avg = list(c.modelConfs.average)
+    mIDs_avg = list(D.average)
     eval_model_graphs(mIDs=mIDs_avg, id='6mIDs_avg', **kws1)
     mIDs_var = [f'{mID0}_var' for mID0 in mIDs_avg]
-    c.modelConfs.variable = add_var_mIDs(mIDs=mIDs_var, mID0s=mIDs_avg)
+    D.variable = add_var_mIDs(mIDs=mIDs_var, mID0s=mIDs_avg)
     eval_model_graphs(mIDs=mIDs_var, id='6mIDs_var', **kws1)
     eval_model_graphs(mIDs=mIDs_avg[:3] + mIDs_var[:3], id='3mIDs_avgVSvar1', **kws1)
     eval_model_graphs(mIDs=mIDs_avg[3:] + mIDs_var[3:], id='3mIDs_avgVSvar2', **kws1)
-    for Cmod in mods.C:
-        for Ifmod in mods.If:
-            mIDsx3=[]
-            for Tmod in mods.T:
-                mID0 = f'{Cmod}_{Tmod}_{Ifmod}_DEF'
-                mID = f'{mID0}_fit'
-                mIDsx3.append(mID)
-                entry = M.adapt_mID(mID0=mID0, mID=mID, space_mkeys=['crawler', 'turner', 'interference'],
-                                **kws2)
-                c.modelConfs['3modules'].update(entry)
-            eval_model_graphs(mIDs=mIDsx3, groupIDs=mods.T, id=f'Tmod_variable_Cmod_{Cmod}_Ifmod_{Ifmod}', **kws1)
-    mIDs_3m = list(c.modelConfs['3modules'])
+    ee=[]
+    for cc in mods.C:
+        for ii in mods.If:
+            mIDs0x3=[f'{cc}_{tt}_{ii}_DEF' for tt in mods.T]
+            mIDsx3 =[f'{mID0}_fit' for mID0 in mIDs0x3]
+            ee+=[M.adapt_mID(mID0=mID0, mID=mID, space_mkeys=['crawler', 'turner', 'interference'],
+                                **kws2) for mID0,mID in zip(mIDs0x3,mIDsx3)]
+            eval_model_graphs(mIDs=mIDsx3, groupIDs=mods.T, id=f'Tmod_variable_Cmod_{cc}_Ifmod_{ii}', **kws1)
+    D['3modules']=dict(ChainMap(*ee))
+    mIDs_3m = list(D['3modules'])
     reg.graphs.store_model_graphs(mIDs_avg, d.dir)
     reg.graphs.store_model_graphs(mIDs_3m, d.dir)
-    d.config = c
+    d.config.modelConfs = D
     d.save_config()
