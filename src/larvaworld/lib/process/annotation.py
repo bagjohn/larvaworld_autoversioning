@@ -9,7 +9,6 @@ from scipy.signal import find_peaks
 from ..aux import nam
 from .. import reg, aux, util
 
-
 __all__ = [
     # 'register_bout_distros',
     'stride_interp',
@@ -19,7 +18,7 @@ __all__ = [
     'detect_strides',
     'detect_turns',
     'weathervanesNheadcasts',
-    # 'comp_chunk_dicts',
+    'comp_epoch_dicts',
     # 'bout_distribution',
     # 'bout_detection',
     # 'compute_interference_data',
@@ -28,6 +27,7 @@ __all__ = [
     'turn_annotation',
     'crawl_annotation',
 ]
+
 
 def process_epochs(a, epochs, dt, return_idx=True):
     if epochs.shape[0] == 0:
@@ -272,13 +272,12 @@ def weathervanesNheadcasts(run_idx, pause_idx, turn_slices, Tamps):
     cast_min, cast_max = np.nanquantile(cast_amps, 0.25), np.nanquantile(cast_amps, 0.75)
     return wvane_min, wvane_max, cast_min, cast_max
 
-def comp_agent_epochs(s, e, c, vel_thr=0.3, strides_enabled=True):
+
+def comp_epoch_dicts(s, e, c, vel_thr=0.3, strides_enabled=True):
     aux.fft_freqs(s, e, c)
     turn_dict = turn_annotation(s, e, c)
     crawl_dict = crawl_annotation(s, e, c, strides_enabled=strides_enabled, vel_thr=vel_thr)
     return aux.AttrDict(**crawl_dict, **turn_dict)
-
-
 
 
 def stride_interp(a, strides, Nbins=64):
@@ -304,7 +303,6 @@ def mean_stride_curve(a, strides, da, Nbins=64):
     return dic
 
 
-
 def cycle_curve_dict(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
     strides = detect_strides(s[reg.getPar('sv')], dt, return_extrema=False, return_runs=False)
     da = np.array([np.trapz(s[reg.getPar('fov')][s0:s1].dropna()) for ii, (s0, s1) in enumerate(strides)])
@@ -313,26 +311,26 @@ def cycle_curve_dict(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
 
 
 def cycle_curve_dict_multi(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
-    #ssv=s[reg.getPar('sv')]
-    #sfov=s[reg.getPar('fov')]
+    # ssv=s[reg.getPar('sv')]
+    # sfov=s[reg.getPar('fov')]
     # ps=reg.getPar(shs)
-    #sshs=aux.AttrDict({sh:s[reg.getPar(sh)] for sh in shs})
+    # sshs=aux.AttrDict({sh:s[reg.getPar(sh)] for sh in shs})
 
     ids = s.index.unique('AgentID').values
-    dic={}
+    dic = {}
     for id in ids:
         ss = s.xs(id, level="AgentID")
-        dic[id]=cycle_curve_dict(ss, dt=dt, shs=shs)
+        dic[id] = cycle_curve_dict(ss, dt=dt, shs=shs)
     return aux.AttrDict(dic)
+
 
 # @reg.funcs.annotation("interference")
 # def compute_interference_data(s, e, c, d, Nbins=64, **kwargs) :
 #     d.cycle_curves = compute_interference(s=s, e=e, c=c, chunk_dicts=d.chunk_dicts, Nbins=Nbins)
 #     d.store(d.cycle_curves, 'cycle_curves')
 
-def compute_interference(s, e, c,d=None, Nbins=64, chunk_dicts=None):
+def compute_interference(s, e, c, d=None, Nbins=64, chunk_dicts=None):
     p_sv, p_fov, p_rov, p_foa, p_b, pau_fov_mu = reg.getPar(['sv', 'fov', 'rov', 'foa', 'b', 'pau_fov_mu'])
-
 
     x = np.linspace(0, 2 * np.pi, Nbins)
 
@@ -396,6 +394,7 @@ def compute_interference(s, e, c,d=None, Nbins=64, chunk_dicts=None):
         pass
     return cycle_curves
 
+
 @reg.funcs.annotation("turn_mode")
 def turn_mode_annotation(e, chunk_dicts):
     wNh = {}
@@ -405,18 +404,17 @@ def turn_mode_annotation(e, chunk_dicts):
         wNh[id] = dict(zip(wNh_ps, weathervanesNheadcasts(dic.run_idx, dic.pause_idx, dic.turn_slice, dic.turn_amp)))
     e[wNh_ps] = pd.DataFrame.from_dict(wNh).T
 
+
 @reg.funcs.annotation("turn")
 def turn_annotation(s, e, c):
     ids = s.index.unique('AgentID').values
     N = s.index.unique('Step').size
 
-
-
     fov, foa = reg.getPar(['fov', 'foa'])
 
-    eTur_ps = reg.getPar( ['Ltur_N', 'Rtur_N', 'tur_N', 'tur_H'])
+    eTur_ps = reg.getPar(['Ltur_N', 'Rtur_N', 'tur_N', 'tur_H'])
     eTur_vs = np.zeros([len(ids), len(eTur_ps)]) * np.nan
-    turn_ps = reg.getPar(['tur_fou', 'tur_t','Ltur_t','Rtur_t', 'tur_fov_max'])
+    turn_ps = reg.getPar(['tur_fou', 'tur_t', 'Ltur_t', 'Rtur_t', 'tur_fov_max'])
     turn_vs = np.zeros([N, len(ids), len(turn_ps)]) * np.nan
     turn_dict = {}
 
@@ -424,11 +422,13 @@ def turn_annotation(s, e, c):
         a_fov = s[fov].xs(id, level="AgentID")
         Lturns, Rturns = detect_turns(a_fov, c.dt)
 
-        Lturns1, Ldurs, Lturn_slices, Lamps, Lturn_idx, Lmaxs = process_epochs(a_fov.values, Lturns, c.dt, return_idx=True)
-        Rturns1, Rdurs, Rturn_slices, Ramps, Rturn_idx, Rmaxs = process_epochs(a_fov.values, Rturns, c.dt, return_idx=True)
-        Lturns_N,Rturns_N = Lturns.shape[0],Rturns.shape[0]
-        turns_N=Lturns_N+Rturns_N
-        tur_H=Lturns_N/turns_N if turns_N!=0 else 0
+        Lturns1, Ldurs, Lturn_slices, Lamps, Lturn_idx, Lmaxs = process_epochs(a_fov.values, Lturns, c.dt,
+                                                                               return_idx=True)
+        Rturns1, Rdurs, Rturn_slices, Ramps, Rturn_idx, Rmaxs = process_epochs(a_fov.values, Rturns, c.dt,
+                                                                               return_idx=True)
+        Lturns_N, Rturns_N = Lturns.shape[0], Rturns.shape[0]
+        turns_N = Lturns_N + Rturns_N
+        tur_H = Lturns_N / turns_N if turns_N != 0 else 0
         Tamps = np.concatenate([Lamps, Ramps])
         Tdurs = np.concatenate([Ldurs, Rdurs])
         Tmaxs = np.concatenate([Lmaxs, Rmaxs])
@@ -445,7 +445,7 @@ def turn_annotation(s, e, c):
             turn_vs[Rturns[:, 1], jj, 4] = Rmaxs
         turn_dict[id] = {'Lturn': Lturns, 'Rturn': Rturns, 'turn_slice': Tslices, 'turn_amp': Tamps,
                          'turn_dur': Tdurs, 'Lturn_dur': Ldurs, 'Rturn_dur': Rdurs, 'turn_vel_max': Tmaxs}
-        eTur_vs[jj, :] = [Lturns_N,Rturns_N, turns_N, tur_H]
+        eTur_vs[jj, :] = [Lturns_N, Rturns_N, turns_N, tur_H]
     s[turn_ps] = turn_vs.reshape([N * len(ids), len(turn_ps)])
     e[eTur_ps] = eTur_vs
 

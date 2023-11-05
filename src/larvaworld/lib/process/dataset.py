@@ -230,7 +230,7 @@ class ParamLarvaDataset(param.Parameterized):
 
     def detect_bouts(self,castsNweathervanes=True, **kwargs):
         s, e, c = self.data
-        self.epoch_dicts=process.annotation.comp_agent_epochs(s, e, c, **kwargs)
+        self.epoch_dicts=process.annotation.comp_epoch_dicts(s, e, c, **kwargs)
         self.chunk_dicts = aux.AttrDict({id: {**self.epoch_dicts[id]} for id in c.agent_ids})
         self.pooled_epochs = aux.AttrDict(
             {k: np.array(aux.SuperList(dic.values()).flatten) for k, dic in self.epoch_dicts.items()})
