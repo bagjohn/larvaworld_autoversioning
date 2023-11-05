@@ -43,12 +43,12 @@ class MediaDrawOps(NestedConf):
     media_dir = String(None, doc='Directory where to save media. Defaults tp model.dir if not provided.')
     fps = PositiveInteger(60, softmax=100, doc='Video speed')
     save_video = Boolean(False, doc='Whether to save a video.')
-    mode = OptionalSelector(objects=['video', 'image'], doc='Screen mode.')
+    vis_mode = OptionalSelector(objects=['video', 'image'], doc='Screen mode.')
     show_display = Boolean(False, doc='Whether to launch the pygame-visualization.')
 
     @property
     def active(self):
-        return self.save_video or self.image_mode or self.show_display or (self.mode is not None)
+        return self.save_video or self.image_mode or self.show_display or (self.vis_mode is not None)
 
     @property
     def video_filepath(self):
@@ -137,7 +137,7 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
     Base class managing the pygame screen.
     """
 
-    def __init__(self, model, background_motion=None, vis_kwargs=None, video=None, **kwargs):
+    def __init__(self, model, background_motion=None, **kwargs):
         m = self.model = model
         super().__init__(dims=aux.get_window_dims(m.p.env_params.arena.dims), **kwargs)
         # super().__init__(dims=aux.get_window_dims(m.space.dims), **kwargs)
@@ -150,10 +150,10 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
         if self.media_dir is None:
             self.media_dir = m.dir
         self._fps = int(self.fps / m.dt)
-        if vis_kwargs is not None:
-            self.mode = vis_kwargs.render.mode
-            if self.mode == 'video' and not self.save_video:
-                self.show_display = True
+        # if vis_kwargs is not None:
+        #     self.vis_mode = vis_kwargs.render.mode
+        if self.vis_mode == 'video' and not self.save_video:
+            self.show_display = True
 
         self.bg = background_motion
 
@@ -295,11 +295,11 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
 
     @property
     def snapshot_valid(self):
-        return self.mode == 'image' and self.image_mode == 'snapshots' and self.snapshot_tick
+        return self.vis_mode == 'image' and self.image_mode == 'snapshots' and self.snapshot_tick
 
     @property
     def render_valid(self):
-        m = self.mode
+        m = self.vis_mode
         return (m == 'image' and self.overlap_mode) or (
                 m == 'video' and (self.image_mode != 'snapshots' or self.snapshot_tick))
 
