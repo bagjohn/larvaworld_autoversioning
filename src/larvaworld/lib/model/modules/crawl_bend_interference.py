@@ -70,12 +70,12 @@ class SquareCoupling(Coupling):
                                   doc='FEEDER phase range for TURNER suppression lift.')
 
     def check_module(self, obj, module):
+        phi_dic={
+            'Crawler':self.crawler_phi_range,
+            'Feeder':self.feeder_phi_range,
+                 }
         A = self.attenuation
-        if module=='Crawler':
-            r=self.crawler_phi_range
-        elif module=='Feeder':
-            r=self.feeder_phi_range
-        if hasattr(obj, 'phi') and obj.suppresion_relief(r):
+        if hasattr(obj, 'phi') and obj.suppresion_relief(phi_dic[module]):
             A += self.attenuation_max
         self.cur_attenuation = A
 

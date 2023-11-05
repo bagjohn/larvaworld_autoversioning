@@ -554,13 +554,13 @@ class SimModeParser:
         elif m == 'Exp':
             _ = r.simulate()
             if self.args.analysis:
-                r.analyze(**anal_kws)
+                r.analyze(show= self.args.show)
         elif m == 'Ga':
             _ = r.simulate()
         elif m == 'Eval':
             _ = r.simulate()
             if self.args.analysis:
-                r.plot_results(**anal_kws)
-                r.plot_models(**anal_kws)
+                r.plot_results(show= self.args.show)
+                r.plot_models(show= self.args.show)
         elif m == 'Replay':
             r.run()

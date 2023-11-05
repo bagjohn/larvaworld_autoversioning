@@ -168,7 +168,7 @@ def sim_multi_agents(Nticks, Nids, ms, group_id, dt=0.1, ids=None, p0s=None, fo0
     e = pd.DataFrame(index=ids)
     e['cum_dur'] = Nticks * dt
     e['num_ticks'] = Nticks
-    e['length'] = [m.body.initial_length for m in ms]
+    e['length'] = [m.body.length for m in ms]
 
     from ...process.spatial import scale_to_length
     scale_to_length(s, e, keys=['v'])
