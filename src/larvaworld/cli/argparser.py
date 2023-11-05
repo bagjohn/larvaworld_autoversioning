@@ -412,6 +412,7 @@ class SimModeParser:
         :param m: The simulation mode.
         :return: The modified subparser.
         """
+        sp = self.parsers.screen_kws.add(sp)
         if m not in ['Replay', 'Eval']:
             sp = self.parsers.sim_params.add(sp)
         for k in self.dict[m]:
