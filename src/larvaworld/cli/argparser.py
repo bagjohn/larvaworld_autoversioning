@@ -4,7 +4,8 @@ from argparse import ArgumentParser
 import param
 from ..lib import reg, aux, sim, screen
 from ..lib.param import SimOps
-#from ..lib.param.custom import ClassAttr, ClassDict
+
+# from ..lib.param.custom import ClassAttr, ClassDict
 
 __all__ = [
     'SingleParserArgument',
@@ -328,8 +329,8 @@ def parser_dict_from_param(d0):
 
     d = aux.AttrDict()
     for k, p in d0.param.objects().items():
-        #print(k)
-        if k=='name' or p.readonly :
+        # print(k)
+        if k == 'name' or p.readonly:
             continue
         elif p.__class__ in param.Parameterized.__subclasses__():
             d[k] = parser_dict_from_param(p)
@@ -386,15 +387,14 @@ class SimModeParser:
         """
         Initialize parsers for different simulation modes.
         """
-        ks=aux.SuperList(self.dict.values()).flatten.unique
-        self.parsers = aux.AttrDict({k:ParserArgumentDict.from_dict(reg.par.PI[k]) for k in ks})
-        self.parsers.screen_kws=ParserArgumentDict.from_param(d0=screen.ScreenOps)
-        self.parsers.SimOps=ParserArgumentDict.from_param(d0=SimOps)
+        ks = aux.SuperList(self.dict.values()).flatten.unique
+        self.parsers = aux.AttrDict({k: ParserArgumentDict.from_dict(reg.par.PI[k]) for k in ks})
+        self.parsers.screen_kws = ParserArgumentDict.from_param(d0=screen.ScreenOps)
+        self.parsers.SimOps = ParserArgumentDict.from_param(d0=SimOps)
         self.cli_parser = self.build_cli_parser()
         self.mode = None
         self.run = None
         self.args = aux.AttrDict()
-        self.parser_args = aux.AttrDict()
         self.run_kws = aux.AttrDict()
 
     def parse_args(self):
@@ -402,9 +402,6 @@ class SimModeParser:
         Parse command line arguments.
         """
         self.args = aux.AttrDict(vars(self.cli_parser.parse_args()))
-
-
-
 
     def populate_mode_subparser(self, sp, m):
         """
@@ -439,7 +436,7 @@ class SimModeParser:
             sp.add_argument('-dIDs', '--group_disp_ids', type=str, nargs='+',
                             help='The displayed IDs of the simulation larva groups')
             sp.add_argument('-a', '--analysis', action='store_true', default=False,
-                           help='Whether to run data-analysis after the simulation')
+                            help='Whether to run data-analysis after the simulation')
             sp.add_argument('-show', '--show_analysis', action='store_true', default=False,
                             help='Whether to show the plots generated during data-analysis')
         return sp
@@ -449,7 +446,8 @@ class SimModeParser:
         Build the command line argument parser.
         """
         p = ArgumentParser()
-        p.add_argument('-parsargs', '--show_parser_args', action = 'store_true', default=False,help='Whether to show the parser argument namespace')
+        p.add_argument('-parsargs', '--show_parser_args', action='store_true', default=False,
+                       help='Whether to show the parser argument namespace')
         subparsers = p.add_subparsers(dest='sim_mode', help='The simulation mode to launch')
         for m in reg.SIMTYPES:
             sp = subparsers.add_parser(m)
@@ -466,20 +464,6 @@ class SimModeParser:
         """
         return self.parsers[p_key].get(self.args)
 
-    def eval_parsers(self):
-        """
-        Evaluate all parser arguments.
-
-        :return: A dictionary of parsed values.
-        """
-        d = aux.AttrDict()
-        d.screen_kws = self.eval_parser('screen_kws')
-        if self.mode not in ['Replay', 'Eval']:
-            d.SimOps = self.eval_parser('SimOps')
-        for k in self.dict[self.mode]:
-            d[k] = self.eval_parser(k)
-        return d
-
     def configure(self, show_args=False):
         """
         Configure the simulation run based on parsed arguments.
@@ -489,12 +473,10 @@ class SimModeParser:
         """
         a = self.args
         self.mode = m = a.sim_mode
-        self.parser_args = sp = self.eval_parsers()
-        kw = aux.AttrDict({'id': a.id})
-        kw.screen_kws =sp.screen_kws
-
+        sp = aux.AttrDict({k:self.eval_parser(k) for k in self.dict[m]})
+        kw = aux.AttrDict({'id': a.id, 'screen_kws': self.eval_parser('screen_kws')})
         if m not in ['Replay', 'Eval']:
-            kw.update(**sp.SimOps)
+            kw.update(**self.eval_parser('SimOps'))
             kw.experiment = a.experiment
         if m == 'Batch':
             kw.mode = 'batch'
@@ -505,26 +487,29 @@ class SimModeParser:
             kw.conf.dIDs = a.group_disp_ids
             self.run = sim.Exec(**kw)
         elif m == 'Exp':
-            kw.N=a.Nagents
-            kw.mIDs=a.group_model_ids
-            kw.dIDs=a.group_disp_ids
+            kw.N = a.Nagents
+            kw.mIDs = a.group_model_ids
+            kw.dIDs = a.group_disp_ids
             self.run = sim.ExpRun(**kw)
         elif m == 'Ga':
             p = reg.conf.Ga.expand(kw.experiment)
+            ev=self.eval_parser('ga_eval_kws')
+            sel=self.eval_parser('ga_select_kws')
+            ref=self.eval_parser('reference_dataset')
 
             for k in ['base_model', 'bestConfID', 'space_mkeys']:
-                if sp.ga_select_kws[k] is None:
-                    sp.ga_select_kws.pop(k)
-            p.ga_select_kws.update(**sp.ga_select_kws)
+                if sel[k] is None:
+                    sel.pop(k)
+            p.ga_select_kws.update(**sel)
 
-            if sp.reference_dataset.refID is not None:
-                p.refID = sp.reference_dataset.refID
+            if ref.refID is not None:
+                p.refID = ref.refID
             kw.parameters = p
             self.run = sim.GAlauncher(**kw)
         elif m == 'Eval':
-            self.run = sim.EvalRun(**sp.Eval)
+            self.run = sim.EvalRun(**self.eval_parser('Eval'))
         elif m == 'Replay':
-            kw.parameters = sp.Replay
+            kw.parameters = self.eval_parser('Replay')
             self.run = sim.ReplayRun(**kw)
         self.run_kws = kw
         if show_args:
@@ -575,7 +560,3 @@ class SimModeParser:
             r.plot_models()
         elif m == 'Replay':
             r.run()
-
-
-
-
