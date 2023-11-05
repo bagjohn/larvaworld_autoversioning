@@ -402,28 +402,24 @@ class GA_thread(threading.Thread):
 
 
 def optimize_mID(mID0, mID1=None, refID=None, space_mkeys=['turner', 'interference'], init='model',
-                 exclusion_mode=False, experiment='exploration',
+                 experiment='exploration',dataset=None,
                  id=None, dt=1 / 16, dur=0.5, dir=None, Nagents=30, Nelits=6, Ngenerations=20,
                  **kwargs):
     warnings.filterwarnings('ignore')
     if mID1 is None:
         mID1 = mID0
-
+    # print(mID0,mID0 in reg.conf.Model.confIDs)
     gaconf = reg.gen.Ga(ga_select_kws=reg.gen.GAselector(Nagents=Nagents, Nelits=Nelits, Ngenerations=Ngenerations,
-                                                         selection_ratio=0.1, init_mode=init, space_mkeys=space_mkeys,
+                                                         init_mode=init, space_mkeys=space_mkeys,
                                                          base_model=mID0, bestConfID=mID1),
                         ga_eval_kws=reg.gen.GAevaluation(refID=refID, **kwargs),
                         env_params='arena_200mm',
                         experiment=experiment).nestedConf
 
     gaconf.env_params = reg.conf.Env.getID(gaconf.env_params)
-
-    # conf.ga_build_kws.
-
-    GA = GAlauncher(parameters=gaconf, dir=dir, id=id, duration=dur, dt=dt)
+    GA = GAlauncher(parameters=gaconf, dir=dir, id=id, duration=dur, dt=dt, dataset=dataset)
     best_genome = GA.simulate()
-    entry = {mID1: best_genome.mConf}
-    return entry
+    return {mID1: best_genome.mConf}
 
 
 reg.gen.GAselector = class_generator(GAselector)

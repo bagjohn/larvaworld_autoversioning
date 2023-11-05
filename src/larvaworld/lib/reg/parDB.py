@@ -2053,6 +2053,9 @@ class ParamRegistry:
 
         self.dict = None
 
+        self.ddict=aux.AttrDict({p.d: p for k, p in self.kdict.items()})
+        self.pdict=aux.AttrDict({p.p: p for k, p in self.kdict.items()})
+
     def null(self, name, key='v', **kwargs):
         if key != 'v':
             raise
@@ -2106,10 +2109,10 @@ class ParamRegistry:
             d0 = self.kdict
             k0 = k
         elif d is not None:
-            d0 = aux.AttrDict({p.d: p for k, p in self.kdict.items()})
+            d0 = self.ddict
             k0 = d
         elif p is not None:
-            d0 = aux.AttrDict({p.p: p for k, p in self.kdict.items()})
+            d0 = self.pdict
             k0 = p
         else:
             raise

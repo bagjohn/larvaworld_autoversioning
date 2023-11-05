@@ -602,7 +602,7 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
         e[str_ps] = str_vs
         e[str_sd_mu] = e[str_d_mu] / e[l]
         e[str_sd_std] = e[str_d_std] / e[l]
-
+    # print(s.columns)
     return crawl_dict
 
 

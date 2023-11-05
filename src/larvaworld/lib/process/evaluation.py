@@ -37,7 +37,7 @@ def eval_end_fast(ee, e_data, e_sym, mode='pooled'):
     return E
 
 
-def eval_distro_fast(ss, s_data, s_sym, mode='pooled', min_size=20):
+def eval_distro_fast(ss, s_data, s_sym, mode='pooled', min_size=10):
     if mode == '1:1':
         E = {}
         for p, sym in s_sym.items():
@@ -223,8 +223,8 @@ class Evaluation(NestedConf):
         'spatial displacement': ['cum_d', 'run_d', 'str_c_l', 'v_mu', 'pau_v_mu', 'run_v_mu', 'v', 'a',
                                  'dsp_0_40_max'],
         'temporal dynamics': ['fsv', 'ffov', 'run_t', 'pau_t', 'run_tr', 'pau_tr'],
-        'stride cycle': ['str_d_mu', 'str_d_std', 'str_sv_mu', 'str_fov_mu', 'str_fov_std', 'str_N'],
-        'epochs': ['run_t', 'pau_t'],
+        'stride cycle': ['str_d_mu', 'str_d_std', 'str_sv_mu', 'str_fov_mu', 'str_fov_std', 'str_N', 'str_t', 'str_d', 'str_sd'],
+        # 'epochs': ['run_t', 'pau_t'],
         'tortuosity': ['tor5', 'tor20', 'tor5_mu', 'tor20_mu']}),
         doc='Evaluation metrics to use')
     cycle_curve_metrics = param.List()

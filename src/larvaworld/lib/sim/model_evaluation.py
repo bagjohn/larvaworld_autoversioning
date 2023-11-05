@@ -240,7 +240,7 @@ def modelConf_analysis(d):
                                      'dsp_0_40_max', 'dsp_0_60_max'],
             'temporal dynamics': ['fsv', 'ffov', 'run_tr', 'pau_tr'],
         },
-        'cycle_curves': ['fov', 'foa', 'b']
+        'cycle_curve_metrics': ['fov', 'foa', 'b']
     }
 
     sample_kws = {k: 'sample' for k in [
@@ -254,7 +254,7 @@ def modelConf_analysis(d):
     c = d.config
     kws = {'refID': c.refID}
     kws1 = {'N': 10, **kws}
-    kws2 = {'e': d.e, 'c': c, **kws, **fit_kws}
+    kws2 = {'dataset': d, **fit_kws}
     D = aux.AttrDict({'average': {}, 'variable': {}, 'individual': {}, '3modules': {}})
     ee = []
     for tt in mods.T[:2]:

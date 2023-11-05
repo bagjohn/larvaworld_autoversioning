@@ -1018,20 +1018,12 @@ class ModelRegistry:
 
         return df, row_colors
 
-    def adapt_crawler(self, refID=None, e=None, mode='realistic', average=True):
-        if e is None:
-            d = reg.conf.Ref.loadRef(refID)
-            d.load(step=False)
-            e = d.endpoint_data
-
+    def adapt_crawler(self, e, mode='realistic'):
         mdict = self.dict.model.m['crawler'].mode[mode].args
         crawler_conf = aux.AttrDict({'mode': mode})
         for d, p in mdict.items():
-            if isinstance(p, param.Parameterized):
-                try:
-                    crawler_conf[d] = epar(e, par=p.codename, average=average)
-                except:
-                    pass
+            if isinstance(p, param.Parameterized) and p.codename in e.columns:
+                crawler_conf[d] = np.round(e[p.codename].dropna().median(), 2)
             else:
                 raise
         return crawler_conf
@@ -1064,19 +1056,16 @@ class ModelRegistry:
             conf.pause_dist.range = (np.round(ll1, 2), np.round(ll2, 2))
         except:
             pass
-        conf.crawl_freq = epar(e, 'fsv', average=True)
+        conf.crawl_freq = np.round(e[reg.getPar('fsv')].dropna().median(), 2)
         conf.mode = mode
         return conf
 
-    def adapt_mID(self, refID, mID0, mID=None, space_mkeys=['turner', 'interference'], dir=None, e=None, c=None,
-                  **kwargs):
+    def adapt_mID(self, dataset,mID0, mID=None, space_mkeys=['turner', 'interference'], dir=None, **kwargs):
+        s,e,c=dataset.data
+
         if mID is None:
             mID = f'{mID0}_fitted'
-        print(f'Adapting {mID0} on {refID} as {mID} fitting {space_mkeys} modules')
-        if e is None or c is None:
-            d = reg.conf.Ref.loadRef(refID)
-            d.load(step=False)
-            e, c = d.endpoint_data, d.config
+        print(f'Adapting {mID0} on {c.refID} as {mID} fitting {space_mkeys} modules')
         if dir is None:
             dir = f'{c.dir}/model/GAoptimization'
         m0 = reg.conf.Model.getID(mID0)
@@ -1085,13 +1074,11 @@ class ModelRegistry:
         if 'intermitter' not in space_mkeys:
             m0.brain.intermitter_params = self.adapt_intermitter(e=e, c=c, mode=m0.brain.intermitter_params.mode,
                                                                  conf=m0.brain.intermitter_params)
-        m0.body.length = epar(e, 'l', average=True, Nround=5)
-
+        m0.body.length = np.round(e[reg.getPar('l')].dropna().median(), 5)
         reg.conf.Model.setID(mID, m0)
         from ..sim.genetic_algorithm import optimize_mID
-        entry = optimize_mID(mID0=mID, space_mkeys=space_mkeys, dt=c.dt, refID=refID,
-                             id=mID, dir=dir, **kwargs)
-        return entry
+        return optimize_mID(mID0=mID, space_mkeys=space_mkeys, dt=c.dt, refID=c.refID,
+                            dataset=dataset,id=mID, dir=dir, **kwargs)
 
     def update_mdict(self, mdict, mmdic):
         if mmdic is None:
@@ -1137,13 +1124,3 @@ class ModelRegistry:
         return aux.AttrDict(dic)
 
 
-def epar(e, k=None, par=None, average=True, Nround=2):
-    if par is None:
-        par = reg.par.PI[k].d
-    vs = e[par]
-    if average:
-        return np.round(vs.median(), Nround)
-    else:
-        return vs
-
-# model = ModelRegistry()
