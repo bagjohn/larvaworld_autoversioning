@@ -3,7 +3,7 @@ from typing import List
 from argparse import ArgumentParser
 import param
 from ..lib import reg, aux, sim, screen
-from ..lib.param import SimOps
+from ..lib.param import SimOps,RuntimeOps
 
 # from ..lib.param.custom import ClassAttr, ClassDict
 
@@ -391,6 +391,7 @@ class SimModeParser:
         self.parsers = aux.AttrDict({k: ParserArgumentDict.from_dict(reg.par.PI[k]) for k in ks})
         self.parsers.screen_kws = ParserArgumentDict.from_param(d0=screen.ScreenOps)
         self.parsers.SimOps = ParserArgumentDict.from_param(d0=SimOps)
+        self.parsers.RuntimeOps = ParserArgumentDict.from_param(d0=RuntimeOps)
         self.cli_parser = self.build_cli_parser()
         self.mode = None
         self.run = None
@@ -412,6 +413,7 @@ class SimModeParser:
         :return: The modified subparser.
         """
         sp = self.parsers.screen_kws.add(sp)
+        sp = self.parsers.RuntimeOps.add(sp)
         if m not in ['Replay', 'Eval']:
             sp = self.parsers.SimOps.add(sp)
         for k in self.dict[m]:
@@ -426,7 +428,7 @@ class SimModeParser:
         :param m: The simulation mode.
         :return: The modified subparser.
         """
-        sp.add_argument('-id', '--id', type=str, help='The simulation ID. If not provided a default is generated')
+        # sp.add_argument('-id', '--id', type=str, help='The simulation ID. If not provided a default is generated')
         if m in ['Exp', 'Batch', 'Ga']:
             sp.add_argument('experiment', choices=reg.conf[m].confIDs, help='The experiment mode')
         if m in ['Exp', 'Batch']:
@@ -473,8 +475,7 @@ class SimModeParser:
         """
         a = self.args
         self.mode = m = a.sim_mode
-        sp = aux.AttrDict({k:self.eval_parser(k) for k in self.dict[m]})
-        kw = aux.AttrDict({'id': a.id, 'screen_kws': self.eval_parser('screen_kws')})
+        kw = aux.AttrDict({'screen_kws': self.eval_parser('screen_kws'), **self.eval_parser('RuntimeOps')})
         if m not in ['Replay', 'Eval']:
             kw.update(**self.eval_parser('SimOps'))
             kw.experiment = a.experiment
