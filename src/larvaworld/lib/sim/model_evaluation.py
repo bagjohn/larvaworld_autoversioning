@@ -15,18 +15,16 @@ import numpy as np
 import pandas as pd
 
 from .. import reg, aux, plot, util
+from ..reg.generators import SimConfiguration, LarvaGroupMutator
 
 __all__ = [
     'EvalRun',
     'eval_model_graphs',
-    'add_var_mIDs',
-    # 'adapt_6mIDs',
-    # 'adapt_3modules',
     'modelConf_analysis',
 ]
 
 
-class EvalConf(reg.generators.LarvaGroupMutator, DataEvaluation):
+class EvalConf(LarvaGroupMutator, DataEvaluation):
 
     def __init__(self, dataset=None, **kwargs):
         super().__init__(dataset=dataset, **kwargs)
@@ -34,11 +32,10 @@ class EvalConf(reg.generators.LarvaGroupMutator, DataEvaluation):
         self.target.config.id = 'experiment'
         self.target.color = 'grey'
         self.target.config.color = 'grey'
-        kwargs['dt'] = self.target.config.dt
-        kwargs['duration'] = self.target.config.Nticks * kwargs['dt'] / 60
 
 
-class EvalRun(EvalConf, reg.generators.SimConfiguration):
+
+class EvalRun(EvalConf, SimConfiguration):
 
     def __init__(self, enrichment=True, screen_kws={}, **kwargs):
         '''
@@ -52,7 +49,11 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
             experiment: The type of experiment. Defaults to 'dispersion'
             **kwargs: Arguments passed to parent class
         '''
-        super().__init__(runtype='Eval', **kwargs)
+        EvalConf.__init__(self,runtype='Eval',**kwargs)
+        kwargs['dt'] = self.target.config.dt
+        kwargs['duration'] = self.target.config.Nticks * kwargs['dt'] / 60
+        SimConfiguration.__init__(self,runtype='Eval', **kwargs)
+        # super().__init__(runtype='Eval', **kwargs)
         self.screen_kws = screen_kws
         self.enrichment = enrichment
         self.figs = aux.AttrDict({'errors': {}, 'hist': {}, 'boxplot': {}, 'stride_cycle': {}, 'loco': {}, 'epochs': {},
@@ -64,7 +65,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
             'dt': self.dt,
             'duration': self.duration,
         }
-        c = self.target.config
+
 
         Nm = len(self.modelIDs)
         if self.offline is None:
@@ -76,6 +77,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
             dsp_temp = [ii[len(dsp) + 1:].split('_') for ii in temp if ii.startswith(f'{dsp}_')]
             dsp_starts = np.unique([int(ii[0]) for ii in dsp_temp]).tolist()
             dsp_stops = np.unique([int(ii[1]) for ii in dsp_temp]).tolist()
+            c = self.target.config
             lgs = c.larva_group.new_groups(Ns=self.N, modelIDs=self.modelIDs, groupIDs=self.groupIDs, sample=self.refID)
             self.datasets = sim_models(modelIDs=self.modelIDs, tor_durs=tor_durs,
                                        dsp_starts=dsp_starts, dsp_stops=dsp_stops,
@@ -120,13 +122,14 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
             df0 = pd.DataFrame.from_dict({k: df.mean(axis=1) for i, (k, df) in enumerate(d.items())})
             kws = {
                 'save_to': f'{self.error_plot_dir}/{norm}',
-                'show': self.show
             }
             bars = {}
             tabs = {}
             for k, df in d.items():
                 tabs[k] = GD['error table'](data=df, k=k, title=labels[k], **kws)
             tabs['mean'] = GD['error table'](data=df0, k='mean', title='average error', **kws)
+            # print(d.step.keys())
+            # print(d.end.keys())
             bars['full'] = GD['error barplot'](error_dict=d, evaluation=self.evaluation, labels=labels, **kws)
             # Summary figure with barplots and tables for both endpoint and timeseries metrics
             bars['summary'] = GD['error summary'](norm_mode=norm, eval_mode=mode, error_dict=d,
@@ -135,7 +138,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
         return aux.AttrDict(dic)
 
     def analyze(self, **kwargs):
-        print('Evaluating all models')
+        reg.vprint('Evaluating all models',1)
         os.makedirs(self.plot_dir, exist_ok=True)
 
         for mode in self.eval_modes:
@@ -204,74 +207,25 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
 reg.gen.Eval = class_generator(EvalConf)
 
 
-def eval_model_graphs(refID, mIDs, groupIDs=None, id=None, dir=None, N=10,
-                      **kwargs):
+def eval_model_graphs(refID, mIDs, groupIDs=None, id=None, dir=None, N=10,**kwargs):
     if id is None:
         id = f'{len(mIDs)}mIDs'
     if dir is None:
         dir = f'{reg.conf.Ref.getID(refID)}/model/evaluation'
 
-    parameters = reg.gen.Eval(refID=refID, modelIDs=mIDs, groupIDs=groupIDs, N=N).nestedConf
 
-    evrun = EvalRun(parameters=parameters, id=id,
-                    dir=dir, **kwargs)
+    evrun = EvalRun(refID=refID, modelIDs=mIDs, groupIDs=groupIDs, N=N, id=id,dir=dir, **kwargs)
     evrun.simulate()
     evrun.plot_models()
     evrun.plot_results()
     return evrun
 
 
-def add_var_mIDs(mID0s, mIDs=None):
-    if mIDs is None:
-        mIDs = [f'{mID0}_var' for mID0 in mID0s]
-    sample_ks = [
-        'brain.crawler_params.stride_dst_mean',
-        'brain.crawler_params.stride_dst_std',
-        'brain.crawler_params.max_scaled_vel',
-        'brain.crawler_params.max_vel_phase',
-        'brain.crawler_params.freq',
-    ]
-    kwargs = {k: 'sample' for k in sample_ks}
-    entries = {}
-    for mID0, mID in zip(mID0s, mIDs):
-        m0 = reg.conf.Model.getID(mID0).get_copy()
-        entries[mID] = m0.update_existingnestdict(kwargs)
-        reg.conf.Model.setID(mID, entries[mID])
-    return entries
-
-
-# def adapt_6mIDs(**kwargs):
-#     entries = {}
-#     mIDs = []
-#     for Tmod in ['NEU', 'SIN']:
-#         for Ifmod in ['PHI', 'SQ', 'DEF']:
-#             mID0 = f'RE_{Tmod}_{Ifmod}_DEF'
-#             mID = f'{Ifmod}on{Tmod}'
-#             entry = reg.model.adapt_mID(mID0=mID0, mID=mID, space_mkeys=['turner', 'interference'], **kwargs)
-#             entries.update(entry)
-#             mIDs.append(mID)
-#     return entries, mIDs
-
-
-# def adapt_3modules(**kwargs):
-#     entries = {}
-#     mIDs = []
-#     for Cmod in ['RE', 'SQ', 'GAU', 'CON']:
-#         for Tmod in ['NEU', 'SIN', 'CON']:
-#             for Ifmod in ['PHI', 'SQ', 'DEF']:
-#                 mID0 = f'{Cmod}_{Tmod}_{Ifmod}_DEF'
-#                 mID = f'{mID0}_fit'
-#                 entry = reg.model.adapt_mID(mID0=mID0, mID=mID, space_mkeys=['crawler', 'turner', 'interference'],
-#                                             **kwargs)
-#                 entries.update(entry)
-#                 mIDs.append(mID)
-#     return entries, mIDs
-
-
 def modelConf_analysis(d):
     from collections import ChainMap
     warnings.filterwarnings('ignore')
     M=reg.model
+    CM=reg.conf.Model
 
     mods = aux.AttrDict({
         'C': ['RE', 'SQ', 'GAU', 'CON'],
@@ -289,6 +243,14 @@ def modelConf_analysis(d):
         'cycle_curves': ['fov', 'foa', 'b']
     }
 
+    sample_kws = {k: 'sample' for k in [
+        'brain.crawler_params.stride_dst_mean',
+        'brain.crawler_params.stride_dst_std',
+        'brain.crawler_params.max_scaled_vel',
+        'brain.crawler_params.max_vel_phase',
+        'brain.crawler_params.freq',
+    ]}
+
     c = d.config
     kws = {'refID': c.refID}
     kws1 = {'N': 10, **kws}
@@ -301,12 +263,15 @@ def modelConf_analysis(d):
     D.average=dict(ChainMap(*ee))
 
     mIDs_avg = list(D.average)
-    eval_model_graphs(mIDs=mIDs_avg, id='6mIDs_avg', **kws1)
     mIDs_var = [f'{mID0}_var' for mID0 in mIDs_avg]
-    D.variable = add_var_mIDs(mIDs=mIDs_var, mID0s=mIDs_avg)
-    eval_model_graphs(mIDs=mIDs_var, id='6mIDs_var', **kws1)
-    eval_model_graphs(mIDs=mIDs_avg[:3] + mIDs_var[:3], id='3mIDs_avgVSvar1', **kws1)
-    eval_model_graphs(mIDs=mIDs_avg[3:] + mIDs_var[3:], id='3mIDs_avgVSvar2', **kws1)
+
+    for mID0, mID in zip(mIDs_avg, mIDs_var):
+        m0 = CM.getID(mID0).get_copy()
+        D.variable[mID] = m0.update_existingnestdict(sample_kws)
+        CM.setID(mID, D.variable[mID])
+
+
+
     ee=[]
     for cc in mods.C:
         for ii in mods.If:
@@ -317,7 +282,17 @@ def modelConf_analysis(d):
             eval_model_graphs(mIDs=mIDsx3, groupIDs=mods.T, id=f'Tmod_variable_Cmod_{cc}_Ifmod_{ii}', **kws1)
     D['3modules']=dict(ChainMap(*ee))
     mIDs_3m = list(D['3modules'])
+
+
     reg.graphs.store_model_graphs(mIDs_avg, d.dir)
     reg.graphs.store_model_graphs(mIDs_3m, d.dir)
+
+    eval_model_graphs(mIDs=mIDs_avg, id='6mIDs_avg', **kws1)
+    eval_model_graphs(mIDs=mIDs_var, id='6mIDs_var', **kws1)
+    eval_model_graphs(mIDs=mIDs_avg[:3] + mIDs_var[:3], id='3mIDs_avgVSvar1', **kws1)
+    eval_model_graphs(mIDs=mIDs_avg[3:] + mIDs_var[3:], id='3mIDs_avgVSvar2', **kws1)
+
+
+
     d.config.modelConfs = D
     d.save_config()

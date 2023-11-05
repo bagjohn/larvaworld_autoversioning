@@ -47,6 +47,11 @@ def error_barplot(error_dict, evaluation, labels=None, name='error_barplots',
             'legend' : False,
             'width' : 0.6,
         }
+        # print(error_dict[k].keys())
+        # print(aux.flatten_list(eval_df['symbols'].values.tolist()))
+        # print(aux.SuperList(eval_df['symbols'].values).flatten.nonexisting(error_dict[k]))
+        # print(aux.SuperList(eval_df['symbols'].values).flatten.existing(error_dict[k]))
+
         df = error_dict[k][aux.flatten_list(eval_df['symbols'].values.tolist())]
         df.plot(**kws)
         build_legend(P.axs[ii], eval_df)

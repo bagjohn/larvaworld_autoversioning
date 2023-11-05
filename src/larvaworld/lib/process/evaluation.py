@@ -221,7 +221,7 @@ class Evaluation(NestedConf):
     eval_metrics = param.Dict(default=aux.AttrDict({
         'angular kinematics': ['run_fov_mu', 'pau_fov_mu', 'b', 'fov', 'foa', 'rov', 'roa', 'tur_fou'],
         'spatial displacement': ['cum_d', 'run_d', 'str_c_l', 'v_mu', 'pau_v_mu', 'run_v_mu', 'v', 'a',
-                                 'dsp_0_40_max', 'str_N'],
+                                 'dsp_0_40_max'],
         'temporal dynamics': ['fsv', 'ffov', 'run_t', 'pau_t', 'run_tr', 'pau_tr'],
         'stride cycle': ['str_d_mu', 'str_d_std', 'str_sv_mu', 'str_fov_mu', 'str_fov_std', 'str_N'],
         'epochs': ['run_t', 'pau_t'],
