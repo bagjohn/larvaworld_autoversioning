@@ -21,7 +21,7 @@ def test_evaluation() :
     parameters = reg.par.get_null('Eval', **{
         'refID': 'exploration.merged_dishes',
         'modelIDs': ['RE_NEU_PHI_DEF', 'RE_SIN_PHI_DEF'],
-        # 'dataset_ids': dIDs,
+        # 'groupIDs': dIDs,
         'N': 3,
         # 'offline': False,
     })

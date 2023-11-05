@@ -22,61 +22,6 @@ __all__ = [
 ]
 
 
-# @reg.funcs.graph('endpoint box')
-# def boxplots(name=None,mode='basic', ks=None, subfolder='endpoint',**kwargs):
-#     ks = plot.define_end_ks(ks, mode)
-#     if name is None:
-#         name = f'endpoint_params_box_{mode}'
-#     P = plot.AutoPlot(ks=ks,name=name,subfolder=subfolder,
-#                       build_kws={'N': 'Nks',  'wh': 8, 'sharex':True}, key='end', **kwargs)
-#     P.boxplots()
-#     '''
-#
-#     data = aux.concat_datasets(dict(zip(P.labels, P.datasets)), key=key)
-#     if not grouped:
-#         x = "DatasetID"
-#         hue = None
-#         palette = dict(zip(P.labels, P.colors))
-#         data = data[P.pars + [x]]
-#     else:
-#         x = "DatasetID"
-#         hue = 'GroupID'
-#         palette = dict(zip(P.group_ids, aux.N_colors(P.Ngroups)))
-#         data = data[P.pars + [x, hue]]
-#
-#     for ii,k in enumerate(P.ks):
-#         p = P.pdict[k]
-#         kws = {
-#             'x': x,
-#             'y': p.d,
-#             'palette': palette,
-#             'hue': hue,
-#             'data': data,
-#             'ax': P.axs[ii],
-#             'width': 0.8,
-#             'fliersize': 3,
-#             'whis': 1.5,
-#             'linewidth': None
-#         }
-#         g1 = sns.boxplot(**kws)  # RUN PLOT
-#         try:
-#             g1.get_legend().remove()
-#         except:
-#             pass
-#         if annotation:
-#             try:
-#                 plot.annotate_plot(show_ns=show_ns, target_only=target_only, **kws)
-#             except:
-#                 pass
-#
-#         P.conf_ax(ii, xticklabelrotation=30, ylab=p.lab, yMaxN=4,
-#                   ylim=ylims[ii] if ylims is not None else p.lim,
-#                   xvis=False if ii < (P.Nrows - 1) * P.Ncols else True)
-#
-#     '''
-#     P.conf_fig(align=True, adjust_kws={'LR': (0.1, 0.95), 'BT': (0.15, 0.9), 'W': 0.5, 'H': 0.15})
-#     return P.get()
-
 
 @reg.funcs.graph('boxplot (grouped)', required={'ks': []})
 def boxplot(ks, sort_labels=False, name=None, xlabel=None, pair_ids=None, common_ids=None, coupled_labels=None,

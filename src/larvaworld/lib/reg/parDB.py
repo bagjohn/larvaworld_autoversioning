@@ -1368,7 +1368,7 @@ def buildInitDict():
 
         d['Eval'] = {
             'modelIDs': ConfID_entry('Model', single_choice=False, k='mIDs'),
-            'dataset_ids': {'dtype': List[str], 'h': 'The ids for the generated datasets', 'k': 'dIDs'},
+            'groupIDs': {'dtype': List[str], 'h': 'The ids for the generated datasets', 'k': 'gIDs'},
             'N': {'dtype': int, 'v': 5, 'lim': (2, 1000),
                   'h': 'Number of agents per model ID',
                   'k': 'N'},

@@ -138,19 +138,19 @@ def generate_agentConfs(larva_groups, parameter_dict={}):
     return agent_confs
 
 
-def sim_models(mIDs, colors=None, dataset_ids=None, lgs=None, data_dir=None, **kwargs):
-    N = len(mIDs)
+def sim_models(modelIDs, colors=None, groupIDs=None, lgs=None, data_dir=None, **kwargs):
+    N = len(modelIDs)
     if colors is None:
         colors = aux.N_colors(N)
-    if dataset_ids is None:
-        dataset_ids = mIDs
+    if groupIDs is None:
+        groupIDs = modelIDs
     if lgs is None:
         lgs = [None] * N
     if data_dir is None:
         dirs = [None] * N
     else:
-        dirs = [f'{data_dir}/{dID}' for dID in dataset_ids]
-    ds = [sim_model(mID=mIDs[i], color=colors[i], dataset_id=dataset_ids[i], lg=lgs[i], dir=dirs[i], **kwargs) for i in
+        dirs = [f'{data_dir}/{dID}' for dID in groupIDs]
+    ds = [sim_model(mID=modelIDs[i], color=colors[i], dataset_id=groupIDs[i], lg=lgs[i], dir=dirs[i], **kwargs) for i in
           range(N)]
     return ds
 

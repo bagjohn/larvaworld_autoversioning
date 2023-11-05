@@ -10,7 +10,7 @@ from .. import reg, aux, util
 from ..param import Area, BoundedArea, NestedConf, Larva_Distro, ClassAttr, SimTimeOps, \
     SimMetricOps, ClassDict, EnrichConf, OptionalPositiveRange, OptionalSelector, OptionalPositiveInteger, \
     generate_xyNor_distro, Odor, Life, class_generator, SimOps, RuntimeOps, Epoch, RuntimeDataOps, RandomizedColor, \
-    OptionalPositiveNumber, Filesystem, TrackerOps, PreprocessConf, Substrate, AirPuff
+    OptionalPositiveNumber, Filesystem, TrackerOps, PreprocessConf, Substrate, AirPuff, PositiveInteger
 from ..model import Food, Border, WindScape, ThermoScape, FoodGrid, OdorScape, DiffusionValueLayer, GaussianValueLayer
 
 __all__ = [
@@ -23,6 +23,7 @@ __all__ = [
     'SimConfigurationParams',
     'FoodConf',
     'EnvConf',
+    'LarvaGroupMutator',
     'LarvaGroup',
     'LabFormat',
     'ExpConf',
@@ -98,7 +99,7 @@ class SimConfigurationParams(SimConfiguration):
     parameters = param.Parameter(default=None)
 
     def __init__(self, runtype='Exp', experiment=None, parameters=None,
-                 N=None, models=None, group_ids=None, sample=None, **kwargs):
+                 N=None, modelIDs=None, groupIDs=None, sample=None, **kwargs):
         if parameters is None:
             if runtype in reg.CONFTYPES:
                 ct = reg.conf[runtype]
@@ -127,9 +128,8 @@ class SimConfigurationParams(SimConfiguration):
                     kwargs[k] = parameters[k]
 
         if 'larva_groups' in parameters:
-            parameters.larva_groups = update_larva_groups(parameters.larva_groups, models=models, group_ids=group_ids,
-                                                          Ns=N,
-                                                          sample=sample)
+            parameters.larva_groups = update_larva_groups(parameters.larva_groups, modelIDs=modelIDs, groupIDs=groupIDs,
+                                                          Ns=N,sample=sample)
         super().__init__(runtype=runtype, experiment=experiment, parameters=parameters, **kwargs)
 
 
@@ -184,7 +184,7 @@ def update_larva_groups(lgs, **kwargs):
         lgs (dict): The existing larvagroups in the experiment configuration.
         N (int):: Overwrite the number of agents per larva group.
         models (list): Overwrite the larva models used in the experiment. If not None, a larva group per model ID will be simulated.
-        dIDs (list): The displayed IDs of the groups. If None, the model IDs (mIDs) are used.
+        groupIDs (list): The displayed IDs of the groups. If None, the model IDs (mIDs) are used.
         sample: The reference dataset.
 
     Returns:
@@ -204,27 +204,34 @@ def update_larva_groups(lgs, **kwargs):
 
     return new_lgs
 
+class LarvaGroupMutator(NestedConf):
+    modelIDs = reg.conf.Model.confID_selector(single=False)
+    groupIDs = param.List(default=None,allow_None=True, item_type=str, doc='The ids for the generated datasets')
+    N = PositiveInteger(5, label='# agents/group', doc='Number of agents per model ID')
 
-def prepare_larvagroup_args(Ns=None, models=None, group_ids=None, colors=None,default_Nlgs=1, **kwargs):
-    temp=[len(a) for a in [Ns, models, group_ids, colors] if isinstance(a, list)]
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+def prepare_larvagroup_args(Ns=None, modelIDs=None, groupIDs=None, colors=None,default_Nlgs=1, **kwargs):
+    temp=[len(a) for a in [Ns, modelIDs, groupIDs, colors] if isinstance(a, list)]
     if len(temp)>0:
         Nlgs = int(np.max(temp))
     else:
         Nlgs =default_Nlgs
-    if models is not None:
-        if isinstance(models, str):
-            models = [copy.deepcopy(models) for i in range(Nlgs)]
-        elif isinstance(models, list):
-            assert len(models) == Nlgs
+    if modelIDs is not None:
+        if isinstance(modelIDs, str):
+            modelIDs = [copy.deepcopy(modelIDs) for i in range(Nlgs)]
+        elif isinstance(modelIDs, list):
+            assert len(modelIDs) == Nlgs
         else:
             raise
     else:
-        models = [None] * Nlgs
-    if group_ids is not None:
-        assert isinstance(group_ids, list) and len(group_ids) == Nlgs
+        modelIDs = [None] * Nlgs
+    if groupIDs is not None:
+        assert isinstance(groupIDs, list) and len(groupIDs) == Nlgs
     else:
-        group_ids = models
-    assert len(group_ids) == Nlgs
+        groupIDs = modelIDs
+    assert len(groupIDs) == Nlgs
     if Ns is not None:
         if isinstance(Ns, list):
             assert len(Ns) == Nlgs
@@ -238,7 +245,7 @@ def prepare_larvagroup_args(Ns=None, models=None, group_ids=None, colors=None,de
         colors = [None]*Nlgs
     else:
         colors = aux.N_colors(Nlgs)
-    return [{'N': Ns[i], 'model': models[i], 'group_id': group_ids[i], 'color': colors[i], **kwargs} for i in range(Nlgs)]
+    return [{'N': Ns[i], 'model': modelIDs[i], 'group_id': groupIDs[i], 'color': colors[i], **kwargs} for i in range(Nlgs)]
 
 
 class LarvaGroup(NestedConf):
