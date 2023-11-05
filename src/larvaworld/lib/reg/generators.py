@@ -1,3 +1,4 @@
+import copy
 import os
 import shutil
 
@@ -213,6 +214,7 @@ def update_larva_groups(lgs, N=None, mIDs=None, dIDs=None, sample=None, expand_m
 
 
 class LarvaGroup(NestedConf):
+    group_id = param.String('LarvaGroup', doc='The distinct ID of the group')
     model = reg.conf.Model.confID_selector()
     color = param.Color('black', doc='The default color of the group')
     odor = ClassAttr(Odor, doc='The odor of the agent')
@@ -221,22 +223,17 @@ class LarvaGroup(NestedConf):
     sample = reg.conf.Ref.confID_selector()
     imitation = param.Boolean(default=False, doc='Whether to imitate the reference dataset.')
 
-    def __init__(self, id=None, **kwargs):
-        super().__init__(**kwargs)
-        if id is None:
-            if self.model is not None:
-                id = self.model
-            else:
-                id = 'LarvaGroup'
-        self.id = id
+    def __init__(self, model=None, group_id=None, **kwargs):
+        if group_id is None:
+            group_id = model if model is not None else 'LarvaGroup'
+        super().__init__(model=model, group_id=group_id, **kwargs)
 
     def entry(self, expand=False, as_entry=True):
         conf = self.nestedConf
-        if expand and conf.model is not None:
+        if expand and conf.model is not None and isinstance(conf.model, str):
             conf.model = reg.conf.Model.getID(conf.model)
-            # conf.model = reg.stored.getModel(conf.model)
         if as_entry:
-            return aux.AttrDict({self.id: conf})
+            return aux.AttrDict({self.group_id: conf})
         else:
             return conf
 
@@ -258,7 +255,7 @@ class LarvaGroup(NestedConf):
             d = None
         if not self.imitation:
             ps, ors = generate_xyNor_distro(self.distribution)
-            ids = [f'{self.id}_{i}' for i in range(Nids)]
+            ids = [f'{self.group_id}_{i}' for i in range(Nids)]
 
             if d is not None:
                 sample_ks = [k for k in m.flatten() if m.flatten()[k] == 'sample']
@@ -280,13 +277,63 @@ class LarvaGroup(NestedConf):
                 'orientation': o,
                 'color': self.color,
                 'unique_id': id,
-                'group': self.id,
+                'group': self.group_id,
                 'odor': self.odor,
                 'life_history': self.life_history,
                 **pars
             }
             confs.append(conf)
         return confs
+
+    def new_group(self, N=None, model=None, group_id=None, color=None, **kwargs):
+        lg_kws = self.nestedConf
+        if N is not None:
+            lg_kws.distribution.N = N
+        if model is not None:
+            lg_kws.model = model
+            if group_id is None:
+                group_id = model
+        if group_id is not None:
+            lg_kws.group_id = group_id
+        if color is not None:
+            lg_kws.color = color
+        lg_kws.update(**kwargs)
+        return LarvaGroup(**lg_kws)
+
+    def new_groups(self, Ns=None, models=None, group_ids=None, colors=None,as_dict=False, **kwargs):
+        Nlgs = int(np.max([len(a) for a in [Ns, models, group_ids, colors] if isinstance(a, list)]))
+        if models is not None:
+            if isinstance(models, str):
+                models = [copy.deepcopy(models) for i in range(Nlgs)]
+            elif isinstance(models, list):
+                assert len(models) == Nlgs
+            else:
+                raise
+        else:
+            models = [copy.deepcopy(self.model) for i in range(Nlgs)]
+        if group_ids is not None:
+            assert isinstance(group_ids, list) and len(group_ids) == Nlgs
+        else:
+            group_ids = models
+        assert len(group_ids) == Nlgs
+        if Ns is not None:
+            if isinstance(Ns, list):
+                assert len(Ns) == Nlgs
+            elif isinstance(Ns, int):
+                Ns = [Ns for i in range(Nlgs)]
+        else:
+            Ns = [None] * Nlgs
+        if colors is not None:
+            assert isinstance(colors, list) and len(colors) == Nlgs
+        else:
+            colors = [self.color] if Nlgs == 1 else aux.N_colors(Nlgs)
+        lg_list= aux.ItemList(
+            [self.new_group(N=Ns[i], model=models[i], group_id=group_ids[i], color=colors[i], **kwargs) for i in
+             range(Nlgs)])
+        if not as_dict:
+            return lg_list
+        else:
+            return aux.AttrDict({lg.group_id : lg.entry(as_entry=False, expand=True) for lg in lg_list})
 
 
 gen.LarvaGroup = class_generator(LarvaGroup)
@@ -364,9 +411,8 @@ class LabFormat(NestedConf):
             'id': id,
             'refID': refID,
             'color': color,
-            'larva_groups': gen.LarvaGroup(c=color, sample=sample, mID=None, N=end.index.values.shape[0],
-                                           life=[age, epochs]).entry(
-                id=group_id),
+            'larva_group': gen.LarvaGroup(group_id=group_id, c=color, sample=sample, mID=None, N=end.index.values.shape[0],
+                                           life=[age, epochs]).nestedConf,
             'env_params': self.env_params.nestedConf,
             **self.tracker.nestedConf,
             'step': step,
@@ -578,9 +624,7 @@ class ExpConf(SimOps):
             confs += lg(parameter_dict=self.parameter_dict)
         return confs
 
-    def update_larva_groups(self, N=None, mIDs=None, dIDs=None, sample=None):
-        self.larva_groups = update_larva_groups(self.larva_groups, N=N, mIDs=mIDs, dIDs=dIDs, sample=sample,
-                                                expand_models=False)
+
 
 
 gen.Exp = ExpConf
@@ -636,7 +680,7 @@ def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, sample=None, substrate_type='sta
             mID0 = f'{mID0}_nav'
 
         kws = {
-            'id': id,
+            'group_id': id,
             'color': mcol,
             'model': mID0,
             **kws0
@@ -652,6 +696,7 @@ class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
     group_id = param.String(None, doc='The unique ID of the group')
     color = RandomizedColor(default='black', doc='The color of the dataset', instantiate=True)
     env_params = ClassAttr(gen.Env, doc='The environment configuration')
+    larva_group = ClassAttr(LarvaGroup, doc='The larva group object')
     agent_ids = param.List(item_type=None, doc='The unique IDs of the agents in the dataset')
     N = OptionalPositiveInteger(default=None, softmax=500, doc='The number of agents in the group')
     sample = reg.conf.Ref.confID_selector()

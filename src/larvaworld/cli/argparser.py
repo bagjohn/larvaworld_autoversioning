@@ -437,9 +437,10 @@ class SimModeParser:
                             help='The larva models to use for creating the simulation larva groups')
             sp.add_argument('-dIDs', '--group_disp_ids', type=str, nargs='+',
                             help='The displayed IDs of the simulation larva groups')
+        if m in ['Exp', 'Batch', 'Eval']:
             sp.add_argument('-a', '--analysis', action='store_true', default=False,
                             help='Whether to run data-analysis after the simulation')
-            sp.add_argument('-show', '--show_analysis', action='store_true', default=False,
+            sp.add_argument('-show', '--show', action='store_true', default=False,
                             help='Whether to show the plots generated during data-analysis')
         return sp
 
@@ -545,6 +546,7 @@ class SimModeParser:
         """
         Launch the simulation run.
         """
+        anal_kws=aux.AttrDict({'show': self.args.show})
         m = self.mode
         r = self.run
         if m == 'Batch':
@@ -552,12 +554,13 @@ class SimModeParser:
         elif m == 'Exp':
             _ = r.simulate()
             if self.args.analysis:
-                r.analyze(show=self.args.show_analysis)
+                r.analyze(**anal_kws)
         elif m == 'Ga':
             _ = r.simulate()
         elif m == 'Eval':
-            r.simulate()
-            r.plot_results()
-            r.plot_models()
+            _ = r.simulate()
+            if self.args.analysis:
+                r.plot_results(**anal_kws)
+                r.plot_models(**anal_kws)
         elif m == 'Replay':
             r.run()

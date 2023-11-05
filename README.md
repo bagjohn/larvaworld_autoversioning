@@ -107,27 +107,27 @@ Five different modes are available. The mode has to declared after the command a
 
     This line runs a dish simulation (30 larvae, 3 minutes) without analysis. 
 
-        larvaworld-cli Exp dish -N 30 -t 3.0 -m video
-        larvaworld-cli Exp patch_grid -N 30 -t 3.0 -m video
+        larvaworld-cli Exp dish -N 30 -duration 3.0 -vis_mode video
+        larvaworld-cli Exp patch_grid -N 30 -duration 3.0 -vis_mode video
 
     This line runs a dispersion simulation and compares the results to the existing reference dataset (`larvaworld/data/reference`)
     We choose to only produce a final image of the simulation.
 
-        larvaworld-cli Exp dispersion -N 30 -t 3.0 -m image -a
+        larvaworld-cli Exp dispersion -N 30 -duration 3.0 -vis_mode image -a
 
 2. Batch run
     (needs debugging)
     Run multiple trials of a given experiment with different parameters.
     This line runs a batch run of odor preference experiments for different valences of the two odor sources.
 
-        larvaworld-cli Batch PItest_off -N 5 -t 1.0
+        larvaworld-cli Batch PItest_off -N 5 -duration 1.0
 
 3. Genetic Algorithm optimization
 
     Run a genetic algorith optimization algorithm to optimize a basic model's configuration set according to a fitness function.
     This line optimizes a model for kinematic realism against a reference experimental dataset
 
-        larvaworld-cli Ga realism -refID exploration.30controls -N 20 -t 0.5 -mID1 GA_test_loco -mGA model
+        larvaworld-cli Ga realism -refID exploration.30controls -N 20 -duration 0.5 -mID1 GA_test_loco -mGA model
 
 4. Experiment replay
 

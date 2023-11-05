@@ -10,13 +10,13 @@ __all__ = [
 ]
 
 class Exec:
-    def __init__(self, mode, conf, run_externally=True, progressbar=None, w_progressbar=None, **kwargs):
+    def __init__(self, mode, conf,experiment, run_externally=True, progressbar=None, w_progressbar=None, **kwargs):
         self.run_externally = run_externally
         self.mode = mode
         self.conf = conf
         self.progressbar = progressbar
         self.w_progressbar = w_progressbar
-        self.type = self.conf['experiment'] if mode == 'batch' else self.conf['experiment']
+        self.type = experiment
         self.done = False
 
 

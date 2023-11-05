@@ -1478,7 +1478,7 @@ class LarvaDatasetCollection:
             if 'larva_groups' in config0:
                 gConf = config0.larva_groups[gID]
                 kws.update(**{
-                    'larva_groups': {gID: gConf},
+                    'larva_group': gConf,
                     # 'df': df,
                     # 'group_id': config0.id,
                     # 'id': gID,

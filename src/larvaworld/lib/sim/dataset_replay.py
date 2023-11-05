@@ -23,7 +23,8 @@ class ReplayRun(BaseRun):
             experiment: The type of experiment. Defaults to 'replay'
             **kwargs: Arguments passed to parent class
         '''
-        d = reg.conf.Ref.retrieve_dataset(dataset=dataset, id=parameters.refID, dir=parameters.refDir)
+        dir=parameters.refDir if 'refDir' in parameters else None
+        d = reg.conf.Ref.retrieve_dataset(dataset=dataset, id=parameters.refID, dir=dir)
 
         self.refDataset = copy.deepcopy(d)
 

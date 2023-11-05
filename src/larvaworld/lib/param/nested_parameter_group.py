@@ -63,11 +63,11 @@ class NestedConf(param.Parameterized):
         """
         d = self.nestedConf
         if 'distribution' in d:
-            if 'group' in d:
+            if 'group_id' in d:
                 if id is not None:
-                    d.group = id
-                elif d.group is not None:
-                    id = d.group
+                    d.group_id = id
+                elif d.group_id is not None:
+                    id = d.group_id
             if 'model' in d:
                 if id is None:
                     id = d.model

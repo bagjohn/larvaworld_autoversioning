@@ -623,8 +623,8 @@ class GA_ScreenManager(BaseScreenManager):
     Screen manager for the Genetic Algorithm simulations.
     """
 
-    def __init__(self, panel_width=600, scene='no_boxes', **kwargs):
-        super().__init__(black_background=True, panel_width=panel_width, **kwargs)
+    def __init__(self, black_background=True, panel_width=600, scene='no_boxes', **kwargs):
+        super().__init__(black_background=black_background, panel_width=panel_width, **kwargs)
         self.screen_kws.caption = f'GA {self.model.experiment} : {self.model.id}'
         self.screen_kws.file_path = f'{reg.ROOT_DIR}/lib/sim/ga_scenes/{scene}.txt'
 

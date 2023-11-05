@@ -58,7 +58,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
 
 
 
-    def __init__(self,show=False,enrichment=True,screen_kws={}, **kwargs):
+    def __init__(self,enrichment=True,screen_kws={}, **kwargs):
         '''
         Simulation mode 'Eval' compares/evaluates different models against a reference dataset obtained by a real or simulated experiment.
 
@@ -74,7 +74,6 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
 
 
         self.screen_kws = screen_kws
-        self.show = show
         self.enrichment = enrichment
 
         self.figs = aux.AttrDict({'errors': {}, 'hist': {}, 'boxplot': {}, 'stride_cycle': {}, 'loco': {}, 'epochs': {},
@@ -85,9 +84,11 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
 
 
     def simulate(self):
-        conf = reg.conf.Exp.expand(self.experiment)
-        conf.larva_groups = reg.generators.update_larva_groups(conf.larva_groups, N=self.N, mIDs=self.modelIDs, dIDs=self.dataset_ids,
-                                                sample=self.refID)
+        # conf = reg.conf.Exp.expand(self.experiment)
+        # conf.larva_groups = reg.generators.update_larva_groups(conf.larva_groups, N=self.N, mIDs=self.modelIDs, dIDs=self.dataset_ids,
+        #                                         sample=self.refID)
+
+
 
 
         Nm=len(self.modelIDs)
@@ -96,6 +97,8 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
             'duration': self.duration,
         }
         c = self.target.config
+
+        lgs = c.larva_group.new_groups(Ns=self.N, models=self.modelIDs, group_ids=self.dataset_ids,sample=self.refID,as_dict=True)
 
 
         if self.offline is None:
@@ -109,7 +112,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
 
             self.datasets = util.sim_models(mIDs=self.modelIDs, tor_durs=tor_durs,
                                         dsp_starts=dsp_starts, dsp_stops=dsp_stops,
-                                        dataset_ids=self.dataset_ids,lgs=conf.larva_groups,
+                                        dataset_ids=self.dataset_ids,lgs=lgs,
                                         enrichment=self.enrichment,
                                         Nids=self.N, env_params=c.env_params,
                                         refDataset=self.target, data_dir=self.data_dir, **kws)
@@ -118,15 +121,19 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
             print(f'Simulating {Nm} models : {self.dataset_ids} with {self.N} larvae each')
 
             # conf.larva_groups=self.larva_groups
-            if self.enrichment is None:
-                conf.enrichment = None
+            # if self.enrichment is None:
+            #     conf.enrichment = None
             kws0 = aux.AttrDict({
                 'dir': self.dir,
                 'store_data': self.store_data,
                 'experiment': self.experiment,
                 'id': self.id,
                 'offline': self.offline,
-                'parameters': conf,
+                'mIDs': self.modelIDs,
+                'dIDs': self.dataset_ids,
+                'N': self.N,
+                'sample': self.refID,
+                # 'parameters': conf,
                 'screen_kws': self.screen_kws,
                 **kws
             })
@@ -184,14 +191,14 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
 
 
 
-    def plot_models(self):
+    def plot_models(self, **kwargs):
         GD = reg.graphs.dict
         save_to = self.plot_dir
         for mID in self.modelIDs:
-            self.figs.models.table[mID] = GD['model table'](mID=mID, save_to=save_to, figsize=(14, 11))
-            self.figs.models.summary[mID] = GD['model summary'](mID=mID, save_to=save_to, refID=self.refID)
+            self.figs.models.table[mID] = GD['model table'](mID=mID, save_to=save_to, figsize=(14, 11), **kwargs)
+            self.figs.models.summary[mID] = GD['model summary'](mID=mID, save_to=save_to, refID=self.refID, **kwargs)
 
-    def plot_results(self, plots=['hists', 'trajectories', 'dispersion', 'bouts', 'fft', 'boxplots']):
+    def plot_results(self, plots=['hists', 'trajectories', 'dispersion', 'bouts', 'fft', 'boxplots'], **kwargs):
         GD = reg.graphs.dict
 
 
@@ -199,7 +206,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
         kws = {
             'datasets': [self.target] + self.datasets,
             'save_to': self.plot_dir,
-            'show': self.show
+            **kwargs
         }
         kws1={
             'subfolder' : None,
@@ -210,7 +217,7 @@ class EvalRun(EvalConf, reg.generators.SimConfiguration):
             'target': self.target,
             'datasets': self.datasets,
             'save_to': self.plot_dir,
-            'show': self.show
+            **kwargs
         }
         self.figs.summary = GD['eval summary'](**kws2)
         self.figs.stride_cycle.norm = GD['stride cycle'](shorts=['sv', 'fov', 'rov', 'foa', 'b'],
