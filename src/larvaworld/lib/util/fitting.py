@@ -5,8 +5,8 @@ from scipy.stats import levy, norm, rv_discrete, ks_2samp
 from .. import reg, aux
 
 __all__ = [
-    'fit_epochs',
-    'get_bout_distros',
+    # 'fit_epochs',
+    # 'get_bout_distros',
     'fit_bout_distros',
     'BoutGenerator',
     'test_boutGens',
@@ -101,31 +101,6 @@ def logNpow_switch(x, xmax, u2, du2, c2cum, c2, discrete=False, fit_by='cdf'):
         return xmids[ii], overlaps[jj]
 
 
-def fit_epochs(grouped_epochs):
-    fitted = {}
-    for k, v in grouped_epochs.items():
-        if k == 'stridechain_length':
-            k = 'run_count'
-        discr = True if k == 'run_count' else False
-        if v is not None and v.shape[0] > 0:
-            try:
-                fitted[k] = fit_bout_distros(np.abs(v), bout=k, combine=False, discrete=discr)
-            except:
-                fitted[k] = None
-        else:
-            fitted[k] = None
-    return aux.AttrDict(fitted)
-
-
-def get_bout_distros(fitted_epochs):
-    d = {}
-    for k, dic in fitted_epochs.items():
-        try:
-        # if isinstance(dic, dict) and 'best' in dic:
-            d[k] = dic['best']
-        except:
-            d[k] = None
-    return aux.AttrDict(d)
 
 
 def fit_bout_distros(x0, xmin=None, xmax=None, discrete=False, xmid=np.nan, overlap=0.0, Nbins=64, print_fits=False,
@@ -389,26 +364,12 @@ def test_boutGens(mID, refID=None, refDataset=None, **kwargs):
     if refDataset is None:
         refDataset = reg.conf.Ref.loadRef(refID, load=True)
     c = refDataset.config
-
-    chunk_dicts = refDataset.chunk_dicts
-    if chunk_dicts in [None, {}]:
-        try:
-            s, e, c = refDataset.data
-        except:
-            refDataset.load()
-            s, e, c = refDataset.data
-        from larvaworld.lib.process.annotation import comp_chunk_dicts
-        chunk_dicts = comp_chunk_dicts(s, e, c=c)
-    if chunk_dicts in [None, {}]:
-        raise ValueError
-    # chunk_dicts = refDataset.load_chunk_dicts()
-    aux_dic = aux.group_epoch_dicts(chunk_dicts)
+    aux_dic = refDataset.pooled_epochs
     Npau = aux_dic['pause_dur'].shape[0]
     Nrun = aux_dic['run_dur'].shape[0]
 
-    from larvaworld.lib.util.sampling import get_sample_bout_distros
     m = reg.conf.Model.getID(mID)
-    m = get_sample_bout_distros(m, c)
+    m = c.get_sample_bout_distros(m.get_copy())
     dicM = m.brain.intermitter_params
     dic = {}
     for n, n0 in zip(['pause', 'run', 'stridechain'], ['pause_dur', 'run_dur', 'run_count']):
@@ -422,6 +383,6 @@ def test_boutGens(mID, refID=None, refDataset=None, **kwargs):
             B = BoutGenerator(**kk, dt=dt)
             vs = B.sample(N)
             dic[n0] = fit_bout_distros(vs, dataset_id=mID, bout=n, combine=False, discrete=discr)
-    datasets = [{'id': 'model', 'pooled_epochs': dic, 'color': 'blue'},
-                {'id': 'experiment', 'pooled_epochs': dict(refDataset.read_HDF('pooled_epochs')), 'color': 'red'}]
+    datasets = [{'id': 'model', 'fitted_epochs': dic, 'color': 'blue'},
+                {'id': 'experiment', 'fitted_epochs': refDataset.fitted_epochs, 'color': 'red'}]
     return [aux.AttrDict(dd) for dd in datasets]

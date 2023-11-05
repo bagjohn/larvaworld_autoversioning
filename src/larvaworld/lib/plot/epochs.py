@@ -60,7 +60,7 @@ def plot_single_bout(x0, bout, color, label, ax, fit_dic=None, plot_fits='best',
             plot.dataset_legend(distro_ls0, distro_cs0, ax=ax, loc='lower left', fontsize=15)
 
 
-@reg.funcs.graph('epochs', required={'dicts':['pooled_epochs']})
+@reg.funcs.graph('epochs', required={'dicts':['fitted_epochs']})
 def plot_bouts(name=None, plot_fits='',print_fits=False, turns=False, stridechain_duration=False, legend_outside=False, **kwargs):
     if name is None :
         if not turns:
@@ -70,14 +70,10 @@ def plot_bouts(name=None, plot_fits='',print_fits=False, turns=False, stridechai
     P = plot.AutoPlot(name=name,build_kws={'Ncols': 2, 'sharey': True, 'wh' : 5}, **kwargs)
     ax0,ax1=P.axs[0],P.axs[1]
 
-    # if not turns:
-    #     b0, b1='run_dur' if stridechain_duration else 'run_count', 'pause_dur'
-    # else:
-    #     b0,b1='turn_dur','turn_amp'
 
     valid_labs = {}
     for d in P.datasets:
-        v = d.pooled_epochs
+        v = d.fitted_epochs
         if v is None:
             continue
 

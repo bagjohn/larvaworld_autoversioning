@@ -55,8 +55,11 @@ class ParamLarvaDataset(param.Parameterized):
         self.epoch_dict = aux.AttrDict({'pause': None, 'run': None})
         self.larva_dicts = {}
         self.__dict__.update(self.config.nestedConf)
+        self._epoch_dicts = None
         self._chunk_dicts = None
         self._pooled_epochs = None
+        self._fitted_epochs = None
+
         self._cycle_curves = None
 
     def required(**pars):
@@ -148,13 +151,46 @@ class ParamLarvaDataset(param.Parameterized):
         self.store(d, 'chunk_dicts')
 
     @property
+    def epoch_dicts(self):
+        try:
+            assert self._epoch_dicts is not None
+        except AssertionError:
+            self._epoch_dicts = aux.AttrDict(self.read('epoch_dicts'))
+        except KeyError:
+            self.detect_bouts()
+        finally:
+            return self._epoch_dicts
+
+    @epoch_dicts.setter
+    def epoch_dicts(self, d):
+        self._epoch_dicts = d
+        self.store(d, 'epoch_dicts')
+
+    @property
+    def fitted_epochs(self):
+        try:
+            assert self._fitted_epochs is not None
+        except AssertionError:
+            self._fitted_epochs = aux.AttrDict(self.read('fitted_epochs'))
+        except KeyError:
+            self.fit_pooled_epochs()
+        finally:
+            return self._fitted_epochs
+
+    @fitted_epochs.setter
+    def fitted_epochs(self, d):
+        self._fitted_epochs = d
+        self.store(d, 'fitted_epochs')
+
+    @property
     def pooled_epochs(self):
         try:
             assert self._pooled_epochs is not None
         except AssertionError:
             self._pooled_epochs = aux.AttrDict(self.read('pooled_epochs'))
         except KeyError:
-            self.comp_pooled_epochs()
+            self.detect_bouts()
+
         finally:
             return self._pooled_epochs
 
@@ -192,23 +228,38 @@ class ParamLarvaDataset(param.Parameterized):
     def pooled_cycle_curves(self, d):
         self.config.pooled_cycle_curves = d
 
-    def detect_bouts(self, **kwargs):
+    def detect_bouts(self,castsNweathervanes=True, **kwargs):
         s, e, c = self.data
-        self.chunk_dicts = process.annotation.comp_chunk_dicts(s, e, c, **kwargs)
+        self.epoch_dicts=process.annotation.comp_agent_epochs(s, e, c, **kwargs)
+        self.chunk_dicts = aux.AttrDict({id: {**self.epoch_dicts[id]} for id in c.agent_ids})
+        self.pooled_epochs = aux.AttrDict(
+            {k: np.array(aux.SuperList(dic.values()).flatten) for k, dic in self.epoch_dicts.items()})
+        # reg.vprint(f'Computed pooled epoch durations.', 1)
+        if castsNweathervanes:
+            process.annotation.turn_mode_annotation(e, self.chunk_dicts)
         reg.vprint(f'Completed bout detection.', 1)
 
-    def comp_pooled_epochs(self):
-        try:
-            grouped_epochs = aux.group_epoch_dicts(self.chunk_dicts)
-            self.pooled_epochs = util.fit_epochs(grouped_epochs)
-            reg.vprint(f'Computed pooled epoch durations.', 1)
-        except:
-            reg.vprint(f'Failed to compute pooled epoch durations.', 1)
+
+    def fit_pooled_epochs(self):
+        try :
+            dic=self.pooled_epochs
+            assert dic is not None
+            fitted = {}
+            for k, v in dic.items():
+                try:
+                    fitted[k] = util.fit_bout_distros(np.abs(v), bout=k, combine=False,
+                                                      discrete=True if k == 'run_count' else False)
+                except:
+                    fitted[k] = None
+            self.fitted_epochs = aux.AttrDict({fitted})
+            reg.vprint(f'Fitted pooled epoch durations.', 1)
+        except :
+            reg.vprint(f'Failed to fit pooled epoch durations.', 1)
 
     def comp_bout_distros(self):
         c = self.config
         c.bout_distros = {}
-        for k, dic in self.pooled_epochs.items():
+        for k, dic in self.fitted_epochs.items():
             try:
                 c.bout_distros[k] = dic['best']
                 reg.vprint(f'Completed {k} bout distribution analysis.', 1)
@@ -257,7 +308,7 @@ class ParamLarvaDataset(param.Parameterized):
         if 'bout_detection' in anot_keys:
             self.detect_bouts()
         if 'bout_distribution' in anot_keys:
-            self.comp_pooled_epochs()
+            self.fit_pooled_epochs()
             self.comp_bout_distros()
         if 'interference' in anot_keys:
             self.comp_interference()

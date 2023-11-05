@@ -19,7 +19,7 @@ __all__ = [
     'detect_strides',
     'detect_turns',
     'weathervanesNheadcasts',
-    'comp_chunk_dicts',
+    # 'comp_chunk_dicts',
     # 'bout_distribution',
     # 'bout_detection',
     # 'compute_interference_data',
@@ -28,26 +28,6 @@ __all__ = [
     'turn_annotation',
     'crawl_annotation',
 ]
-
-# def register_bout_distros(c,e):
-#     from ..model.modules.intermitter import get_EEB_poly1d
-#     try:
-#         c.intermitter = {
-#             nam.freq('crawl'): e[nam.freq(nam.scal(nam.vel('')))].mean(),
-#             nam.freq('feed'): e[nam.freq('feed')].mean() if nam.freq('feed') in e.columns else 2.0,
-#             'dt': c.dt,
-#             # 'crawl_bouts': True,
-#             'feed_bouts': True,
-#             'stridechain_dist': c.bout_distros.run_count,
-#             'pause_dist': c.bout_distros.pause_dur,
-#             'run_dist': c.bout_distros.run_dur,
-#             'feeder_reoccurence_rate': None,
-#         }
-#         c.EEB_poly1d = get_EEB_poly1d(**c.intermitter).c.tolist()
-#     except :
-#         pass
-
-
 
 def process_epochs(a, epochs, dt, return_idx=True):
     if epochs.shape[0] == 0:
@@ -292,18 +272,11 @@ def weathervanesNheadcasts(run_idx, pause_idx, turn_slices, Tamps):
     cast_min, cast_max = np.nanquantile(cast_amps, 0.25), np.nanquantile(cast_amps, 0.75)
     return wvane_min, wvane_max, cast_min, cast_max
 
-
-def comp_chunk_dicts(s, e, c, vel_thr=0.3, strides_enabled=True,turns=True,runs=True,castsNweathervanes=True, **kwargs):
+def comp_agent_epochs(s, e, c, vel_thr=0.3, strides_enabled=True):
     aux.fft_freqs(s, e, c)
-    turn_dict = turn_annotation(s, e, c) if turns else None
-    crawl_dict = crawl_annotation(s, e, c, strides_enabled=strides_enabled, vel_thr=vel_thr) if runs else None
-    if turn_dict and crawl_dict:
-        chunk_dicts = aux.AttrDict({id: {**turn_dict[id], **crawl_dict[id]} for id in c.agent_ids})
-        if castsNweathervanes :
-            turn_mode_annotation(e, chunk_dicts)
-        return chunk_dicts
-    else:
-        return None
+    turn_dict = turn_annotation(s, e, c)
+    crawl_dict = crawl_annotation(s, e, c, strides_enabled=strides_enabled, vel_thr=vel_thr)
+    return aux.AttrDict(**crawl_dict, **turn_dict)
 
 
 
