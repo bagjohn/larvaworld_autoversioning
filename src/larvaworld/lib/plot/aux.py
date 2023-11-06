@@ -36,6 +36,7 @@ __all__ = [
     'configure_subplot_grid',
     'define_end_ks',
     'get_vs',
+    'color_epochs',
 ]
 
 
@@ -743,3 +744,13 @@ def get_vs(datasets, par, key='step', absolute=False, rad2deg=False):
             v = np.rad2deg(v)
         vs.append(v)
     return vs
+
+def color_epochs(epochs,ax,trange,edgecolor=f'{0.4 * (0 + 1)}', facecolor="lightblue",epoch_boundaries=True,epoch_area=True):
+    if epoch_boundaries:
+        for s0, s1 in epochs:
+            for s01 in [s0, s1]:
+                ax.axvline(trange[s01], color=edgecolor, alpha=0.3, linestyle='dashed', linewidth=1)
+
+    if epoch_area:
+        for s0, s1 in epochs:
+            ax.axvspan(trange[s0], trange[s1], color=facecolor, alpha=1.0)

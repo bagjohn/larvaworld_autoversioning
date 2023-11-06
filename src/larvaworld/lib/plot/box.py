@@ -326,7 +326,7 @@ def lineplot(markers, ks=['f_am'], name=None, coupled_labels=None, xlabel=None, 
     for ii, sh in enumerate(ks):
         ax = P.axs[ii]
         p, u = reg.getPar(sh, to_return=['d', 'l'])
-        vs = [d.endpoint_data[p] * scale for d in P.datasets]
+        vs = [d.e[p] * scale for d in P.datasets]
         means = [v.mean() for v in vs]
         stds = [v.std() for v in vs]
         for n, marker in zip(range(N), markers):

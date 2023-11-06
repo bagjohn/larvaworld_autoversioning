@@ -439,7 +439,7 @@ def turn_annotation(s, e, c):
             turn_vs[Rturns[:, 1], jj, 1] = Rdurs
             turn_vs[Rturns[:, 1], jj, 3] = Rdurs
             turn_vs[Rturns[:, 1], jj, 4] = Rmaxs
-        turn_dict[id] = {'Lturn': Lturns, 'Rturn': Rturns, 'turn_slice': Tslices, 'turn_amp': Tamps,
+        turn_dict[id] = {'Lturn': Lturns, 'Rturn': Rturns, 'turn_slice': Tslices, 'turn_amp': Tamps,'Lturn_amp': Lamps,'Rturn_amp': Ramps,
                          'turn_dur': Tdurs, 'Lturn_dur': Ldurs, 'Rturn_dur': Rdurs, 'turn_vel_max': Tmaxs}
         eTur_vs[jj, :] = [Lturns_N, Rturns_N, turns_N, tur_H]
     s[turn_ps] = turn_vs.reshape([N * len(ids), len(turn_ps)])
@@ -469,15 +469,15 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
     crawl_dict = {}
 
     for jj, id in enumerate(c.agent_ids):
-        strides, str_chain_ls, stride_Dor, stride_durs, stride_dsts, stride_sdsts, strides1 = [], [], [], [], [], [], []
+        sv_minima, sv_maxima,strides, str_chain_ls, stride_Dor, stride_durs, stride_dsts, stride_sdsts, strides1 = [], [], [], [], [], [], [],[],[]
         a_v = s[v].xs(id, level="AgentID").values
         a_fov = s[fov].xs(id, level="AgentID").values
 
         if c.Npoints > 1:
             a_sv = s[sv].xs(id, level="AgentID").values
             if strides_enabled:
-                strides, runs, str_chain_ls = detect_strides(a_sv, dt, fr=e[fv].loc[id], vel_thr=vel_thr,
-                                                             return_extrema=False)
+                sv_minima, sv_maxima,strides, runs, str_chain_ls = detect_strides(a_sv, dt, fr=e[fv].loc[id], vel_thr=vel_thr,
+                                                             return_extrema=True)
                 strides1, stride_durs, stride_slices, stride_dsts, stride_idx, stride_maxs = process_epochs(a_v,
                                                                                                             strides, dt)
                 stride_sdsts = stride_dsts / e[l].loc[id]
@@ -540,7 +540,7 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
             np.nanmin(pause_durs) if len(pause_durs) > 0 else dt,
             np.nanmax(pause_durs) if len(pause_durs) > 0 else 100,
         ]
-        crawl_dict[id] = {'stride': strides, 'stride_Dor': stride_Dor, 'exec': runs, 'pause': pauses,
+        crawl_dict[id] = {'vel_minima': sv_minima, 'vel_maxima': sv_maxima,'stride': strides, 'stride_Dor': stride_Dor, 'exec': runs, 'pause': pauses,
                           'run_idx': run_idx, 'pause_idx': pause_idx, 'stride_dur': stride_durs,
                           'run_count': str_chain_ls, 'run_dur': run_durs, 'run_dst': run_dsts, 'pause_dur': pause_durs}
     s[run_ps] = run_vs.reshape([c.Nticks * c.N, len(run_ps)])

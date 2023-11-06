@@ -242,11 +242,13 @@ def stride_cycle_all_points(name='stride cycle multi',  idx=0, Nbins=64, short='
 def plot_stride_Dbend(name='stride_bend_change',show_text=False, subfolder='stride', **kwargs):
     P = plot.AutoPlot(name=name, subfolder=subfolder, **kwargs)
     ax = P.axs[0]
-
+    b0p,b1p,bdp=nam.atStartStopChunk('bend','stride')
     fits = {}
     for i, (d, l, c) in enumerate(zip(P.datasets, P.labels, P.colors)):
-        b0 = d.get_par(nam.at('bend', nam.start('stride'))).dropna().values.flatten()[:500]
-        b1 = d.get_par(nam.at('bend', nam.stop('stride'))).dropna().values.flatten()[:500]
+        if not aux.SuperList([b0p,b1p]).exist_in(d.step_ps):
+            d.track_par_in_chunk(chunk='stride', par='bend')
+        b0 = d.get_par(b0p).dropna().values.flatten()[:500]
+        b1 = d.get_par(b1p).dropna().values.flatten()[:500]
         sign_b = np.sign(b0)
         b0 *= sign_b
         b1 *= sign_b
@@ -262,7 +264,7 @@ def plot_stride_Dbend(name='stride_bend_change',show_text=False, subfolder='stri
                     transform=ax.transAxes)
             print(f'Bend correction during strides for {l} fitted as : db={m}*b + {k}')
     P.conf_ax(xlab=r'$\theta_{bend}$ at stride start $(deg)$', ylab=r'$\Delta\theta_{bend}$ over stride $(deg)$',
-              xlim=[0, 85], ylim=[-60, 60], yMaxN=5)
+              yMaxN=5)
     P.adjust((0.25, 0.95), (0.2, 0.95), 0.01)
     return P.get()
 

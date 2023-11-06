@@ -28,10 +28,7 @@ def plot_single_bout(x0, bout, color, label, ax, fit_dic=None, plot_fits='best',
     idx_Kmax = fit_dic['idx_Kmax']
     xrange, du2, c2, y = fit_dic['values']
     lws[idx_Kmax] = 4
-    # ddfs = fit_dic['cdfs']
-    # for ii in ddfs:
-    #     if ii is not None:
-    #         ii /= ii[0]
+
     ax.loglog(xrange, y, marker, color=color, alpha=0.7, label=label)
     ax.set_title(bout)
     ax.set_xlabel(xlabel)
@@ -87,28 +84,22 @@ def plot_bouts(name=None, plot_fits='',print_fits=False, turns=False, stridechai
             'x0': None
         })
 
-        # if b0 in v and v[b0] is not None:
-        #     plot_single_bout(fit_dic=v[b0], bout='pauses', ax=ax1, **kws)
-        #     valid_labs[d.id] = kws.color
+        def try_bout(k, ax_idx, bout, **kws2):
+            if k in v and v[k] is not None:
+                plot_single_bout(fit_dic=v[k], bout=bout, ax=P.axs[ax_idx], **kws2, **kws)
+                valid_labs[d.id] = kws.color
+
 
         if not turns:
-            if 'pause_dur' in v and v.pause_dur is not None:
-                plot_single_bout(fit_dic=v.pause_dur, bout='pauses', ax=ax1, **kws)
-                valid_labs[d.id] = kws.color
-            if stridechain_duration and 'run_dur' in v and v.run_dur is not None:
-                plot_single_bout(fit_dic=v.run_dur, bout='runs', ax=ax0, **kws)
-                valid_labs[d.id] = kws.color
-            elif not stridechain_duration and 'run_count' in v and v.run_count is not None:
-                plot_single_bout(fit_dic=v.run_count, discrete=True, bout='stridechains', xlabel='# strides', ax=ax0, **kws)
-                valid_labs[d.id] = kws.color
+            try_bout('pause_dur', 1, 'pauses')
+            if stridechain_duration:
+                try_bout('run_dur', 0, 'runs')
+            else:
+                try_bout('run_count', 0, 'stridechains', xlabel='# strides', discrete=True)
         else:
-            if 'turn_dur' in v and v.turn_dur is not None:
-                plot_single_bout(fit_dic=v.turn_dur, bout='turn duration', ax=ax0, **kws)
-                valid_labs[d.id] = kws.color
-            if 'turn_amp' in v and v.turn_amp is not None:
-                plot_single_bout(fit_dic=v.turn_amp, bout='turn amplitude', xlabel='angle (deg)',
-                                 xlim=(10 ** -0.5, 10 ** 3), ax=ax1, **kws)
-                valid_labs[d.id] = kws.color
+            try_bout('turn_dur', 0, 'turn duration')
+            try_bout('turn_amp', 1, 'turn amplitude', xlabel='angle (deg)',xlim=(10 ** -0.5, 10 ** 3))
+
     ax0.set_ylabel('probability')
     ax1.yaxis.set_visible(False)
     if P.Ndatasets > 1:
