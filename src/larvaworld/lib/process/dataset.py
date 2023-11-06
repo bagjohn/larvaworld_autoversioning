@@ -262,7 +262,7 @@ class ParamLarvaDataset(param.Parameterized):
         self.epoch_dicts = aux.AttrDict({k: {id: d0[id][k] for id in list(d0)} for k in epoch_ks})
 
         self.pooled_epochs = aux.AttrDict(
-            {k: np.concatenate(aux.SuperList(dic.values()),k) for k, dic in self.epoch_dicts.items() if k not in ['turn_slice', 'pause_idx', 'run_idx']})
+            {k: np.concatenate(aux.SuperList(dic.values())) for k, dic in self.epoch_dicts.items() if k not in ['turn_slice', 'pause_idx', 'run_idx']})
 
         reg.vprint(f'Completed bout detection.', 1)
 
