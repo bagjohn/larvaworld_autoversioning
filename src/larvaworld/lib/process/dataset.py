@@ -187,7 +187,8 @@ class ParamLarvaDataset(param.Parameterized):
         try:
             assert self._pooled_epochs is not None
         except AssertionError:
-            self._pooled_epochs = aux.AttrDict(self.read('pooled_epochs'))
+            self._pooled_epochs = aux.load_dict(f'{self.config.data_dir}/pooled_epochs.txt')
+            # self._pooled_epochs = aux.AttrDict(self.read('pooled_epochs'))
         except KeyError:
             self.comp_pooled_epochs()
 
@@ -197,7 +198,8 @@ class ParamLarvaDataset(param.Parameterized):
     @pooled_epochs.setter
     def pooled_epochs(self, d):
         self._pooled_epochs = d
-        self.store(d, 'pooled_epochs')
+        aux.save_dict(d, f'{self.config.data_dir}/pooled_epochs.txt')
+        # self.store(d, 'pooled_epochs')
 
     @property
     def cycle_curves(self):
@@ -258,9 +260,9 @@ class ParamLarvaDataset(param.Parameterized):
         d0=self.chunk_dicts
         epoch_ks=aux.SuperList([list(dic.keys()) for dic in d0.values()]).flatten.unique
         self.epoch_dicts = aux.AttrDict({k: {id: d0[id][k] for id in list(d0)} for k in epoch_ks})
+
         self.pooled_epochs = aux.AttrDict(
-            {k: np.array(aux.SuperList(dic.values()).flatten) for k, dic in self.epoch_dicts.items()})
-        # reg.vprint(f'Computed pooled epoch durations.', 1)
+            {k: np.concatenate(aux.SuperList(dic.values()),k) for k, dic in self.epoch_dicts.items() if k not in ['turn_slice', 'pause_idx', 'run_idx']})
 
         reg.vprint(f'Completed bout detection.', 1)
 
@@ -276,7 +278,7 @@ class ParamLarvaDataset(param.Parameterized):
                                                       discrete=True if k == 'run_count' else False)
                 except:
                     fitted[k] = None
-            self.fitted_epochs = aux.AttrDict({fitted})
+            self.fitted_epochs = aux.AttrDict(fitted)
             reg.vprint(f'Fitted pooled epoch durations.', 1)
         except :
             reg.vprint(f'Failed to fit pooled epoch durations.', 1)
