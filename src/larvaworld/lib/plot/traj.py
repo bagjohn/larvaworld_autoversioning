@@ -191,11 +191,11 @@ def track_annotated(epoch='stride', a=None, dt=0.1, a2plot=None, ylab=None, ylim
     name = f'{temp}_{agent_id}' if agent_id is not None else f'{temp}_{agent_idx}'
     P = plot.AutoPlot(name=name, subfolder=subfolder,
                       build_kws={'Nrows': 'Ndatasets', 'w': 20, 'h': 5, 'sharex': True, 'sharey': True}, **kwargs)
-    trange = np.arange(0, a.shape[0] * dt, dt)
+    Nticks=a.shape[0]
+    trange = np.arange(0, Nticks * dt, dt)
 
     ax = P.axs[0]
-    # D=P.datasets[0].chunk_dicts[agent_id]
-    #print(D)
+
     def stride_epochs(a, dt, ax):
         if show_extrema and a2plot is None:
             i_min, i_max, strides, runs, run_counts = detect_strides(a=a, dt=dt, return_extrema=True)
@@ -206,24 +206,6 @@ def track_annotated(epoch='stride', a=None, dt=0.1, a2plot=None, ylab=None, ylim
         pauses = detect_pauses(a, dt, runs=runs)
         return [runs, pauses], strides
 
-    # def stride_epochs(a, dt, ax):
-    #     strides, runs, pauses = D.stride, D.exec, D.pause
-    #     for vs in [strides, runs, pauses]:
-    #         print(vs.shape)
-    #         vs=vs[vs[:,1]<a.shape[0]]
-    #         print(vs.shape)
-    #         if vs[-1,1]>a.shape[0]:
-    #             vs[-1, 1]=a.shape[0]
-    #         print(vs.shape)
-    #
-    #     if show_extrema and a2plot is None:
-    #         i_min, i_max= D.vel_minima, D.vel_maxima
-    #         i_min = i_min[i_min < Nticks]
-    #         i_max = i_max[i_max < Nticks]
-    #         ax.plot(trange[i_max], a[i_max], linestyle='None', lw=10, color='green', marker='v')
-    #         ax.plot(trange[i_min], a[i_min], linestyle='None', lw=10, color='red', marker='^')
-    #     print(runs[-1], pauses[-1], strides[-1])
-    #     return [runs, pauses], strides
 
     def turn_epochs(a, dt, ax):
         ax.axhline(0, color='black', alpha=1, linestyle='dashed', linewidth=1)
@@ -235,19 +217,7 @@ def track_annotated(epoch='stride', a=None, dt=0.1, a2plot=None, ylab=None, ylim
             Rturns = Rturns[np.abs(Ramps) > min_amp]
         return [Lturns, Rturns], Lturns.tolist() + Rturns.tolist()
 
-    # def turn_epochs(a, dt, ax):
-    #     ax.axhline(0, color='black', alpha=1, linestyle='dashed', linewidth=1)
-    #     Lturns, Rturns = D.Lturn, D.Rturn
-    #
-    #     if min_amp is not None:
-    #         Tamps = D.turn_amp
-    #
-    #         Lamps, Ramps = Tamps[:Lturns.shape[0],:],Tamps[Rturns.shape[0]:,:],
-    #         Lturns = Lturns[np.abs(Lamps) > min_amp]
-    #         Rturns = Rturns[np.abs(Ramps) > min_amp]
-    #     Lturns = Lturns[Lturns[:, 1] < Nticks]
-    #     Rturns = Rturns[Rturns[:, 1] < Nticks]
-    #     return [Lturns, Rturns], Lturns.tolist() + Rturns.tolist()
+
 
     epoch_dict = aux.AttrDict({
         'stride': {
@@ -286,18 +256,18 @@ def track_annotated(epoch='stride', a=None, dt=0.1, a2plot=None, ylab=None, ylim
     ax.plot(trange, aa2plot)
 
     epochs, epochs0 = kws.func(a, dt, ax=ax)
-    plot.color_epochs(epochs=epochs0, epoch_area=False,epoch_boundaries=epoch_boundaries, edgecolor=f'{0.4 * (0 + 1)}',ax=ax,trange=trange)
-    for color, epoch in zip(kws.chunk_cols, epochs):
-        plot.color_epochs(epochs=epoch, epoch_boundaries=False, facecolor=color,ax=ax,trange=trange)
-    #
-    # if epoch_boundaries:
-    #     for s0, s1 in epochs0:
-    #         for s01 in [s0, s1]:
-    #             ax.axvline(trange[s01], color=f'{0.4 * (0 + 1)}', alpha=0.3, linestyle='dashed', linewidth=1)
-    #
+    # plot.color_epochs(epochs=epochs0, epoch_area=False,epoch_boundaries=epoch_boundaries, edgecolor=f'{0.4 * (0 + 1)}',ax=ax,trange=trange)
     # for color, epoch in zip(kws.chunk_cols, epochs):
-    #     for s0, s1 in epoch:
-    #         ax.axvspan(trange[s0], trange[s1], color=color, alpha=1.0)
+    #     plot.color_epochs(epochs=epoch, epoch_boundaries=False, facecolor=color,ax=ax,trange=trange)
+    #
+    if epoch_boundaries:
+        for s0, s1 in epochs0:
+            for s01 in [s0, s1]:
+                ax.axvline(trange[s01], color=f'{0.4 * (0 + 1)}', alpha=0.3, linestyle='dashed', linewidth=1)
+
+    for color, epoch in zip(kws.chunk_cols, epochs):
+        for s0, s1 in epoch:
+            ax.axvspan(trange[s0], trange[s1], color=color, alpha=1.0)
 
     leg_kws = {
         'leg_loc': "upper right",

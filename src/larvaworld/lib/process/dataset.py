@@ -233,7 +233,7 @@ class ParamLarvaDataset(param.Parameterized):
     def track_par_in_chunk(self, chunk, par):
         s, e, c = self.data
         A = self.empty_df(dim3=3)
-        d0=self.epoch_dicts[chunk]
+        d0 = self.epoch_dicts[chunk]
         for i, id in enumerate(c.agent_ids):
             epochs = d0[id]
             ss = s[par].xs(id, level='AgentID')
@@ -251,25 +251,25 @@ class ParamLarvaDataset(param.Parameterized):
         aux.fft_freqs(s, e, c)
         turn_dict = process.annotation.turn_annotation(s, e, c)
         crawl_dict = process.annotation.crawl_annotation(s, e, c, strides_enabled=strides_enabled, vel_thr=vel_thr)
-        self.chunk_dicts= aux.AttrDict({id: {**turn_dict[id], **crawl_dict[id]} for id in c.agent_ids})
+        self.chunk_dicts = aux.AttrDict({id: {**turn_dict[id], **crawl_dict[id]} for id in c.agent_ids})
         if castsNweathervanes:
             process.annotation.turn_mode_annotation(e, self.chunk_dicts)
         reg.vprint(f'Completed bout detection.', 1)
 
     def comp_pooled_epochs(self):
-        d0=self.chunk_dicts
-        epoch_ks=aux.SuperList([list(dic.keys()) for dic in d0.values()]).flatten.unique
+        d0 = self.chunk_dicts
+        epoch_ks = aux.SuperList([list(dic.keys()) for dic in d0.values()]).flatten.unique
         self.epoch_dicts = aux.AttrDict({k: {id: d0[id][k] for id in list(d0)} for k in epoch_ks})
 
         self.pooled_epochs = aux.AttrDict(
-            {k: np.concatenate(aux.SuperList(dic.values())) for k, dic in self.epoch_dicts.items() if k not in ['turn_slice', 'pause_idx', 'run_idx']})
+            {k: np.concatenate(aux.SuperList(dic.values())) for k, dic in self.epoch_dicts.items() if
+             k not in ['turn_slice', 'pause_idx', 'run_idx']})
 
         reg.vprint(f'Completed bout detection.', 1)
 
-
     def fit_pooled_epochs(self):
-        try :
-            dic=self.pooled_epochs
+        try:
+            dic = self.pooled_epochs
             assert dic is not None
             fitted = {}
             for k, v in dic.items():
@@ -280,12 +280,12 @@ class ParamLarvaDataset(param.Parameterized):
                     fitted[k] = None
             self.fitted_epochs = aux.AttrDict(fitted)
             reg.vprint(f'Fitted pooled epoch durations.', 1)
-        except :
+        except:
             reg.vprint(f'Failed to fit pooled epoch durations.', 1)
 
     def comp_bout_distros(self):
         c = self.config
-        c.bout_distros =aux.AttrDict()
+        c.bout_distros = aux.AttrDict()
         for k, dic in self.fitted_epochs.items():
             try:
                 c.bout_distros[k] = dic['best']
@@ -1332,52 +1332,140 @@ class LarvaDataset(BaseLarvaDataset):
             self.save()
         return self
 
+    @property
+    def epoch_bound_dicts(self):
+        d = aux.AttrDict()
+        for k, dic in self.epoch_dicts.items():
+            try:
+                if all([vs.shape.__len__() == 2 for id, vs in dic.items()]):
+                    d[k] = dic
+            except:
+                pass
+        return d
+
     def get_chunk_par(self, chunk, k=None, par=None, min_dur=0, mode='distro'):
         s, e, c = self.data
-        chunk_idx = f'{chunk}_idx'
-        chunk_dur = f'{chunk}_dur'
+        epochs = self.epoch_dicts[chunk]
+        if min_dur != 0:
+            epoch_durs = self.epoch_dicts[f'{chunk}_dur']
+            epochs = aux.AttrDict({id: epochs[id][epoch_durs[id] >= min_dur] for id in c.agent_ids})
         if par is None:
             par = reg.getPar(k)
+        grouped = s[par].groupby('AgentID')
+        if mode=='extrema':
+            c01s=[[df.loc[epochs[id][:, 0]].values, df.loc[epochs[id][:, 1]].values] for id, df in grouped if epochs[id].shape>0]
+            c0s=np.concatenate([c01[0] for c01 in c01s])
+            c1s=np.concatenate([c01[1] for c01 in c01s])
+            dc01s = c1s - c0s
+            return c0s, c1s, dc01s
+        elif mode == 'distro':
 
-        if mode == 'distro':
-
-            vs = []
-            for id in c.agent_ids:
-                dic = self.chunk_dicts[id]
-                ss = s[par].xs(id, level='AgentID')
-                if min_dur == 0:
-                    idx = dic[chunk_idx] + 1
+            def get_idx(eps):
+                Nepochs = eps.shape[0]
+                if Nepochs == 0:
+                    idx = []
+                elif Nepochs == 1:
+                    idx = np.arange(epochs[0][0], epochs[0][1] + 1, 1)
                 else:
-                    epochs = dic[chunk][dic[chunk_dur] >= min_dur]
-                    Nepochs = epochs.shape[0]
-                    if Nepochs == 0:
-                        idx = []
-                    elif Nepochs == 1:
-                        idx = np.arange(epochs[0][0], epochs[0][1] + 1, 1)
-                    else:
-                        slices = [np.arange(r0, r1 + 1, 1) for r0, r1 in epochs]
-                        idx = np.concatenate(slices)
-                vs.append(ss.loc[idx].dropna().values)
-            vs = np.concatenate(vs)
-            return vs
-        elif mode == 'extrema':
-            cc0s, cc1s, cc01s = [], [], []
-            for id in c.agent_ids:
-                dic = self.chunk_dicts[id]
-                ss = s[par].xs(id, level='AgentID')
-                epochs = dic[chunk]
-                if min_dur != 0:
-                    epochs = epochs[dic[chunk_dur] >= min_dur]
-                Nepochs = epochs.shape[0]
-                if Nepochs > 0:
-                    c0s = ss.loc[epochs[:, 0]].values
-                    c1s = ss.loc[epochs[:, 1]].values
-                    cc0s.append(c0s)
-                    cc1s.append(c1s)
-            cc0s = np.concatenate(cc0s)
-            cc1s = np.concatenate(cc1s)
-            cc01s = cc1s - cc0s
-            return cc0s, cc1s, cc01s
+                    slices = [np.arange(r0, r1 + 1, 1) for r0, r1 in eps]
+                    idx = np.concatenate(slices)
+                return idx
+
+            return np.concatenate([df.loc[get_idx(epochs[id])].dropna().values for id, df in grouped])
+
+        # c0s = ss.loc[epochs[:, 0]].values
+        # c1s = ss.loc[epochs[:, 1]].values
+        # s, e, c = self.data
+        # chunk_idx = f'{chunk}_idx'
+        # chunk_dur = f'{chunk}_dur'
+
+        #
+        # if mode == 'distro':
+        #
+        #     vs = []
+        #     for id in c.agent_ids:
+        #         dic = self.chunk_dicts[id]
+        #         ss = s[par].xs(id, level='AgentID')
+        #         if min_dur == 0:
+        #             idx = dic[chunk_idx] + 1
+        #         else:
+        #             epochs = dic[chunk][dic[chunk_dur] >= min_dur]
+        #             Nepochs = epochs.shape[0]
+        #             if Nepochs == 0:
+        #                 idx = []
+        #             elif Nepochs == 1:
+        #                 idx = np.arange(epochs[0][0], epochs[0][1] + 1, 1)
+        #             else:
+        #                 slices = [np.arange(r0, r1 + 1, 1) for r0, r1 in epochs]
+        #                 idx = np.concatenate(slices)
+        #         vs.append(ss.loc[idx].dropna().values)
+        #     vs = np.concatenate(vs)
+        #     return vs
+        # elif mode == 'extrema':
+        #     cc0s, cc1s, cc01s = [], [], []
+        #     for id in c.agent_ids:
+        #         dic = self.chunk_dicts[id]
+        #         ss = s[par].xs(id, level='AgentID')
+        #         epochs = dic[chunk]
+        #         if min_dur != 0:
+        #             epochs = epochs[dic[chunk_dur] >= min_dur]
+        #         Nepochs = epochs.shape[0]
+        #         if Nepochs > 0:
+        #             c0s = ss.loc[epochs[:, 0]].values
+        #             c1s = ss.loc[epochs[:, 1]].values
+        #             cc0s.append(c0s)
+        #             cc1s.append(c1s)
+        #     cc0s = np.concatenate(cc0s)
+        #     cc1s = np.concatenate(cc1s)
+        #     cc01s = cc1s - cc0s
+        #     return cc0s, cc1s, cc01s
+
+    # def get_chunk_par(self, chunk, k=None, par=None, min_dur=0, mode='distro'):
+    #     s, e, c = self.data
+    #     chunk_idx = f'{chunk}_idx'
+    #     chunk_dur = f'{chunk}_dur'
+    #     if par is None:
+    #         par = reg.getPar(k)
+    #
+    #     if mode == 'distro':
+    #
+    #         vs = []
+    #         for id in c.agent_ids:
+    #             dic = self.chunk_dicts[id]
+    #             ss = s[par].xs(id, level='AgentID')
+    #             if min_dur == 0:
+    #                 idx = dic[chunk_idx] + 1
+    #             else:
+    #                 epochs = dic[chunk][dic[chunk_dur] >= min_dur]
+    #                 Nepochs = epochs.shape[0]
+    #                 if Nepochs == 0:
+    #                     idx = []
+    #                 elif Nepochs == 1:
+    #                     idx = np.arange(epochs[0][0], epochs[0][1] + 1, 1)
+    #                 else:
+    #                     slices = [np.arange(r0, r1 + 1, 1) for r0, r1 in epochs]
+    #                     idx = np.concatenate(slices)
+    #             vs.append(ss.loc[idx].dropna().values)
+    #         vs = np.concatenate(vs)
+    #         return vs
+    #     elif mode == 'extrema':
+    #         cc0s, cc1s, cc01s = [], [], []
+    #         for id in c.agent_ids:
+    #             dic = self.chunk_dicts[id]
+    #             ss = s[par].xs(id, level='AgentID')
+    #             epochs = dic[chunk]
+    #             if min_dur != 0:
+    #                 epochs = epochs[dic[chunk_dur] >= min_dur]
+    #             Nepochs = epochs.shape[0]
+    #             if Nepochs > 0:
+    #                 c0s = ss.loc[epochs[:, 0]].values
+    #                 c1s = ss.loc[epochs[:, 1]].values
+    #                 cc0s.append(c0s)
+    #                 cc1s.append(c1s)
+    #         cc0s = np.concatenate(cc0s)
+    #         cc1s = np.concatenate(cc1s)
+    #         cc01s = cc1s - cc0s
+    #         return cc0s, cc1s, cc01s
 
 
 class LarvaDatasetCollection:

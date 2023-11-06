@@ -301,7 +301,7 @@ def plot_interference(mode='orientation', agent_idx=None, subfolder='interferenc
         for l, d, c in P.data_palette:
             df = d.read(f'stride.{p}')
             if agent_idx is not None:
-                df = df.loc[d.agent_ids[agent_idx]].values
+                df = df.loc[c.agent_ids[agent_idx]].values
             else:
                 df = df.values
             if mode in ['bend', 'orientation']:
