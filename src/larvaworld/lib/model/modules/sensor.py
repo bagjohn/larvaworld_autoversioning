@@ -9,7 +9,6 @@ from .remote_brian_interface import RemoteBrianModelInterface
 __all__ = [
     'Sensor',
     'Olfactor',
-    'BrianOlfactor',
     'Toucher',
     'WindSensor',
     'Thermosensor',
@@ -18,7 +17,7 @@ __all__ = [
 
 class Sensor(Effector):
     output_range = RangeRobust((-1.0, 1.0), readonly=True)
-    perception = param.Selector(objects=['log','linear', 'null'], label='sensory transduction mode',
+    perception = param.Selector(objects=['linear', 'log', 'null'], label='sensory transduction mode',
                                 doc='The method used to calculate the perceived sensory activation from the current and previous sensory input.')
     decay_coef = PositiveNumber(0.1, softmax=2.0, step=0.01, label='sensory decay coef',
                                 doc='The linear decay coefficient of the olfactory sensory activation.')
@@ -26,16 +25,6 @@ class Sensor(Effector):
     gain_dict = param.Dict(default=aux.AttrDict(), doc='Dictionary of sensor gain per stimulus ID')
 
 
-    @staticmethod
-    def select(mode):
-        d = aux.AttrDict({
-            'olfactor': Olfactor,
-            'brian_olfactor': BrianOlfactor,
-            'toucher': Toucher,
-            'wind': WindSensor,
-            'thermo': Thermosensor
-        })
-        return d[mode]
 
     def __init__(self, brain=None, **kwargs):
         super().__init__(**kwargs)
@@ -233,20 +222,15 @@ class BrianOlfactor(Olfactor):
         self.brian_warmup = remote_warmup
         self.response_key = response_key
         self.remote_dt = remote_dt
-        self.agent_id = RemoteBrianModelInterface.getRandomModelId()
 
 
     def update(self):
-        agent_id = self.brain.agent.unique_id if self.brain is not None else self.agent_id
-
+        agent_id = self.brain.agent.unique_id # TODO: is this always present ?
         msg_kws = {
             # Default :
-            # TODO: can we get this info from somewhere ?
-            # yes: self.X.values() provides an array of all odor types, the index could be used as odor_id
-            'odor_id': 0,
+            'odor_id': 0, # TODO: can we get this info from somewhere ?
             # The concentration change :
-            'concentration_mmol': self.first_odor_concentration, # 1st ODOR concentration
-            'concentration_change_mmol': self.first_odor_concentration_change, # 1st ODOR concentration change
+            'concentration': self.first_odor_concentration,
         }
 
         response = self.brianInterface.executeRemoteModelStep(agent_id, t_sim=self.remote_dt, t_warmup=self.brian_warmup, **msg_kws)

@@ -7,7 +7,7 @@ from .ipc import Server, Client
 __displayname__ = 'Client-Server'
 
 
-class BrianInterfaceMessage(ipc.Message):
+class LarvaMessage(ipc.Message):
     def __init__(self, sim_id, model_id, step, **params):
         self.sim_id = sim_id
         self.model_id = model_id
@@ -18,7 +18,7 @@ class BrianInterfaceMessage(ipc.Message):
         return [self.sim_id, self.model_id, self.step], self.params
 
     def with_params(self, **params):
-        return BrianInterfaceMessage(self.sim_id, self.model_id, self.step, **params)
+        return LarvaMessage(self.sim_id, self.model_id, self.step, **params)
 
     def param(self, key):
         try:
