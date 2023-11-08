@@ -1,7 +1,28 @@
 from ...ipc import LarvaMessage, Client
-
+from uuid import uuid4
+import datetime
 
 class RemoteBrianModelInterface(object):
+
+    # generates random agent id prefixed with current date + time
+    # format: 2023-11-06_16-30_<randomId>
+    @staticmethod
+    def getRandomModelId():
+        def numberToBase(n, b):
+            if n == 0:
+                return [0]
+            digits = []
+            while n:
+                digits.append(int(n % b))
+                n //= b
+            return digits[::-1]
+
+        rand_id = uuid4()
+        now = datetime.datetime.now()
+        date_str = now.strftime("%Y-%m-%d_%H-%M")
+        urlsafe_66_alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+        short_id = ''.join(urlsafe_66_alphabet[x] for x in numberToBase(rand_id.int, 66))
+        return '_'.join([date_str, short_id])
 
     # remote_dt: duration of remote simulation per step in ms
     def __init__(self, server_host='localhost', server_port=5795, remote_dt=100):

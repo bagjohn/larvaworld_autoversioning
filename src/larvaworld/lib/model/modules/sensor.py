@@ -222,10 +222,12 @@ class BrianOlfactor(Olfactor):
         self.brian_warmup = remote_warmup
         self.response_key = response_key
         self.remote_dt = remote_dt
+        self.agent_id = RemoteBrianModelInterface.getRandomModelId()
 
 
     def update(self):
-        agent_id = self.brain.agent.unique_id # TODO: is this always present ?
+        agent_id = self.brain.agent.unique_id if self.brain is not None else self.agent_id
+        
         msg_kws = {
             # Default :
             'odor_id': 0, # TODO: can we get this info from somewhere ?
