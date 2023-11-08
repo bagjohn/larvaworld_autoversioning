@@ -230,7 +230,8 @@ class BrianOlfactor(Olfactor):
             # Default :
             'odor_id': 0, # TODO: can we get this info from somewhere ?
             # The concentration change :
-            'concentration': self.first_odor_concentration,
+            'concentration_mmol': self.first_odor_concentration,
+            'concentration_change_mmol': self.first_odor_concentration_change,
         }
 
         response = self.brianInterface.executeRemoteModelStep(agent_id, t_sim=self.remote_dt, t_warmup=self.brian_warmup, **msg_kws)
