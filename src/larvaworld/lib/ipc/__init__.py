@@ -8,16 +8,17 @@ __displayname__ = 'Client-Server'
 
 
 class LarvaMessage(ipc.Message):
-    def __init__(self, sim_id, model_id, **params):
+    def __init__(self, sim_id, model_id, step, **params):
         self.sim_id = sim_id
         self.model_id = model_id
+        self.step = step
         self.params = params
 
     def _get_args(self):
-        return [self.sim_id, self.model_id], self.params
+        return [self.sim_id, self.model_id, self.step], self.params
 
     def with_params(self, **params):
-        return LarvaMessage(self.sim_id, self.model_id, **params)
+        return LarvaMessage(self.sim_id, self.model_id, self.step, **params)
 
     def param(self, key):
         try:
