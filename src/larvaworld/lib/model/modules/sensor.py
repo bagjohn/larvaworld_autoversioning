@@ -4,6 +4,7 @@ import param
 from ... import aux
 from .basic import Effector
 from ...param import PositiveNumber, RangeRobust
+from .remote_brian_interface import RemoteBrianModelInterface
 
 __all__ = [
     'Sensor',
@@ -212,3 +213,26 @@ class Thermosensor(Sensor):
     @property
     def cool_sensor_perception(self):
         return self.dX['cool']
+
+
+class BrianOlfactor(Olfactor):
+    def __init__(self, response_key='OSN_rate', server_host='localhost', server_port=5795, remote_dt=100, remote_warmup=0, **kwargs):
+        super().__init__(**kwargs)
+        self.brianInterface = RemoteBrianModelInterface(server_host, server_port, remote_dt)
+        self.brian_warmup = remote_warmup
+        self.response_key = response_key
+        self.remote_dt = remote_dt
+
+
+    def update(self):
+        agent_id = self.brain.agent.unique_id # TODO: is this always present ?
+        msg_kws = {
+            # Default :
+            'odor_id': 0, # TODO: can we get this info from somewhere ?
+            # The concentration change :
+            'concentration': self.first_odor_concentration,
+        }
+
+        response = self.brianInterface.executeRemoteModelStep(agent_id, t_sim=self.remote_dt, t_warmup=self.brian_warmup, **msg_kws)
+        self.output = response.param(self.response_key)
+        super().update()
