@@ -262,11 +262,11 @@ class ParamLarvaDataset(param.Parameterized):
         self.epoch_dicts = aux.AttrDict({k: {id: d0[id][k] for id in list(d0)} for k in epoch_ks})
 
         def get_vs(dic):
-            l=aux.SuperList(dic.values())
-            try :
-                sh=[len(ll.shape) for ll in l]
-                if sh.count(2)>sh.count(1):
-                    l=aux.SuperList([ll for ll in l if len(ll.shape)==2])
+            l = aux.SuperList(dic.values())
+            try:
+                sh = [len(ll.shape) for ll in l]
+                if sh.count(2) > sh.count(1):
+                    l = aux.SuperList([ll for ll in l if len(ll.shape) == 2])
             except:
                 pass
             return np.concatenate(l)
@@ -274,7 +274,6 @@ class ParamLarvaDataset(param.Parameterized):
         self.pooled_epochs = aux.AttrDict(
             {k: get_vs(dic) for k, dic in self.epoch_dicts.items() if
              k not in ['turn_slice', 'pause_idx', 'run_idx']})
-
 
         reg.vprint(f'Completed bout detection.', 1)
 
@@ -1363,10 +1362,11 @@ class LarvaDataset(BaseLarvaDataset):
         if par is None:
             par = reg.getPar(k)
         grouped = s[par].groupby('AgentID')
-        if mode=='extrema':
-            c01s=[[df.loc[epochs[id][:, 0]].values, df.loc[epochs[id][:, 1]].values] for id, df in grouped if epochs[id].shape>0]
-            c0s=np.concatenate([c01[0] for c01 in c01s])
-            c1s=np.concatenate([c01[1] for c01 in c01s])
+        if mode == 'extrema':
+            c01s = [[df.loc[epochs[id][:, 0]].values, df.loc[epochs[id][:, 1]].values] for id, df in grouped if
+                    epochs[id].shape > 0]
+            c0s = np.concatenate([c01[0] for c01 in c01s])
+            c1s = np.concatenate([c01[1] for c01 in c01s])
             dc01s = c1s - c0s
             return c0s, c1s, dc01s
         elif mode == 'distro':
