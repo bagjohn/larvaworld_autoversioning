@@ -261,9 +261,20 @@ class ParamLarvaDataset(param.Parameterized):
         epoch_ks = aux.SuperList([list(dic.keys()) for dic in d0.values()]).flatten.unique
         self.epoch_dicts = aux.AttrDict({k: {id: d0[id][k] for id in list(d0)} for k in epoch_ks})
 
+        def get_vs(dic):
+            l=aux.SuperList(dic.values())
+            try :
+                sh=[ll.shape[0] for ll in l]
+                if sh.count(2)>sh.count(1):
+                    l=aux.SuperList([ll for ll in l if ll.shape[0]==2])
+            except:
+                pass
+            return np.concatenate(l)
+
         self.pooled_epochs = aux.AttrDict(
-            {k: np.concatenate(aux.SuperList(dic.values())) for k, dic in self.epoch_dicts.items() if
+            {k: get_vs(dic) for k, dic in self.epoch_dicts.items() if
              k not in ['turn_slice', 'pause_idx', 'run_idx']})
+
 
         reg.vprint(f'Completed bout detection.', 1)
 
