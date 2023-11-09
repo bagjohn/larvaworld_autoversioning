@@ -264,9 +264,9 @@ class ParamLarvaDataset(param.Parameterized):
         def get_vs(dic):
             l=aux.SuperList(dic.values())
             try :
-                sh=[ll.shape[0] for ll in l]
+                sh=[len(ll.shape) for ll in l]
                 if sh.count(2)>sh.count(1):
-                    l=aux.SuperList([ll for ll in l if ll.shape[0]==2])
+                    l=aux.SuperList([ll for ll in l if len(ll.shape)==2])
             except:
                 pass
             return np.concatenate(l)
