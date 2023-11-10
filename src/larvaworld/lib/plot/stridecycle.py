@@ -10,8 +10,6 @@ from matplotlib import pyplot as plt, ticker, cm
 from ..aux import nam
 from .. import reg, aux, plot
 
-
-
 __all__ = [
     'plot_vel_during_strides',
     'stride_cycle',
@@ -21,11 +19,13 @@ __all__ = [
     'plot_interference',
 ]
 
+
 def plot_vel_during_strides(dataset, use_component=False, save_to=None, return_fig=False, show=False):
     chunk = 'stride'
+    D=dataset.epoch_dicts[chunk]
+
     Npoints = 64
     d = dataset
-    s = d.step_data
 
     if save_to is None:
         save_to = os.path.join(d.plot_dir, 'plot_vel_during_strides')
@@ -39,7 +39,6 @@ def plot_vel_during_strides(dataset, use_component=False, save_to=None, return_f
 
     svels = nam.scal(nam.vel(d.points))
     lvels = nam.scal(nam.lin(nam.vel(d.points[1:])))
-    # ids = d.agent_ids
     hov = nam.vel(nam.orient('front'))
 
     if use_component:
@@ -50,29 +49,16 @@ def plot_vel_during_strides(dataset, use_component=False, save_to=None, return_f
     ang_vels = [hov]
     vels = [lin_vels, ang_vels]
     vels_list = lin_vels + ang_vels
-    # Nvels = len(vels_list)
-
-    # all_agents = [s.xs(id, level='AgentID', drop_level=True) for id in ids]
-    # all_flag_starts = [ag[ag[nam.start(chunk)] == True].index.values.astype(int) for ag in all_agents]
-    # all_flag_stops = [ag[ag[nam.stop(chunk)] == True].index.values.astype(int) for ag in all_agents]
 
     all_vel_timeseries = [[] for i in range(len(vels_list))]
 
-    for id in d.config.agent_ids :
-        ss=s.xs(id, level='AgentID', drop_level=True)
-        flag_starts=ss[ss[nam.start(chunk)] == True].index.values.astype(int)
-        flag_stops=ss[ss[nam.stop(chunk)] == True].index.values.astype(int)
-        for start, stop in zip(flag_starts, flag_stops):
+    for id in d.config.agent_ids:
+        for start, stop in D[id]:
             for i, vel in enumerate(vels_list):
-                vel_timeserie = s.loc[(slice(start, stop), id), vel].values
+                vel_timeserie = d.s.loc[(slice(start, stop), id), vel].values
                 all_vel_timeseries[i].append(vel_timeserie)
 
 
-    # for agent_id, flag_starts, flag_stops in zip(ids, all_flag_starts, all_flag_stops):
-    #     for start, stop in zip(flag_starts, flag_stops):
-    #         for i, vel in enumerate(vels_list):
-    #             vel_timeserie = s.loc[(slice(start, stop), agent_id), vel].values
-    #             all_vel_timeseries[i].append(vel_timeserie)
 
     durations = [len(i) for i in all_vel_timeseries[0]]
     lin_vel_timeseries = all_vel_timeseries[:-1]
@@ -92,7 +78,7 @@ def plot_vel_during_strides(dataset, use_component=False, save_to=None, return_f
         for serie, vel, col, c, l in zip(vel_timeseries[i], vels[i], cs[i], cs[i], labels[i]):
             array = [np.interp(x=np.linspace(0, 2 * np.pi, Npoints), xp=np.linspace(0, 2 * np.pi, dur), fp=ts, left=0,
                                right=0) for dur, ts in zip(durations, serie)]
-            plot.plot_quantiles(df=array, axis=ax, color_mean=c, color_shading=col, label=l)
+            plot.plot_quantiles(df=array, axis=ax, color_mean=c, color=col, label=l)
 
         Nticks = 5
         ticks = np.linspace(0, Npoints - 1, Nticks)
@@ -103,21 +89,21 @@ def plot_vel_during_strides(dataset, use_component=False, save_to=None, return_f
         ax.set_xlabel('$\phi_{stride}$')
         l = ax.legend(loc='upper right')
         for j, text in enumerate(l.get_texts()):
-            text.color=cs[i][j]
+            text.color = cs[i][j]
         plt.subplots_adjust(bottom=0.2, top=0.95, left=0.1, right=0.95, wspace=0.01)
         fig.savefig(filepaths[i], dpi=300)
         print(f'Plot saved as {filepaths[i]}')
 
-@reg.funcs.graph('stride cycle', required={'ks':['sv', 'fov', 'rov', 'foa', 'b']})
+
+@reg.funcs.graph('stride cycle', required={'ks': ['sv', 'fov', 'rov', 'foa', 'b']})
 def stride_cycle(name=None, shorts=['sv', 'fov', 'rov', 'foa', 'b'], modes=None, subfolder='stride',
-                 Nbins=64, individuals=False, pooled=True,title='Stride cycle analysis', **kwargs):
-    from ..process.annotation import compute_interference
+                 Nbins=64, individuals=False, pooled=True, title='Stride cycle analysis', **kwargs):
     if name is None:
         name = f'stride_cycle_curves_all_larvae' if individuals else f'stride_cycle_curves'
 
     Nsh = len(shorts)
     P = plot.AutoPlot(name=name, subfolder=subfolder, build_kws={'N': Nsh, 'w': 8, 'h': 5, 'sharex': True},
-                 **kwargs)
+                      **kwargs)
 
     x = np.linspace(0, 2 * np.pi, Nbins)
     for ii, sh in enumerate(shorts):
@@ -126,54 +112,51 @@ def stride_cycle(name=None, shorts=['sv', 'fov', 'rov', 'foa', 'b'], modes=None,
         else:
             mode = modes[ii]
 
-        for d in P.datasets:
-            c = d.config
-            col = c.color
+        for l, d, c in P.data_palette:
+            kws = {'label': l, 'color': c}
             if individuals:
-                if d.cycle_curves not in [None, {}]:
+                try:
                     df = d.cycle_curves[sh][mode]
                     if pooled:
-                        plot.plot_quantiles(df=df, axis=P.axs[ii], color_shading=col, x=x, label=d.id)
+                        plot.plot_quantiles(df=df, axis=P.axs[ii], x=x, **kws)
                     else:
                         for j in range(df.shape[0]):
-                            P.axs[ii].plot(x, df[j, :], color=col)
-                        P.axs[ii].plot(x, np.nanquantile(df, q=0.5, axis=0), label=d.id, color=col)
-
+                            P.axs[ii].plot(x, df[j, :], color=c)
+                        P.axs[ii].plot(x, np.nanquantile(df, q=0.5, axis=0), **kws)
+                except:
+                    pass
             else:
-                if d.pooled_cycle_curves not in [None, {}]:
-                    P.axs[ii].plot(x, np.array(d.pooled_cycle_curves[sh][mode]), label=d.id, color=col)
-
+                try:
+                    P.axs[ii].plot(x, np.array(d.pooled_cycle_curves[sh][mode]), **kws)
+                except:
+                    pass
         P.conf_ax(ii, xticks=np.linspace(0, 2 * np.pi, 5), xlim=[0, 2 * np.pi],
                   xticklabels=[r'$0$', r'$\frac{\pi}{2}$', r'$\pi$', r'$\frac{3\pi}{2}$', r'$2\pi$'],
                   xlab='$\phi_{stride}$', ylab=reg.par.kdict[sh].symunit, xvis=True if ii == Nsh - 1 else False)
     P.axs[0].legend(loc='upper left', fontsize=15)
-
     P.conf_fig(title=title, title_kws={'w': 'bold', 's': 20}, align=True,
                adjust_kws={'BT': (0.1, 0.9), 'LR': (0.2, 0.9), 'H': 0.01})
     return P.get()
 
 
-@reg.funcs.graph('stride cycle multi', required={'ks':['sv', 'fov', 'rov', 'foa', 'b']})
-def stride_cycle_all_points(name='stride cycle multi',  idx=0, Nbins=64, short='fov',subfolder='stride', maxNpoints=5,
+@reg.funcs.graph('stride cycle multi', required={'ks': ['sv', 'fov', 'rov', 'foa', 'b']})
+def stride_cycle_all_points(name='stride cycle multi', idx=0, Nbins=64, short='fov', subfolder='stride', maxNpoints=5,
                             axx=None, **kwargs):
-
     P = plot.AutoPlot(name=name, subfolder=subfolder, build_kws={'Nrows': 2, 'w': 15, 'h': 6, 'sharex': True},
-                 **kwargs)
+                      **kwargs)
 
     pi2 = 2 * np.pi
     x = np.linspace(0, pi2, Nbins)
 
-    from ..process.annotation import stride_interp,detect_strides
+    from ..process.annotation import stride_interp, detect_strides
     l, sv, fv, fov = reg.getPar(['l', 'sv', 'fv', 'fov'])
 
-
     for d in P.datasets:
-        s,e,c = d.data
+        s, e, c = d.data
         id = c.agent_ids[idx]
         ee = e.loc[id]
         ss = s.xs(id, level='AgentID')
         strides = detect_strides(ss[sv], c.dt, fr=ee[fv], return_runs=False, return_extrema=False)
-
 
         if short is not None:
             par, ylab1 = reg.getPar(short, to_return=['d', 'l'])
@@ -183,10 +166,9 @@ def stride_cycle_all_points(name='stride cycle multi',  idx=0, Nbins=64, short='
             aa_plus = aa[da > 0]
             aa_norm = np.vstack([aa_plus, -aa_minus])
 
-            plot.plot_quantiles(df=aa_norm, axis=P.axs[1], color_shading='blue', x=x, label='experiment')
-        else :
+            plot.plot_quantiles(df=aa_norm, axis=P.axs[1], color='blue', x=x, label='experiment')
+        else:
             ylab1 = None
-
 
         points0 = nam.midline(c.Npoints, type='point')
         if c.Npoints > maxNpoints:
@@ -201,7 +183,7 @@ def stride_cycle_all_points(name='stride cycle multi',  idx=0, Nbins=64, short='
         y0max = 0.7
         for p, col in zip(points, pointcols):
             v_p = nam.vel(p)
-            a = ss[v_p] if v_p in ss.columns else aux.eudist(ss[nam.xy(p)].values)/c.dt
+            a = ss[v_p] if v_p in ss.columns else aux.eudist(ss[nam.xy(p)].values) / c.dt
             a = a / ee[l]
             aa = np.zeros([len(strides), Nbins])
             for ii, (s0, s1) in enumerate(strides):
@@ -209,13 +191,15 @@ def stride_cycle_all_points(name='stride cycle multi',  idx=0, Nbins=64, short='
             aa_mu = np.nanquantile(aa, q=0.5, axis=0)
             aa_max = np.max(aa_mu)
             phi_max = x[np.argmax(aa_mu)]
-            plot.plot_quantiles(df=aa, axis=P.axs[0], color_shading=col, x=x, label=p)
-            P.axs[0].axvline(phi_max, ymax=aa_max / y0max, color=col, alpha=1, linestyle='dashed', linewidth=2, zorder=20)
+            plot.plot_quantiles(df=aa, axis=P.axs[0], color=col, x=x, label=p)
+            P.axs[0].axvline(phi_max, ymax=aa_max / y0max, color=col, alpha=1, linestyle='dashed', linewidth=2,
+                             zorder=20)
             P.axs[0].scatter(phi_max, aa_max + 0.02 * y0max, color=col, marker='v', linewidth=2, zorder=20)
-        for i, ymax,ylab in zip([0,1],[y0max,None], [r'scaled velocity $(s^{-1})$',ylab1]):
+        for i, ymax, ylab in zip([0, 1], [y0max, None], [r'scaled velocity $(s^{-1})$', ylab1]):
             P.conf_ax(i, ylim=(0, ymax), xlim=(0, pi2), ylab=ylab, xlab='$\phi_{stride}$',
-                  legfontsize=15, leg_loc='upper left', yMaxN=5,
-                  xticks=np.linspace(0, pi2, 5),xticklabels=[r'$0$', r'$\frac{\pi}{2}$', r'$\pi$', r'$\frac{3\pi}{2}$', r'$2\pi$'])
+                      legfontsize=15, leg_loc='upper left', yMaxN=5,
+                      xticks=np.linspace(0, pi2, 5),
+                      xticklabels=[r'$0$', r'$\frac{\pi}{2}$', r'$\pi$', r'$\frac{3\pi}{2}$', r'$2\pi$'])
 
         try:
             att = 'attenuation'
@@ -228,24 +212,26 @@ def stride_cycle_all_points(name='stride cycle multi',  idx=0, Nbins=64, short='
             axx.violinplot(aa.T, widths=0.9)
             axx.axhline(0, color='green', alpha=0.5, linestyle='dashed', linewidth=1)
             P.conf_ax(ax=axx, ylab=r'$\Delta\phi$', xlab='# point',
-                      xticks=np.arange(c.Npoints + 1),yticks=[-np.pi / 2, 0, np.pi / 2, np.pi],
+                      xticks=np.arange(c.Npoints + 1), yticks=[-np.pi / 2, 0, np.pi / 2, np.pi],
                       xticklabels=[None] + np.arange(1, c.Npoints + 1, 1).tolist(),
                       yticklabels=[r'$-\frac{\pi}{2}$', r'$0$', r'$\frac{\pi}{2}$', r'$\pi$'],
-                      minor_ticklabelsize = 12, major_ticklabelsize = 12)
+                      minor_ticklabelsize=12, major_ticklabelsize=12)
 
         except:
             pass
     P.adjust((0.15, 0.9), (0.2, 0.9), 0.1, 0.15)
     return P.get()
 
-@reg.funcs.graph('stride Dbend', required={'pars':[nam.at('bend', nam.start('stride')),nam.at('bend', nam.stop('stride'))]})
-def plot_stride_Dbend(name='stride_bend_change',show_text=False, subfolder='stride', **kwargs):
+
+@reg.funcs.graph('stride Dbend',
+                 required={'pars': [nam.at('bend', nam.start('stride')), nam.at('bend', nam.stop('stride'))]})
+def plot_stride_Dbend(name='stride_bend_change', show_text=False, subfolder='stride', **kwargs):
     P = plot.AutoPlot(name=name, subfolder=subfolder, **kwargs)
     ax = P.axs[0]
-    b0p,b1p,bdp=nam.atStartStopChunk('bend','stride')
+    b0p, b1p, bdp = nam.atStartStopChunk('bend', 'stride')
     fits = {}
     for i, (d, l, c) in enumerate(zip(P.datasets, P.labels, P.colors)):
-        if not aux.SuperList([b0p,b1p]).exist_in(d.step_ps):
+        if not aux.SuperList([b0p, b1p]).exist_in(d.step_ps):
             d.track_par_in_chunk(chunk='stride', par='bend')
         b0 = d.get_par(b0p).dropna().values.flatten()[:500]
         b1 = d.get_par(b1p).dropna().values.flatten()[:500]
@@ -268,14 +254,17 @@ def plot_stride_Dbend(name='stride_bend_change',show_text=False, subfolder='stri
     P.adjust((0.25, 0.95), (0.2, 0.95), 0.01)
     return P.get()
 
-@reg.funcs.graph('stride Dor', required={'ks':['str_fo', 'str_ro']})
-def plot_stride_Dorient(name='stride_orient_change',absolute=True, subfolder='stride',Nbins=200, **kwargs):
-    P = plot.AutoPlot(ks=['str_fo', 'str_ro'],ranges=[80,80],absolute=absolute, name=name, subfolder=subfolder,build_kws={'Ncols': 'Nks'}, **kwargs)
-    P.plot_hist(alpha=0.5,nbins=Nbins)
+
+@reg.funcs.graph('stride Dor', required={'ks': ['str_fo', 'str_ro']})
+def plot_stride_Dorient(name='stride_orient_change', absolute=True, subfolder='stride', Nbins=200, **kwargs):
+    P = plot.AutoPlot(ks=['str_fo', 'str_ro'], ranges=[80, 80], absolute=absolute, name=name, subfolder=subfolder,
+                      build_kws={'Ncols': 'Nks'}, **kwargs)
+    P.plot_hist(alpha=0.5, nbins=Nbins)
     P.adjust((0.12, 0.99), (0.2, 0.95), 0.01)
     return P.get()
 
-@reg.funcs.graph('interference', required={'ks':['sv','fov','rov', 'bv','l']})
+
+@reg.funcs.graph('interference', required={'ks': ['sv', 'fov', 'rov', 'bv', 'l']})
 def plot_interference(mode='orientation', agent_idx=None, subfolder='interference', **kwargs):
     name = f'interference_{mode}' if agent_idx is None else f'interference_{mode}_agent_idx_{agent_idx}'
 
@@ -307,7 +296,7 @@ def plot_interference(mode='orientation', agent_idx=None, subfolder='interferenc
             if mode in ['bend', 'orientation']:
                 df = np.abs(df)
             Npoints = df.shape[1] - 1
-            plot.plot_quantiles(df=df, axis=P.axs[i], color_shading=c, label=l)
+            plot.plot_quantiles(df=df, axis=P.axs[i], color=c, label=l)
         P.conf_ax(i, ylab=ylab, ylim=ylim if i != 0 else [0.0, 0.6], yMaxN=4, leg_loc='upper right',
                   xlab='$\phi_{stride}$', xlim=[0, Npoints], xticks=np.linspace(0, Npoints, 5),
                   xticklabels=[r'$0$', r'$\frac{\pi}{2}$', r'$\pi$', r'$\frac{3\pi}{2}$', r'$2\pi$'],

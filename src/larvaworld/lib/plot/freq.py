@@ -62,7 +62,7 @@ def plot_fft_multi(ks=['v', 'fov'], name=f'frequency_powerspectrum', axx=None, *
             yk = np.array([r[1] for r in res])
             colk = aux.mix2colors(col, col0k)
             colsk.append(colk)
-            plot.plot_quantiles(yk, x=xf, axis=P.axs[0], label=lk, color_shading=colk)
+            plot.plot_quantiles(yk, x=xf, axis=P.axs[0], label=lk, color=colk)
         plot.prob_hist(vs=fsk, colors=colsk, **prob_kws)
     P.conf_ax(0, ylim=(0, 8), xlim=(0, 3.5), ylab='Amplitude (a.u.)', xlab='Frequency (Hz)',
               title='Fourier analysis', titlefontsize=25, yMaxN=5)

@@ -23,14 +23,7 @@ __all__ = [
 def plot_gut(**kwargs):
     P = plot.AutoPlot(name='gut', **kwargs)
     P.plot_quantiles(par='gut_occupancy', coeff=100, ylab='% gut occupied',ylim=[0, 100])
-    '''
-    x = P.trange()
-    for l, d, c in P.data_palette:
-        df = d.step_data['gut_occupancy'] * 100
-        plot.plot_quantiles(df=df, x=x, axis=P.axs[0], color_shading=c, label=l)
-    P.conf_ax(xlab='time, $min$', ylab='% gut occupied',
-              xlim=P.tlim, ylim=[0, 100], xMaxN=5, yMaxN=5, leg_loc='upper left')
-    '''
+
 
     P.adjust((0.1, 0.95), (0.15, 0.95), 0.05, 0.005)
     return P.get()
@@ -69,7 +62,7 @@ def plot_food_amount(filt_amount=False, scaled=False, **kwargs):
             dst_b = dst_b.diff()
             dst_b.iloc[0] = 0
             dst_b = signal.sosfiltfilt(sos, dst_b)
-        plot.plot_mean_and_range(x=P.trange(), mean=dst_m, lb=dst_b, ub=dst_u, axis=P.axs[0], color_shading=c, label=lab)
+        plot.plot_mean_and_range(x=P.trange(), mean=dst_m, lb=dst_b, ub=dst_u, axis=P.axs[0], color=c, label=lab)
     P.conf_ax(xlab='time, $min$', ylab=ylab, xlim=P.tlim, xMaxN=5, leg_loc='upper left')
     P.adjust((0.1, 0.95), (0.15, 0.95), 0.05, 0.005)
     return P.get()

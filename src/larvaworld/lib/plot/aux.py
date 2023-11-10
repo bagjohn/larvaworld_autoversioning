@@ -59,7 +59,7 @@ def plot_quantiles(df, x=None, **kwargs):
     - Exception if the input data type is not recognized.
 
     Example usage:
-    plot_quantiles(data_array, x_values, axis=plt.gca(), color_shading='blue', label='Data')
+    plot_quantiles(data_array, x_values, axis=plt.gca(), color='blue', label='Data')
     """
     if isinstance(df, np.ndarray):
         mean = np.nanquantile(df, q=0.5, axis=0)
@@ -76,7 +76,7 @@ def plot_quantiles(df, x=None, **kwargs):
     plot_mean_and_range(x=x, mean=mean, lb=lb, ub=ub, **kwargs)
 
 
-def plot_mean_and_range(x, mean, lb, ub, axis, color_shading, color_mean=None, label=None, linestyle='solid',
+def plot_mean_and_range(x, mean, lb, ub, axis, color, color_mean=None, label=None, linestyle='solid',
                         linewidth=2):
     """
     Plot the mean and a shaded range (quantiles or confidence intervals).
@@ -92,7 +92,7 @@ def plot_mean_and_range(x, mean, lb, ub, axis, color_shading, color_mean=None, l
         The upper bound of the range.
     - axis: matplotlib.axes.Axes
         The axis where the plot will be drawn.
-    - color_shading: str
+    - color: str
         The color of the shaded range.
     - color_mean: str, optional
         The color of the mean line. If None, it will be set to color_shading.
@@ -114,9 +114,9 @@ def plot_mean_and_range(x, mean, lb, ub, axis, color_shading, color_mean=None, l
     else:
         raise Exception("Incompatible input shapes.")
     if color_mean is None:
-        color_mean = color_shading
+        color_mean = color
     # Plot the shaded range (confidence intervals)
-    axis.fill_between(xx, ub, lb, color=color_shading, alpha=0.2, zorder=0)
+    axis.fill_between(xx, ub, lb, color=color, alpha=0.2, zorder=0)
     # Plot the mean on top
     axis.plot(xx, mean, color_mean, label=label, linewidth=linewidth, alpha=1.0, zorder=10, linestyle=linestyle)
 

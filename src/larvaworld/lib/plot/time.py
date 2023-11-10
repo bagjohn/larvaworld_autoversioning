@@ -166,7 +166,7 @@ def timeplot(ks=[], pars=[], name=None, same_plot=True, individuals=False, table
                         ax.plot(x, dc_single, color=c, linewidth=1)
                     ax.plot(x, dc_m, color=c, linewidth=2)
                 else:
-                    plot.plot_quantiles(df=dc, x=x, axis=ax, color_shading=c, label=symbol, linewidth=2)
+                    plot.plot_quantiles(df=dc, x=x, axis=ax, color=c, label=symbol, linewidth=2)
                     if show_first:
                         cc='red' if P.Ndatasets == 1 else c
                         dc0 = dc.xs(dc.index.get_level_values('AgentID')[0], level='AgentID')
