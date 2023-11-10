@@ -814,6 +814,7 @@ class ParamLarvaDataset(param.Parameterized):
         self.comp_ang_moments(**kwargs)
         if is_last:
             self.save()
+        reg.vprint('Angular analysis complete.', 1)
 
     def comp_bend(self, mode='minimal', recompute=False):
 
@@ -961,6 +962,7 @@ class ParamLarvaDataset(param.Parameterized):
         self.comp_operators(pars=c.traj_xy)
         for point in ['', 'centroid']:
             self.comp_xy_moments(point, **kwargs)
+        reg.vprint('Spatial analysis complete.', 1)
 
     def scale_to_length(self, pars=None, keys=None):
         s, e, c = self.data
@@ -1011,7 +1013,7 @@ class ParamLarvaDataset(param.Parameterized):
                 s[sd] = s.apply(rowFunc, axis=1)
                 self.comp_operators(pars=[sd])
 
-            reg.vprint('Bearing and distance to source computed')
+            reg.vprint('Bearing and distance to source computed',1)
 
     def comp_wind(self):
         w = self.config.env_params.windscape
