@@ -10,6 +10,8 @@ from ..aux import nam
 from .. import reg, aux, util
 
 __all__ = [
+    'epoch_slices',
+    'epoch_idx',
     'process_epochs',
     'stride_interp',
     'detect_pauses',
@@ -27,6 +29,21 @@ __all__ = [
     'turn_annotation',
     'crawl_annotation',
 ]
+
+def epoch_slices(epochs):
+    if epochs.shape[0] == 0:
+        return []
+    else:
+        return [np.arange(r0, r1, 1) for r0, r1 in epochs]
+
+def epoch_idx(epochs):
+    slices = epoch_slices(epochs)
+    if len(slices) == 0:
+        return np.array([])
+    elif len(slices) == 1:
+        return np.array(slices[0])
+    else:
+        return np.concatenate(slices)
 
 
 def process_epochs(a, epochs, dt, return_idx=True):
