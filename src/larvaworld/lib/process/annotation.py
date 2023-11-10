@@ -10,7 +10,7 @@ from ..aux import nam
 from .. import reg, aux, util
 
 __all__ = [
-    # 'register_bout_distros',
+    'process_epochs',
     'stride_interp',
     'detect_pauses',
     'detect_epochs',
