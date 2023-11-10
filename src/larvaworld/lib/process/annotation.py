@@ -320,11 +320,6 @@ def cycle_curve_dict_multi(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
     return aux.AttrDict(dic)
 
 
-# @reg.funcs.annotation("interference")
-# def compute_interference_data(s, e, c, d, Nbins=64, **kwargs) :
-#     d.cycle_curves = compute_interference(s=s, e=e, c=c, chunk_dicts=d.chunk_dicts, Nbins=Nbins)
-#     d.store(d.cycle_curves, 'cycle_curves')
-
 def compute_interference(s, e, c, d=None, Nbins=64, chunk_dicts=None):
     p_sv, p_fov, p_rov, p_foa, p_b, pau_fov_mu = reg.getPar(['sv', 'fov', 'rov', 'foa', 'b', 'pau_fov_mu'])
 
@@ -403,19 +398,14 @@ def turn_mode_annotation(e, chunk_dicts):
 
 @reg.funcs.annotation("turn")
 def turn_annotation(s, e, c):
-    ids = s.index.unique('AgentID').values
-    N = s.index.unique('Step').size
-
-    fov, foa = reg.getPar(['fov', 'foa'])
-
     eTur_ps = reg.getPar(['Ltur_N', 'Rtur_N', 'tur_N', 'tur_H'])
-    eTur_vs = np.zeros([len(ids), len(eTur_ps)]) * np.nan
+    eTur_vs = np.zeros([c.N, len(eTur_ps)]) * np.nan
     turn_ps = reg.getPar(['tur_fou', 'tur_t', 'Ltur_t', 'Rtur_t', 'tur_fov_max'])
-    turn_vs = np.zeros([N, len(ids), len(turn_ps)]) * np.nan
+    turn_vs = np.zeros([c.Nticks, c.N, len(turn_ps)]) * np.nan
     turn_dict = {}
 
-    for jj, id in enumerate(ids):
-        a_fov = s[fov].xs(id, level="AgentID")
+    for jj, id in enumerate(c.agent_ids):
+        a_fov = s[reg.getPar('fov')].xs(id, level="AgentID")
         Lturns, Rturns = detect_turns(a_fov, c.dt)
 
         Lturns1, Ldurs, Lturn_slices, Lamps, Lturn_idx, Lmaxs = process_epochs(a_fov.values, Lturns, c.dt,
@@ -425,10 +415,7 @@ def turn_annotation(s, e, c):
         Lturns_N, Rturns_N = Lturns.shape[0], Rturns.shape[0]
         turns_N = Lturns_N + Rturns_N
         tur_H = Lturns_N / turns_N if turns_N != 0 else 0
-        Tamps = np.concatenate([Lamps, Ramps])
-        Tdurs = np.concatenate([Ldurs, Rdurs])
-        Tmaxs = np.concatenate([Lmaxs, Rmaxs])
-        Tslices = Lturn_slices + Rturn_slices
+
         if Lturns_N > 0:
             turn_vs[Lturns[:, 1], jj, 0] = Lamps
             turn_vs[Lturns[:, 1], jj, 1] = Ldurs
@@ -439,10 +426,11 @@ def turn_annotation(s, e, c):
             turn_vs[Rturns[:, 1], jj, 1] = Rdurs
             turn_vs[Rturns[:, 1], jj, 3] = Rdurs
             turn_vs[Rturns[:, 1], jj, 4] = Rmaxs
-        turn_dict[id] = {'Lturn': Lturns, 'Rturn': Rturns, 'turn_slice': Tslices, 'turn_amp': Tamps,'Lturn_amp': Lamps,'Rturn_amp': Ramps,
-                         'turn_dur': Tdurs, 'Lturn_dur': Ldurs, 'Rturn_dur': Rdurs, 'turn_vel_max': Tmaxs}
+        turn_dict[id] = {'Lturn': Lturns, 'Rturn': Rturns, 'turn_slice': Lturn_slices + Rturn_slices, 'turn_amp': np.concatenate([Lamps, Ramps]),
+                         'Lturn_amp': Lamps,'Rturn_amp': Ramps,
+                         'turn_dur': np.concatenate([Ldurs, Rdurs]), 'Lturn_dur': Ldurs, 'Rturn_dur': Rdurs, 'turn_vel_max': np.concatenate([Lmaxs, Rmaxs])}
         eTur_vs[jj, :] = [Lturns_N, Rturns_N, turns_N, tur_H]
-    s[turn_ps] = turn_vs.reshape([N * len(ids), len(turn_ps)])
+    s[turn_ps] = turn_vs.reshape(-1, len(turn_ps))
     e[eTur_ps] = eTur_vs
 
     return turn_dict
@@ -543,7 +531,7 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
         crawl_dict[id] = {'vel_minima': sv_minima, 'vel_maxima': sv_maxima,'stride': strides, 'stride_Dor': stride_Dor, 'exec': runs, 'pause': pauses,
                           'run_idx': run_idx, 'pause_idx': pause_idx, 'stride_dur': stride_durs,
                           'run_count': str_chain_ls, 'run_dur': run_durs, 'run_dst': run_dsts, 'pause_dur': pause_durs}
-    s[run_ps] = run_vs.reshape([c.Nticks * c.N, len(run_ps)])
+    s[run_ps] = run_vs.reshape(-1, len(run_ps))
     e[lin_ps] = lin_vs
 
     str_d_mu, str_d_std, str_sd_mu, str_sd_std, run_tr, pau_tr, cum_run_t, cum_pau_t, cum_t = \

@@ -246,6 +246,32 @@ class ParamLarvaDataset(param.Parameterized):
                 A[t1s, i, 2] = b1s - b0s
         s[aux.nam.atStartStopChunk(par, chunk)] = A.reshape([-1, 3])
 
+    def turn_annotation(self):
+        c = self.config
+        eTur_ps = reg.getPar(['Ltur_N', 'Rtur_N', 'tur_N', 'tur_H'])
+        eTur_vs = np.zeros([c.N, len(eTur_ps)]) * np.nan
+        turn_dict = {}
+
+        for jj, id in enumerate(c.agent_ids):
+            a_fov = self.s[reg.getPar('fov')].xs(id, level="AgentID")
+            Lturns, Rturns = process.annotation.detect_turns(a_fov, c.dt)
+
+            Lturns1, Ldurs, Lturn_slices, Lamps, Lturn_idx, Lmaxs = process.annotation.process_epochs(a_fov.values, Lturns, c.dt,
+                                                                                   return_idx=True)
+            Rturns1, Rdurs, Rturn_slices, Ramps, Rturn_idx, Rmaxs = process.annotation.process_epochs(a_fov.values, Rturns, c.dt,
+                                                                                   return_idx=True)
+            Lturns_N, Rturns_N = Lturns.shape[0], Rturns.shape[0]
+            turns_N = Lturns_N + Rturns_N
+            tur_H = Lturns_N / turns_N if turns_N != 0 else 0
+            turn_dict[id] = {'Lturn': Lturns, 'Rturn': Rturns, 'turn_slice': Lturn_slices + Rturn_slices,
+                             'turn_amp': np.concatenate([Lamps, Ramps]),
+                             'Lturn_amp': Lamps, 'Rturn_amp': Ramps,
+                             'turn_dur': np.concatenate([Ldurs, Rdurs]), 'Lturn_dur': Ldurs, 'Rturn_dur': Rdurs,
+                             'turn_vel_max': np.concatenate([Lmaxs, Rmaxs])}
+            eTur_vs[jj, :] = [Lturns_N, Rturns_N, turns_N, tur_H]
+        self.e[eTur_ps] = eTur_vs
+        return turn_dict
+
     def detect_bouts(self, vel_thr=0.3, strides_enabled=True, castsNweathervanes=True):
         s, e, c = self.data
         aux.fft_freqs(s, e, c)
@@ -800,13 +826,6 @@ class ParamLarvaDataset(param.Parameterized):
         if mode == 'full':
             mid = self.midline_xy_data
             s[c.seg_orientations] = self.midline_seg_orients_from_mid(mid)
-            # or_pars.append(par)
-        # for p in or_pars:
-        #     p_unw = aux.nam.unwrap(p)
-        #     s[p_unw] = aux.apply_per_level(s[p], aux.unwrap_deg).flatten()
-
-        # ss = s[p_unw]
-        # e[nam.initial(par)] = s[par].dropna().groupby('AgentID').first()
 
     def comp_angular(self, is_last=False, **kwargs):
         self.comp_orientations(**kwargs)
@@ -1385,100 +1404,6 @@ class LarvaDataset(BaseLarvaDataset):
                 return idx
 
             return np.concatenate([df.loc[get_idx(epochs[id])].dropna().values for id, df in grouped])
-
-        # c0s = ss.loc[epochs[:, 0]].values
-        # c1s = ss.loc[epochs[:, 1]].values
-        # s, e, c = self.data
-        # chunk_idx = f'{chunk}_idx'
-        # chunk_dur = f'{chunk}_dur'
-
-        #
-        # if mode == 'distro':
-        #
-        #     vs = []
-        #     for id in c.agent_ids:
-        #         dic = self.chunk_dicts[id]
-        #         ss = s[par].xs(id, level='AgentID')
-        #         if min_dur == 0:
-        #             idx = dic[chunk_idx] + 1
-        #         else:
-        #             epochs = dic[chunk][dic[chunk_dur] >= min_dur]
-        #             Nepochs = epochs.shape[0]
-        #             if Nepochs == 0:
-        #                 idx = []
-        #             elif Nepochs == 1:
-        #                 idx = np.arange(epochs[0][0], epochs[0][1] + 1, 1)
-        #             else:
-        #                 slices = [np.arange(r0, r1 + 1, 1) for r0, r1 in epochs]
-        #                 idx = np.concatenate(slices)
-        #         vs.append(ss.loc[idx].dropna().values)
-        #     vs = np.concatenate(vs)
-        #     return vs
-        # elif mode == 'extrema':
-        #     cc0s, cc1s, cc01s = [], [], []
-        #     for id in c.agent_ids:
-        #         dic = self.chunk_dicts[id]
-        #         ss = s[par].xs(id, level='AgentID')
-        #         epochs = dic[chunk]
-        #         if min_dur != 0:
-        #             epochs = epochs[dic[chunk_dur] >= min_dur]
-        #         Nepochs = epochs.shape[0]
-        #         if Nepochs > 0:
-        #             c0s = ss.loc[epochs[:, 0]].values
-        #             c1s = ss.loc[epochs[:, 1]].values
-        #             cc0s.append(c0s)
-        #             cc1s.append(c1s)
-        #     cc0s = np.concatenate(cc0s)
-        #     cc1s = np.concatenate(cc1s)
-        #     cc01s = cc1s - cc0s
-        #     return cc0s, cc1s, cc01s
-
-    # def get_chunk_par(self, chunk, k=None, par=None, min_dur=0, mode='distro'):
-    #     s, e, c = self.data
-    #     chunk_idx = f'{chunk}_idx'
-    #     chunk_dur = f'{chunk}_dur'
-    #     if par is None:
-    #         par = reg.getPar(k)
-    #
-    #     if mode == 'distro':
-    #
-    #         vs = []
-    #         for id in c.agent_ids:
-    #             dic = self.chunk_dicts[id]
-    #             ss = s[par].xs(id, level='AgentID')
-    #             if min_dur == 0:
-    #                 idx = dic[chunk_idx] + 1
-    #             else:
-    #                 epochs = dic[chunk][dic[chunk_dur] >= min_dur]
-    #                 Nepochs = epochs.shape[0]
-    #                 if Nepochs == 0:
-    #                     idx = []
-    #                 elif Nepochs == 1:
-    #                     idx = np.arange(epochs[0][0], epochs[0][1] + 1, 1)
-    #                 else:
-    #                     slices = [np.arange(r0, r1 + 1, 1) for r0, r1 in epochs]
-    #                     idx = np.concatenate(slices)
-    #             vs.append(ss.loc[idx].dropna().values)
-    #         vs = np.concatenate(vs)
-    #         return vs
-    #     elif mode == 'extrema':
-    #         cc0s, cc1s, cc01s = [], [], []
-    #         for id in c.agent_ids:
-    #             dic = self.chunk_dicts[id]
-    #             ss = s[par].xs(id, level='AgentID')
-    #             epochs = dic[chunk]
-    #             if min_dur != 0:
-    #                 epochs = epochs[dic[chunk_dur] >= min_dur]
-    #             Nepochs = epochs.shape[0]
-    #             if Nepochs > 0:
-    #                 c0s = ss.loc[epochs[:, 0]].values
-    #                 c1s = ss.loc[epochs[:, 1]].values
-    #                 cc0s.append(c0s)
-    #                 cc1s.append(c1s)
-    #         cc0s = np.concatenate(cc0s)
-    #         cc1s = np.concatenate(cc1s)
-    #         cc01s = cc1s - cc0s
-    #         return cc0s, cc1s, cc01s
 
 
 class LarvaDatasetCollection:
