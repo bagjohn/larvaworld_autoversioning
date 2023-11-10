@@ -450,13 +450,6 @@ class LabFormat(NestedConf):
         reg.vprint(f'***-- Dataset {d.id} created with {len(d.config.agent_ids)} larvae! -----', 1)
         return d
 
-    def enrich_dataset(self, d, conf=None):
-        d.preprocess(**self.preprocess.nestedConf)
-        if conf is None:
-            conf = reg.gen.EnrichConf(proc_keys=[], anot_keys=[]).nestedConf
-        reg.vprint(f'****- Processed dataset {d.id} to derive secondary metrics -----', 1)
-        return d
-
     def import_dataset(self, parent_dir, raw_folder=None, merged=False,
                        proc_folder=None, group_id=None, id=None, sample=None, color='black', epochs=[], age=0.0,
                        refID=None, enrich_conf=None, save_dataset=False, **kwargs):
@@ -527,11 +520,15 @@ class LabFormat(NestedConf):
             step = step.astype(float)
             d = self.build_dataset(step, end, parent_dir, proc_folder=proc_folder, group_id=group_id,
                                    id=id, sample=sample, color=color, epochs=epochs, age=age, refID=refID)
-            d = self.enrich_dataset(d, conf=enrich_conf)
+            if enrich_conf is None :
+                enrich_conf=aux.AttrDict()
+            enrich_conf.pre_kws = self.preprocess.nestedConf
+            d.enrich(**enrich_conf, is_last=False)
+            reg.vprint(f'****- Processed dataset {d.id} to derive secondary metrics -----', 1)
+
             if save_dataset:
                 shutil.rmtree(d.config.dir, ignore_errors=True)
                 d.save()
-                # reg.vprint(f'***** Dataset {d.id} stored -----', 1)
             return d
 
     def import_datasets(self, source_ids, ids=None, colors=None, refIDs=None, **kwargs):
