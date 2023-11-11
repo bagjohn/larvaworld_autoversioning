@@ -249,9 +249,10 @@ class ParamLarvaDataset(param.Parameterized):
     def crawl_annotation(self, strides_enabled=True, vel_thr=0.3):
         from ..process.annotation import detect_strides, detect_pauses, detect_runs, epoch_idx, epoch_durs, epoch_amps
         c = self.config
+        dt = c.dt
         if c.Npoints <= 1:
             strides_enabled = False
-        kws = {'dt': c.dt, 'vel_thr': vel_thr}
+        kws = {'dt': dt, 'vel_thr': vel_thr}
         l, v, sv, dst, fov = reg.getPar(['l', 'v', 'sv', 'd', 'fov'])
         str_d_mu, str_d_std, str_sd_mu, str_sd_std, run_tr, pau_tr, cum_run_t, cum_pau_t, cum_t = \
             reg.getPar(
@@ -259,82 +260,71 @@ class ParamLarvaDataset(param.Parameterized):
                  'cum_t'])
         Sps = [str_d_mu, str_d_std]+reg.getPar(['str_sv_mu','str_N','run_v_mu', 'pau_v_mu'])+[cum_run_t, cum_pau_t]
         Svs = np.zeros([c.N, len(Sps)]) * np.nan
-        D = {}
+        DD = {}
         for jj, id in enumerate(c.agent_ids):
+            D = aux.AttrDict()
             ss = self.s.xs(id, level="AgentID")
             a_v = ss[v].values
             a_fov = ss[fov].values
             if strides_enabled:
                 a = ss[sv].values
-                imin, imax, strides, runs, str_chain_ls = detect_strides(a, return_extrema=True, **kws)
+                D.vel_minima, D.vel_maxima, D.stride, D.exec, D.run_count = detect_strides(a, return_extrema=True, **kws)
             else:
-                imin, imax, strides, str_chain_ls = np.array([]), np.array([]), np.array([]), np.array([])
+                D.vel_minima, D.vel_maxima, D.stride, D.run_count = np.array([]), np.array([]), np.array([]), np.array([])
                 a = a_v
-                runs = detect_runs(a, **kws)
-            pauses = detect_pauses(a, runs=runs, **kws)
+                D.exec = detect_runs(a, **kws)
+            D.stride_Dor = np.array([np.trapz(a_fov[s0:s1 + 1]) for s0, s1 in D.stride])
+            D.stride_dur = epoch_durs(D.stride, dt)
+            D.stride_dst = epoch_amps(D.stride, a, dt)
+            D.stride_idx = epoch_idx(D.stride)
+            D.run_dur = epoch_durs(D.exec, dt)
+            D.run_dst = epoch_amps(D.exec, a_v, dt)
+            D.run_idx = epoch_idx(D.exec)
+            D.pause = detect_pauses(a, runs=D.exec, **kws)
+            D.pause_dur = epoch_durs(D.pause, dt)
+            D.pause_idx = epoch_idx(D.pause)
 
-            D[id] = aux.AttrDict({
-                'vel_minima': imin,
-                'vel_maxima': imax,
-                'stride': strides,
-                'stride_Dor': np.array([np.trapz(a_fov[s0:s1 + 1]) for s0, s1 in strides]),
-                'exec': runs,
-                'pause': pauses,
-                'run_idx': epoch_idx(runs),
-                'stride_idx': epoch_idx(strides),
-                'pause_idx': epoch_idx(pauses),
-                'stride_dur': epoch_durs(strides, c.dt),
-                'stride_dst': epoch_amps(strides, a, c.dt),
-                'run_count': str_chain_ls,
-                'run_dur': epoch_durs(runs, c.dt),
-                'run_dst': epoch_amps(runs, a_v, c.dt),
-                'pause_dur': epoch_durs(pauses, c.dt)
-            })
-            pidx, ridx, sidx = D[id].pause_idx, D[id].run_idx, D[id].stride_idx
-            pdur, rdur = D[id].pause_dur, D[id].run_dur
-            sdst=D[id].stride_dst
-            Svs[jj, :] = [np.nanmean(sdst),np.nanstd(sdst),np.nanmean(a[sidx]),np.nansum(str_chain_ls),
-                          np.mean(a_v[ridx]),np.mean(a_v[pidx]),np.sum(rdur),np.sum(pdur)]
+            Svs[jj, :] = [np.nanmean(D.stride_dst),np.nanstd(D.stride_dst),
+                          np.nanmean(a[D.stride_idx]),np.nansum(D.run_count),
+                          np.mean(a_v[D.run_idx]),np.mean(a_v[D.pause_idx]),
+                          np.sum(D.run_dur),np.sum(D.pause_dur)]
+            DD[id] = D
         self.e[Sps] = Svs
         self.e[run_tr] = self.e[cum_run_t] / self.e[cum_t]
         self.e[pau_tr] = self.e[cum_pau_t] / self.e[cum_t]
         if l in self.end_ps:
             self.e[str_sd_mu] = self.e[str_d_mu] / self.e[l]
             self.e[str_sd_std] = self.e[str_d_std] / self.e[l]
-        return D
+        return DD
 
-    def turn_annotation(self):
-        from ..process.annotation import detect_turns, epoch_durs, epoch_amps, epoch_maxs
+    def turn_annotation(self, min_dur=None):
+        from ..process.annotation import detect_turns, process_epochs
         c = self.config
         dt=c.dt
         A = self.s[reg.getPar('fov')]
 
         ps = reg.getPar(['Ltur_N', 'Rtur_N', 'tur_N', 'tur_H'])
         vs = np.zeros([c.N, len(ps)]) * np.nan
-        D = {}
+        DD = {}
 
         for j, id in enumerate(c.agent_ids):
+            D=aux.AttrDict()
             a = A.xs(id, level="AgentID")
-            Ls, Rs = detect_turns(a, dt)
-            LN, RN = Ls.shape[0], Rs.shape[0]
+            D.Lturn, D.Rturn = detect_turns(a, dt, min_dur=min_dur)
+            D.Lturn_dur, D.Lturn_amp, Lmaxs = process_epochs(a.values, D.Lturn, dt)
+            D.Rturn_dur, D.Rturn_amp, Rmaxs = process_epochs(a.values, D.Rturn, dt)
+            D.turn_dur = np.concatenate([D.Lturn_dur, D.Rturn_dur])
+            D.turn_amp = np.concatenate([D.Lturn_amp, D.Rturn_amp])
+            D.turn_vel_max = np.concatenate([Lmaxs, Rmaxs])
+            LN, RN = D.Lturn.shape[0], D.Rturn.shape[0]
             N = LN + RN
             H = LN / N if N != 0 else 0
-            D[id] = aux.AttrDict({
-                'Lturn': Ls,
-                'Rturn': Rs,
-                'Lturn_amp': epoch_amps(Ls, a, dt),
-                'Rturn_amp': epoch_amps(Rs, a, dt),
-                'Lturn_dur': epoch_durs(Ls, dt),
-                'Rturn_dur': epoch_durs(Rs, dt),
-                'Lturn_vel_max': epoch_maxs(Ls, a),
-                'Rturn_vel_max': epoch_maxs(Rs, a),
-            })
-            D[id].turn_dur = np.concatenate([D[id].Lturn_dur, D[id].Rturn_dur])
-            D[id].turn_amp = np.concatenate([D[id].Lturn_amp, D[id].Rturn_amp])
-            D[id].turn_vel_max = np.concatenate([D[id].Lturn_vel_max, D[id].Rturn_vel_max])
+
+
             vs[j, :] = [LN, RN, N, H]
+            DD[id]=D
         self.e[ps] = vs
-        return D
+        return DD
 
     def detect_bouts(self, vel_thr=0.3, strides_enabled=True, castsNweathervanes=True):
         s, e, c = self.data
