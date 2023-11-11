@@ -250,6 +250,9 @@ class ParamLarvaDataset(param.Parameterized):
         from ..process.annotation import detect_strides, detect_pauses, detect_runs, process_epochs, epoch_idx, \
             epoch_durs, epoch_amps
         c = self.config
+        if c.Npoints <= 1:
+            strides_enabled = False
+
         kws = {'dt': c.dt, 'vel_thr': vel_thr}
         l, v, sv, dst, acc, fov, foa, b, bv, ba = \
             reg.getPar(['l', 'v', 'sv', 'd', 'a', 'fov', 'foa', 'b', 'bv', 'ba'])
@@ -268,33 +271,17 @@ class ParamLarvaDataset(param.Parameterized):
         for jj, id in enumerate(c.agent_ids):
             ss = self.s.xs(id, level="AgentID")
 
-            sv_minima, sv_maxima, strides, str_chain_ls, stride_dsts = np.array([]), np.array([]), np.array(
-                []), np.array([]), np.array([])
             a_v = ss[v].values
             a_fov = ss[fov].values
 
-            if c.Npoints > 1:
-                a_sv = ss[sv].values
-                if strides_enabled:
-                    sv_minima, sv_maxima, strides, runs, str_chain_ls = detect_strides(a_sv, return_extrema=True, **kws)
-                    # stride_durs, stride_dsts, stride_maxs = process_epochs(a_v, strides, c.dt)
-                    stride_dsts = epoch_amps(strides, a_sv, c.dt)
-                    stride_idx = epoch_idx(strides)
-                    str_fovs = np.abs(a_fov[stride_idx])
-                    str_vs[jj, :] = [np.nanmean(stride_dsts),
-                                     np.nanstd(stride_dsts),
-                                     np.nanmean(a_sv[stride_idx]),
-                                     np.nanmean(str_fovs),
-                                     np.nanstd(str_fovs),
-                                     np.nansum(str_chain_ls),
-                                     ]
-                else:
-                    runs = detect_runs(a_sv, **kws)
-                pauses = detect_pauses(a_sv, runs=runs, **kws)
+            if strides_enabled:
+                a = ss[sv].values
+                sv_minima, sv_maxima, strides, runs, str_chain_ls = detect_strides(a, return_extrema=True, **kws)
             else:
-
-                runs = detect_runs(a_v, **kws)
-                pauses = detect_pauses(a_v, runs=runs, **kws)
+                sv_minima, sv_maxima, strides, str_chain_ls = np.array([]), np.array([]), np.array([]), np.array([])
+                a = a_v
+                runs = detect_runs(a, **kws)
+            pauses = detect_pauses(a, runs=runs, **kws)
 
             D[id] = aux.AttrDict({
                 'vel_minima': sv_minima,
@@ -304,17 +291,28 @@ class ParamLarvaDataset(param.Parameterized):
                 'exec': runs,
                 'pause': pauses,
                 'run_idx': epoch_idx(runs),
+                'stride_idx': epoch_idx(strides),
                 'pause_idx': epoch_idx(pauses),
                 'stride_dur': epoch_durs(strides, c.dt),
-                'stride_dst': stride_dsts,
+                'stride_dst': epoch_amps(strides, a, c.dt),
                 'run_count': str_chain_ls,
                 'run_dur': epoch_durs(runs, c.dt),
                 'run_dst': epoch_amps(runs, a_v, c.dt),
                 'pause_dur': epoch_durs(pauses, c.dt)
             })
 
-            pidx,ridx=D[id].pause_idx,D[id].run_idx
-            pdur,rdur=D[id].pause_dur,D[id].run_dur
+            pidx, ridx, sidx = D[id].pause_idx, D[id].run_idx, D[id].stride_idx
+            pdur, rdur = D[id].pause_dur, D[id].run_dur
+
+            str_fovs = np.abs(a_fov[sidx])
+            str_vs[jj, :] = [np.nanmean(D[id].stride_dst),
+                             np.nanstd(D[id].stride_dst),
+                             np.nanmean(a[sidx]),
+                             np.nanmean(str_fovs),
+                             np.nanstd(str_fovs),
+                             np.nansum(str_chain_ls),
+                             ]
+
             if b in ss.columns:
                 pau_bs = ss[b].abs().values[pidx]
                 pau_bvs = ss[bv].abs().values[pidx]
@@ -357,7 +355,7 @@ class ParamLarvaDataset(param.Parameterized):
         self.e[run_tr] = self.e[cum_run_t] / self.e[cum_t]
         self.e[pau_tr] = self.e[cum_pau_t] / self.e[cum_t]
 
-        if c.Npoints > 1 and strides_enabled:
+        if strides_enabled:
             self.e[str_ps] = str_vs
             self.e[str_sd_mu] = self.e[str_d_mu] / self.e[l]
             self.e[str_sd_std] = self.e[str_d_std] / self.e[l]
@@ -418,7 +416,7 @@ class ParamLarvaDataset(param.Parameterized):
 
         self.pooled_epochs = aux.AttrDict(
             {k: get_vs(dic) for k, dic in self.epoch_dicts.items() if
-             k not in ['turn_slice', 'pause_idx', 'run_idx']})
+             k not in ['turn_slice', 'pause_idx', 'run_idx', 'stride_idx']})
 
         reg.vprint(f'Completed bout detection.', 1)
 
