@@ -106,7 +106,7 @@ def comp_stride_variation(s, e, c):
                        np.nan, np.nan, np.nan, np.nan]
             else:
                 strides[:, 1] = strides[:, 1] - 1
-                durs, amps, maxs = process_epochs(a, strides, dt=c.dt, return_idx=False)
+                durs, amps, maxs = process_epochs(a, strides, dt=c.dt)
                 Nstr = strides.shape[0]
 
                 t_cv = stats.variation(durs)

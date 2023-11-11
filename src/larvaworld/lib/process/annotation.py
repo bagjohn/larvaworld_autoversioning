@@ -10,7 +10,10 @@ from ..aux import nam
 from .. import reg, aux, util
 
 __all__ = [
+    'epoch_durs',
     'epoch_slices',
+    'epoch_amps',
+    'epoch_maxs',
     'epoch_idx',
     'process_epochs',
     'stride_interp',
@@ -30,11 +33,22 @@ __all__ = [
     'crawl_annotation',
 ]
 
+def epoch_durs(epochs,dt):
+    return (np.diff(epochs).flatten()) * dt
+
 def epoch_slices(epochs):
     if epochs.shape[0] == 0:
         return []
     else:
         return [np.arange(r0, r1, 1) for r0, r1 in epochs]
+
+def epoch_amps(epochs,a,dt):
+    slices = epoch_slices(epochs)
+    return np.array([np.trapz(a[p][~np.isnan(a[p])], dx=dt) for p in slices])
+
+def epoch_maxs(epochs,a):
+    slices = epoch_slices(epochs)
+    return np.array([np.max(a[p]) for p in slices])
 
 def epoch_idx(epochs):
     slices = epoch_slices(epochs)
@@ -46,13 +60,13 @@ def epoch_idx(epochs):
         return np.concatenate(slices)
 
 
-def process_epochs(a, epochs, dt, return_idx=True):
+def process_epochs(a, epochs, dt, return_idx=False):
     if epochs.shape[0] == 0:
-        stops = []
+        stops = np.array([])
         durs = np.array([])
         slices = []
         amps = np.array([])
-        idx = []  # np.array([])
+        idx = np.array([])
         maxs = np.array([])
         if return_idx:
             return stops, durs, slices, amps, idx, maxs
@@ -484,7 +498,8 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
                 sv_minima, sv_maxima,strides, runs, str_chain_ls = detect_strides(a_sv, dt, fr=e[fv].loc[id], vel_thr=vel_thr,
                                                              return_extrema=True)
                 strides1, stride_durs, stride_slices, stride_dsts, stride_idx, stride_maxs = process_epochs(a_v,
-                                                                                                            strides, dt)
+                                                                                                            strides, dt,
+                                                                               return_idx=True)
                 stride_sdsts = stride_dsts / e[l].loc[id]
                 stride_Dor = np.array([np.trapz(a_fov[s0:s1 + 1]) for s0, s1 in strides])
                 str_fovs = np.abs(a_fov[stride_idx])
@@ -503,8 +518,10 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
             runs = detect_runs(a_v, dt, vel_thr=vel_thr)
             pauses = detect_pauses(a_v, dt, runs=runs, vel_thr=vel_thr)
 
-        pauses1, pause_durs, pause_slices, pause_dsts, pause_idx, pause_maxs = process_epochs(a_v, pauses, dt)
-        runs1, run_durs, run_slices, run_dsts, run_idx, run_maxs = process_epochs(a_v, runs, dt)
+        pauses1, pause_durs, pause_slices, pause_dsts, pause_idx, pause_maxs = process_epochs(a_v, pauses, dt,
+                                                                               return_idx=True)
+        runs1, run_durs, run_slices, run_dsts, run_idx, run_maxs = process_epochs(a_v, runs, dt,
+                                                                               return_idx=True)
 
         run_vs[pauses1, jj, 0] = pause_durs
         run_vs[runs1, jj, 1] = run_durs
