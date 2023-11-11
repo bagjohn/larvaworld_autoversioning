@@ -251,14 +251,14 @@ class ParamLarvaDataset(param.Parameterized):
         c = self.config
         if c.Npoints <= 1:
             strides_enabled = False
-
         kws = {'dt': c.dt, 'vel_thr': vel_thr}
         l, v, sv, dst, fov = reg.getPar(['l', 'v', 'sv', 'd', 'fov'])
-        Sps = reg.getPar(['str_d_mu', 'str_d_std', 'str_sv_mu','str_N','run_v_mu', 'pau_v_mu','cum_run_t', 'cum_pau_t'])
-        # Lps = reg.getPar(['run_v_mu', 'pau_v_mu','cum_run_t', 'cum_pau_t'])
-        # Lvs = np.zeros([c.N, len(Lps)]) * np.nan
+        str_d_mu, str_d_std, str_sd_mu, str_sd_std, run_tr, pau_tr, cum_run_t, cum_pau_t, cum_t = \
+            reg.getPar(
+                ['str_d_mu', 'str_d_std', 'str_sd_mu', 'str_sd_std', 'run_tr', 'pau_tr', 'cum_run_t', 'cum_pau_t',
+                 'cum_t'])
+        Sps = [str_d_mu, str_d_std]+reg.getPar(['str_sv_mu','str_N','run_v_mu', 'pau_v_mu'])+[cum_run_t, cum_pau_t]
         Svs = np.zeros([c.N, len(Sps)]) * np.nan
-
         D = {}
         for jj, id in enumerate(c.agent_ids):
             ss = self.s.xs(id, level="AgentID")
@@ -266,16 +266,16 @@ class ParamLarvaDataset(param.Parameterized):
             a_fov = ss[fov].values
             if strides_enabled:
                 a = ss[sv].values
-                v_min, v_max, strides, runs, str_chain_ls = detect_strides(a, return_extrema=True, **kws)
+                imin, imax, strides, runs, str_chain_ls = detect_strides(a, return_extrema=True, **kws)
             else:
-                v_min, v_max, strides, str_chain_ls = np.array([]), np.array([]), np.array([]), np.array([])
+                imin, imax, strides, str_chain_ls = np.array([]), np.array([]), np.array([]), np.array([])
                 a = a_v
                 runs = detect_runs(a, **kws)
             pauses = detect_pauses(a, runs=runs, **kws)
 
             D[id] = aux.AttrDict({
-                'vel_minima': v_min,
-                'vel_maxima': v_max,
+                'vel_minima': imin,
+                'vel_maxima': imax,
                 'stride': strides,
                 'stride_Dor': np.array([np.trapz(a_fov[s0:s1 + 1]) for s0, s1 in strides]),
                 'exec': runs,
@@ -295,20 +295,10 @@ class ParamLarvaDataset(param.Parameterized):
             sdst=D[id].stride_dst
             Svs[jj, :] = [np.nanmean(sdst),np.nanstd(sdst),np.nanmean(a[sidx]),np.nansum(str_chain_ls),
                           np.mean(a_v[ridx]),np.mean(a_v[pidx]),np.sum(rdur),np.sum(pdur)]
-            # Lvs[jj, :] = [np.mean(a_v[ridx]),np.mean(a_v[pidx]),np.sum(rdur),np.sum(pdur)]
-
-        # self.e[Lps] = Lvs
         self.e[Sps] = Svs
-        str_d_mu, str_d_std, str_sd_mu, str_sd_std, run_tr, pau_tr, cum_run_t, cum_pau_t, cum_t = \
-            reg.getPar(
-                ['str_d_mu', 'str_d_std', 'str_sd_mu', 'str_sd_std', 'run_tr', 'pau_tr', 'cum_run_t', 'cum_pau_t',
-                 'cum_t'])
-
         self.e[run_tr] = self.e[cum_run_t] / self.e[cum_t]
         self.e[pau_tr] = self.e[cum_pau_t] / self.e[cum_t]
-
-        if strides_enabled:
-
+        if l in self.end_ps:
             self.e[str_sd_mu] = self.e[str_d_mu] / self.e[l]
             self.e[str_sd_std] = self.e[str_d_std] / self.e[l]
         return D
@@ -316,38 +306,34 @@ class ParamLarvaDataset(param.Parameterized):
     def turn_annotation(self):
         from ..process.annotation import detect_turns, epoch_durs, epoch_amps, epoch_maxs
         c = self.config
+        dt=c.dt
         A = self.s[reg.getPar('fov')]
 
-        eTur_ps = reg.getPar(['Ltur_N', 'Rtur_N', 'tur_N', 'tur_H'])
-        eTur_vs = np.zeros([c.N, len(eTur_ps)]) * np.nan
+        ps = reg.getPar(['Ltur_N', 'Rtur_N', 'tur_N', 'tur_H'])
+        vs = np.zeros([c.N, len(ps)]) * np.nan
         D = {}
 
-        for jj, id in enumerate(c.agent_ids):
-            a_fov = A.xs(id, level="AgentID")
-            Lturns, Rturns = detect_turns(a_fov, c.dt)
-            # Ldurs, Lamps, Lmaxs = process_epochs(a_fov.values, Lturns, c.dt)
-            # Rdurs, Ramps, Rmaxs = process_epochs(a_fov.values, Rturns, c.dt)
-            Lturns_N, Rturns_N = Lturns.shape[0], Rturns.shape[0]
-            turns_N = Lturns_N + Rturns_N
-            tur_H = Lturns_N / turns_N if turns_N != 0 else 0
+        for j, id in enumerate(c.agent_ids):
+            a = A.xs(id, level="AgentID")
+            Ls, Rs = detect_turns(a, dt)
+            LN, RN = Ls.shape[0], Rs.shape[0]
+            N = LN + RN
+            H = LN / N if N != 0 else 0
             D[id] = aux.AttrDict({
-                'Lturn': Lturns,
-                'Rturn': Rturns,
-                # 'turn_slice': epoch_slices(Lturns) + epoch_slices(Rturns),
-                # 'turn_amp': np.concatenate([Lamps, Ramps]),
-                'Lturn_amp': epoch_amps(Lturns, a_fov, c.dt),
-                'Rturn_amp': epoch_amps(Rturns, a_fov, c.dt),
-                # 'turn_dur': np.concatenate([Ldurs, Rdurs]),
-                'Lturn_dur': epoch_durs(Lturns, c.dt),
-                'Rturn_dur': epoch_durs(Rturns, c.dt),
-                'Lturn_vel_max': epoch_maxs(Lturns, a_fov),
-                'Rturn_vel_max': epoch_maxs(Rturns, a_fov),
+                'Lturn': Ls,
+                'Rturn': Rs,
+                'Lturn_amp': epoch_amps(Ls, a, dt),
+                'Rturn_amp': epoch_amps(Rs, a, dt),
+                'Lturn_dur': epoch_durs(Ls, dt),
+                'Rturn_dur': epoch_durs(Rs, dt),
+                'Lturn_vel_max': epoch_maxs(Ls, a),
+                'Rturn_vel_max': epoch_maxs(Rs, a),
             })
             D[id].turn_dur = np.concatenate([D[id].Lturn_dur, D[id].Rturn_dur])
             D[id].turn_amp = np.concatenate([D[id].Lturn_amp, D[id].Rturn_amp])
             D[id].turn_vel_max = np.concatenate([D[id].Lturn_vel_max, D[id].Rturn_vel_max])
-            eTur_vs[jj, :] = [Lturns_N, Rturns_N, turns_N, tur_H]
-        self.e[eTur_ps] = eTur_vs
+            vs[j, :] = [LN, RN, N, H]
+        self.e[ps] = vs
         return D
 
     def detect_bouts(self, vel_thr=0.3, strides_enabled=True, castsNweathervanes=True):
