@@ -257,11 +257,18 @@ class ParamLarvaDataset(param.Parameterized):
         l, v, sv, dst, acc, fov, foa, b, bv, ba = \
             reg.getPar(['l', 'v', 'sv', 'd', 'a', 'fov', 'foa', 'b', 'bv', 'ba'])
 
-        str_ps = reg.getPar(['str_d_mu', 'str_d_std', 'str_sv_mu', 'str_fov_mu', 'str_fov_std', 'str_N'])
+        str_ps = reg.getPar(['str_d_mu', 'str_d_std', 'str_sv_mu',
+                             # 'str_fov_mu', 'str_fov_std',
+                             'str_N'])
         lin_ps = reg.getPar(
-            ['run_v_mu', 'pau_v_mu', 'run_a_mu', 'pau_a_mu', 'run_fov_mu', 'run_fov_std', 'pau_fov_mu', 'pau_fov_std',
-             'run_foa_mu', 'pau_foa_mu', 'pau_b_mu', 'pau_b_std', 'pau_bv_mu', 'pau_bv_std', 'pau_ba_mu', 'pau_ba_std',
-             'cum_run_t', 'cum_pau_t', 'run_t_min', 'run_t_max', 'pau_t_min', 'pau_t_max'])
+            ['run_v_mu', 'pau_v_mu',
+             # 'run_fov_mu', 'run_fov_std', 'pau_fov_mu', 'pau_fov_std',
+             # 'run_foa_mu', 'pau_foa_mu',
+             # 'pau_b_mu', 'pau_b_std', 'pau_bv_mu', 'pau_bv_std',
+             # 'pau_ba_mu', 'pau_ba_std',
+             'cum_run_t', 'cum_pau_t',
+             # 'run_t_min', 'run_t_max', 'pau_t_min', 'pau_t_max'
+             ])
 
         lin_vs = np.zeros([c.N, len(lin_ps)]) * np.nan
         str_vs = np.zeros([c.N, len(str_ps)]) * np.nan
@@ -304,45 +311,44 @@ class ParamLarvaDataset(param.Parameterized):
             pidx, ridx, sidx = D[id].pause_idx, D[id].run_idx, D[id].stride_idx
             pdur, rdur = D[id].pause_dur, D[id].run_dur
 
-            str_fovs = np.abs(a_fov[sidx])
+            # str_fovs = np.abs(a_fov[sidx])
             str_vs[jj, :] = [np.nanmean(D[id].stride_dst),
                              np.nanstd(D[id].stride_dst),
                              np.nanmean(a[sidx]),
-                             np.nanmean(str_fovs),
-                             np.nanstd(str_fovs),
+                             # np.nanmean(str_fovs),
+                             # np.nanstd(str_fovs),
                              np.nansum(str_chain_ls),
                              ]
 
-            if b in ss.columns:
-                pau_bs = ss[b].abs().values[pidx]
-                pau_bvs = ss[bv].abs().values[pidx]
-                pau_bas = ss[ba].abs().values[pidx]
-                pau_b_temp = [np.mean(pau_bs), np.std(pau_bs), np.mean(pau_bvs), np.std(pau_bvs), np.mean(pau_bas),
-                              np.std(pau_bas)]
-            else:
-                pau_b_temp = [np.nan] * 6
-            a_foa = ss[foa].abs().values
-            a_acc = ss[acc].values
-            pau_fovs = np.abs(a_fov[pidx])
-            run_fovs = np.abs(a_fov[ridx])
-            pau_foas = a_foa[pidx]
-            run_foas = a_foa[ridx]
+            # if b in ss.columns:
+            #     pau_bs = ss[b].abs().values[pidx]
+            #     pau_bvs = ss[bv].abs().values[pidx]
+                # pau_bas = ss[ba].abs().values[pidx]
+                # pau_b_temp = [np.mean(pau_bs), np.std(pau_bs), np.mean(pau_bvs), np.std(pau_bvs)]
+            # else:
+            #     pau_b_temp = [np.nan] * 6
+            # a_foa = ss[foa].abs().values
+            # a_acc = ss[acc].values
+            # pau_fovs = np.abs(a_fov[pidx])
+            # run_fovs = np.abs(a_fov[ridx])
+            # pau_foas = a_foa[pidx]
+            # run_foas = a_foa[ridx]
             lin_vs[jj, :] = [
                 np.mean(a_v[ridx]),
                 np.mean(a_v[pidx]),
-                np.mean(a_acc[ridx]),
-                np.mean(a_acc[pidx]),
-                np.mean(run_fovs), np.std(run_fovs),
-                np.mean(pau_fovs), np.std(pau_fovs),
-                np.mean(run_foas),
-                np.mean(pau_foas),
-                *pau_b_temp,
+                # np.mean(a_acc[ridx]),
+                # np.mean(a_acc[pidx]),
+                # np.mean(run_fovs), np.std(run_fovs),
+                # np.mean(pau_fovs), np.std(pau_fovs),
+                # np.mean(a_foa[ridx]),
+                # np.mean(a_foa[pidx]),
+                # *pau_b_temp,
                 np.sum(rdur),
                 np.sum(pdur),
-                np.nanmin(rdur) if len(rdur) > 0 else 1,
-                np.nanmax(rdur) if len(rdur) > 0 else 100,
-                np.nanmin(pdur) if len(pdur) > 0 else c.dt,
-                np.nanmax(pdur) if len(pdur) > 0 else 100,
+                # np.nanmin(rdur) if len(rdur) > 0 else 1,
+                # np.nanmax(rdur) if len(rdur) > 0 else 100,
+                # np.nanmin(pdur) if len(pdur) > 0 else c.dt,
+                # np.nanmax(pdur) if len(pdur) > 0 else 100,
             ]
 
         self.e[lin_ps] = lin_vs
