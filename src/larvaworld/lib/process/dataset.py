@@ -247,52 +247,35 @@ class ParamLarvaDataset(param.Parameterized):
         s[aux.nam.atStartStopChunk(par, chunk)] = A.reshape([-1, 3])
 
     def crawl_annotation(self, strides_enabled=True, vel_thr=0.3):
-        from ..process.annotation import detect_strides, detect_pauses, detect_runs, process_epochs, epoch_idx, \
-            epoch_durs, epoch_amps
+        from ..process.annotation import detect_strides, detect_pauses, detect_runs, epoch_idx, epoch_durs, epoch_amps
         c = self.config
         if c.Npoints <= 1:
             strides_enabled = False
 
         kws = {'dt': c.dt, 'vel_thr': vel_thr}
-        l, v, sv, dst, acc, fov, foa, b, bv, ba = \
-            reg.getPar(['l', 'v', 'sv', 'd', 'a', 'fov', 'foa', 'b', 'bv', 'ba'])
-
-        str_ps = reg.getPar(['str_d_mu', 'str_d_std', 'str_sv_mu',
-                             # 'str_fov_mu', 'str_fov_std',
-                             'str_N'])
-        lin_ps = reg.getPar(
-            ['run_v_mu', 'pau_v_mu',
-             # 'run_fov_mu', 'run_fov_std', 'pau_fov_mu', 'pau_fov_std',
-             # 'run_foa_mu', 'pau_foa_mu',
-             # 'pau_b_mu', 'pau_b_std', 'pau_bv_mu', 'pau_bv_std',
-             # 'pau_ba_mu', 'pau_ba_std',
-             'cum_run_t', 'cum_pau_t',
-             # 'run_t_min', 'run_t_max', 'pau_t_min', 'pau_t_max'
-             ])
-
-        lin_vs = np.zeros([c.N, len(lin_ps)]) * np.nan
-        str_vs = np.zeros([c.N, len(str_ps)]) * np.nan
+        l, v, sv, dst, fov = reg.getPar(['l', 'v', 'sv', 'd', 'fov'])
+        Sps = reg.getPar(['str_d_mu', 'str_d_std', 'str_sv_mu','str_N','run_v_mu', 'pau_v_mu','cum_run_t', 'cum_pau_t'])
+        # Lps = reg.getPar(['run_v_mu', 'pau_v_mu','cum_run_t', 'cum_pau_t'])
+        # Lvs = np.zeros([c.N, len(Lps)]) * np.nan
+        Svs = np.zeros([c.N, len(Sps)]) * np.nan
 
         D = {}
-
         for jj, id in enumerate(c.agent_ids):
             ss = self.s.xs(id, level="AgentID")
-
             a_v = ss[v].values
             a_fov = ss[fov].values
-
             if strides_enabled:
                 a = ss[sv].values
-                sv_minima, sv_maxima, strides, runs, str_chain_ls = detect_strides(a, return_extrema=True, **kws)
+                v_min, v_max, strides, runs, str_chain_ls = detect_strides(a, return_extrema=True, **kws)
             else:
-                sv_minima, sv_maxima, strides, str_chain_ls = np.array([]), np.array([]), np.array([]), np.array([])
+                v_min, v_max, strides, str_chain_ls = np.array([]), np.array([]), np.array([]), np.array([])
                 a = a_v
                 runs = detect_runs(a, **kws)
             pauses = detect_pauses(a, runs=runs, **kws)
 
             D[id] = aux.AttrDict({
-                'vel_minima': sv_minima,
-                'vel_maxima': sv_maxima,
+                'vel_minima': v_min,
+                'vel_maxima': v_max,
                 'stride': strides,
                 'stride_Dor': np.array([np.trapz(a_fov[s0:s1 + 1]) for s0, s1 in strides]),
                 'exec': runs,
@@ -307,52 +290,15 @@ class ParamLarvaDataset(param.Parameterized):
                 'run_dst': epoch_amps(runs, a_v, c.dt),
                 'pause_dur': epoch_durs(pauses, c.dt)
             })
-
             pidx, ridx, sidx = D[id].pause_idx, D[id].run_idx, D[id].stride_idx
             pdur, rdur = D[id].pause_dur, D[id].run_dur
+            sdst=D[id].stride_dst
+            Svs[jj, :] = [np.nanmean(sdst),np.nanstd(sdst),np.nanmean(a[sidx]),np.nansum(str_chain_ls),
+                          np.mean(a_v[ridx]),np.mean(a_v[pidx]),np.sum(rdur),np.sum(pdur)]
+            # Lvs[jj, :] = [np.mean(a_v[ridx]),np.mean(a_v[pidx]),np.sum(rdur),np.sum(pdur)]
 
-            # str_fovs = np.abs(a_fov[sidx])
-            str_vs[jj, :] = [np.nanmean(D[id].stride_dst),
-                             np.nanstd(D[id].stride_dst),
-                             np.nanmean(a[sidx]),
-                             # np.nanmean(str_fovs),
-                             # np.nanstd(str_fovs),
-                             np.nansum(str_chain_ls),
-                             ]
-
-            # if b in ss.columns:
-            #     pau_bs = ss[b].abs().values[pidx]
-            #     pau_bvs = ss[bv].abs().values[pidx]
-                # pau_bas = ss[ba].abs().values[pidx]
-                # pau_b_temp = [np.mean(pau_bs), np.std(pau_bs), np.mean(pau_bvs), np.std(pau_bvs)]
-            # else:
-            #     pau_b_temp = [np.nan] * 6
-            # a_foa = ss[foa].abs().values
-            # a_acc = ss[acc].values
-            # pau_fovs = np.abs(a_fov[pidx])
-            # run_fovs = np.abs(a_fov[ridx])
-            # pau_foas = a_foa[pidx]
-            # run_foas = a_foa[ridx]
-            lin_vs[jj, :] = [
-                np.mean(a_v[ridx]),
-                np.mean(a_v[pidx]),
-                # np.mean(a_acc[ridx]),
-                # np.mean(a_acc[pidx]),
-                # np.mean(run_fovs), np.std(run_fovs),
-                # np.mean(pau_fovs), np.std(pau_fovs),
-                # np.mean(a_foa[ridx]),
-                # np.mean(a_foa[pidx]),
-                # *pau_b_temp,
-                np.sum(rdur),
-                np.sum(pdur),
-                # np.nanmin(rdur) if len(rdur) > 0 else 1,
-                # np.nanmax(rdur) if len(rdur) > 0 else 100,
-                # np.nanmin(pdur) if len(pdur) > 0 else c.dt,
-                # np.nanmax(pdur) if len(pdur) > 0 else 100,
-            ]
-
-        self.e[lin_ps] = lin_vs
-
+        # self.e[Lps] = Lvs
+        self.e[Sps] = Svs
         str_d_mu, str_d_std, str_sd_mu, str_sd_std, run_tr, pau_tr, cum_run_t, cum_pau_t, cum_t = \
             reg.getPar(
                 ['str_d_mu', 'str_d_std', 'str_sd_mu', 'str_sd_std', 'run_tr', 'pau_tr', 'cum_run_t', 'cum_pau_t',
@@ -362,38 +308,47 @@ class ParamLarvaDataset(param.Parameterized):
         self.e[pau_tr] = self.e[cum_pau_t] / self.e[cum_t]
 
         if strides_enabled:
-            self.e[str_ps] = str_vs
+
             self.e[str_sd_mu] = self.e[str_d_mu] / self.e[l]
             self.e[str_sd_std] = self.e[str_d_std] / self.e[l]
-        # print(s.columns)
         return D
 
     def turn_annotation(self):
-        from ..process.annotation import detect_turns, process_epochs, epoch_slices
+        from ..process.annotation import detect_turns, epoch_durs, epoch_amps, epoch_maxs
         c = self.config
         A = self.s[reg.getPar('fov')]
 
         eTur_ps = reg.getPar(['Ltur_N', 'Rtur_N', 'tur_N', 'tur_H'])
         eTur_vs = np.zeros([c.N, len(eTur_ps)]) * np.nan
-        turn_dict = {}
+        D = {}
 
         for jj, id in enumerate(c.agent_ids):
             a_fov = A.xs(id, level="AgentID")
             Lturns, Rturns = detect_turns(a_fov, c.dt)
-            Ldurs, Lamps, Lmaxs = process_epochs(a_fov.values, Lturns, c.dt)
-            Rdurs, Ramps, Rmaxs = process_epochs(a_fov.values, Rturns, c.dt)
+            # Ldurs, Lamps, Lmaxs = process_epochs(a_fov.values, Lturns, c.dt)
+            # Rdurs, Ramps, Rmaxs = process_epochs(a_fov.values, Rturns, c.dt)
             Lturns_N, Rturns_N = Lturns.shape[0], Rturns.shape[0]
             turns_N = Lturns_N + Rturns_N
             tur_H = Lturns_N / turns_N if turns_N != 0 else 0
-            turn_dict[id] = {'Lturn': Lturns, 'Rturn': Rturns,
-                             'turn_slice': epoch_slices(Lturns) + epoch_slices(Rturns),
-                             'turn_amp': np.concatenate([Lamps, Ramps]),
-                             'Lturn_amp': Lamps, 'Rturn_amp': Ramps,
-                             'turn_dur': np.concatenate([Ldurs, Rdurs]), 'Lturn_dur': Ldurs, 'Rturn_dur': Rdurs,
-                             'turn_vel_max': np.concatenate([Lmaxs, Rmaxs])}
+            D[id] = aux.AttrDict({
+                'Lturn': Lturns,
+                'Rturn': Rturns,
+                # 'turn_slice': epoch_slices(Lturns) + epoch_slices(Rturns),
+                # 'turn_amp': np.concatenate([Lamps, Ramps]),
+                'Lturn_amp': epoch_amps(Lturns, a_fov, c.dt),
+                'Rturn_amp': epoch_amps(Rturns, a_fov, c.dt),
+                # 'turn_dur': np.concatenate([Ldurs, Rdurs]),
+                'Lturn_dur': epoch_durs(Lturns, c.dt),
+                'Rturn_dur': epoch_durs(Rturns, c.dt),
+                'Lturn_vel_max': epoch_maxs(Lturns, a_fov),
+                'Rturn_vel_max': epoch_maxs(Rturns, a_fov),
+            })
+            D[id].turn_dur = np.concatenate([D[id].Lturn_dur, D[id].Rturn_dur])
+            D[id].turn_amp = np.concatenate([D[id].Lturn_amp, D[id].Rturn_amp])
+            D[id].turn_vel_max = np.concatenate([D[id].Lturn_vel_max, D[id].Rturn_vel_max])
             eTur_vs[jj, :] = [Lturns_N, Rturns_N, turns_N, tur_H]
         self.e[eTur_ps] = eTur_vs
-        return turn_dict
+        return D
 
     def detect_bouts(self, vel_thr=0.3, strides_enabled=True, castsNweathervanes=True):
         s, e, c = self.data

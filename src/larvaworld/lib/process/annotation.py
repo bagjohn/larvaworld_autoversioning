@@ -423,7 +423,8 @@ def turn_mode_annotation(e, chunk_dicts):
     wNh_ps = ['weathervane_q25_amp', 'weathervane_q75_amp', 'headcast_q25_amp', 'headcast_q75_amp']
     for jj, id in enumerate(e.index.values):
         dic = chunk_dicts[id]
-        wNh[id] = dict(zip(wNh_ps, weathervanesNheadcasts(dic.run_idx, dic.pause_idx, dic.turn_slice, dic.turn_amp)))
+        turn_slice=epoch_slices(dic.Lturn) + epoch_slices(dic.Rturn)
+        wNh[id] = dict(zip(wNh_ps, weathervanesNheadcasts(dic.run_idx, dic.pause_idx, turn_slice, dic.turn_amp)))
     e[wNh_ps] = pd.DataFrame.from_dict(wNh).T
 
 
