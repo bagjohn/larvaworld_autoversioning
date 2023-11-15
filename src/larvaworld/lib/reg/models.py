@@ -264,6 +264,8 @@ def init_brain_modules():
             **sensor_kws(k0='O', l0='olfaction')}
         d = {'default': {'args': args, 'class_func': modules.Olfactor,
                          'variable': ['perception', 'decay_coef', 'brute_force', 'gain_dict']},
+             'brian_osn': {'args': args, 'class_func': modules.BrianOlfactor,
+                         'variable': ['perception', 'decay_coef', 'brute_force', 'gain_dict']},
              # 'nengo': {'args': IMargs, 'class_func': NengoIntermitter},
              # 'branch': {'args': BRargs, 'class_func': BranchIntermitter},
              }
@@ -851,9 +853,13 @@ class ModelRegistry:
         olf_pars2 = self.generate_configuration(self.dict.brain.m['olfactor'].mode['default'].args,
                                                 gain_dict={'CS': 150.0,
                                                            'UCS': 0.0})
+        olf_brian_osn = self.generate_configuration(self.dict.brain.m['olfactor'].mode['brian_osn'].args,
+                                                gain_dict={'Odor': 150.0})
+
         kwargs0 = {'brain.modules.olfactor': True, 'brain.olfactor_params': olf_pars0}
         kwargs1 = {'brain.modules.olfactor': True, 'brain.olfactor_params': olf_pars1}
         kwargs2 = {'brain.modules.olfactor': True, 'brain.olfactor_params': olf_pars2}
+        olf_brian_osn_kwargs = {'brain.modules.olfactor': True, 'brain.olfactor_params': olf_brian_osn}
 
         # MB_pars = aux.AttrDict({'mode': 'MB'})
         MB_pars = self.generate_configuration(self.dict.brain.m['memory'].mode['MB'].args)
@@ -929,6 +935,7 @@ class ModelRegistry:
         E['max_feeder'] = self.newConf(m0=E['RE_NEU_PHI_DEF_max_feeder'], kwargs={})
         E['explorer'] = self.newConf(m0=E['loco_default'], kwargs={})
         E['navigator'] = self.newConf(m0=E['explorer'], kwargs=kwargs1)
+        E['navigator_osn'] = self.newConf(m0=E['explorer'], mID='navigator_osn', kwargs=olf_brian_osn_kwargs)
         E['navigator_x2'] = self.newConf(m0=E['explorer'], kwargs=kwargs2)
         E['RLnavigator'] = self.newConf(m0=E['navigator'], kwargs=RL_kws)
         E['RLforager'] = self.newConf(m0=E['forager'], kwargs=RL_kws)
