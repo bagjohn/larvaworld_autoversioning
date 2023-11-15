@@ -9,6 +9,7 @@ from .remote_brian_interface import RemoteBrianModelInterface
 __all__ = [
     'Sensor',
     'Olfactor',
+    'BrianOlfactor',
     'Toucher',
     'WindSensor',
     'Thermosensor',
@@ -227,13 +228,15 @@ class BrianOlfactor(Olfactor):
 
     def update(self):
         agent_id = self.brain.agent.unique_id if self.brain is not None else self.agent_id
-        
+
         msg_kws = {
             # Default :
-            'odor_id': 0, # TODO: can we get this info from somewhere ?
+            # TODO: can we get this info from somewhere ?
+            # yes: self.X.values() provides an array of all odor types, the index could be used as odor_id
+            'odor_id': 0,
             # The concentration change :
-            'concentration_mmol': self.first_odor_concentration,
-            'concentration_change_mmol': self.first_odor_concentration_change,
+            'concentration_mmol': self.first_odor_concentration, # 1st ODOR concentration
+            'concentration_change_mmol': self.first_odor_concentration_change, # 1st ODOR concentration change
         }
 
         response = self.brianInterface.executeRemoteModelStep(agent_id, t_sim=self.remote_dt, t_warmup=self.brian_warmup, **msg_kws)
