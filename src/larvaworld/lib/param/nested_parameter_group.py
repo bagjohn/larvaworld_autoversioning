@@ -99,8 +99,6 @@ class NestedConf(param.Parameterized):
         return aux.SuperList([k for k in ks if k not in d])
 
 
-
-
 def class_generator(A0, mode='Unit'):
     class A(NestedConf):
         def __init__(self, **kwargs):
@@ -209,12 +207,16 @@ def expand_kws_shortcuts(kwargs):
 
 
 def class_defaults(A, excluded=[], **kwargs):
-    d= class_generator(A)().nestedConf
-    if len(excluded)>0 :
-        for exc_A in excluded :
-            exc_d=class_generator(exc_A)().nestedConf
-            for k in exc_d :
-                if k in d :
-                    d.pop(k)
+    d = class_generator(A)().nestedConf
+    if len(excluded) > 0:
+        for exc_A in excluded:
+            try:
+                exc_d = class_generator(exc_A)().nestedConf
+                for k in exc_d:
+                    if k in d:
+                        d.pop(k)
+            except:
+                if exc_A in d:
+                    d.pop(exc_A)
     d.update_existingdict(kwargs)
     return d

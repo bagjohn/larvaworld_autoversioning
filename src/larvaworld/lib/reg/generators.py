@@ -624,13 +624,11 @@ class ExpConf(SimOps):
         super().__init__(**kwargs)
 
     @classmethod
-    def imitation_exp(cls, refID, mID='loco_default', **kwargs):
+    def imitation_exp(cls, refID, mID='explorer', **kwargs):
         c = reg.conf.Ref.getRef(refID)
         kws = {
-            # 'id': f'Imitation {refID}',
             'sample': refID,
             'model': mID,
-            # 'model': reg.conf.Model.getID(mID),
             'color': c.color,
             'distribution': {'N': c.N},
             'imitation': True,
