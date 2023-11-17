@@ -36,11 +36,8 @@ class ObstacleLarvaRobot(LarvaRobot):
         S_kws = {
             'saturation_value': sensor_saturation_value,
             'error': obstacle_sensor_error,
-            'max_distance': int(self.model.screen_manager.viewer._scale[0, 0] * sensor_max_distance * self.real_length),
-            # 'max_distance': sensor_max_distance * self.real_length,
-            # 'viewer': self.model.viewer,
-            'collision_distance': int(self.model.screen_manager.viewer._scale[0, 0] * self.real_length / 5),
-            # 'collision_distance': 0.1 * self.real_length,
+            'max_distance': int(self.model.screen_manager.viewer._scale[0, 0] * sensor_max_distance * self.length),
+            'collision_distance': int(self.model.screen_manager.viewer._scale[0, 0] * self.length / 5),
         }
 
         M_kws = {

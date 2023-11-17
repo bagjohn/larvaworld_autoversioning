@@ -126,7 +126,6 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
         super().__init__(**kwargs)
         self.set_default_color(self.default_color)
 
-
     def draw(self, v, **kwargs):
         if v.manager.draw_sensors:
             self.draw_sensors(v, **kwargs)
@@ -169,7 +168,6 @@ class LarvaMotile(LarvaSegmented):
         self.food_detected, self.feeder_motion = None, False
         self.cum_food_detected, self.amount_eaten = 0, 0
 
-
     def build_brain(self, conf):
         """Build the brain for the larva agent."""
 
@@ -204,10 +202,10 @@ class LarvaMotile(LarvaSegmented):
         from larvaworld.lib.model.deb.deb import DEB_runner
         if energetic_pars is not None:
             self.deb = DEB_runner(model=self.model, id=self.unique_id,
-                                  life_history=life_history,gut_params=energetic_pars.gut,
+                                  life_history=life_history, gut_params=energetic_pars.gut,
                                   **energetic_pars.DEB)
-            self.real_length = self.deb.Lw * 10 / 1000
-            self.real_mass = self.deb.Ww
+            self.length = self.deb.Lw * 10 / 1000
+            self.mass = self.deb.Ww
             self.V = self.deb.V
             try:
                 self.deb.set_intermitter(self.brain.locomotor.intermitter)
@@ -215,14 +213,14 @@ class LarvaMotile(LarvaSegmented):
                 pass
         else:
             self.deb = None
-            self.V = self.length**3
-            self.real_mass = None
-            self.real_length = None
+            self.V = self.length ** 3
+            self.mass = None
+            self.length = None
 
     def run_energetics(self, V_eaten):
         self.deb.update(V_eaten)
-        self.real_length = self.deb.Lw * 10 / 1000
-        self.real_mass = self.deb.Ww
+        self.length = self.deb.Lw * 10 / 1000
+        self.mass = self.deb.Ww
         self.V = self.deb.V
         # TODO add this again
         # self.adjust_body_vertices()
@@ -249,7 +247,7 @@ class LarvaMotile(LarvaSegmented):
 
     @property
     def scaled_amount_eaten(self):
-        return self.amount_eaten / self.real_mass
+        return self.amount_eaten / self.mass
 
     def resolve_carrying(self, food):
         gain_for_base_odor = 100.0
@@ -335,7 +333,6 @@ class LarvaMotile(LarvaSegmented):
         self.cum_food_detected += int(self.on_food)
         if self.deb is not None:
             self.run_energetics(V)
-
 
         try:
             if self.model.screen_manager.color_behavior:

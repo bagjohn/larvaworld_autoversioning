@@ -26,7 +26,7 @@ class LarvaOffline(LarvaRobot):
         dt = self.model.dt
         self.cum_dur += dt
 
-        lin, ang, feed = self.brain.locomotor.step(A_in=0, length=self.real_length)
+        lin, ang, feed = self.brain.locomotor.step(A_in=0, length=self.length)
         self.lin_vel = lin * self.lin_vel_coef
         self.ang_vel = self.compute_ang_vel(ang)
 

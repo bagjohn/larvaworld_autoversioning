@@ -34,7 +34,7 @@ def dst2source_evaluation(robot, source_xy):
 
 
 def cum_dst(robot, **kwargs):
-    return robot.cum_dst / robot.real_length
+    return robot.cum_dst / robot.length
 
 
 def bend_error_exclusion(robot):

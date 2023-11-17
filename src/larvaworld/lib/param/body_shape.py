@@ -94,14 +94,14 @@ class BodyMobile(ShapeMobile, BodyContour):
         density = 300 kg/m**2=0.3 mg/mm*2. (It is totally fortunate that box2d calculates mass as density*area)
         This yields m3=0.3 * 5.2*5.2*0.2  = 1.6224 mg and m1=0.3 * 1.3*1.3*0.2 = 0.1014 mg
         It follows that mass=density*width_to_length_ratio*length**2 for both real and simulated mass
-        So, when using a scaling factor sf where sim_length=sf*real_length ==> sim_mass=sf**2 * real_mass'''
+        So, when using a scaling factor sf where sim_length=sf*length ==> sim_mass=sf**2 * mass'''
 
     def compute_mass_from_length(self):
-        self.real_mass = self.density * self.length ** 2 * self.width_to_length_ratio
+        self.mass = self.density * self.length ** 2 * self.width_to_length_ratio
         # self.sim_mass = self.density * self.sim_length**2*self.width_to_length_ratio
 
     def adjust_shape_to_mass(self):
-        self.length = np.sqrt(self.real_mass / (self.density * self.width_to_length_ratio))
+        self.length = np.sqrt(self.mass / (self.density * self.width_to_length_ratio))
 
 
 class SegmentedBody(BodyMobile):
