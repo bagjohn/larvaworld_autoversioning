@@ -475,19 +475,15 @@ class Chemotaxis_Essay(Essay):
         self.exp_dict = self.chemo_exps(self.models)
 
     def get_models1(self, gain):
-        mID0 = 'RE_NEU_SQ_DEF_nav'
+        m=reg.conf.Model.getID('navigator')
         o = 'brain.olfactor_params'
-        mW = reg.model.newConf(mID0=mID0, kwargs={f'{o}.gain_dict.Odor': gain,
-                                               f'{o}.perception': 'log'})
-        mWlin = reg.model.newConf(mID0=mID0, kwargs={f'{o}.gain_dict.Odor': gain,
-                                                  f'{o}.perception': 'linear'})
-        mC = reg.model.newConf(mID0=mID0, kwargs={f'{o}.gain_dict.Odor': 0})
-        mT = reg.model.newConf(mID0=mID0, kwargs={f'{o}.gain_dict.Odor': gain,
-                                               f'{o}.perception': 'log',
-                                               f'{o}.brute_force': True})
-        mTlin = reg.model.newConf(mID0=mID0, kwargs={f'{o}.gain_dict.Odor': gain,
-                                                  f'{o}.brute_force': True,
-                                                  f'{o}.perception': 'linear'})
+
+        mW = m.update_nestdict_copy({f'{o}.gain_dict.Odor': gain, f'{o}.perception': 'log'})
+        mWlin = m.update_nestdict_copy({f'{o}.gain_dict.Odor': gain, f'{o}.perception': 'linear'})
+        mC = m.update_nestdict_copy({f'{o}.gain_dict.Odor': 0})
+        mT = m.update_nestdict_copy({f'{o}.gain_dict.Odor': gain, f'{o}.perception': 'log', f'{o}.brute_force': True})
+        mTlin = m.update_nestdict_copy({f'{o}.gain_dict.Odor': gain, f'{o}.perception': 'linear', f'{o}.brute_force': True})
+
 
         T = 'Tastekin'
         W = 'Wystrach'
@@ -508,8 +504,8 @@ class Chemotaxis_Essay(Essay):
         models = {}
         for Tmod in ['NEU', 'SIN']:
             for Ifmod in ['PHI', 'SQ', 'DEF']:
-                mID0 = f'RE_{Tmod}_{Ifmod}_DEF_nav'
-                models[f'{Tmod}_{Ifmod}'] = {'model': reg.model.newConf(mID0=mID0, kwargs={
+                m = reg.conf.Model.getID(f'RE_{Tmod}_{Ifmod}_DEF_nav')
+                models[f'{Tmod}_{Ifmod}'] = {'model': m.update_nestdict_copy({
                     f'brain.olfactor_params.brute_force': True,
                     f'brain.olfactor_params.gain_dict.Odor': gain,
                     f'brain.interference_params.attenuation': 0.1,
@@ -524,8 +520,8 @@ class Chemotaxis_Essay(Essay):
         models = {}
         for Tmod in ['NEU', 'SIN']:
             for Ifmod in ['PHI', 'SQ', 'DEF']:
-                mID0 = f'RE_{Tmod}_{Ifmod}_DEF_nav'
-                models[f'{Tmod}_{Ifmod}'] = {'model': reg.model.newConf(mID0=mID0, kwargs={
+                m = reg.conf.Model.getID(f'RE_{Tmod}_{Ifmod}_DEF_nav')
+                models[f'{Tmod}_{Ifmod}'] = {'model': m.update_nestdict_copy({
                     f'brain.olfactor_params.perception': 'log',
                     f'brain.olfactor_params.decay_coef': 0.1,
                     f'brain.olfactor_params.gain_dict.Odor': gain,
@@ -542,8 +538,8 @@ class Chemotaxis_Essay(Essay):
         models = {}
         for Tmod in ['NEU', 'SIN']:
             for Ifmod in ['PHI', 'SQ']:
-                mID0 = f'RE_{Tmod}_{Ifmod}_DEF_var2_nav'
-                models[f'{Tmod}_{Ifmod}'] = {'model': reg.model.newConf(mID0=mID0, kwargs={
+                m = reg.conf.Model.getID(f'RE_{Tmod}_{Ifmod}_DEF_var2_nav')
+                models[f'{Tmod}_{Ifmod}'] = {'model': m.update_nestdict_copy({
                     f'brain.olfactor_params.perception': 'log',
                     f'brain.olfactor_params.decay_coef': 0.1,
                     f'brain.olfactor_params.gain_dict.Odor': gain,

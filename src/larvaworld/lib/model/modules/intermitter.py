@@ -287,12 +287,8 @@ class Intermitter(Timer):
 
     @staticmethod
     def select(mode):
-        d = aux.AttrDict({
-            'default': Intermitter,
-            'nengo': NengoIntermitter,
-            'branch': BranchIntermitter
-        })
-        return d[mode]
+        from .module_modes import ModuleModeDict
+        return ModuleModeDict.Intermitter[mode]
 
 
 class OfflineIntermitter(Intermitter):
@@ -345,6 +341,13 @@ class FittedIntermitter(OfflineIntermitter):
         stored_conf.update(kwargs)
         stored_conf['feed_bouts'] = True if stored_conf['feed_freq'] is not None else False
         super().__init__(**stored_conf)
+
+
+# ModeDict = aux.AttrDict({
+#             'default': Intermitter,
+#             'nengo': NengoIntermitter,
+#             'branch': BranchIntermitter
+#         })
 
 
 def get_EEB_poly1d(**kws):

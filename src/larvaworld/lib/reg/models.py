@@ -795,25 +795,19 @@ class ModelRegistry:
 
         return {mID: conf}
 
-    def newConf(self, m0=None, mID0=None, mID=None, kwargs={}):
-        if m0 is None:
-            m0 = reg.conf.Model.getID(mID0)
-        T0 = m0.get_copy()
-        conf = T0.update_nestdict(kwargs)
-        if mID is not None:
-            reg.conf.Model.setID(mID, conf)
-        return conf
 
     def autogenerate_confs(self):
+        from ..model import ModuleModeDict as MD
+
         mod_dict = {'realistic': 'RE', 'square': 'SQ', 'gaussian': 'GAU', 'constant': 'CON',
                     'default': 'DEF', 'neural': 'NEU', 'sinusoidal': 'SIN', 'nengo': 'NENGO', 'phasic': 'PHI',
                     'branch': 'BR'}
         kws = {'modkws': {'interference': {'attenuation': 0.1, 'attenuation_max': 0.6}}}
         E = {}
-        for Cmod in ['realistic', 'square', 'gaussian', 'constant']:
-            for Tmod in ['neural', 'sinusoidal', 'constant']:
-                for Ifmod in ['phasic', 'square', 'default']:
-                    for IMmod in ['nengo', 'branch', 'default']:
+        for Cmod in MD.Crawler.keylist:
+            for Tmod in MD.Turner.keylist:
+                for Ifmod in MD.Interference.keylist:
+                    for IMmod in MD.Intermitter.keylist:
                         kkws = {
                             'mID': f'{mod_dict[Cmod]}_{mod_dict[Tmod]}_{mod_dict[Ifmod]}_{mod_dict[IMmod]}',
                             'modes': {'crawler': Cmod, 'turner': Tmod, 'interference': Ifmod, 'intermitter': IMmod},
@@ -855,7 +849,6 @@ class ModelRegistry:
         kwargs1 = {'brain.modules.olfactor': True, 'brain.olfactor_params': olf_pars1}
         kwargs2 = {'brain.modules.olfactor': True, 'brain.olfactor_params': olf_pars2}
 
-        # MB_pars = aux.AttrDict({'mode': 'MB'})
         MB_pars = self.generate_configuration(self.dict.brain.m['memory'].mode['MB'].args)
         MB_pars.mode='MB'
         MB_kws = {'brain.modules.memory': True, 'brain.memory_params': MB_pars}
@@ -869,6 +862,69 @@ class ModelRegistry:
                     'brain.intermitter_params.EEB': 0.5, 'brain.intermitter_params.feed_bouts': True}
         maxEEB_kws = {'brain.intermitter_params.EEB': 0.9}
 
+
+
+        for mID0, m0 in mID0dic.items():
+            E[f'{mID0}_nav0'] = m0.update_nestdict_copy(kwargs0)
+            E[f'{mID0}_forager0'] = E[f'{mID0}_nav0'].update_nestdict_copy(feed_kws)
+            E[f'{mID0}_max_forager0'] = E[f'{mID0}_forager0'].update_nestdict_copy(maxEEB_kws)
+            E[f'{mID0}_forager0_MB'] = E[f'{mID0}_forager0'].update_nestdict_copy(MB_kws)
+            E[f'{mID0}_forager0_RL'] = E[f'{mID0}_forager0'].update_nestdict_copy(RL_kws)
+
+            E[f'{mID0}_nav'] = m0.update_nestdict_copy(kwargs1)
+            E[f'{mID0}_nav_brute'] = E[f'{mID0}_nav'].update_nestdict_copy({'brain.olfactor_params.brute_force': True})
+            E[f'{mID0}_nav_x2'] = m0.update_nestdict_copy(kwargs2)
+            E[f'{mID0}_nav_x2_brute'] = E[f'{mID0}_nav_x2'].update_nestdict_copy({'brain.olfactor_params.brute_force': True})
+
+            E[f'{mID0}_nav_RL'] = E[f'{mID0}_nav'].update_nestdict_copy(RL_kws)
+
+            E[f'{mID0}_feeder'] = m0.update_nestdict_copy(feed_kws)
+            E[f'{mID0}_max_feeder'] = E[f'{mID0}_feeder'].update_nestdict_copy(maxEEB_kws)
+
+
+            E[f'{mID0}_forager'] = E[f'{mID0}_nav'].update_nestdict_copy(feed_kws)
+            E[f'{mID0}_forager_x2'] = E[f'{mID0}_nav_x2'].update_nestdict_copy(feed_kws)
+            E[f'{mID0}_max_forager'] = E[f'{mID0}_forager'].update_nestdict_copy(maxEEB_kws)
+            E[f'{mID0}_max_forager0_MB'] = E[f'{mID0}_forager0_MB'].update_nestdict_copy(maxEEB_kws)
+            E[f'{mID0}_forager_MB'] = E[f'{mID0}_forager'].update_nestdict_copy(MB_kws)
+            E[f'{mID0}_max_forager_MB'] = E[f'{mID0}_forager_MB'].update_nestdict_copy(maxEEB_kws)
+            E[f'{mID0}_max_forager0_RL'] = E[f'{mID0}_forager0_RL'].update_nestdict_copy(maxEEB_kws)
+            E[f'{mID0}_forager_RL'] = E[f'{mID0}_forager'].update_nestdict_copy(RL_kws)
+            E[f'{mID0}_max_forager_RL'] = E[f'{mID0}_forager_RL'].update_nestdict_copy(maxEEB_kws)
+
+
+
+
+        E['noMB_untrained'] = E['RE_NEU_PHI_DEF_max_forager0']
+        E['noMB_trained'] = E['RE_NEU_PHI_DEF_max_forager']
+        E['MB_untrained'] = E['RE_NEU_PHI_DEF_max_forager0_MB']
+        E['MB_trained'] = E['RE_NEU_PHI_DEF_max_forager_MB']
+        E['forager'] = E['RE_NEU_PHI_DEF_forager']
+        E['forager_x2'] = E['RE_NEU_PHI_DEF_forager_x2']
+        E['max_forager'] = E['RE_NEU_PHI_DEF_max_forager']
+        E['feeder'] = E['RE_NEU_PHI_DEF_feeder']
+        E['max_feeder'] = E['RE_NEU_PHI_DEF_max_feeder']
+        E['explorer'] = E['loco_default']
+        E['navigator'] = E['explorer'].update_nestdict_copy(kwargs1)
+        E['navigator_x2'] = E['explorer'].update_nestdict_copy(kwargs2)
+        E['RLnavigator'] = E['navigator'].update_nestdict_copy(RL_kws)
+        E['RLforager'] = E['forager'].update_nestdict_copy(RL_kws)
+        for mID0 in ['Levy', 'NEU_Levy', 'NEU_Levy_continuous', 'CON_SIN']:
+            E[f'{mID0}_nav'] = E[mID0].update_nestdict_copy(kwargs1)
+            E[f'{mID0}_nav_x2'] = E[mID0].update_nestdict_copy(kwargs2)
+
+        sm_pars = self.generate_configuration(self.dict.aux.m['sensorimotor'].mode['default'].args)
+        E['obstacle_avoider'] = E['navigator'].update_nestdict_copy({'sensorimotor': sm_pars})
+
+
+        sample_kws={k: 'sample' for k in [
+            'brain.crawler_params.stride_dst_mean',
+            'brain.crawler_params.stride_dst_std',
+            'brain.crawler_params.max_scaled_vel',
+            'brain.crawler_params.max_vel_phase',
+            'brain.crawler_params.freq',
+        ]}
+
         RvSkws = {}
         for species, k_abs, EEB in zip(['rover', 'sitter'], [0.8, 0.4], [0.67, 0.37]):
             DEB_pars = self.generate_configuration(self.dict.aux.m['energetics'].mode['DEB'].args, species=species,
@@ -878,80 +934,12 @@ class ModelRegistry:
             RvSkws[species] = {'wF': {'energetics': energy_pars, 'brain.intermitter_params.EEB': EEB},
                                'woF': {'energetics': energy_pars}}
 
-        for mID0, m0 in mID0dic.items():
-            mID00 = f'{mID0}_nav0'
-            E[mID00] = self.newConf(m0=m0, kwargs=kwargs0)
-            mID1 = f'{mID0}_nav'
-            E[mID1] = self.newConf(m0=m0, kwargs=kwargs1)
-            mID1br = f'{mID1}_brute'
-            E[mID1br] = self.newConf(m0=E[mID1], kwargs={'brain.olfactor_params.brute_force': True})
-            mID2 = f'{mID0}_nav_x2'
-            E[mID2] = self.newConf(m0=m0, kwargs=kwargs2)
-            mID2br = f'{mID2}_brute'
-            E[mID2br] = self.newConf(m0=E[mID2], kwargs={'brain.olfactor_params.brute_force': True})
 
-            mID1_RL = f'{mID1}_RL'
-            E[mID1_RL] = self.newConf(m0=E[mID1], kwargs=RL_kws)
-
-            mID01 = f'{mID0}_feeder'
-            E[mID01] = self.newConf(m0=m0, kwargs=feed_kws)
-            mID02 = f'{mID0}_max_feeder'
-            E[mID02] = self.newConf(m0=E[mID01], kwargs=maxEEB_kws)
-
-            mID110 = f'{mID0}_forager0'
-            E[mID110] = self.newConf(m0=E[mID00], kwargs=feed_kws)
-            mID120 = f'{mID0}_max_forager0'
-            E[mID120] = self.newConf(m0=E[mID110], kwargs=maxEEB_kws)
-
-            mID11 = f'{mID0}_forager'
-            E[mID11] = self.newConf(m0=E[mID1], kwargs=feed_kws)
-            E[f'{mID0}_forager_x2'] = self.newConf(m0=E[mID2], kwargs=feed_kws)
-            E[f'{mID0}_max_forager'] = self.newConf(m0=E[mID11], kwargs=maxEEB_kws)
-
-            E[f'{mID0}_forager0_MB'] = self.newConf(m0=E[mID110], kwargs=MB_kws)
-            E[f'{mID0}_max_forager0_MB'] = self.newConf(m0=E[f'{mID0}_forager0_MB'], kwargs=maxEEB_kws)
-            E[f'{mID0}_forager_MB'] = self.newConf(m0=E[mID11], kwargs=MB_kws)
-            E[f'{mID0}_max_forager_MB'] = self.newConf(m0=E[f'{mID0}_forager_MB'], kwargs=maxEEB_kws)
-
-            E[f'{mID0}_forager0_RL'] = self.newConf(m0=E[mID110], kwargs=RL_kws)
-            E[f'{mID0}_max_forager0_RL'] = self.newConf(m0=E[f'{mID0}_forager0_RL'], kwargs=maxEEB_kws)
-            E[f'{mID0}_forager_RL'] = self.newConf(m0=E[mID11], kwargs=RL_kws)
-            E[f'{mID0}_max_forager_RL'] = self.newConf(m0=E[f'{mID0}_forager_RL'], kwargs=maxEEB_kws)
-
-        E['noMB_untrained'] = self.newConf(m0=E['RE_NEU_PHI_DEF_max_forager0'], kwargs={})
-        E['noMB_trained'] = self.newConf(m0=E['RE_NEU_PHI_DEF_max_forager'], kwargs={})
-        E['MB_untrained'] = self.newConf(m0=E['RE_NEU_PHI_DEF_max_forager0_MB'], kwargs={})
-        E['MB_trained'] = self.newConf(m0=E['RE_NEU_PHI_DEF_max_forager_MB'], kwargs={})
-        E['forager'] = self.newConf(m0=E['RE_NEU_PHI_DEF_forager'], kwargs={})
-        E['forager_x2'] = self.newConf(m0=E['RE_NEU_PHI_DEF_forager_x2'], kwargs={})
-        E['max_forager'] = self.newConf(m0=E['RE_NEU_PHI_DEF_max_forager'], kwargs={})
-        E['feeder'] = self.newConf(m0=E['RE_NEU_PHI_DEF_feeder'], kwargs={})
-        E['max_feeder'] = self.newConf(m0=E['RE_NEU_PHI_DEF_max_feeder'], kwargs={})
-        E['explorer'] = self.newConf(m0=E['loco_default'], kwargs={})
-        E['navigator'] = self.newConf(m0=E['explorer'], kwargs=kwargs1)
-        E['navigator_x2'] = self.newConf(m0=E['explorer'], kwargs=kwargs2)
-        E['RLnavigator'] = self.newConf(m0=E['navigator'], kwargs=RL_kws)
-        E['RLforager'] = self.newConf(m0=E['forager'], kwargs=RL_kws)
-        for mID0 in ['Levy', 'NEU_Levy', 'NEU_Levy_continuous', 'CON_SIN']:
-            E[f'{mID0}_nav'] = self.newConf(m0=E[mID0], kwargs=kwargs1)
-            E[f'{mID0}_nav_x2'] = self.newConf(m0=E[mID0], kwargs=kwargs2)
-
-        sm_pars = self.generate_configuration(self.dict.aux.m['sensorimotor'].mode['default'].args)
-        E['obstacle_avoider'] = self.newConf(m0=E['RE_NEU_PHI_DEF_nav'], kwargs={'sensorimotor': sm_pars})
-
-        sample_ks = [
-            'brain.crawler_params.stride_dst_mean',
-            'brain.crawler_params.stride_dst_std',
-            'brain.crawler_params.max_scaled_vel',
-            'brain.crawler_params.max_vel_phase',
-            'brain.crawler_params.freq',
-        ]
-        for mID0, RvSsuf, Fexists in zip(
-                ['RE_NEU_PHI_DEF', 'RE_NEU_PHI_DEF_feeder', 'RE_NEU_PHI_DEF_nav', 'RE_NEU_PHI_DEF_forager'],
-                ['_loco', '', '_nav', '_forager'], ['woF', 'wF', 'woF', 'wF']):
-            E[f'v{mID0}'] = self.newConf(m0=E[mID0], kwargs={k: 'sample' for k in sample_ks})
+        for mID0, Fexists in zip(
+                ['explorer', 'feeder', 'navigator', 'forager'],['woF', 'wF', 'woF', 'wF']):
+            E[f'{mID0}_var'] = E[mID0].update_nestdict_copy(sample_kws)
             for species, kws in RvSkws.items():
-                E[f'{species}{RvSsuf}'] = self.newConf(m0=E[mID0], kwargs=kws[Fexists])
+                E[f'{species}_{mID0}'] = E[mID0].update_nestdict_copy(kws[Fexists])
 
         return E
 

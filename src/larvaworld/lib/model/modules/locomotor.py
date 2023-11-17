@@ -82,7 +82,6 @@ class DefaultLocomotor(Locomotor):
         for k in ['crawler', 'turner', 'interference', 'feeder', 'intermitter']:
 
             if conf.modules[k]:
-
                 m = conf[f'{k}_params']
                 if k != 'interference':
                     m['dt'] = dt
@@ -92,12 +91,6 @@ class DefaultLocomotor(Locomotor):
                     mode = m.mode
                     mm = {k: m[k] for k in m if k != 'mode'}
                     kwargs[k] = self.param[k].class_.select(mode)(**mm)
-                    # kws = {kw: getattr(self, kw) for kw in D[k].kwargs.keys()}
-                    # func = D[k].mode[mode].class_func
-                    # kwargs[k] = func(**mm, **kws)
-            # else:
-            #     M = None
-            # setattr(self, k, M)
         super().__init__(**kwargs)
 
 

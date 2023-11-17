@@ -1,8 +1,7 @@
 import numpy as np
 import param
 
-from ... import aux
-from ...param import PhaseRange, Phase, NestedConf
+from ...param import PhaseRange, Phase
 
 __all__ = [
     'Coupling',
@@ -14,7 +13,6 @@ __all__ = [
 
 # class DefaultCoupling(NestedConf):
 class Coupling(param.Parameterized):
-    # mode = param.Selector(objects=['default', 'square', 'phasic'], doc='The coupling algorithm')
     attenuation = param.Magnitude(0.0, label='crawl-induced angular attenuation',
                                   doc='The attenuation coefficient for the crawl-interference to the angular motion.')
     attenuation_max = param.Magnitude(1.0, label='crawl-induced maximum angular attenuation',
@@ -40,46 +38,30 @@ class Coupling(param.Parameterized):
     def check_module(self, obj, module):
         self.cur_attenuation = self.attenuation
 
-    # def check_crawler(self, crawler):
-    #     self.cur_attenuation = self.attenuation
-    #
-    # def check_feeder(self, feeder):
-    #     self.cur_attenuation = self.attenuation
-
-    @ staticmethod
+    @staticmethod
     def select(mode):
-        d = aux.AttrDict({
-            'default': DefaultCoupling,
-            'square': SquareCoupling,
-            'phasic': PhasicCoupling
-        })
-        return d[mode]
+        from .module_modes import ModuleModeDict
+        return ModuleModeDict.Interference[mode]
 
 
-
-class DefaultCoupling(Coupling):pass
-    # attenuation_max = param.Magnitude(1.0, readonly=True)
-    # mode = param.Selector(default='default', readonly=True)
+class DefaultCoupling(Coupling): pass
 
 
 class SquareCoupling(Coupling):
-    # mode = param.Selector(default='square', readonly=True)
     crawler_phi_range = PhaseRange(label='crawler suppression relief phase interval',
                                    doc='CRAWLER phase range for TURNER suppression lift.')
     feeder_phi_range = PhaseRange(label='feeder suppression relief phase interval',
                                   doc='FEEDER phase range for TURNER suppression lift.')
 
     def check_module(self, obj, module):
-        phi_dic={
-            'Crawler':self.crawler_phi_range,
-            'Feeder':self.feeder_phi_range,
-                 }
+        phi_dic = {
+            'Crawler': self.crawler_phi_range,
+            'Feeder': self.feeder_phi_range,
+        }
         A = self.attenuation
         if hasattr(obj, 'phi') and obj.suppresion_relief(phi_dic[module]):
             A += self.attenuation_max
         self.cur_attenuation = A
-
-
 
 
 class PhasicCoupling(Coupling):
@@ -89,8 +71,8 @@ class PhasicCoupling(Coupling):
         def gaussian(x, mu, sig):
             return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
 
-        #A = gaussian(x, self.max_attenuation_phase, 1) * self.attenuation_max + self.attenuation
-        A = np.exp(-np.power(x - self.max_attenuation_phase, 2.) / 2)* self.attenuation_max + self.attenuation
+        # A = gaussian(x, self.max_attenuation_phase, 1) * self.attenuation_max + self.attenuation
+        A = np.exp(-np.power(x - self.max_attenuation_phase, 2.) / 2) * self.attenuation_max + self.attenuation
         if A >= 1:
             A = 1
         elif A <= 0:
@@ -102,6 +84,8 @@ class PhasicCoupling(Coupling):
         self.cur_attenuation = self.get(x)
 
 
-
-
-
+# ModeDict = aux.AttrDict({
+#     'default': DefaultCoupling,
+#     'square': SquareCoupling,
+#     'phasic': PhasicCoupling
+# })

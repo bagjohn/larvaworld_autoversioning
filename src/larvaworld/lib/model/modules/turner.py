@@ -1,7 +1,6 @@
 import random
 import param
 
-from ... import reg, aux
 from .basic import Effector, StepEffector, SinOscillator
 from ...param import PositiveNumber, PositiveInteger
 
@@ -19,12 +18,8 @@ class Turner(Effector):
 
     @staticmethod
     def select(mode):
-        d = aux.AttrDict({
-            'neural': NeuralOscillator,
-            'sinusoidal': SinTurner,
-            'constant': ConstantTurner
-        })
-        return d[mode]
+        from .module_modes import ModuleModeDict
+        return ModuleModeDict.Turner[mode]
 
 
 class ConstantTurner(Turner, StepEffector): pass
@@ -124,3 +119,10 @@ class NeuralOscillator(Turner):
     def get_state(self):
         state = [self.E_l, self.H_E_l, self.E_r, self.H_E_r, self.C_l, self.H_C_l, self.C_r, self.H_C_r]
         return state
+
+
+# ModeDict = aux.AttrDict({
+#             'neural': NeuralOscillator,
+#             'sinusoidal': SinTurner,
+#             'constant': ConstantTurner
+#         })
