@@ -657,13 +657,33 @@ class DEB_runner(DEB):
     DEB_dt = OptionalPositiveNumber(doc='The timestep of the DEB energetics module in seconds.')
     f_decay = PositiveNumber(default=0.1, doc='The exponential decay coefficient of the DEB functional response.')
 
-    def __init__(self, dt=0.1,DEB_dt=None, **kwargs):
-        if DEB_dt is None :
-            DEB_dt=dt
-        super().__init__(DEB_dt=DEB_dt,**kwargs)
-        self.f_exp_coef = np.exp(-self.f_decay * dt)
-        self.deb_step_every = int(dt / self.DEB_dt)
+    def __init__(self, model=None,life_history={},**kwargs):
+        self.model=model
+
+        super().__init__(steps_per_day=24 * 6,**kwargs)
+        if self.model is not None:
+            if self.DEB_dt is None:
+                self.DEB_dt = self.model.dt
+            self.f_exp_coef = np.exp(-self.f_decay * self.model.dt)
+            # self.step_every = int(self.model.dt / self.DEB_dt)
+        self.grow_larva(**life_history)
+        # self.deb_step_every = int(dt / self.model.dt)
+        self.set_steps_per_day(int(24 * 60 * 60 / self.DEB_dt))
         self.temp_cum_V_eaten = 0
+
+    @property
+    def valid(self):
+        return self.model.Nticks % int(self.model.dt / self.DEB_dt) == 0
+
+    def update(self, V_eaten=0):
+        self.temp_cum_V_eaten += V_eaten
+        if self.valid:
+            X_V = self.temp_cum_V_eaten
+            if X_V > 0:
+                self.f += self.gut.k_abs
+            self.f *= self.f_exp_coef
+            self.run(X_V=X_V)
+            self.temp_cum_V_eaten = 0
 
 
 
