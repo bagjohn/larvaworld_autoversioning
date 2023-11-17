@@ -206,17 +206,6 @@ class LarvaMotile(LarvaSegmented):
             self.deb = DEB_runner(model=self.model, id=self.unique_id,
                                   life_history=life_history,gut_params=energetic_pars.gut,
                                   **energetic_pars.DEB)
-
-            # pDEB = energetic_pars.DEB
-            # pGUT = energetic_pars.gut
-            # dt = pDEB.DEB_dt
-            # if dt is None:
-            #     dt = self.model.dt
-            # self.temp_cum_V_eaten = 0
-            # self.f_exp_coef = np.exp(-pDEB.f_decay * dt)
-            # self.deb.grow_larva(**life_history)
-            # self.deb_step_every = int(dt / self.model.dt)
-            # self.deb.set_steps_per_day(int(24 * 60 * 60 / self.deb.DEB_dt))
             self.real_length = self.deb.Lw * 10 / 1000
             self.real_mass = self.deb.Ww
             self.V = self.deb.V
@@ -231,20 +220,12 @@ class LarvaMotile(LarvaSegmented):
             self.real_length = None
 
     def run_energetics(self, V_eaten):
-        if self.deb is not None:
-            self.deb.update(V_eaten)
-            # if self.model.Nticks % self.deb.step_every == 0:
-            #     X_V = self.deb.temp_cum_V_eaten
-            #     if X_V > 0:
-            #         self.deb.f += self.deb.gut.k_abs
-            #     self.deb.f *= self.deb.f_exp_coef
-            #     self.deb.run(X_V=X_V)
-            #     self.deb.temp_cum_V_eaten = 0
-            self.real_length = self.deb.Lw * 10 / 1000
-            self.real_mass = self.deb.Ww
-            self.V = self.deb.V
-                # TODO add this again
-                # self.adjust_body_vertices()
+        self.deb.update(V_eaten)
+        self.real_length = self.deb.Lw * 10 / 1000
+        self.real_mass = self.deb.Ww
+        self.V = self.deb.V
+        # TODO add this again
+        # self.adjust_body_vertices()
 
     def get_feed_success(self, t):
         if self.feeder_motion:
@@ -352,7 +333,8 @@ class LarvaMotile(LarvaSegmented):
         V = self.feed(self.food_detected, self.feeder_motion)
         self.amount_eaten += V * 1000
         self.cum_food_detected += int(self.on_food)
-        self.run_energetics(V)
+        if self.deb is not None:
+            self.run_energetics(V)
 
 
         try:

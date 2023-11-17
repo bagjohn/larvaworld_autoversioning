@@ -657,17 +657,15 @@ class DEB_runner(DEB):
     DEB_dt = OptionalPositiveNumber(doc='The timestep of the DEB energetics module in seconds.')
     f_decay = PositiveNumber(default=0.1, doc='The exponential decay coefficient of the DEB functional response.')
 
-    def __init__(self, model=None,life_history={},**kwargs):
-        self.model=model
-
-        super().__init__(steps_per_day=24 * 6,**kwargs)
+    def __init__(self, model=None, life_history=None, **kwargs):
+        if life_history is None:
+            life_history = aux.AttrDict({'epochs': {}, 'age': None})
+        self.model = model
+        super().__init__(steps_per_day=24 * 6, **kwargs)
         if self.model is not None:
             if self.DEB_dt is None:
                 self.DEB_dt = self.model.dt
-            self.f_exp_coef = np.exp(-self.f_decay * self.model.dt)
-            # self.step_every = int(self.model.dt / self.DEB_dt)
         self.grow_larva(**life_history)
-        # self.deb_step_every = int(dt / self.model.dt)
         self.set_steps_per_day(int(24 * 60 * 60 / self.DEB_dt))
         self.temp_cum_V_eaten = 0
 
@@ -678,13 +676,11 @@ class DEB_runner(DEB):
     def update(self, V_eaten=0):
         self.temp_cum_V_eaten += V_eaten
         if self.valid:
-            X_V = self.temp_cum_V_eaten
-            if X_V > 0:
+            if self.temp_cum_V_eaten > 0:
                 self.f += self.gut.k_abs
-            self.f *= self.f_exp_coef
-            self.run(X_V=X_V)
+            self.f *= np.exp(-self.f_decay * self.model.dt)
+            self.run(X_V=self.temp_cum_V_eaten)
             self.temp_cum_V_eaten = 0
-
 
 
 # p.257 in S. a. L. M. Kooijman, “Dynamic Energy Budget theory for metabolic organisation : Summary of concepts of the third edition,” Water, vol. 365, p. 68, 2010.
