@@ -16,7 +16,7 @@ __all__ = [
 
 class Sensor(Effector):
     output_range = RangeRobust((-1.0, 1.0), readonly=True)
-    perception = param.Selector(objects=['linear', 'log', 'null'], label='sensory transduction mode',
+    perception = param.Selector(objects=['log','linear', 'null'], label='sensory transduction mode',
                                 doc='The method used to calculate the perceived sensory activation from the current and previous sensory input.')
     decay_coef = PositiveNumber(0.1, softmax=2.0, step=0.01, label='sensory decay coef',
                                 doc='The linear decay coefficient of the olfactory sensory activation.')

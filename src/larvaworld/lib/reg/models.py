@@ -801,11 +801,11 @@ class ModelRegistry:
 
     def autogenerate_confs(self):
         from ..model import ModuleModeDict as MD
-        from ..model.modules import RLmemory, Timer, RemoteBrianModelMemory
+        from ..model.modules import RLmemory, Timer, RemoteBrianModelMemory, Feeder, Olfactor, Effector
         from ..param import class_defaults
         D = self.dict
         D_en = D.aux.m['energetics']
-        D_mem = D.brain.m['memory']
+        # D_mem = D.brain.m['memory']
 
         mod_dict = {'realistic': 'RE', 'square': 'SQ', 'gaussian': 'GAU', 'constant': 'CON',
                     'default': 'DEF', 'neural': 'NEU', 'sinusoidal': 'SIN', 'nengo': 'NENGO', 'phasic': 'PHI',
@@ -814,7 +814,7 @@ class ModelRegistry:
         kws2 = {'modkws': {'interference': {'attenuation': 0.0}, 'intermitter': {'run_mode': 'exec'}}}
 
         olf_kws = [{'brain.modules.olfactor': True,
-                    'brain.olfactor_params': self.generate_configuration(D.brain.m['olfactor'].mode['default'].args,
+                    'brain.olfactor_params': class_defaults(Olfactor, excluded=[Effector],
                                                                          gain_dict=g)} for g in [
             {'Odor': 0.0}, {'Odor': 150.0}, {'CS': 150.0, 'UCS': 0.0}
         ]]
@@ -829,7 +829,8 @@ class ModelRegistry:
         RL_pars.mode = 'RL'
         RL_kws = {'brain.modules.memory': True, 'brain.memory_params': RL_pars}
 
-        feed_pars = self.generate_configuration(D.brain.m['feeder'].mode['default'].args)
+        feed_pars = class_defaults(Feeder, excluded=[Timer, 'phi'])
+        # feed_pars = self.generate_configuration(D.brain.m['feeder'].mode['default'].args)
         feed_kws = {'brain.modules.feeder': True, 'brain.feeder_params': feed_pars,
                     'brain.intermitter_params.EEB': 0.5, 'brain.intermitter_params.feed_bouts': True}
         maxEEB_kws = {'brain.intermitter_params.EEB': 0.9}
