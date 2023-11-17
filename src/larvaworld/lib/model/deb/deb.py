@@ -45,8 +45,8 @@ class DEB(NestedConf):
     use_gut = param.Boolean(True, doc='Whether to use the gut module.')
     hunger_gain = param.Magnitude(0.0, label='hunger sensitivity to reserve reduction',
                                   doc='The sensitivy of the hunger drive in deviations of the DEB reserve density.')
+    dt = PositiveNumber(0.1,doc='The timestep of the DEB energetics module in seconds.')
     hours_as_larva = PositiveNumber(0.0, doc='The age since eclosion')
-    steps_per_day = PositiveInteger(24 * 60, doc='How many iterations of the model per day')
     substrate = ClassAttr(Substrate, doc='The substrate where the agent feeds')
 
     def __init__(self, id='DEB model', cv=0, T=298.15, eb=1.0,
@@ -101,13 +101,12 @@ class DEB(NestedConf):
         self.f = self.base_f
         self.V_bite = V_bite
 
-        self.dt = 1 / self.steps_per_day
         if gut_params is None:
             gut_params = reg.par.get_null('gut')
             # gut_params=null_dict('gut_params')
 
         self.gut = deb.Gut(deb=self, save_dict=save_dict, **gut_params) if self.use_gut else None
-        self.set_steps_per_day(self.steps_per_day)
+        self.scale_time()
         self.run_embryo_stage()
         self.predict_larva_stage(f=self.base_f)
 
@@ -146,10 +145,6 @@ class DEB(NestedConf):
             base_hunger = self.intermitter.base_EEB
         self.base_hunger = base_hunger
 
-    def set_steps_per_day(self, steps_per_day):
-        self.steps_per_day = steps_per_day
-        self.dt = 1 / steps_per_day
-        self.scale_time()
 
     def derived_pars(self):
         kap = self.kap
@@ -494,7 +489,7 @@ class DEB(NestedConf):
                 while self.stage == 'larva':
                     self.run(**c)
             else:
-                N = int(self.steps_per_day / 24 * (t1 - t0))
+                N = int(1/self.dt / 24 * (t1 - t0))
                 for i in range(N):
                     if self.stage == 'larva':
                         self.run(**c)
@@ -654,19 +649,17 @@ class DEB(NestedConf):
 
 
 class DEB_runner(DEB):
-    DEB_dt = OptionalPositiveNumber(doc='The timestep of the DEB energetics module in seconds.')
     f_decay = PositiveNumber(default=0.1, doc='The exponential decay coefficient of the DEB functional response.')
 
-    def __init__(self, model=None, life_history=None, **kwargs):
+    def __init__(self, model=None, dt=None,life_history=None, **kwargs):
         if life_history is None:
             life_history = aux.AttrDict({'epochs': {}, 'age': None})
         self.model = model
-        super().__init__(steps_per_day=24 * 6, **kwargs)
         if self.model is not None:
-            if self.DEB_dt is None:
-                self.DEB_dt = self.model.dt
+            if dt is None:
+                dt = self.model.dt
+        super().__init__(dt=dt, **kwargs)
         self.grow_larva(**life_history)
-        self.set_steps_per_day(int(24 * 60 * 60 / self.DEB_dt))
         self.temp_cum_V_eaten = 0
 
     @property
@@ -727,11 +720,9 @@ def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=Fals
 
     if deb_dt is None:
         deb_dt = dt
-    steps_per_day = np.round(24 * 60 * 60 / deb_dt).astype(int)
-    deb = DEB(id=id, assimilation_mode='gut', save_dict=save_dict, **kwargs)
+    deb = DEB(id=id, assimilation_mode='gut', dt=deb_dt, save_dict=save_dict, **kwargs)
     if EEB is None:
         EEB = get_best_EEB(deb, cRef)
-    deb.set_steps_per_day(steps_per_day=steps_per_day)
     deb.base_hunger = EEB
     Nticks = np.round(deb_dt / dt).astype(int)
     inter = OfflineIntermitter(**kws2, EEB=EEB)
@@ -779,7 +770,7 @@ def test_substrates():
     for s in substrate_dict:
         try:
             q = 1
-            deb0 = DEB(substrate={'quality': q, 'type': s}, assimilation_mode='sim', steps_per_day=24 * 60)
+            deb0 = DEB(substrate={'quality': q, 'type': s}, assimilation_mode='sim', dt=60)
             print()
             print('half-saturation coefficient : ', np.round(deb0.K, 5), ' C-mole/cm**3')
             print('substrate type : ', s)
