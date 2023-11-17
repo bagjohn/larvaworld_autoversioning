@@ -103,7 +103,6 @@ class DEB(NestedConf):
 
         if gut_params is None:
             gut_params = reg.par.get_null('gut')
-            # gut_params=null_dict('gut_params')
 
         self.gut = deb.Gut(deb=self, save_dict=save_dict, **gut_params) if self.use_gut else None
         self.scale_time()
@@ -664,7 +663,7 @@ class DEB_runner(DEB):
 
     @property
     def valid(self):
-        return self.model.Nticks % int(self.model.dt / self.DEB_dt) == 0
+        return self.model.Nticks % int(self.model.dt / self.dt) == 0
 
     def update(self, V_eaten=0):
         self.temp_cum_V_eaten += V_eaten

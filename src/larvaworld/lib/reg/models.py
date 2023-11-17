@@ -517,7 +517,7 @@ def init_aux_modules():
                         'assimilation_mode': {'dtype': str, 'v0': 'gut', 'vs': ['sim', 'gut', 'deb'],
                                               'sym': nam.tex.sub('m', 'ass'), 'k': 'ass_mod',
                                               'h': 'The method used to calculate the DEB assimilation energy flow.'},
-                        'DEB_dt': {'lim': (0.0, 1000.0), 'disp': 'DEB timestep (sec)', 'v0': None,
+                        'dt': {'lim': (0.0, 1000.0), 'disp': 'DEB timestep (sec)', 'v0': None,
                                    'sym': nam.tex.sub('dt', 'DEB'),
                                    'k': 'DEB_dt',
                                    'h': 'The timestep of the DEB energetics module in seconds.'},
