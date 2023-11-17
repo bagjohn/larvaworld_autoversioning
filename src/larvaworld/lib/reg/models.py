@@ -861,7 +861,7 @@ class ModelRegistry:
         E['navigator'] = E['explorer'].update_nestdict_copy(olf_kws[1])
         E['navigator_x2'] = E['explorer'].update_nestdict_copy(olf_kws[2])
         E['RLnavigator'] = E['navigator'].update_nestdict_copy(RL_kws)
-        E['RLforager'] = E['forager'].update_nestdict_copy(RL_kws)
+
 
         sm_pars = self.generate_configuration(D.aux.m['sensorimotor'].mode['default'].args)
         E['obstacle_avoider'] = E['navigator'].update_nestdict_copy({'sensorimotor': sm_pars})
@@ -921,6 +921,7 @@ class ModelRegistry:
         E['max_forager'] = E['RE_NEU_PHI_DEF_max_forager']
         E['feeder'] = E['RE_NEU_PHI_DEF_feeder']
         E['max_feeder'] = E['RE_NEU_PHI_DEF_max_feeder']
+        E['RLforager'] = E['forager'].update_nestdict_copy(RL_kws)
 
         for mID0 in ['Levy', 'NEU_Levy', 'NEU_Levy_continuous', 'CON_SIN']:
             E[f'{mID0}_nav'] = E[mID0].update_nestdict_copy(olf_kws[1])
