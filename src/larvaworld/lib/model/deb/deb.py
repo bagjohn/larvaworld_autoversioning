@@ -11,7 +11,7 @@ from ...aux import nam
 
 from ...model import deb
 from ...param import Substrate, NestedConf, PositiveNumber, PositiveInteger, ClassAttr, substrate_dict, \
-    Epoch
+    Epoch, OptionalPositiveNumber
 
 '''
 Standard culture medium
@@ -27,6 +27,7 @@ Larvae were reared from egg-hatch to mid- third-instar (96±2h post-hatch) in 25
 __all__ = [
     'DEB',
     'deb_default',
+    'DEB_runner',
     'get_best_EEB',
     'deb_sim',
 ]
@@ -505,7 +506,6 @@ class DEB(NestedConf):
         if self.gut is not None:
             self.gut.update()
 
-
     @property
     def pupation_buffer(self):
         return self.E_R / self.E_Rj
@@ -651,6 +651,20 @@ class DEB(NestedConf):
     @property
     def deb_f_deviation_mean(self):
         return np.mean(np.array(self.dict['f']) - 1)
+
+
+class DEB_runner(DEB):
+    DEB_dt = OptionalPositiveNumber(doc='The timestep of the DEB energetics module in seconds.')
+    f_decay = PositiveNumber(default=0.1, doc='The exponential decay coefficient of the DEB functional response.')
+
+    def __init__(self, dt=0.1,DEB_dt=None, **kwargs):
+        if DEB_dt is None :
+            DEB_dt=dt
+        super().__init__(DEB_dt=DEB_dt,**kwargs)
+        self.f_exp_coef = np.exp(-self.f_decay * dt)
+        self.deb_step_every = int(dt / self.DEB_dt)
+        self.temp_cum_V_eaten = 0
+
 
 
 # p.257 in S. a. L. M. Kooijman, “Dynamic Energy Budget theory for metabolic organisation : Summary of concepts of the third edition,” Water, vol. 365, p. 68, 2010.
