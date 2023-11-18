@@ -688,19 +688,19 @@ class DEB_runner(DEB):
 
 def deb_default(id='DEB model', epochs={}, age=None, **kwargs):
     deb = DEB(id=id, simulation=False, use_gut=False, **kwargs)
-    N = len(epochs)
-
-    if N == 0:
-        epochs = {0: Epoch().nestedConf}
-    elif str(N - 1) in epochs:
-        t1 = epochs[str(N - 1)].age_range[1]
-        if t1 is not None:
-            epochs.update({N: Epoch(age_range=(t1, None)).nestedConf})
-    elif N - 1 in epochs:
-        t1 = epochs[N - 1].age_range[1]
-        if t1 is not None:
-            epochs.update({N: Epoch(age_range=(t1, None)).nestedConf})
-    deb.grow_larva(epochs=epochs, age=age)
+    # N = len(epochs)
+    #
+    # if N == 0:
+    #     epochs = {0: Epoch().nestedConf}
+    # elif str(N - 1) in epochs:
+    #     t1 = epochs[str(N - 1)].age_range[1]
+    #     if t1 is not None:
+    #         epochs.update({N: Epoch(age_range=(t1, None)).nestedConf})
+    # elif N - 1 in epochs:
+    #     t1 = epochs[N - 1].age_range[1]
+    #     if t1 is not None:
+    #         epochs.update({N: Epoch(age_range=(t1, None)).nestedConf})
+    deb.grow_larva(epochs=epochs)
     return deb.finalize_dict()
 
 
