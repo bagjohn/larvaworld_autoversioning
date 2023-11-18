@@ -136,6 +136,13 @@ class DEB_basic(NestedConf):
             print(f'Reserve energy  (mJ) :       {int(1000 * self.E0)}')
             print(f'Wet weight      (mg) :       {np.round(1000 * self.Ww0, 5)}')
 
+    @classmethod
+    def from_file(cls, species='default', **kwargs):
+        # Drosophila model by default
+        with open(f'{reg.ROOT_DIR}/lib/model/deb/models/deb_{species}.csv') as tfp:
+            d = json.load(tfp)
+        kwargs.update(**d)
+        return cls(**kwargs)
 
 class DEB(DEB_basic):
     id = param.String('DEB model', doc='The unique ID of the DEB model')
