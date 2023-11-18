@@ -690,34 +690,23 @@ def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=Fals
     from ..modules.intermitter import OfflineIntermitter
     c = reg.conf.Ref.getRef(refID)
     kws2 = c['intermitter']
-    if dt is None:
-        dt = kws2['dt']
-    else:
-        kws2.update({'dt': dt})
-
+    if dt is not None:
+        kws2['dt']=dt
     if deb_dt is None:
-        deb_dt = dt
+        deb_dt = kws2['dt']
     D = DEB(id=id, assimilation_mode='gut', dt=deb_dt, **kwargs)
     if EEB is None:
         EEB = get_best_EEB(D, c)
     D.base_hunger = EEB
-    Nticks = np.round(deb_dt / dt).astype(int)
     I = OfflineIntermitter(**kws2, EEB=EEB)
-    counter, feeds, cum_feeds = 0,0,0
-    feed_dict = []
+    cum_feeds = 0
     while (D.stage != 'pupa' and D.alive):
         I.step()
-        if I.Nfeeds > cum_feeds:
-            feeds += 1
-            cum_feeds += 1
-        if int(I.total_t / I.dt) % Nticks == 0:
-            feed_dict.append(feeds)
-            D.run(X_V=D.V_bite * D.V * feeds)
-            feeds = 0
+        if I.total_ticks % round(D.dt / I.dt) == 0:
+            D.run(X_V=D.V_bite * D.V * (I.Nfeeds-cum_feeds))
+            cum_feeds = I.Nfeeds
             if use_hunger:
                 I.EEB = D.hunger
-            if D.age * 24 > counter:
-                counter += 24
     D.finalize_dict()
     d_sim = D.return_dict()
     d_inter = I.build_dict()
@@ -734,26 +723,3 @@ def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=Fals
     else:
         d_mod = deb_default(id=model_id, **kwargs)
         return d_sim, d_mod
-
-
-def test_substrates():
-    for s in substrate_dict:
-        try:
-            q = 1
-            deb0 = DEB(substrate={'quality': q, 'type': s}, assimilation_mode='sim', dt=60)
-            print()
-            print('half-saturation coefficient : ', np.round(deb0.K, 5), ' C-mole/cm**3')
-            print('substrate type : ', s)
-            print('w_X : ', int(deb0.substrate.get_w_X()), 'g/C-mole')
-            print('d_X : ', np.round(deb0.substrate.get_d_X(quality=1), 5), 'g/cm**3')
-            # print([[q, deb.substrate.get_X(quality=q)] for q in np.arange(0,1.01,0.3)])
-            for q in [0.15, 0.25, 0.5, 0.75, 1.00]:
-                print(f'    quality : {int(q * 100)}%')
-                print(f'          X : {np.round(deb0.substrate.get_X(quality=q), 5)} C-mole/cm**3')
-                print(f'          f : {np.round(deb0.substrate.get_f(K=deb0.K, quality=q), 2)}')
-        except:
-            pass
-
-
-if __name__ == '__main__':
-    pass
