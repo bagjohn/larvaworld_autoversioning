@@ -394,7 +394,6 @@ class DEB(DEB_basic):
     hunger_gain = param.Magnitude(0.0, label='hunger sensitivity to reserve reduction',
                                   doc='The sensitivy of the hunger drive in deviations of the DEB reserve density.')
     dt = PositiveNumber(1 / (24 * 60), doc='The timestep of the DEB energetics module in days.')
-    hours_as_larva = PositiveNumber(0.0, doc='The age since eclosion')
     substrate = ClassAttr(Substrate, doc='The substrate where the agent feeds')
 
     def __init__(self, species='default', save_dict=True, save_to=None, V_bite=0.0005, base_hunger=0.5,
@@ -406,7 +405,6 @@ class DEB(DEB_basic):
         kwargs.update(**species_dict)
         super().__init__(species=species, **kwargs)
         self.set_intermitter(intermitter, base_hunger)
-        self.sim_start = self.hours_as_larva
         self.save_to = save_to
         self.simulation = simulation
         self.epochs = []
@@ -491,6 +489,7 @@ class DEB(DEB_basic):
             self.apply_fluxes(p_A=0)
             t += self.dt
         self.t_b_comp=t
+        self.age+=self.t_b_comp
         self.Lw_b_comp = self.V ** (1 / 3) / self.del_M
         self.Wwb_comp = self.compute_Ww()
         self.stage = 'larva'
@@ -509,6 +508,7 @@ class DEB(DEB_basic):
             self.apply_fluxes(p_A=self.p_Amm_dt * f * self.V)
             t += self.dt
         self.t_j_comp=t
+        self.age += self.t_j_comp
         self.Lw_j_comp = self.V ** (1 / 3) / self.del_M
         self.Wwj_comp = self.compute_Ww()
         # Ej = self.Ej = self.E
@@ -601,10 +601,8 @@ class DEB(DEB_basic):
                     if self.stage == 'larva':
                         self.run(**c)
         tb = self.birth_time_in_hours
-        tp = self.pupation_time_in_hours
-        self.epochs = [[e.start + tb, e.end + tb if e.end is not None else tp] for e in epochs]
+        self.epochs = [[e.start + tb, e.end + tb if e.end is not None else self.pupation_time_in_hours_sim] for e in epochs]
         self.epoch_qs = [e.substrate.quality for e in epochs]
-        self.hours_as_larva = self.age * 24 - tb
         if self.gut is not None:
             self.gut.update()
 
@@ -660,8 +658,8 @@ class DEB(DEB_basic):
             d['death'] = self.death_time_in_hours
             d['id'] = self.id
             d['simulation'] = self.simulation
-            d['hours_as_larva'] = self.hours_as_larva
-            d['sim_start'] = self.sim_start
+            d['hours_as_larva'] = self.age * 24 - self.birth_time_in_hours
+            d['sim_start'] = self.birth_time_in_hours if len(self.epochs)==0 else self.epochs[-1][1]
             d['epochs'] = self.epochs
             d['epoch_qs'] = self.epoch_qs
             d['fr'] = 1 / (self.dt * 24 * 60 * 60)
