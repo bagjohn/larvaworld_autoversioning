@@ -192,7 +192,10 @@ class Epoch(NestedConf):
         return self.age_range[1]
 
     def ticks(self,dt):
-        return int((self.end - self.start)*60*60/dt)
+        if self.end is not None:
+            return int((self.end - self.start)*60*60/dt)
+        else:
+            return np.inf
 
 
 class Life(NestedConf):

@@ -278,6 +278,7 @@ class DEB(NestedConf):
             print(f'Wet weight      (mg) :      {np.round(self.Wwe * 1000, 5)}')
             print(f'Physical length (mm) :      {np.round(self.Lwe * 10, 3)}')
 
+    @property
     def time_to_death_by_starvation(self):
         return self.v ** -1 * self.L * np.log(self.kap ** -1)
 
@@ -494,27 +495,15 @@ class DEB(NestedConf):
             self.gut.update()
 
     def grow_larva2(self, epochs, **kwargs):
-
-        # tb = self.birth_time_in_hours
-        # tp = self.pupation_time_in_hours
-
         for e in epochs:
-            # if not isinstance(e.substrate, Substrate):
-            #     e.substrate = Substrate(**e.substrate)
             c = {'assimilation_mode': 'sim', 'f': e.substrate.get_f(K=self.K)}
-            t0, t1 = e.age_range
-            if t1 is None:
+            if e.end is None:
                 while self.stage == 'larva':
                     self.run(**c)
             else:
-                for i in range(int((t1 - t0)*60*60/self.dt)):
+                for i in range(e.ticks(self.dt)):
                     if self.stage == 'larva':
                         self.run(**c)
-        # self.epochs = [[e.age_range[0] + tb, e.age_range[1] + tb if e.age_range[1] is not None else tp] for e in epochs]
-        # self.epoch_qs = [e.substrate.quality for e in epochs]
-        # self.hours_as_larva = self.age * 24 - tb
-        # if self.gut is not None:
-        #     self.gut.update()
 
     @property
     def pupation_buffer(self):
@@ -712,9 +701,7 @@ def deb_default(id='DEB model', epochs={}, age=None, **kwargs):
         if t1 is not None:
             epochs.update({N: Epoch(age_range=(t1, None)).nestedConf})
     deb.grow_larva(epochs=epochs, age=age)
-    deb.finalize_dict()
-    d = deb.return_dict()
-    return d
+    return deb.finalize_dict()
 
 
 def get_best_EEB(deb, cRef):
