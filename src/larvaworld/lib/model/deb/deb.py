@@ -85,7 +85,6 @@ class DEB_basic(NestedConf):
         super().__init__(**kwargs)
         self.print_output = print_output
 
-    def derived_pars(self):
         self.E_M = self.p_Am / self.v #maximum reserve density
         self.k_M = self.p_M / self.E_G
         self.g = self.E_G / (self.kap * self.E_M)
@@ -200,7 +199,6 @@ class DEB(DEB_basic):
         self.pupation_time_in_hours = np.nan
         self.emergence_time_in_hours = np.nan
         self.death_time_in_hours = np.nan
-        # self.derived_pars()
 
         self.E = self.E0
         self.E_H = 0
@@ -251,62 +249,6 @@ class DEB(DEB_basic):
         if self.hunger_as_EEB and self.intermitter is not None:
             base_hunger = self.intermitter.base_EEB
         self.base_hunger = base_hunger
-
-    # def derived_pars(self):
-    #     kap = self.kap
-    #     v = self.v
-    #     p_Am = self.p_Am = self.z * self.p_M / kap
-    #     self.J_E_Am = p_Am / self.mu_E
-    #     self.J_X_Am = self.J_E_Am / self.y_E_X
-    #     # self.p_Xm = p_Am / self.kap_X
-    #     self.K = self.J_X_Am / self.F_m
-    #
-    #     self.E_M = p_Am / v
-    #     self.E_V = self.mu_V * self.d_V / self.w_V
-    #     k_M = self.k_M = self.p_M / self.E_G
-    #     g = self.g = self.E_G / (kap * self.E_M)
-    #     ii = g ** 2 * k_M ** 3 / ((1 - kap) * v ** 2)
-    #     self.k = self.k_J / k_M
-    #     self.U_Hb = self.E_Hb / p_Am
-    #     self.vHb = self.U_Hb * ii
-    #     self.U_He = self.E_He / p_Am
-    #     self.vHe = self.U_He * ii
-    #     self.Lm = v / (g * k_M)
-    #     self.T_factor = np.exp(self.T_A / self.T_ref - self.T_A / self.T);  # Arrhenius factor
-    #     # v**-1*L=e*E_G/(g*pM)
-    #     lb = self.lb = deb.get_lb(eb=self.eb, **self.species_dict)
-    #     self.E0 = deb.get_E0(eb=self.eb, lb=lb, **self.species_dict)
-    #     self.E_Rm = deb.get_E_Rm(lb=lb, **self.species_dict)
-    #
-    #     Lb = self.Lb = lb * self.Lm
-    #     self.Lwb = Lb / self.del_M
-    #     self.tau_b = deb.get_tau_b(g=self.g, lb=self.lb, eb=self.eb)
-    #     self.t_b = self.tau_b / k_M / self.T_factor
-    #     # print(Lb)
-    #     self.k_E = v / Lb
-    #
-    #     # For the larva the volume specific max assimilation rate p_Amm is used instead of the surface-specific p_Am
-    #     self.p_Amm = p_Am / Lb
-    #     self.J_X_Amm = self.J_X_Am / Lb
-    #     self.J_E_Amm = self.J_E_Am / Lb
-    #     self.F_mm = self.F_m / Lb
-    #
-    #     # DEB textbook p.91
-    #     # self.y_VE = (self.d_V / self.w_V)*self.mu_E/E_G
-    #     # self.J_E_Am = self.p_Am/self.mu_E
-    #
-    #     # self.U0 = self.uE0 * v ** 2 / g ** 2 / k_M ** 3
-    #     # self.E0 = self.U0 * p_Am
-    #     self.Ww0 = self.E0 * self.w_E / self.mu_E  # g, initial wet weight
-    #
-    #     self.v_Rm = (1 + lb / g) / (1 - lb)  # scaled max reprod buffer density
-    #     self.v_Rj = self.s_j * self.v_Rm  # scaled reprod buffer density at pupation
-    #
-    #     if self.print_output:
-    #         print('------------------Egg------------------')
-    #         print(f'Reserve energy  (mJ) :       {int(1000 * self.E0)}')
-    #         print(f'Wet weight      (mg) :       {np.round(1000 * self.Ww0, 5)}')
-
     def hex_model(self):
         # p.161    [1] S. a. L. M. Kooijman, “Comments on Dynamic Energy Budget theory,” Changes, 2010.
         # For the larva stage
