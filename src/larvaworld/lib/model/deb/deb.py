@@ -86,18 +86,24 @@ class DEB_basic(NestedConf):
         self.print_output = print_output
 
         self.L0 = 10 ** -10
+        self.derive_pars()
+        self.prepare_embryo_stage()
 
+    def derive_pars(self):
         # self.p_Am = self.z*self.p_M/self.kap
         self.E_M = self.p_Am / self.v  # maximum reserve density
         self.k_M = self.p_M / self.E_G
-        self.g = self.E_G / (self.kap * self.E_M)
-        ii = self.g ** 2 * self.k_M ** 3 / ((1 - self.kap) * self.v ** 2)
         self.k = self.k_J / self.k_M
+        self.g = self.E_G / (self.kap * self.E_M)
+        self.Lm = self.v / (self.g * self.k_M)
+        self.xb = self.g / (self.eb + self.g)
+        self.Ucoeff = self.g ** 2 * self.k_M ** 3 / self.v ** 2
+
+        ii = self.Ucoeff / (1 - self.kap)
         self.U_Hb = self.E_Hb / self.p_Am
         self.vHb = self.U_Hb * ii
         self.U_He = self.E_He / self.p_Am
         self.vHe = self.U_He * ii
-        self.Lm = self.v / (self.g * self.k_M)
 
         self.J_E_Am = self.p_Am / self.mu_E
         self.J_X_Am = self.J_E_Am / self.y_E_X
@@ -105,6 +111,8 @@ class DEB_basic(NestedConf):
         self.E_V = self.mu_V * self.d_V / self.w_V
 
         self.T_factor = np.exp(self.T_A / self.T_ref - self.T_A / self.T)  # Arrhenius factor
+
+    def prepare_embryo_stage(self):
         self.lb = self.get_lb()
         self.k_E = self.g * self.k_M / self.lb
 
@@ -113,17 +121,17 @@ class DEB_basic(NestedConf):
         self.Lb = self.lb * self.Lm
         self.Lwb = self.Lb / self.del_M
 
-        self.E_Rm = (self.kap-1) * self.E_M * self.g *(1-self.lb)/ (1+self.lb)
+        self.E_Rm = (self.kap - 1) * self.E_M * self.g * (1 - self.lb) / (1 + self.lb)
         # self.E_Rm = (1 - self.kap) * self.g * self.E_M * (self.k_E + self.k_M) / (self.k_E - self.g * self.k_M)
 
-        self.tau_b = self.get_tau_b()
-        self.t_b = self.tau_b / self.k_M / self.T_factor
+        # self.tau_b = self.get_tau_b()
+        self.t_b = self.get_tau_b() / self.k_M / self.T_factor
 
         # For the larva the volume specific max assimilation rate p_Amm is used instead of the surface-specific p_Am
-        self.p_Amm = self.p_Am / self.Lb
-        self.J_X_Amm = self.J_X_Am / self.Lb
-        self.J_E_Amm = self.J_E_Am / self.Lb
-        self.F_mm = self.F_m / self.Lb
+        # self.p_Amm = self.p_Am / self.Lb
+        # self.J_X_Amm = self.J_X_Am / self.Lb
+        # self.J_E_Amm = self.J_E_Am / self.Lb
+        # self.F_mm = self.F_m / self.Lb
 
         # DEB textbook p.91
         # self.y_VE = (self.d_V / self.w_V)*self.mu_E/E_G
@@ -152,8 +160,8 @@ class DEB_basic(NestedConf):
 
     def get_lb(self):
         g = self.g
+        xb = self.xb
         n = 1000 + round(1000 * max(0, self.k - 1))
-        xb = g / (g + self.eb)
         xb3 = xb ** (1 / 3)
         x = np.linspace(10 ** -5, xb, n)
         dx = xb / n
@@ -190,9 +198,8 @@ class DEB_basic(NestedConf):
         def get_tb(x, ab, xb):
             return x ** (-2 / 3) / (1 - x) / (ab - deb.beta0(x, xb))
 
-        xb = self.g / (self.eb + self.g)
-        ab = 3 * self.g * xb ** (1 / 3) / self.lb
-        return 3 * quad(func=get_tb, a=1e-15, b=xb, args=(ab, xb))[0]
+        ab = 3 * self.g * self.xb ** (1 / 3) / self.lb
+        return 3 * quad(func=get_tb, a=1e-15, b=self.xb, args=(ab, self.xb))[0]
 
     def get_E0(self):
         """
@@ -210,17 +217,12 @@ class DEB_basic(NestedConf):
             Returns:
                 float: Maximum reserve density that an organism can achieve.
         """
-        g = self.g
-        xb = g / (g + self.eb)
 
         # Calculate uE0 using the equation in the Dynamic Energy Budget textbook
-        uE0 = np.real((3 * g / (3 * g * xb ** (1 / 3) / self.lb - deb.beta0(0, xb))) ** 3)
+        uE0 = np.real((3 * self.g / (3 * self.g * self.xb ** (1 / 3) / self.lb - deb.beta0(0, self.xb))) ** 3)
 
         # Calculate U0 and E0 using the equations in the Dynamic Energy Budget textbook
-        U0 = uE0 * self.v ** 2 / g ** 2 / self.k_M ** 3
-        E0 = U0 * self.p_Am
-        return E0
-
+        return self.p_Am * uE0 / self.Ucoeff
 
     def predict_larva_stage(self, f=1.0):
         g = self.g
@@ -342,10 +344,10 @@ class DEB(DEB_basic):
         self.k_J_dt = self.k_J * dt
         self.h_a_dt = self.h_a * dt ** 2
 
-        self.p_Am_dt = self.p_Am * dt
-        self.p_Amm_dt = self.p_Amm * dt
-        self.J_X_Amm_dt = self.J_X_Amm * dt
-        self.J_E_Amm_dt = self.J_E_Amm * dt
+        # self.p_Am_dt = self.p_Am * dt
+        self.p_Amm_dt = self.p_Am / self.Lb * dt
+        self.J_X_Amm_dt = self.J_X_Am / self.Lb * dt
+        self.J_E_Amm_dt = self.J_E_Am / self.Lb * dt
         self.k_E_dt = self.k_E * dt
 
         if self.gut is not None:
@@ -453,15 +455,11 @@ class DEB(DEB_basic):
             print(f'Wet weight      (mg) :      {np.round(self.Wwi * 1000, 5)}')
             print(f'Physical length (mm) :      {np.round(self.Lwi * 10, 3)}')
 
-    def run_embryo_stage(self, dt=None):
-        if dt is None:
-            dt = self.dt
-
+    def run_embryo_stage(self):
         kap = self.kap
         E_G = self.E_G
 
         t = 0
-
         while self.E_H < self.E_Hb:
             # This is in e/t and below needs to be volume-specific
             p_S = self.p_M_dt * self.V + self.p_T_dt * self.V ** (2 / 3)
@@ -473,7 +471,7 @@ class DEB(DEB_basic):
             self.E -= p_C
             self.V += p_G / E_G
             self.E_H += p_R
-            t += dt
+            t += self.dt
         self.Eb = self.E
         L_b = self.V ** (1 / 3)
         Lw_b = L_b / self.del_M
@@ -494,29 +492,16 @@ class DEB(DEB_basic):
     def run_larva_stage(self, f=1.0, dt=None):
         if dt is None:
             dt = self.dt
-        kap = self.kap
-        E_G = self.E_G
-        g = self.g
-        del_M = self.del_M
 
         t = 0
 
         while self.E_R < self.E_Rj:
-            p_A = self.p_Amm_dt * f * self.V
-            p_S = self.p_M_dt * self.V
-            p_C = self.E * (E_G * self.k_E_dt + p_S / self.V) / (kap * self.E / self.V + E_G)
-            p_G = kap * p_C - p_S
-            p_J = self.k_J_dt * self.E_Hb
-            p_R = (1 - kap) * p_C - p_J
-
-            self.E += (p_A - p_C)
-            self.V += p_G / E_G
-            self.E_R += p_R
+            self.apply_fluxes(p_A=self.p_Amm_dt * f * self.V)
             t += dt
-        Lw_j = self.V ** (1 / 3) / del_M
+        Lw_j = self.V ** (1 / 3) / self.del_M
         Ej = self.Ej = self.E
         self.Uj = Ej / self.p_Am
-        self.uEj = self.lj ** 3 * (self.kap * self.kap_V + f / g)
+        self.uEj = self.lj ** 3 * (self.kap * self.kap_V + f / self.g)
         self.Wwj = self.compute_Ww(V=self.Lj ** 3,
                                    E=Ej + self.E_Rj)  # g, wet weight at pupation, including reprod buffer
         # self.Wwj = self.Lj**3 * (1 + f * self.w_V) # g, wet weight at pupation, excluding reprod buffer at pupation
@@ -536,20 +521,28 @@ class DEB(DEB_basic):
 
         return h
 
+    def apply_fluxes(self, p_A):
+        p_S = self.p_M_dt * self.V
+        p_C = self.E * (self.E_G * self.k_E_dt + p_S / self.V) / (self.kap * self.E / self.V + self.E_G)
+        p_G = self.kap * p_C - p_S
+        p_J = self.k_J_dt * self.E_Hb
+        p_R = (1 - self.kap) * p_C - p_J
+        self.E += (p_A - p_C)
+        self.V += p_G / self.E_G
+        self.E_R += p_R
+
+    # @property
+    # def p_S(self):
+    #     return self.p_M_dt * self.V
+    #
+    # @property
+    # def p_C(self):
+    #     return self.E * (self.E_G * self.k_E_dt + self.p_S / self.V) / (self.kap * self.E / self.V + self.E_G)
+
     def run(self, **kwargs):
         self.age += self.dt
         if self.E_R < self.E_Rj:
-            k = self.kap
-            E_G = self.E_G
-            p_A = self.get_p_A(**kwargs)
-            p_S = self.p_M_dt * self.V
-            p_C = self.E * (E_G * self.k_E_dt + p_S / self.V) / (k * self.E / self.V + E_G)
-            p_G = k * p_C - p_S
-            p_J = self.k_J_dt * self.E_Hb
-            p_R = (1 - k) * p_C - p_J
-            self.E += (p_A - p_C)
-            self.V += p_G / E_G
-            self.E_R += p_R
+            self.apply_fluxes(p_A=self.get_p_A(**kwargs))
             self.update_hunger()
         elif self.stage == 'larva':
             self.pupation_time_in_hours = np.round(self.age * 24, 2)
@@ -569,12 +562,12 @@ class DEB(DEB_basic):
 
     @property
     def J_X_A(self):
-        return self.J_X_Amm * self.V * self.base_f
+        return self.J_X_Am / self.Lb * self.V * self.base_f
 
     @property
     def F(self):  # Vol specific filtering rate (cm**3/(d*cm**3) -> vol of environment/vol of individual*day
         # F = self.F_mm * self.K/(self.K + self.substrate.X)
-        F = (self.F_mm ** -1 + self.substrate.X * self.J_X_Amm ** -1) ** -1
+        F = ((self.F_m / self.Lb) ** -1 + self.substrate.X * (self.J_X_Am / self.Lb) ** -1) ** -1
         # F = (self.F_mm ** -1 + self.substrate.X * self.J_X_Amm ** -1) ** -1
         return F
 

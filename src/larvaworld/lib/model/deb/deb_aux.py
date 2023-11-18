@@ -31,7 +31,6 @@ def beta0(x0, x1):
 
     f1 = - 3 * x13 + a3 * np.arctan((1 + 2 * x13) / a3) - scimath.log(x13 - 1) + scimath.log(1 + x13 + x13 ** 2) / 2
     f0 = - 3 * x03 + a3 * np.arctan((1 + 2 * x03) / a3) - scimath.log(x03 - 1) + scimath.log(1 + x03 + x03 ** 2) / 2
-    f = f1 - f0
-    return np.real(f)
+    return np.real(f1 - f0)
     # return f
 
