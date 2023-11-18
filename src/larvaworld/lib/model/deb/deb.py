@@ -8,6 +8,7 @@ import param
 
 from ... import reg, aux
 from ...aux import nam
+from ...util.fitting import simplex,beta0
 
 from ...model import deb
 from ...param import Substrate, NestedConf, PositiveNumber, PositiveInteger, ClassAttr, substrate_dict, \
@@ -168,7 +169,7 @@ class DEB_basic(NestedConf):
         dx = xb / n
         x3 = x ** (1 / 3)
 
-        b = deb.beta0(x, xb) / (3 * g)
+        b = beta0(x, xb) / (3 * g)
 
         t0 = xb * g * self.vHb
         i = 0
@@ -197,7 +198,7 @@ class DEB_basic(NestedConf):
     def get_tau_b(self):
         from scipy.integrate import quad
         def get_tb(x, ab, xb):
-            return x ** (-2 / 3) / (1 - x) / (ab - deb.beta0(x, xb))
+            return x ** (-2 / 3) / (1 - x) / (ab - beta0(x, xb))
 
         ab = 3 * self.g * self.xb ** (1 / 3) / self.lb
         return 3 * quad(func=get_tb, a=1e-15, b=self.xb, args=(ab, self.xb))[0]
@@ -220,7 +221,7 @@ class DEB_basic(NestedConf):
         """
 
         # Calculate uE0 using the equation in the Dynamic Energy Budget textbook
-        uE0 = np.real((3 * self.g / (3 * self.g * self.xb ** (1 / 3) / self.lb - deb.beta0(0, self.xb))) ** 3)
+        uE0 = np.real((3 * self.g / (3 * self.g * self.xb ** (1 / 3) / self.lb - beta0(0, self.xb))) ** 3)
 
         # Calculate U0 and E0 using the equations in the Dynamic Energy Budget textbook
         return self.p_Am * uE0 / self.Ucoeff
@@ -236,7 +237,7 @@ class DEB_basic(NestedConf):
             ert = np.exp(- tau_j * self.rho_j)
             return np.abs(self.v_Rj - c1 * (1 - ert) + c2 * tau_j * ert)
 
-        self.tau_j = deb.simplex(get_tj, 1)
+        self.tau_j = simplex(get_tj, 1)
         self.lj = lb * np.exp(self.tau_j * self.rho_j / 3)
         self.t_j = self.tau_j / self.k_M / self.T_factor
         self.Lj = self.lj * self.Lm

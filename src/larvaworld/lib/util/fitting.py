@@ -1,18 +1,46 @@
 import warnings
+import math
+
 import numpy as np
+from numpy.lib import scimath
+from scipy.optimize import minimize
 from scipy.stats import levy, norm, rv_discrete, ks_2samp
 
 from .. import reg, aux
 
 __all__ = [
-    # 'fit_epochs',
-    # 'get_bout_distros',
+    'simplex',
+    'beta0',
     'fit_bout_distros',
     'BoutGenerator',
     'test_boutGens',
     'exp_bout',
     'critical_bout',
 ]
+
+
+def simplex(func, x0, args=()):
+    res = minimize(func, x0, args=args, method='nelder-mead', options={'xatol': 1e-8, 'disp': False}).x[0]
+    return res
+
+
+def beta0(x0, x1):
+    '''
+    Beta function used in the DEB textbook (p.58)
+    Args:
+        x0:float
+        x1:float
+
+    Returns:float
+
+    '''
+    x03 = x0 ** (1 / 3)
+    x13 = x1 ** (1 / 3)
+    a3 = math.sqrt(3)
+
+    f1 = - 3 * x13 + a3 * np.arctan((1 + 2 * x13) / a3) - scimath.log(x13 - 1) + scimath.log(1 + x13 + x13 ** 2) / 2
+    f0 = - 3 * x03 + a3 * np.arctan((1 + 2 * x03) / a3) - scimath.log(x03 - 1) + scimath.log(1 + x03 + x03 ** 2) / 2
+    return np.real(f1 - f0)
 
 
 def get_logNpow(x, xmax, xmid, overlap=0, discrete=False):
