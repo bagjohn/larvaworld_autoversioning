@@ -25,6 +25,7 @@ Larvae were reared from egg-hatch to mid- third-instar (96±2h post-hatch) in 25
 '''
 
 __all__ = [
+    'DEB_basic',
     'DEB',
     'deb_default',
     'DEB_runner',
@@ -153,15 +154,19 @@ class DEB(DEB_basic):
     hours_as_larva = PositiveNumber(0.0, doc='The age since eclosion')
     substrate = ClassAttr(Substrate, doc='The substrate where the agent feeds')
 
-    def __init__(self, save_dict=True, save_to=None, V_bite=0.0005, base_hunger=0.5,
+    def __init__(self, species='default', save_dict=True, save_to=None, V_bite=0.0005, base_hunger=0.5,
                  simulation=True, intermitter=None, gut_params={}, **kwargs):
-        super().__init__(**kwargs)
 
         # Drosophila model by default
+        with open(f'{reg.ROOT_DIR}/lib/model/deb/models/deb_{species}.csv') as tfp:
+            species_dict = json.load(tfp)
+        kwargs.update(**species_dict)
+        super().__init__(species=species, **kwargs)
 
-        with open(f'{reg.ROOT_DIR}/lib/model/deb/models/deb_{self.species}.csv') as tfp:
-            self.species_dict = json.load(tfp)
-        self.__dict__.update(self.species_dict)
+
+
+
+        # self.__dict__.update(self.species_dict)
 
         self.set_intermitter(intermitter, base_hunger)
 
