@@ -216,9 +216,13 @@ class Life(NestedConf):
         return cls(age=age, epochs=epochs, reach_pupation=reach_pupation)
 
     @classmethod
-    def prestarved(cls, age=0.0, h_starved=0.0, rearing_quality=1.0, starvation_quality=0.0, substrate_type='standard', **kwargs):
+    def prestarved(cls, age=0.0, h_starved=0.0, rearing_quality=1.0, starvation_quality=0.0,final_quality=None,
+                   substrate_type='standard', reach_pupation=False):
+        if final_quality is None:
+            final_quality=rearing_quality
         sub_r = [rearing_quality, substrate_type]
         sub_s = [starvation_quality, substrate_type]
+        sub_p = [final_quality, substrate_type]
         if age == 0.0:
             ticks, subs = [], []
         else:
@@ -228,7 +232,9 @@ class Life(NestedConf):
                 ticks, subs = [age], [sub_s]
             else:
                 ticks, subs = [age - h_starved, age], [sub_r, sub_s]
-        return cls.from_epoch_ticks(ticks=ticks, subs=subs, **kwargs)
+        if reach_pupation:
+            subs.append(sub_p)
+        return cls.from_epoch_ticks(ticks=ticks, subs=subs, reach_pupation=reach_pupation)
 
 
 class AirPuff(NestedConf):

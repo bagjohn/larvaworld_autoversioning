@@ -471,28 +471,6 @@ class DEB(NestedConf):
         omegaV = Em * self.w_E / self.d_E / self.mu_E
         return self.V * (1 + omegaV * self.e)
 
-    # def grow_larva2(self, epochs, **kwargs):
-    #     tb = self.birth_time_in_hours
-    #     tp = self.pupation_time_in_hours
-    #
-    #     for e in epochs:
-    #         if not isinstance(e.substrate, Substrate):
-    #             e.substrate = Substrate(**e.substrate)
-    #         c = {'assimilation_mode': 'sim', 'f': e.substrate.get_f(K=self.K)}
-    #         t0, t1 = e.age_range
-    #         if t1 is None:
-    #             while self.stage == 'larva':
-    #                 self.run(**c)
-    #         else:
-    #             for i in range(int((t1 - t0)*60*60/self.dt)):
-    #                 if self.stage == 'larva':
-    #                     self.run(**c)
-    #     self.epochs = [[e.age_range[0] + tb, e.age_range[1] + tb if e.age_range[1] is not None else tp] for e in epochs]
-    #     self.epoch_qs = [e.substrate.quality for e in epochs]
-    #     self.hours_as_larva = self.age * 24 - tb
-    #     if self.gut is not None:
-    #         self.gut.update()
-
     def grow_larva(self, epochs, **kwargs):
         tb = self.birth_time_in_hours
         tp = self.pupation_time_in_hours
@@ -514,6 +492,28 @@ class DEB(NestedConf):
         self.hours_as_larva = self.age * 24 - tb
         if self.gut is not None:
             self.gut.update()
+
+    def grow_larva2(self, epochs, **kwargs):
+        # tb = self.birth_time_in_hours
+        # tp = self.pupation_time_in_hours
+
+        for e in epochs:
+            # if not isinstance(e.substrate, Substrate):
+            #     e.substrate = Substrate(**e.substrate)
+            c = {'assimilation_mode': 'sim', 'f': e.substrate.get_f(K=self.K)}
+            t0, t1 = e.age_range
+            if t1 is None:
+                while self.stage == 'larva':
+                    self.run(**c)
+            else:
+                for i in range(int((t1 - t0)*60*60/self.dt)):
+                    if self.stage == 'larva':
+                        self.run(**c)
+        # self.epochs = [[e.age_range[0] + tb, e.age_range[1] + tb if e.age_range[1] is not None else tp] for e in epochs]
+        # self.epoch_qs = [e.substrate.quality for e in epochs]
+        # self.hours_as_larva = self.age * 24 - tb
+        # if self.gut is not None:
+        #     self.gut.update()
 
     @property
     def pupation_buffer(self):
