@@ -86,7 +86,15 @@ class DEB_basic(NestedConf):
         super().__init__(**kwargs)
         self.print_output = print_output
 
+        # Larva stage flags
+        self.stage = 'embryo'
+        self.alive = True
+
         self.L0 = 10 ** -10
+        self.E_H = 0
+        self.E_R = 0
+        self.V = self.L0 ** 3
+
         self.derive_pars()
         self.prepare_embryo_stage()
 
@@ -151,14 +159,10 @@ class DEB_basic(NestedConf):
             print(f'Reserve energy  (mJ) :       {int(1000 * self.E0)}')
             print(f'Wet weight      (mg) :       {np.round(1000 * self.Ww0, 5)}')
 
-        # Larva stage flags
-        self.stage = 'embryo'
-        self.alive = True
+
 
         self.E = self.E0
-        self.E_H = 0
-        self.E_R = 0
-        self.V = self.L0 ** 3
+
 
     def get_lb(self):
         g = self.g
