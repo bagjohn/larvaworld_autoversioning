@@ -191,6 +191,9 @@ class Epoch(NestedConf):
     def end(self):
         return self.age_range[1]
 
+    def ticks(self,dt):
+        return int((self.end - self.start)*60*60/dt)
+
 
 class Life(NestedConf):
     age = OptionalPositiveNumber(default=0.0, softmax=100.0, hardmax=250.0,
