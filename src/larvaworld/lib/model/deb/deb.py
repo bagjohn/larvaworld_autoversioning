@@ -45,7 +45,7 @@ class DEB(NestedConf):
     use_gut = param.Boolean(True, doc='Whether to use the gut module.')
     hunger_gain = param.Magnitude(0.0, label='hunger sensitivity to reserve reduction',
                                   doc='The sensitivy of the hunger drive in deviations of the DEB reserve density.')
-    dt = PositiveNumber(0.1,doc='The timestep of the DEB energetics module in seconds.')
+    dt = PositiveNumber(1/(24*60),doc='The timestep of the DEB energetics module in seconds.')
     hours_as_larva = PositiveNumber(0.0, doc='The age since eclosion')
     substrate = ClassAttr(Substrate, doc='The substrate where the agent feeds')
 
@@ -403,7 +403,7 @@ class DEB(NestedConf):
         if assimilation_mode is None:
             assimilation_mode = self.assimilation_mode
         self.f = f
-        self.age += self.dt/(24*60*60)
+        self.age += self.dt
         kap = self.kap
         E_G = self.E_G
         if self.E_R < self.E_Rj:
@@ -649,7 +649,7 @@ class DEB_runner(DEB):
         self.model = model
         if self.model is not None:
             if dt is None:
-                dt = self.model.dt
+                dt = self.model.dt/(24*60*60)
         super().__init__(dt=dt, **kwargs)
         self.grow_larva(**life_history)
         self.temp_cum_V_eaten = 0
@@ -693,7 +693,7 @@ def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=Fals
     if dt is not None:
         kws2['dt']=dt
     if deb_dt is None:
-        deb_dt = kws2['dt']
+        deb_dt = kws2['dt']/(24*60*60)
     D = DEB(id=id, assimilation_mode='gut', dt=deb_dt, **kwargs)
     if EEB is None:
         EEB = get_best_EEB(D, c)
@@ -702,7 +702,7 @@ def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=Fals
     cum_feeds = 0
     while (D.stage != 'pupa' and D.alive):
         I.step()
-        if I.total_ticks % round(D.dt / I.dt) == 0:
+        if I.total_ticks % round(D.dt*(24*60*60) / I.dt) == 0:
             D.run(X_V=D.V_bite * D.V * (I.Nfeeds-cum_feeds))
             cum_feeds = I.Nfeeds
             if use_hunger:
