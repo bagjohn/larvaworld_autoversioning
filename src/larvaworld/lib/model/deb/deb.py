@@ -8,7 +8,7 @@ import param
 
 from ... import reg, aux
 from ...aux import nam
-from ...util.fitting import simplex,beta0
+from ...util.fitting import simplex, beta0
 
 from ...model import deb
 from ...param import Substrate, NestedConf, PositiveNumber, PositiveInteger, ClassAttr, substrate_dict, \
@@ -51,6 +51,13 @@ class DEB_basic(NestedConf):
     s_G = PositiveNumber(0.0001, doc='Gompertz stress coefficient')
     h_a = PositiveNumber(0.0001, doc='Weibull ageing acceleration (d**-2)')
     kap_R = param.Magnitude(0.95, doc='fraction of the reproduction buffer fixed into eggs')
+
+    E_M = OptionalPositiveNumber(doc='maximum reserve capacity')
+    k_M = OptionalPositiveNumber(doc='somatic maintenance rate coefficient')
+    k = OptionalPositiveNumber(doc='maintenance ratio')
+    g = OptionalPositiveNumber(doc='energy investment ratio')
+    Lm = OptionalPositiveNumber(doc='maximum length')
+    K = OptionalPositiveNumber(doc='half-saturation coefficient')
 
     p_T = PositiveNumber(0.0, doc='??')
     kap_V = param.Magnitude(0.99, doc='??')
@@ -96,7 +103,9 @@ class DEB_basic(NestedConf):
         self.V = self.L0 ** 3
 
         self.derive_pars()
-        self.prepare_embryo_stage()
+        self.compute_initial_state()
+        self.E = self.E0
+        self.predict_embryo_stage()
 
     def derive_pars(self):
         # self.p_Am = self.z*self.p_M/self.kap
@@ -108,60 +117,18 @@ class DEB_basic(NestedConf):
         self.xb = self.g / (self.eb + self.g)
         self.Ucoeff = self.g ** 2 * self.k_M ** 3 / self.v ** 2
 
-        # ii = self.Ucoeff / (1 - self.kap)
-        # self.U_Hb = self.E_Hb / self.p_Am
         self.vHb = self.E_Hb / self.p_Am * self.Ucoeff / (1 - self.kap)
-        # self.U_He = self.E_He / self.p_Am
         self.vHe = self.E_He / self.p_Am * self.Ucoeff / (1 - self.kap)
 
         self.J_E_Am = self.p_Am / self.mu_E
         self.J_X_Am = self.J_E_Am / self.y_E_X
         self.K = self.J_X_Am / self.F_m
-        self.E_V = self.mu_V * self.d_V / self.w_V
-
-        self.T_factor = np.exp(self.T_A / self.T_ref - self.T_A / self.T)  # Arrhenius factor
-
-    def prepare_embryo_stage(self):
-        self.lb = self.get_lb()
-        self.k_E = self.g * self.k_M / self.lb
-
-        self.E0 = self.get_E0()
-
-        self.Lb = self.lb * self.Lm
-        self.Lwb = self.Lb / self.del_M
-        # self.Vb=self.Lb**3
-        self.Wwb=self.Lb**3 * self.d_V + self.E0 * self.w_E / self.mu_E
-        self.E_Rm = (self.kap - 1) * self.E_M * self.g * (1 - self.lb) / (1 + self.lb)
-        # self.E_Rm = (1 - self.kap) * self.g * self.E_M * (self.k_E + self.k_M) / (self.k_E - self.g * self.k_M)
-
-        # self.tau_b = self.get_tau_b()
-        self.t_b = self.get_tau_b() / self.k_M / self.T_factor
-
-        # For the larva the volume specific max assimilation rate p_Amm is used instead of the surface-specific p_Am
-        # self.p_Amm = self.p_Am / self.Lb
-        # self.J_X_Amm = self.J_X_Am / self.Lb
-        # self.J_E_Amm = self.J_E_Am / self.Lb
-        # self.F_mm = self.F_m / self.Lb
-
-        # DEB textbook p.91
-        # self.y_VE = (self.d_V / self.w_V)*self.mu_E/E_G
-        # self.J_E_Am = self.p_Am/self.mu_E
-
-        # self.U0 = self.uE0 * v ** 2 / g ** 2 / k_M ** 3
-        # self.E0 = self.U0 * p_Am
-        self.Ww0 = self.E0 * self.w_E / self.mu_E  # g, initial wet weight
-
-        self.v_Rm = (1 + self.lb / self.g) / (1 - self.lb)  # scaled max reprod buffer density
-        self.v_Rj = self.s_j * self.v_Rm  # scaled reprod buffer density at pupation
-
-        if self.print_output:
-            print('------------------Egg------------------')
-            print(f'Reserve energy  (mJ) :       {int(1000 * self.E0)}')
-            print(f'Wet weight      (mg) :       {np.round(1000 * self.Ww0, 5)}')
 
 
 
-        self.E = self.E0
+
+
+
 
 
     def get_lb(self):
@@ -230,6 +197,49 @@ class DEB_basic(NestedConf):
         # Calculate U0 and E0 using the equations in the Dynamic Energy Budget textbook
         return self.p_Am * uE0 / self.Ucoeff
 
+    def compute_initial_state(self):
+        self.lb = self.get_lb()
+        self.E0 = self.get_E0()
+        self.Ww0 = self.E0 * self.w_E / self.mu_E  # g, initial wet weight
+
+        if self.print_output:
+            print('------------------Egg------------------')
+            print(f'Reserve energy  (mJ) :       {int(1000 * self.E0)}')
+            print(f'Wet weight      (mg) :       {np.round(1000 * self.Ww0, 5)}')
+
+    def predict_embryo_stage(self):
+        self.k_E = self.g * self.k_M / self.lb
+        self.Lb = self.lb * self.Lm
+        self.Lwb = self.Lb / self.del_M
+
+        # TODO Compute Eb and Ej
+        self.Eb=self.E0
+        self.Wwb = self.compute_Ww(V=self.Lb ** 3, E=self.Eb)  # g, wet weight at birth
+
+        self.v_Rm = (1 + self.lb / self.g) / (1 - self.lb)  # scaled max reprod buffer density
+        self.v_Rj = self.s_j * self.v_Rm  # scaled reprod buffer density at pupation
+
+        # self.E_Rm = (self.kap - 1) * self.E_M / self.v_Rm
+        # self.E_Rm = (1 - self.kap) * self.g * self.E_M * (self.k_E + self.k_M) / (self.k_E - self.g * self.k_M)
+
+        self.t_b = self.get_tau_b() / self.k_M / self.T_factor
+
+        # For the larva the volume specific max assimilation rate p_Amm is used instead of the surface-specific p_Am
+        # self.p_Amm = self.p_Am / self.Lb
+        # self.J_X_Amm = self.J_X_Am / self.Lb
+        # self.J_E_Amm = self.J_E_Am / self.Lb
+        # self.F_mm = self.F_m / self.Lb
+
+        # DEB textbook p.91
+        # self.y_VE = (self.d_V / self.w_V)*self.mu_E/E_G
+        # self.J_E_Am = self.p_Am/self.mu_E
+
+        # self.U0 = self.uE0 * v ** 2 / g ** 2 / k_M ** 3
+        # self.E0 = self.U0 * p_Am
+
+
+
+
     def predict_larva_stage(self, f=1.0):
         g = self.g
         lb = self.lb
@@ -249,6 +259,80 @@ class DEB_basic(NestedConf):
         self.E_Rm = self.v_Rm * (1 - self.kap) * g * self.E_M * self.Lj ** 3
         self.E_Rj = self.E_Rm * self.s_j
         self.E_eggs = self.E_Rm * self.kap_R
+        # TODO Compute Eb and Ej
+        self.Ej = self.Eb * np.exp(self.tau_j * self.rho_j)
+        self.Wwj = self.compute_Ww(V=self.Lj ** 3, E=self.Ej + self.E_Rj)  # g, wet weight at pupation
+
+    def predict_pupa_stage(self):
+        from scipy.integrate import solve_ivp
+        g = self.g
+        k_M = self.k_M
+
+        def emergence(t, luEvH, terminal=True, direction=0):
+            return self.vHe - luEvH[2]
+
+        def get_te(t, luEvH):
+            l = luEvH[0]
+            u_E = max(1e-6, luEvH[1])
+            ii = u_E + l ** 3
+            dl = (g * u_E - l ** 4) / ii / 3
+            du_E = - u_E * l ** 2 * (g + l) / ii
+            dv_H = - du_E - self.k * luEvH[2]
+            return [dl, du_E, dv_H]  # pack output
+
+        sol = solve_ivp(fun=get_te, t_span=(0, 1000), y0=[0, self.uEj, 0], events=emergence)
+        self.tau_e = sol.t_events[0][0]
+        self.le, self.uEe = sol.y_events[0][0][:2]
+        self.t_e = self.tau_e / k_M / self.T_factor
+        self.Le = self.le * self.Lm
+        self.Lwe = self.Le / self.del_M
+        self.Ee = self.uEe / self.Ucoeff * self.p_Am
+        self.Wwe = self.compute_Ww(V=self.Le ** 3, E=self.Ee + self.E_Rj)  # g, wet weight at emergence
+
+        # self.V = self.Le ** 3
+        # self.E = self.Ee
+        # self.E_H = self.E_He
+        # self.update()
+
+        # self.stage = 'imago'
+        # self.age = self.t_e
+        if self.print_output:
+            print('-------------Pupa stage-------------')
+            print(f'Duration         (d) :      {np.round(self.t_e, 3)}')
+            print('-------------Emergence--------------')
+            print(f'Wet weight      (mg) :      {np.round(self.Wwe * 1000, 5)}')
+            print(f'Physical length (mm) :      {np.round(self.Lwe * 10, 3)}')
+
+    def predict_imago_stage(self, f=1.0):
+        # if np.abs(self.sG) < 1e-10:
+        #     self.sG = 1e-10
+        # self.uh_a =self.h_a/ self.k_M ** 2 # scaled Weibull aging coefficient
+        self.lT = self.p_T / (self.p_M * self.Lm)  # scaled heating length {p_T}/[p_M]Lm
+        self.li = f - self.lT
+        # self.hW3 = self.ha * f * self.g/ 6/ self.li
+        # self.hW = self.hW3**(1/3) # scaled Weibull aging rate
+        # self.hG = self.sG * f * self.g * self.li**2
+        # self.hG3 = self.hG**3;     # scaled Gompertz aging rate
+        # self.tG = self.hG/ self.hW
+        # self.tG3 = self.hG3/ self.hW3 # scaled Gompertz aging rate
+        # # self.tau_m = sol.t_events[0][0]
+        # # self.lm, self.uEm=sol.y_events[0][0][:2]
+        # self.t_m = self.tau_m / self.k_M / self.T_factor
+        self.Li = self.li * self.Lm
+        self.Lwi = self.Li / self.del_M
+        self.Ei = self.uEi / self.Ucoeff * self.p_Am
+        self.Wwi = self.compute_Ww(V=self.Li ** 3, E=self.Ei + self.E_Rj)  # g, imago wet weight
+
+        if self.print_output:
+            print('-------------Imago stage-------------')
+            print(f'Duration         (d) :      {np.round(self.t_i_cor, 3)}')
+            print('---------------Emergence---------------')
+            print(f'Wet weight      (mg) :      {np.round(self.Wwi * 1000, 5)}')
+            print(f'Physical length (mm) :      {np.round(self.Lwi * 10, 3)}')
+
+    @property
+    def T_factor(self):
+        return np.exp(self.T_A / self.T_ref - self.T_A / self.T)  # Arrhenius factor
 
     @property
     def Lw(self):
@@ -280,6 +364,10 @@ class DEB_basic(NestedConf):
     @property
     def pupation_buffer(self):
         return self.E_R / self.E_Rj
+
+    @property
+    def time_to_death_by_starvation(self):
+        return self.v ** -1 * self.L * np.log(self.kap ** -1)
 
     @classmethod
     def from_file(cls, species='default', **kwargs):
@@ -324,9 +412,7 @@ class DEB(DEB_basic):
 
         # Stage duration parameters
         self.age = 0
-        self.birth_time_in_hours = np.nan
-        self.pupation_time_in_hours = np.nan
-        # self.death_time_in_hours = np.nan
+
 
         self.deb_p_A = 0
         self.sim_p_A = 0
@@ -373,46 +459,15 @@ class DEB(DEB_basic):
         # self.k_E = self.v/self.Lb # Reserve turnover
         pass
 
-    def predict_pupa_stage(self):
-        from scipy.integrate import solve_ivp
-        g = self.g
-        k_M = self.k_M
 
-        def emergence(t, luEvH, terminal=True, direction=0):
-            return self.vHe - luEvH[2]
 
-        def get_te(t, luEvH):
-            l = luEvH[0]
-            u_E = max(1e-6, luEvH[1])
-            ii = u_E + l ** 3
-            dl = (g * u_E - l ** 4) / ii / 3
-            du_E = - u_E * l ** 2 * (g + l) / ii
-            dv_H = - du_E - self.k * luEvH[2]
-            return [dl, du_E, dv_H]  # pack output
+    @property
+    def birth_time_in_hours(self):
+        return np.round(self.t_b_comp * 24, 1)
 
-        sol = solve_ivp(fun=get_te, t_span=(0, 1000), y0=[0, self.uEj, 0], events=emergence)
-        self.tau_e = sol.t_events[0][0]
-        self.le, self.uEe = sol.y_events[0][0][:2]
-        self.t_e = self.tau_e / k_M / self.T_factor
-        self.Le = self.le * self.Lm
-        self.Lwe = self.Le / self.del_M
-        self.Ue = self.uEe * self.v ** 2 / g ** 2 / k_M ** 3
-        self.Ee = self.Ue * self.p_Am
-        self.Wwe = self.compute_Ww(V=self.Le ** 3, E=self.Ee + self.E_Rj)  # g, wet weight at emergence
-
-        self.V = self.Le ** 3
-        self.E = self.Ee
-        self.E_H = self.E_He
-        # self.update()
-
-        self.stage = 'imago'
-        self.age = self.t_e
-        if self.print_output:
-            print('-------------Pupa stage-------------')
-            print(f'Duration         (d) :      {np.round(self.t_e, 3)}')
-            print('-------------Emergence--------------')
-            print(f'Wet weight      (mg) :      {np.round(self.Wwe * 1000, 5)}')
-            print(f'Physical length (mm) :      {np.round(self.Lwe * 10, 3)}')
+    @property
+    def pupation_time_in_hours(self):
+        return self.birth_time_in_hours + np.round(self.t_j_comp * 24, 1)
 
     @property
     def emergence_time_in_hours(self):
@@ -425,125 +480,75 @@ class DEB(DEB_basic):
         else:
             return np.nan
 
-    @property
-    def time_to_death_by_starvation(self):
-        return self.v ** -1 * self.L * np.log(self.kap ** -1)
 
-    def predict_imago_stage(self, f=1.0):
-        # if np.abs(self.sG) < 1e-10:
-        #     self.sG = 1e-10
-        # self.uh_a =self.h_a/ self.k_M ** 2 # scaled Weibull aging coefficient
-        self.lT = self.p_T / (self.p_M * self.Lm)  # scaled heating length {p_T}/[p_M]Lm
-        self.li = f - self.lT
-        # self.hW3 = self.ha * f * self.g/ 6/ self.li
-        # self.hW = self.hW3**(1/3) # scaled Weibull aging rate
-        # self.hG = self.sG * f * self.g * self.li**2
-        # self.hG3 = self.hG**3;     # scaled Gompertz aging rate
-        # self.tG = self.hG/ self.hW
-        # self.tG3 = self.hG3/ self.hW3 # scaled Gompertz aging rate
-        # # self.tau_m = sol.t_events[0][0]
-        # # self.lm, self.uEm=sol.y_events[0][0][:2]
-        # self.t_m = self.tau_m / self.k_M / self.T_factor
-        self.Li = self.li * self.Lm
-        self.Lwi = self.Li / self.del_M
-        self.Ui = self.uEi * self.v ** 2 / self.g ** 2 / self.k_M ** 3
-        self.Ei = self.Ui * self.p_Am
-        self.Wwi = self.compute_Ww(V=self.Li ** 3, E=self.Ei + self.E_Rj)  # g, imago wet weight
-        # self.age = self.t_m
-
-        self.V = self.Li ** 3
-        self.E = self.Ei
-
-        if self.print_output:
-            print('-------------Imago stage-------------')
-            print(f'Duration         (d) :      {np.round(self.t_i_cor, 3)}')
-            print('---------------Emergence---------------')
-            print(f'Wet weight      (mg) :      {np.round(self.Wwi * 1000, 5)}')
-            print(f'Physical length (mm) :      {np.round(self.Lwi * 10, 3)}')
 
     def run_embryo_stage(self):
-        kap = self.kap
-        E_G = self.E_G
-
         t = 0
         while self.E_H < self.E_Hb:
             # This is in e/t and below needs to be volume-specific
-            p_S = self.p_M_dt * self.V + self.p_T_dt * self.V ** (2 / 3)
-            p_C = self.E * (E_G * self.v_dt / self.V ** (1 / 3) + p_S / self.V) / (kap * self.E / self.V + E_G)
-            p_G = kap * p_C - p_S
-            p_J = self.k_J_dt * self.E_H
-            p_R = (1 - kap) * p_C - p_J
-
-            self.E -= p_C
-            self.V += p_G / E_G
-            self.E_H += p_R
+            self.apply_fluxes(p_A=0)
             t += self.dt
-        self.Eb = self.E
-        L_b = self.V ** (1 / 3)
-        Lw_b = L_b / self.del_M
-
-        Wwb = self.compute_Ww()  # g, wet weight at birth
-        self.birth_time_in_hours = np.round(self.t_b * 24, 2)
-        self.sim_start += self.birth_time_in_hours
+        self.t_b_comp=t
+        Lw_b = self.V ** (1 / 3) / self.del_M
         self.stage = 'larva'
-        self.age = self.t_b
         if self.print_output:
             print('-------------Embryo stage-------------')
-            print(f'Duration         (d) :      predicted {np.round(self.t_b, 3)} VS computed {np.round(t, 3)}')
+            print(f'Duration         (d) :      predicted {np.round(self.t_b, 3)} VS computed {np.round(self.t_b_comp, 3)}')
             print('----------------Birth----------------')
-            print(f'Wet weight      (mg) :      predicted {np.round(self.Wwb * 1000, 5)} VS computed {np.round(self.compute_Ww()*1000, 5)}')
+            print(
+                f'Wet weight      (mg) :      predicted {np.round(self.Wwb * 1000, 5)} VS computed {np.round(self.compute_Ww() * 1000, 5)}')
             print(
                 f'Physical length (mm) :      predicted {np.round(self.Lwb * 10, 3)} VS computed {np.round(Lw_b * 10, 3)}')
 
     def run_larva_stage(self, f=1.0, dt=None):
         if dt is None:
             dt = self.dt
-
         t = 0
-
         while self.E_R < self.E_Rj:
             self.apply_fluxes(p_A=self.p_Amm_dt * f * self.V)
             t += dt
+        self.t_j_comp=t
         Lw_j = self.V ** (1 / 3) / self.del_M
         Ej = self.Ej = self.E
         self.Uj = Ej / self.p_Am
         self.uEj = self.lj ** 3 * (self.kap * self.kap_V + f / self.g)
-        self.Wwj = self.compute_Ww(V=self.Lj ** 3,
-                                   E=Ej + self.E_Rj)  # g, wet weight at pupation, including reprod buffer
+        self.Wwj = self.compute_Ww(V=self.Lj ** 3,E=Ej + self.E_Rj)  # g, wet weight at pupation, including reprod buffer
         # self.Wwj = self.Lj**3 * (1 + f * self.w_V) # g, wet weight at pupation, excluding reprod buffer at pupation
         # self.Wwj += self.E_Rj * self.w_E/ self.mu_E/ self.d_E # g, wet weight including reprod buffer
-        self.pupation_time_in_hours = self.birth_time_in_hours + np.round(t * 24, 1)
         self.stage = 'pupa'
         if self.print_output:
             print('-------------Larva stage-------------')
-            print(f'Duration         (d) :      predicted {np.round(self.t_j, 3)} VS computed {np.round(t, 3)}')
+            print(f'Duration         (d) :      predicted {np.round(self.t_j, 3)} VS computed {np.round(self.t_j_comp, 3)}')
             print('---------------Pupation---------------')
-            print(f'Wet weight      (mg) :      {np.round(self.Wwj * 1000, 5)}')
+            print(f'Wet weight      (mg) :      predicted {np.round(self.Wwj * 1000, 5)} VS computed {np.round(self.compute_Ww() * 1000, 5)}')
             print(
                 f'Physical length (mm) :      predicted {np.round(self.Lwj * 10, 3)} VS computed {np.round(Lw_j * 10, 3)}')
 
-    def compute_hunger(self):
-        h = np.clip(self.base_hunger + self.hunger_gain * (1 - self.e), a_min=0, a_max=1)
 
-        return h
 
     def apply_fluxes(self, p_A):
-        p_S = self.p_M_dt * self.V
-        p_C = self.E * (self.E_G * self.k_E_dt + p_S / self.V) / (self.kap * self.E / self.V + self.E_G)
+        if self.stage == 'larva':
+            p_S = self.p_M_dt * self.V
+            a = self.k_E_dt
+            p_J = self.k_J_dt * self.E_Hb
+        elif self.stage == 'embryo':
+            p_S = self.p_M_dt * self.V + self.p_T_dt * self.V ** (2 / 3)
+            a=self.v_dt / self.V ** (1 / 3)
+            p_J = self.k_J_dt * self.E_H
+        p_C = self.E * (self.E_G * a + p_S / self.V) / (self.kap * self.E / self.V + self.E_G)
         p_G = self.kap * p_C - p_S
-        p_J = self.k_J_dt * self.E_Hb
         p_R = (1 - self.kap) * p_C - p_J
         self.E += (p_A - p_C)
         self.V += p_G / self.E_G
-        self.E_R += p_R
+        if self.stage == 'larva':
+            self.E_R += p_R
+        elif self.stage == 'embryo':
+            self.E_H += p_R
 
-    # @property
-    # def p_S(self):
-    #     return self.p_M_dt * self.V
-    #
-    # @property
-    # def p_C(self):
-    #     return self.E * (self.E_G * self.k_E_dt + self.p_S / self.V) / (self.kap * self.E / self.V + self.E_G)
+
+    def compute_hunger(self):
+        return np.clip(self.base_hunger + self.hunger_gain * (1 - self.e), a_min=0, a_max=1)
+
 
     def run(self, **kwargs):
         self.age += self.dt
@@ -551,7 +556,7 @@ class DEB(DEB_basic):
             self.apply_fluxes(p_A=self.get_p_A(**kwargs))
             self.update_hunger()
         elif self.stage == 'larva':
-            self.pupation_time_in_hours = np.round(self.age * 24, 2)
+            self.pupation_time_in_hours_sim = np.round(self.age * 24, 2)
             self.stage = 'pupa'
         if self.dict is not None:
             self.update_dict()
