@@ -261,9 +261,9 @@ class DEB_basic(NestedConf):
         self.E_Rj = self.E_Rm * self.s_j
         self.E_eggs = self.E_Rm * self.kap_R
         # TODO Compute Eb and Ej
-        # self.uEj = self.lj ** 3 * (self.kap * self.kap_V + f / self.g)
-        # self.Ej = self.uEj / self.Ucoeff * self.p_Am
-        self.Ej = self.Eb * np.exp(self.tau_j * self.rho_j)
+        self.uEj = self.lj ** 3 * (self.kap * self.kap_V + f / self.g)
+        self.Ej = self.uEj / self.Ucoeff * self.p_Am
+        # self.Ej = self.Eb * np.exp(self.tau_j * self.rho_j)
         self.Wwj = self.compute_Ww(V=self.Lj ** 3, E=self.Ej + self.E_Rj)  # g, wet weight at pupation
 
     def predict_pupa_stage(self):
@@ -483,7 +483,10 @@ class DEB(DEB_basic):
 
     @property
     def emergence_time_in_hours(self):
-        return self.pupation_time_in_hours + np.round(self.t_e * 24, 1)
+        try:
+            return self.pupation_time_in_hours + np.round(self.t_e * 24, 1)
+        except:
+            return np.nan
 
     @property
     def death_time_in_hours(self):
