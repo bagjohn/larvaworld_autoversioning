@@ -716,8 +716,8 @@ def get_best_EEB(deb, cRef):
 def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=False, model_id=None, save_dict=True,
             **kwargs):
     from ..modules.intermitter import OfflineIntermitter
-    cRef = reg.conf.Ref.getRef(refID)
-    kws2 = cRef['intermitter']
+    c = reg.conf.Ref.getRef(refID)
+    kws2 = c['intermitter']
     if dt is None:
         dt = kws2['dt']
     else:
@@ -725,45 +725,38 @@ def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=Fals
 
     if deb_dt is None:
         deb_dt = dt
-    deb = DEB(id=id, assimilation_mode='gut', dt=deb_dt, save_dict=save_dict, **kwargs)
+    D = DEB(id=id, assimilation_mode='gut', dt=deb_dt, save_dict=save_dict, **kwargs)
     if EEB is None:
-        EEB = get_best_EEB(deb, cRef)
-    deb.base_hunger = EEB
+        EEB = get_best_EEB(D, c)
+    D.base_hunger = EEB
     Nticks = np.round(deb_dt / dt).astype(int)
-    inter = OfflineIntermitter(**kws2, EEB=EEB)
-    counter = 0
-    feeds = 0
-    cum_feeds = 0
+    I = OfflineIntermitter(**kws2, EEB=EEB)
+    counter, feeds, cum_feeds = 0,0,0
     feed_dict = []
-    while (deb.stage != 'pupa' and deb.alive):
-        inter.step()
-        if inter.Nfeeds > cum_feeds:
+    while (D.stage != 'pupa' and D.alive):
+        I.step()
+        if I.Nfeeds > cum_feeds:
             feeds += 1
             cum_feeds += 1
-        if int(inter.total_t / inter.dt) % Nticks == 0:
+        if int(I.total_t / I.dt) % Nticks == 0:
             feed_dict.append(feeds)
-            X_V = deb.V_bite * deb.V * feeds
-            deb.run(X_V=X_V)
+            D.run(X_V=D.V_bite * D.V * feeds)
             feeds = 0
             if use_hunger:
-                inter.EEB = deb.hunger
-                # if inter.feeder_reocurrence_as_EEB:
-                #     inter.feeder_reoccurence_rate = inter.EEB
-            if deb.age * 24 > counter:
-                # print(counter, int(deb.pupation_buffer * 100))
+                I.EEB = D.hunger
+            if D.age * 24 > counter:
                 counter += 24
-    deb.finalize_dict()
-    d_sim = deb.return_dict()
-    d_inter = inter.build_dict()
-    mini_dic = {
-        'DEB model': deb.species,
+    D.finalize_dict()
+    d_sim = D.return_dict()
+    d_inter = I.build_dict()
+    d_sim.update({
+        'DEB model': D.species,
         'EEB': np.round(EEB, 2),
         **{f'{q} ratio': np.round(d_inter[nam.dur_ratio(p)], 2) for p, q in
            zip(['stridechain', 'pause', 'feedchain'], ['crawl', 'pause', 'feed'])},
-        f"{nam.freq('feed')}_exp": np.round(inter.mean_feed_freq, 2),
-        f"{nam.freq('feed')}_est": np.round(deb.fr_feed, 2)
-    }
-    d_sim.update(mini_dic)
+        f"{nam.freq('feed')}_exp": np.round(I.mean_feed_freq, 2),
+        f"{nam.freq('feed')}_est": np.round(D.fr_feed, 2)
+    })
     if model_id is None:
         return d_sim
     else:
