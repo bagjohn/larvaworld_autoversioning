@@ -307,7 +307,7 @@ class DEB(DEB_basic):
         self.V = self.Le ** 3
         self.E = self.Ee
         self.E_H = self.E_He
-        self.update()
+        # self.update()
 
         self.emergence_time_in_hours = self.pupation_time_in_hours + np.round(self.t_e * 24, 1)
         self.stage = 'imago'
