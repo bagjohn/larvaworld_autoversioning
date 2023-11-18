@@ -35,14 +35,14 @@ __all__ = [
 
 
 class DEB_basic(NestedConf):
-    F_m = PositiveNumber(6.5,doc='maximum surface-area specific searching rate (l cm**-2 d**-1)')
+    F_m = PositiveNumber(6.5, doc='maximum surface-area specific searching rate (l cm**-2 d**-1)')
     kap_X = param.Magnitude(0.8, doc='assimilation efficiency')
     p_Am = PositiveNumber(229.0, doc='maximum surface-area specific assimilation rate (J cm**-2 d**-1)')
-    E_G = PositiveNumber(4400.0,doc='volume-specific cost of structure (J/cm**3)')
-    v = PositiveNumber(0.12,doc='energy conductance (cm/d)')
-    p_M = PositiveNumber(210.0,doc='volume-specific somatic maintenance (J cm**-3 d**-1)')
+    E_G = PositiveNumber(4400.0, doc='volume-specific cost of structure (J/cm**3)')
+    v = PositiveNumber(0.12, doc='energy conductance (cm/d)')
+    p_M = PositiveNumber(210.0, doc='volume-specific somatic maintenance (J cm**-3 d**-1)')
     kap = param.Magnitude(0.99, doc='fraction of mobilized reserve allocated to soma')
-    k_J = PositiveNumber(0.002,doc='maturity maintenance rate coefficient (d**-1)')
+    k_J = PositiveNumber(0.002, doc='maturity maintenance rate coefficient (d**-1)')
     E_Hb = PositiveNumber(0.0006, doc='maturity threshold from embryo to juvenile (J)')
     E_He = PositiveNumber(0.05, doc='maturity threshold from juvenile to adult (J)')
     z = PositiveNumber(0.5, doc='zoom factor')
@@ -51,16 +51,16 @@ class DEB_basic(NestedConf):
     h_a = PositiveNumber(0.0001, doc='Weibull ageing acceleration (d**-2)')
     kap_R = param.Magnitude(0.95, doc='fraction of the reproduction buffer fixed into eggs')
 
-    p_T = PositiveNumber(0.0,doc='??')
+    p_T = PositiveNumber(0.0, doc='??')
     kap_V = param.Magnitude(0.99, doc='??')
     kap_P = param.Magnitude(0.18, doc='??')
 
-    eb = PositiveNumber(1.0,doc='scaled reserve density at birth')
-    s_j = PositiveNumber(0.999,doc='??')
+    eb = PositiveNumber(1.0, doc='scaled reserve density at birth')
+    s_j = PositiveNumber(0.999, doc='??')
 
-    T = PositiveNumber(298.15,doc='Temperature')
-    T_ref = PositiveNumber(293.15,doc='Reference temperature')
-    T_A = PositiveNumber(8000,doc='Arrhenius temperature')
+    T = PositiveNumber(298.15, doc='Temperature')
+    T_ref = PositiveNumber(293.15, doc='Reference temperature')
+    T_A = PositiveNumber(8000, doc='Arrhenius temperature')
 
     mu_E = PositiveNumber(550000.0, doc='specific chemical potential of compound E')
     mu_V = PositiveNumber(500000.0, doc='specific chemical potential of compound V')
@@ -81,12 +81,14 @@ class DEB_basic(NestedConf):
     y_E_X = PositiveNumber(0.7, doc='yield coefficient that couples mass flux E to mass flux X')
     y_P_X = PositiveNumber(0.2, doc='yield coefficient that couples mass flux P to mass flux X')
 
-    def __init__(self,print_output=False,  **kwargs):
+    def __init__(self, print_output=False, **kwargs):
         super().__init__(**kwargs)
         self.print_output = print_output
 
+        self.L0 = 10 ** -10
+
         # self.p_Am = self.z*self.p_M/self.kap
-        self.E_M = self.p_Am / self.v #maximum reserve density
+        self.E_M = self.p_Am / self.v  # maximum reserve density
         self.k_M = self.p_M / self.E_G
         self.g = self.E_G / (self.kap * self.E_M)
         ii = self.g ** 2 * self.k_M ** 3 / ((1 - self.kap) * self.v ** 2)
@@ -104,7 +106,7 @@ class DEB_basic(NestedConf):
 
         self.T_factor = np.exp(self.T_A / self.T_ref - self.T_A / self.T)  # Arrhenius factor
         self.lb = deb.get_lb(kap=self.kap, E_Hb=self.E_Hb, v=self.v, p_Am=self.p_Am, E_G=self.E_G, k_J=self.k_J,
-                             p_M=self.p_M,eb=self.eb)
+                             p_M=self.p_M, eb=self.eb)
         self.E0 = deb.get_E0(kap=self.kap, v=self.v, p_M=self.p_M, p_Am=self.p_Am, E_G=self.E_G, eb=self.eb, lb=self.lb)
         self.E_Rm = deb.get_E_Rm(kap=self.kap, v=self.v, p_M=self.p_M, p_Am=self.p_Am, E_G=self.E_G, lb=self.lb)
 
@@ -136,6 +138,66 @@ class DEB_basic(NestedConf):
             print(f'Reserve energy  (mJ) :       {int(1000 * self.E0)}')
             print(f'Wet weight      (mg) :       {np.round(1000 * self.Ww0, 5)}')
 
+        # Larva stage flags
+        self.stage = 'embryo'
+        self.alive = True
+
+        self.E = self.E0
+        self.E_H = 0
+        self.E_R = 0
+        self.V = self.L0 ** 3
+
+    def predict_larva_stage(self, f=1.0):
+        g = self.g
+        lb = self.lb
+        c1 = f / g * (g + lb) / (f - lb)
+        c2 = self.k * self.vHb / lb ** 3
+        self.rho_j = (f / lb - 1) / (f / g + 1)  # scaled specific growth rate of larva
+
+        def get_tj(tau_j):
+            ert = np.exp(- tau_j * self.rho_j)
+            return np.abs(self.v_Rj - c1 * (1 - ert) + c2 * tau_j * ert)
+
+        self.tau_j = deb.simplex(get_tj, 1)
+        self.lj = lb * np.exp(self.tau_j * self.rho_j / 3)
+        self.t_j = self.tau_j / self.k_M / self.T_factor
+        self.Lj = self.lj * self.Lm
+        self.Lwj = self.Lj / self.del_M
+        self.E_Rm = self.v_Rm * (1 - self.kap) * g * self.E_M * self.Lj ** 3
+        self.E_Rj = self.E_Rm * self.s_j
+        self.E_eggs = self.E_Rm * self.kap_R
+
+    @property
+    def Lw(self):
+        return self.L / self.del_M
+
+    @property
+    def L(self):
+        return self.V ** (1 / 3)
+
+    def compute_Ww(self, V=None, E=None):
+        if V is None:
+            V = self.V
+        if E is None:
+            E = self.E + self.E_R
+        return V * self.d_V + E * self.w_E / self.mu_E
+
+    @property
+    def Ww(self):
+        return self.V * self.d_V + (self.E + self.E_R) * self.w_E / self.mu_E
+
+    @property
+    def e(self):
+        return self.E / self.V / self.E_M
+
+    @property
+    def Vw(self):
+        return self.V + self.w_E / self.d_E / self.mu_E * self.E
+
+    @property
+    def pupation_buffer(self):
+        return self.E_R / self.E_Rj
+
     @classmethod
     def from_file(cls, species='default', **kwargs):
         # Drosophila model by default
@@ -143,6 +205,7 @@ class DEB_basic(NestedConf):
             d = json.load(tfp)
         kwargs.update(**d)
         return cls(**kwargs)
+
 
 class DEB(DEB_basic):
     id = param.String('DEB model', doc='The unique ID of the DEB model')
@@ -169,30 +232,12 @@ class DEB(DEB_basic):
             species_dict = json.load(tfp)
         kwargs.update(**species_dict)
         super().__init__(species=species, **kwargs)
-
-
-
-
-        # self.__dict__.update(self.species_dict)
-
         self.set_intermitter(intermitter, base_hunger)
-
-        # self.T = T
-        self.L0 = 10 ** -10
         self.sim_start = self.hours_as_larva
-        # self.id = id
-        # self.cv = cv
-        # self.eb = eb
-
         self.save_to = save_to
-        # self.print_output = print_output
         self.simulation = simulation
         self.epochs = []
         self.epoch_qs = []
-
-        # Larva stage flags
-        self.stage = 'embryo'
-        self.alive = True
 
         # Stage duration parameters
         self.age = 0
@@ -201,10 +246,6 @@ class DEB(DEB_basic):
         self.emergence_time_in_hours = np.nan
         self.death_time_in_hours = np.nan
 
-        self.E = self.E0
-        self.E_H = 0
-        self.E_R = 0
-        self.V = self.L0 ** 3
         self.deb_p_A = 0
         self.sim_p_A = 0
 
@@ -217,14 +258,6 @@ class DEB(DEB_basic):
         self.run_embryo_stage()
         self.predict_larva_stage(f=self.base_f)
         self.dict = self.init_dict() if save_dict else None
-
-    @property
-    def Lw(self):
-        return self.L / self.del_M
-
-    @property
-    def L(self):
-        return self.V ** (1 / 3)
 
     def scale_time(self):
         dt = self.dt * self.T_factor
@@ -250,32 +283,13 @@ class DEB(DEB_basic):
         if self.hunger_as_EEB and self.intermitter is not None:
             base_hunger = self.intermitter.base_EEB
         self.base_hunger = base_hunger
+
     def hex_model(self):
         # p.161    [1] S. a. L. M. Kooijman, “Comments on Dynamic Energy Budget theory,” Changes, 2010.
         # For the larva stage
         # self.r = self.g * self.k_M * (self.e/self.lb -1)/(self.e+self.g) # growth rate at  constant food where e=f
         # self.k_E = self.v/self.Lb # Reserve turnover
         pass
-
-    def predict_larva_stage(self, f=1.0):
-        g = self.g
-        lb = self.lb
-        c1 = f / g * (g + lb) / (f - lb)
-        c2 = self.k * self.vHb / lb ** 3
-        self.rho_j = (f / lb - 1) / (f / g + 1)  # scaled specific growth rate of larva
-
-        def get_tj(tau_j):
-            ert = np.exp(- tau_j * self.rho_j)
-            return np.abs(self.v_Rj - c1 * (1 - ert) + c2 * tau_j * ert)
-
-        self.tau_j = deb.simplex(get_tj, 1)
-        self.lj = lb * np.exp(self.tau_j * self.rho_j / 3)
-        self.t_j = self.tau_j / self.k_M / self.T_factor
-        self.Lj = self.lj * self.Lm
-        self.Lwj = self.Lj / self.del_M
-        self.E_Rm = self.v_Rm * (1 - self.kap) * g * self.E_M * self.Lj ** 3
-        self.E_Rj = self.E_Rm * self.s_j
-        self.E_eggs = self.E_Rm * self.kap_R
 
     def predict_pupa_stage(self):
         from scipy.integrate import solve_ivp
@@ -487,27 +501,6 @@ class DEB(DEB_basic):
         freq /= (24 * 60 * 60)
         return freq
 
-    def compute_Ww(self, V=None, E=None):
-        if V is None:
-            V = self.V
-        if E is None:
-            E = self.E + self.E_R
-        return V * self.d_V + E * self.w_E / self.mu_E
-
-    @property
-    def Ww(self):
-        return self.V * self.d_V + (self.E + self.E_R) * self.w_E / self.mu_E
-
-    @property
-    def e(self):
-        return self.E / self.V / self.E_M
-
-    @property
-    def Vw(self):
-        Em = self.p_Am / self.v
-        omegaV = Em * self.w_E / self.d_E / self.mu_E
-        return self.V * (1 + omegaV * self.e)
-
     def grow_larva(self, epochs, **kwargs):
         for e in epochs:
             c = {'assimilation_mode': 'sim', 'f': e.substrate.get_f(K=self.K)}
@@ -525,10 +518,6 @@ class DEB(DEB_basic):
         self.hours_as_larva = self.age * 24 - tb
         if self.gut is not None:
             self.gut.update()
-
-    @property
-    def pupation_buffer(self):
-        return self.E_R / self.E_Rj
 
     @property
     def EEB(self):
