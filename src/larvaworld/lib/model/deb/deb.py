@@ -74,7 +74,6 @@ class DEB(NestedConf):
         self.print_output = print_output
         self.simulation = simulation
         self.epochs = []
-        self.epoch_fs = []
         self.epoch_qs = []
         self.dict_file = None
 
@@ -474,28 +473,22 @@ class DEB(NestedConf):
 
     def grow_larva(self, epochs, **kwargs):
         tb = self.birth_time_in_hours
-        self.epoch_fs = []
-        self.epoch_qs = []
-        self.epochs = []
-        for ep in epochs:
-            sub = ep.substrate
-            if not isinstance(sub, Substrate):
-                sub = Substrate(**sub)
-            f = sub.get_f(K=self.K)
-            c = {'assimilation_mode': 'sim', 'f': f}
-            t0, t1 = ep.age_range
+        tp = self.pupation_time_in_hours
+
+        for e in epochs:
+            if not isinstance(e.substrate, Substrate):
+                e.substrate = Substrate(**e.substrate)
+            c = {'assimilation_mode': 'sim', 'f': e.substrate.get_f(K=self.K)}
+            t0, t1 = e.age_range
             if t1 is None:
                 while self.stage == 'larva':
                     self.run(**c)
             else:
-                N = int(1/self.dt / 24 * (t1 - t0))
-                for i in range(N):
+                for i in range(int((t1 - t0)*60*60/self.dt)):
                     if self.stage == 'larva':
                         self.run(**c)
-            self.epoch_fs.append(f)
-            self.epoch_qs.append(sub.quality)
-            self.epochs.append(
-                [t0 + tb, t1 + tb if t1 is not None else self.pupation_time_in_hours])
+        self.epochs = [[e.age_range[0] + tb, e.age_range[1] + tb if e.age_range[1] is not None else tp] for e in epochs]
+        self.epoch_qs = [e.substrate.quality for e in epochs]
         self.hours_as_larva = self.age * 24 - tb
         if self.gut is not None:
             self.gut.update()
@@ -559,7 +552,6 @@ class DEB(NestedConf):
             d['hours_as_larva'] = self.hours_as_larva
             d['sim_start'] = self.sim_start
             d['epochs'] = self.epochs
-            d['epoch_fs'] = self.epoch_fs
             d['epoch_qs'] = self.epoch_qs
             d['fr'] = 1 / (self.dt * 24 * 60 * 60)
             d['feed_freq_estimate'] = self.fr_feed
@@ -609,6 +601,10 @@ class DEB(NestedConf):
             return self.gut.p_A
         elif assimilation_mode == 'deb':
             return self.deb_p_A
+
+    @property
+    def steps_per_day(self):
+        return int(1/self.dt)
 
     @property
     def deb_f_mean(self):
