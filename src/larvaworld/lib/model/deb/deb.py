@@ -33,7 +33,110 @@ __all__ = [
 ]
 
 
-class DEB(NestedConf):
+class DEB_basic(NestedConf):
+    F_m = PositiveNumber(doc='maximum surface-area specific searching rate (l cm**-2 d**-1)')
+    kap_X = param.Magnitude(0.8, doc='assimilation efficiency')
+    p_Am = PositiveNumber(doc='maximum surface-area specific assimilation rate (J cm**-2 d**-1)')
+    E_G = PositiveNumber(doc='volume-specific cost of structure (J/cm**3)')
+    v = PositiveNumber(doc='energy conductance (cm/d)')
+    p_M = PositiveNumber(doc='volume-specific somatic maintenance (J cm**-3 d**-1)')
+    kap = param.Magnitude(0.99, doc='fraction of mobilized reserve allocated to soma')
+    k_J = PositiveNumber(doc='maturity maintenance rate coefficient (d**-1)')
+    E_Hb = PositiveNumber(doc='maturity threshold from embryo to juvenile (J)')
+    E_He = PositiveNumber(doc='maturity threshold from juvenile to adult (J)')
+    z = PositiveNumber(doc='zoom factor')
+    del_M = PositiveNumber(doc='shape correction coefficient')
+    s_G = PositiveNumber(doc='Gompertz stress coefficient')
+    h_a = PositiveNumber(doc='Weibull ageing acceleration (d**-2)')
+    kap_R = param.Magnitude(0.8, doc='fraction of the reproduction buffer fixed into eggs')
+
+    p_T = PositiveNumber(0.0,doc='??')
+    kap_V = param.Magnitude(doc='??')
+    kap_P = param.Magnitude(doc='??')
+
+    eb = PositiveNumber(1.0,doc='scaled reserve density at birth')
+    s_j = PositiveNumber(0.999,doc='??')
+
+    T = PositiveNumber(298.15,doc='Temperature')
+    T_ref = PositiveNumber(293.15,doc='Reference temperature')
+    T_A = PositiveNumber(8000,doc='Arrhenius temperature')
+
+    mu_E = PositiveNumber(doc='specific chemical potential of compound E')
+    mu_V = PositiveNumber(doc='specific chemical potential of compound V')
+    mu_X = PositiveNumber(doc='specific chemical potential of compound X')
+    mu_P = PositiveNumber(doc='specific chemical potential of compound P')
+    mu_C = PositiveNumber(doc='specific chemical potential of compound C')
+    mu_H = PositiveNumber(doc='specific chemical potential of compound H')
+    mu_O = PositiveNumber(doc='specific chemical potential of compound O')
+    mu_N = PositiveNumber(doc='specific chemical potential of compound N')
+    d_V = PositiveNumber(doc='density of compound V')
+    d_X = PositiveNumber(doc='density of compound X')
+    d_E = PositiveNumber(doc='density of compound E')
+    d_P = PositiveNumber(doc='density of compound P')
+    w_V = PositiveNumber(doc='molar weight of compound V')
+    w_E = PositiveNumber(doc='molar weight of compound E')
+    w_X = PositiveNumber(doc='molar weight of compound X')
+    w_P = PositiveNumber(doc='molar weight of compound P')
+    y_E_X = PositiveNumber(doc='yield coefficient that couples mass flux E to mass flux X')
+    y_P_X = PositiveNumber(doc='yield coefficient that couples mass flux P to mass flux X')
+
+    def __init__(self,print_output=False,  **kwargs):
+        super().__init__(**kwargs)
+        self.print_output = print_output
+
+    def derived_pars(self):
+        self.E_M = self.p_Am / self.v #maximum reserve density
+        self.k_M = self.p_M / self.E_G
+        self.g = self.E_G / (self.kap * self.E_M)
+        ii = self.g ** 2 * self.k_M ** 3 / ((1 - self.kap) * self.v ** 2)
+        self.k = self.k_J / self.k_M
+        self.U_Hb = self.E_Hb / self.p_Am
+        self.vHb = self.U_Hb * ii
+        self.U_He = self.E_He / self.p_Am
+        self.vHe = self.U_He * ii
+        self.Lm = self.v / (self.g * self.k_M)
+
+        self.J_E_Am = self.p_Am / self.mu_E
+        self.J_X_Am = self.J_E_Am / self.y_E_X
+        self.K = self.J_X_Am / self.F_m
+        self.E_V = self.mu_V * self.d_V / self.w_V
+
+        self.T_factor = np.exp(self.T_A / self.T_ref - self.T_A / self.T)  # Arrhenius factor
+        self.lb = deb.get_lb(kap=self.kap, E_Hb=self.E_Hb, v=self.v, p_Am=self.p_Am, E_G=self.E_G, k_J=self.k_J,
+                             p_M=self.p_M,eb=self.eb)
+        self.E0 = deb.get_E0(kap=self.kap, v=self.v, p_M=self.p_M, p_Am=self.p_Am, E_G=self.E_G, eb=self.eb, lb=self.lb)
+        self.E_Rm = deb.get_E_Rm(kap=self.kap, v=self.v, p_M=self.p_M, p_Am=self.p_Am, E_G=self.E_G, lb=self.lb)
+
+        self.Lb = self.lb * self.Lm
+        self.Lwb = self.Lb / self.del_M
+        self.tau_b = deb.get_tau_b(g=self.g, lb=self.lb, eb=self.eb)
+        self.t_b = self.tau_b / self.k_M / self.T_factor
+        self.k_E = self.v / self.Lb
+
+        # For the larva the volume specific max assimilation rate p_Amm is used instead of the surface-specific p_Am
+        self.p_Amm = self.p_Am / self.Lb
+        self.J_X_Amm = self.J_X_Am / self.Lb
+        self.J_E_Amm = self.J_E_Am / self.Lb
+        self.F_mm = self.F_m / self.Lb
+
+        # DEB textbook p.91
+        # self.y_VE = (self.d_V / self.w_V)*self.mu_E/E_G
+        # self.J_E_Am = self.p_Am/self.mu_E
+
+        # self.U0 = self.uE0 * v ** 2 / g ** 2 / k_M ** 3
+        # self.E0 = self.U0 * p_Am
+        self.Ww0 = self.E0 * self.w_E / self.mu_E  # g, initial wet weight
+
+        self.v_Rm = (1 + self.lb / self.g) / (1 - self.lb)  # scaled max reprod buffer density
+        self.v_Rj = self.s_j * self.v_Rm  # scaled reprod buffer density at pupation
+
+        if self.print_output:
+            print('------------------Egg------------------')
+            print(f'Reserve energy  (mJ) :       {int(1000 * self.E0)}')
+            print(f'Wet weight      (mg) :       {np.round(1000 * self.Ww0, 5)}')
+
+
+class DEB(DEB_basic):
     id = param.String('DEB model', doc='The unique ID of the DEB model')
     species = param.Selector(objects=['default', 'rover', 'sitter'], label='phenotype',
                              doc='The phenotype/species-specific fitted DEB model to use.')  # Drosophila model by default
@@ -46,13 +149,11 @@ class DEB(NestedConf):
     use_gut = param.Boolean(True, doc='Whether to use the gut module.')
     hunger_gain = param.Magnitude(0.0, label='hunger sensitivity to reserve reduction',
                                   doc='The sensitivy of the hunger drive in deviations of the DEB reserve density.')
-    dt = PositiveNumber(1/(24*60),doc='The timestep of the DEB energetics module in days.')
+    dt = PositiveNumber(1 / (24 * 60), doc='The timestep of the DEB energetics module in days.')
     hours_as_larva = PositiveNumber(0.0, doc='The age since eclosion')
     substrate = ClassAttr(Substrate, doc='The substrate where the agent feeds')
 
-    def __init__(self, T=298.15, eb=1.0,
-                 print_output=False, save_dict=True,
-                 save_to=None, V_bite=0.0005, base_hunger=0.5,
+    def __init__(self, save_dict=True, save_to=None, V_bite=0.0005, base_hunger=0.5,
                  simulation=True, intermitter=None, gut_params={}, **kwargs):
         super().__init__(**kwargs)
 
@@ -64,15 +165,15 @@ class DEB(NestedConf):
 
         self.set_intermitter(intermitter, base_hunger)
 
-        self.T = T
+        # self.T = T
         self.L0 = 10 ** -10
         self.sim_start = self.hours_as_larva
         # self.id = id
         # self.cv = cv
-        self.eb = eb
+        # self.eb = eb
 
         self.save_to = save_to
-        self.print_output = print_output
+        # self.print_output = print_output
         self.simulation = simulation
         self.epochs = []
         self.epoch_qs = []
@@ -87,7 +188,7 @@ class DEB(NestedConf):
         self.pupation_time_in_hours = np.nan
         self.emergence_time_in_hours = np.nan
         self.death_time_in_hours = np.nan
-        self.derived_pars()
+        # self.derived_pars()
 
         self.E = self.E0
         self.E_H = 0
@@ -139,61 +240,60 @@ class DEB(NestedConf):
             base_hunger = self.intermitter.base_EEB
         self.base_hunger = base_hunger
 
-
-    def derived_pars(self):
-        kap = self.kap
-        v = self.v
-        p_Am = self.p_Am = self.z * self.p_M / kap
-        self.J_E_Am = p_Am / self.mu_E
-        self.J_X_Am = self.J_E_Am / self.y_E_X
-        self.p_Xm = p_Am / self.kap_X
-        self.K = self.J_X_Am / self.F_m
-
-        self.E_M = p_Am / v
-        self.E_V = self.mu_V * self.d_V / self.w_V
-        k_M = self.k_M = self.p_M / self.E_G
-        g = self.g = self.E_G / (kap * self.E_M)
-        ii = g ** 2 * k_M ** 3 / ((1 - kap) * v ** 2)
-        self.k = self.k_J / k_M
-        self.U_Hb = self.E_Hb / p_Am
-        self.vHb = self.U_Hb * ii
-        self.U_He = self.E_He / p_Am
-        self.vHe = self.U_He * ii
-        self.Lm = v / (g * k_M)
-        self.T_factor = np.exp(self.T_A / self.T_ref - self.T_A / self.T);  # Arrhenius factor
-        # v**-1*L=e*E_G/(g*pM)
-        lb = self.lb = deb.get_lb(eb=self.eb, **self.species_dict)
-        self.E0 = deb.get_E0(eb=self.eb, lb=lb, **self.species_dict)
-        self.E_Rm = deb.get_E_Rm(lb=lb, **self.species_dict)
-
-        Lb = self.Lb = lb * self.Lm
-        self.Lwb = Lb / self.del_M
-        self.tau_b = deb.get_tau_b(g=self.g, lb=self.lb,eb=self.eb)
-        self.t_b = self.tau_b / k_M / self.T_factor
-        # print(Lb)
-        self.k_E = v / Lb
-
-        # For the larva the volume specific max assimilation rate p_Amm is used instead of the surface-specific p_Am
-        self.p_Amm = p_Am / Lb
-        self.J_X_Amm = self.J_X_Am / Lb
-        self.J_E_Amm = self.J_E_Am / Lb
-        self.F_mm = self.F_m / Lb
-
-        # DEB textbook p.91
-        # self.y_VE = (self.d_V / self.w_V)*self.mu_E/E_G
-        # self.J_E_Am = self.p_Am/self.mu_E
-
-        # self.U0 = self.uE0 * v ** 2 / g ** 2 / k_M ** 3
-        # self.E0 = self.U0 * p_Am
-        self.Ww0 = self.E0 * self.w_E / self.mu_E  # g, initial wet weight
-
-        self.v_Rm = (1 + lb / g) / (1 - lb)  # scaled max reprod buffer density
-        self.v_Rj = self.s_j * self.v_Rm  # scaled reprod buffer density at pupation
-
-        if self.print_output:
-            print('------------------Egg------------------')
-            print(f'Reserve energy  (mJ) :       {int(1000 * self.E0)}')
-            print(f'Wet weight      (mg) :       {np.round(1000 * self.Ww0, 5)}')
+    # def derived_pars(self):
+    #     kap = self.kap
+    #     v = self.v
+    #     p_Am = self.p_Am = self.z * self.p_M / kap
+    #     self.J_E_Am = p_Am / self.mu_E
+    #     self.J_X_Am = self.J_E_Am / self.y_E_X
+    #     # self.p_Xm = p_Am / self.kap_X
+    #     self.K = self.J_X_Am / self.F_m
+    #
+    #     self.E_M = p_Am / v
+    #     self.E_V = self.mu_V * self.d_V / self.w_V
+    #     k_M = self.k_M = self.p_M / self.E_G
+    #     g = self.g = self.E_G / (kap * self.E_M)
+    #     ii = g ** 2 * k_M ** 3 / ((1 - kap) * v ** 2)
+    #     self.k = self.k_J / k_M
+    #     self.U_Hb = self.E_Hb / p_Am
+    #     self.vHb = self.U_Hb * ii
+    #     self.U_He = self.E_He / p_Am
+    #     self.vHe = self.U_He * ii
+    #     self.Lm = v / (g * k_M)
+    #     self.T_factor = np.exp(self.T_A / self.T_ref - self.T_A / self.T);  # Arrhenius factor
+    #     # v**-1*L=e*E_G/(g*pM)
+    #     lb = self.lb = deb.get_lb(eb=self.eb, **self.species_dict)
+    #     self.E0 = deb.get_E0(eb=self.eb, lb=lb, **self.species_dict)
+    #     self.E_Rm = deb.get_E_Rm(lb=lb, **self.species_dict)
+    #
+    #     Lb = self.Lb = lb * self.Lm
+    #     self.Lwb = Lb / self.del_M
+    #     self.tau_b = deb.get_tau_b(g=self.g, lb=self.lb, eb=self.eb)
+    #     self.t_b = self.tau_b / k_M / self.T_factor
+    #     # print(Lb)
+    #     self.k_E = v / Lb
+    #
+    #     # For the larva the volume specific max assimilation rate p_Amm is used instead of the surface-specific p_Am
+    #     self.p_Amm = p_Am / Lb
+    #     self.J_X_Amm = self.J_X_Am / Lb
+    #     self.J_E_Amm = self.J_E_Am / Lb
+    #     self.F_mm = self.F_m / Lb
+    #
+    #     # DEB textbook p.91
+    #     # self.y_VE = (self.d_V / self.w_V)*self.mu_E/E_G
+    #     # self.J_E_Am = self.p_Am/self.mu_E
+    #
+    #     # self.U0 = self.uE0 * v ** 2 / g ** 2 / k_M ** 3
+    #     # self.E0 = self.U0 * p_Am
+    #     self.Ww0 = self.E0 * self.w_E / self.mu_E  # g, initial wet weight
+    #
+    #     self.v_Rm = (1 + lb / g) / (1 - lb)  # scaled max reprod buffer density
+    #     self.v_Rj = self.s_j * self.v_Rm  # scaled reprod buffer density at pupation
+    #
+    #     if self.print_output:
+    #         print('------------------Egg------------------')
+    #         print(f'Reserve energy  (mJ) :       {int(1000 * self.E0)}')
+    #         print(f'Wet weight      (mg) :       {np.round(1000 * self.Ww0, 5)}')
 
     def hex_model(self):
         # p.161    [1] S. a. L. M. Kooijman, “Comments on Dynamic Energy Budget theory,” Changes, 2010.
@@ -585,7 +685,7 @@ class DEB(NestedConf):
 
     @property
     def steps_per_day(self):
-        return int(1/self.dt)
+        return int(1 / self.dt)
 
     @property
     def deb_f_mean(self):
@@ -627,13 +727,13 @@ class DEB(NestedConf):
 class DEB_runner(DEB):
     f_decay = PositiveNumber(default=0.1, doc='The exponential decay coefficient of the DEB functional response.')
 
-    def __init__(self, model=None, dt=None,life_history=None, **kwargs):
+    def __init__(self, model=None, dt=None, life_history=None, **kwargs):
         if life_history is None:
             life_history = aux.AttrDict({'epochs': {}, 'age': None})
         self.model = model
         if self.model is not None:
             if dt is None:
-                dt = self.model.dt/(24*60*60)
+                dt = self.model.dt / (24 * 60 * 60)
         super().__init__(dt=dt, **kwargs)
         self.grow_larva(**life_history)
         self.temp_cum_V_eaten = 0
@@ -675,9 +775,9 @@ def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=Fals
     c = reg.conf.Ref.getRef(refID)
     kws2 = c['intermitter']
     if dt is not None:
-        kws2['dt']=dt
+        kws2['dt'] = dt
     if deb_dt is None:
-        deb_dt = kws2['dt']/(24*60*60)
+        deb_dt = kws2['dt'] / (24 * 60 * 60)
     D = DEB(id=id, assimilation_mode='gut', dt=deb_dt, **kwargs)
     if EEB is None:
         EEB = get_best_EEB(D, c)
@@ -686,8 +786,8 @@ def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=Fals
     cum_feeds = 0
     while (D.stage != 'pupa' and D.alive):
         I.step()
-        if I.total_ticks % round(D.dt*(24*60*60) / I.dt) == 0:
-            D.run(X_V=D.V_bite * D.V * (I.Nfeeds-cum_feeds))
+        if I.total_ticks % round(D.dt * (24 * 60 * 60) / I.dt) == 0:
+            D.run(X_V=D.V_bite * D.V * (I.Nfeeds - cum_feeds))
             cum_feeds = I.Nfeeds
             if use_hunger:
                 I.EEB = D.hunger
