@@ -256,11 +256,13 @@ class DEB_basic(NestedConf):
         self.t_j = self.tau_j / self.k_M / self.T_factor
         self.Lj = self.lj * self.Lm
         self.Lwj = self.Lj / self.del_M
+
         self.E_Rm = self.v_Rm * (1 - self.kap) * g * self.E_M * self.Lj ** 3
         self.E_Rj = self.E_Rm * self.s_j
         self.E_eggs = self.E_Rm * self.kap_R
         # TODO Compute Eb and Ej
-        self.Ej = self.Eb * np.exp(self.tau_j * self.rho_j)
+        self.uEj = self.lj ** 3 * (self.kap * self.kap_V + f / self.g)
+        self.Ej = self.uEj / self.Ucoeff * self.p_Am
         self.Wwj = self.compute_Ww(V=self.Lj ** 3, E=self.Ej + self.E_Rj)  # g, wet weight at pupation
 
     def predict_pupa_stage(self):
@@ -429,12 +431,12 @@ class DEB(DEB_basic):
 
     def scale_time(self):
         dt = self.dt * self.T_factor
-        self.F_m_dt = self.F_m * dt
+        # self.F_m_dt = self.F_m * dt
         self.v_dt = self.v * dt
         self.p_M_dt = self.p_M * dt
         self.p_T_dt = self.p_T * dt if self.p_T != 0.0 else 0.0
         self.k_J_dt = self.k_J * dt
-        self.h_a_dt = self.h_a * dt ** 2
+        # self.h_a_dt = self.h_a * dt ** 2
 
         # self.p_Am_dt = self.p_Am * dt
         self.p_Amm_dt = self.p_Am / self.Lb * dt
@@ -489,30 +491,30 @@ class DEB(DEB_basic):
             self.apply_fluxes(p_A=0)
             t += self.dt
         self.t_b_comp=t
-        Lw_b = self.V ** (1 / 3) / self.del_M
+        self.Lw_b_comp = self.V ** (1 / 3) / self.del_M
+        self.Wwb_comp = self.compute_Ww()
         self.stage = 'larva'
         if self.print_output:
             print('-------------Embryo stage-------------')
             print(f'Duration         (d) :      predicted {np.round(self.t_b, 3)} VS computed {np.round(self.t_b_comp, 3)}')
             print('----------------Birth----------------')
             print(
-                f'Wet weight      (mg) :      predicted {np.round(self.Wwb * 1000, 5)} VS computed {np.round(self.compute_Ww() * 1000, 5)}')
+                f'Wet weight      (mg) :      predicted {np.round(self.Wwb * 1000, 5)} VS computed {np.round(self.Wwb_comp * 1000, 5)}')
             print(
-                f'Physical length (mm) :      predicted {np.round(self.Lwb * 10, 3)} VS computed {np.round(Lw_b * 10, 3)}')
+                f'Physical length (mm) :      predicted {np.round(self.Lwb * 10, 3)} VS computed {np.round(self.Lw_b_comp * 10, 3)}')
 
-    def run_larva_stage(self, f=1.0, dt=None):
-        if dt is None:
-            dt = self.dt
+    def run_larva_stage(self, f=1.0):
         t = 0
         while self.E_R < self.E_Rj:
             self.apply_fluxes(p_A=self.p_Amm_dt * f * self.V)
-            t += dt
+            t += self.dt
         self.t_j_comp=t
-        Lw_j = self.V ** (1 / 3) / self.del_M
-        Ej = self.Ej = self.E
-        self.Uj = Ej / self.p_Am
-        self.uEj = self.lj ** 3 * (self.kap * self.kap_V + f / self.g)
-        self.Wwj = self.compute_Ww(V=self.Lj ** 3,E=Ej + self.E_Rj)  # g, wet weight at pupation, including reprod buffer
+        self.Lw_j_comp = self.V ** (1 / 3) / self.del_M
+        self.Wwj_comp = self.compute_Ww()
+        # Ej = self.Ej = self.E
+        # self.Uj = Ej / self.p_Am
+        # self.uEj = self.lj ** 3 * (self.kap * self.kap_V + f / self.g)
+        # self.Wwj = self.compute_Ww(V=self.Lj ** 3,E=self.Ej + self.E_Rj)  # g, wet weight at pupation, including reprod buffer
         # self.Wwj = self.Lj**3 * (1 + f * self.w_V) # g, wet weight at pupation, excluding reprod buffer at pupation
         # self.Wwj += self.E_Rj * self.w_E/ self.mu_E/ self.d_E # g, wet weight including reprod buffer
         self.stage = 'pupa'
@@ -520,9 +522,9 @@ class DEB(DEB_basic):
             print('-------------Larva stage-------------')
             print(f'Duration         (d) :      predicted {np.round(self.t_j, 3)} VS computed {np.round(self.t_j_comp, 3)}')
             print('---------------Pupation---------------')
-            print(f'Wet weight      (mg) :      predicted {np.round(self.Wwj * 1000, 5)} VS computed {np.round(self.compute_Ww() * 1000, 5)}')
+            print(f'Wet weight      (mg) :      predicted {np.round(self.Wwj * 1000, 5)} VS computed {np.round(self.Wwj_comp * 1000, 5)}')
             print(
-                f'Physical length (mm) :      predicted {np.round(self.Lwj * 10, 3)} VS computed {np.round(Lw_j * 10, 3)}')
+                f'Physical length (mm) :      predicted {np.round(self.Lwj * 10, 3)} VS computed {np.round(self.Lw_j_comp * 10, 3)}')
 
 
 
