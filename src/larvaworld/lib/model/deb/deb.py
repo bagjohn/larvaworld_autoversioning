@@ -403,7 +403,7 @@ class DEB(NestedConf):
         if assimilation_mode is None:
             assimilation_mode = self.assimilation_mode
         self.f = f
-        self.age += self.dt
+        self.age += self.dt/(24*60*60)
         kap = self.kap
         E_G = self.E_G
         if self.E_R < self.E_Rj:
