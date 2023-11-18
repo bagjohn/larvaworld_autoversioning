@@ -8,10 +8,12 @@ __all__ = [
     'simplex',
     'beta0',
     'get_lb',
+    'get_tau_b',
     'get_E0',
     'get_E_Rm',
     'run_embryo_stage',
 ]
+
 
 def simplex(func, x0, args=()):
     res = minimize(func, x0, args=args, method='nelder-mead', options={'xatol': 1e-8, 'disp': False}).x[0]
@@ -80,6 +82,16 @@ def get_lb(kap, E_Hb, v, p_Am, E_G, k_J, p_M, eb=1.0, **kwargs):
     return lb
 
 
+def get_tau_b(g, lb, eb=1.0):
+    from scipy.integrate import quad
+    def get_tb(x, ab, xb):
+        return x ** (-2 / 3) / (1 - x) / (ab - beta0(x, xb))
+
+    xb = g / (eb + g)
+    ab = 3 * g * xb ** (1 / 3) / lb
+    return 3 * quad(func=get_tb, a=1e-15, b=xb, args=(ab, xb))[0]
+
+
 def get_E0(kap, v, p_M, p_Am, E_G, eb=1.0, lb=None, **kwargs):
     """
         This function calculates the maximum reserve density (E0) that an organism can achieve given its energy budget parameters.
@@ -113,6 +125,7 @@ def get_E0(kap, v, p_M, p_Am, E_G, eb=1.0, lb=None, **kwargs):
     E0 = U0 * p_Am
     return E0
 
+
 def get_E_Rm(kap, v, p_M, p_Am, E_G, lb=None, **kwargs):
     '''
         The threshold for pupation is [E_Rj]¼sj[E_Rm], which is introduced with a new parameter sj and an expression
@@ -131,8 +144,8 @@ def get_E_Rm(kap, v, p_M, p_Am, E_G, lb=None, **kwargs):
     k_M = p_M / E_G
     g = E_G * v / (kap * p_Am)
     E_M = p_Am / v
-    k_E = g * k_M/lb
-    E_Rm = (1 - kap) * g * E_M * (k_E + k_M)/(k_E - g * k_M)
+    k_E = g * k_M / lb
+    E_Rm = (1 - kap) * g * E_M * (k_E + k_M) / (k_E - g * k_M)
     return E_Rm
 
 
@@ -155,7 +168,7 @@ def run_embryo_stage2(kap, E_Hb, v, E_G, k_J, p_M, p_Am, p_T: float = 0., dt: fl
         p_C = E * (v_E_G_plus_P_T_per_kap * L2 + p_M_per_kap * L3) / denom
         dL = (E * v - (p_M_per_kap * L + p_T_per_kap) * L3) / 3 / denom
         dE = -p_C
-        dE_H = (1-kap) * p_C - k_J * E_H
+        dE_H = (1 - kap) * p_C - k_J * E_H
         if E_H + dt * dE_H > E_Hb:
             dt = (E_Hb - E_H) / dE_H
             done = True
@@ -163,7 +176,7 @@ def run_embryo_stage2(kap, E_Hb, v, E_G, k_J, p_M, p_Am, p_T: float = 0., dt: fl
         L += dt * dL
         E_H += dt * dE_H
         t += dt
-        print(t,E_H,E_Hb)
+        print(t, E_H, E_Hb)
         if E < 0 or dL < 0:
             return -1, -1, -1
     return t, E, L
@@ -185,22 +198,20 @@ def run_embryo_stage(kap, E_Hb, v, E_G, k_J, p_M, p_Am, p_T: float = 0., dt: flo
         L3 = L * L2
 
         # volume specific :
-        e=E/E_m
+        e = E / E_m
         p_C = E_m * (v / L + k_M * (1 + L_T / L)) * (e * g) / (e + g)
-        p_S = p_M + p_T /L
+        p_S = p_M + p_T / L
         p_G = kap * p_C - p_S
-        dL=p_G / E_G
+        dL = p_G / E_G
 
-        E -= dt * p_C*L3
+        E -= dt * p_C * L3
         L += dt * dL
-
 
         p_J = k_J * E_H
         p_R = (1 - kap) * p_C - p_J
         # dL = (p_G / E_G) ** (1 / 3)
 
         # dL = E * v/ (3*kap* E +3*E_G * L3) - p_S * L/ (3 *E+ 3* E_G_per_kap * L3)
-
 
         # L += dt *(p_G / E_G)**(1/3)
 
@@ -247,7 +258,6 @@ if __name__ == '__main__':
     # print(t, E, L)
     print(t2, E2, L2)
     pass
-
 
 '''
 # Latex equations

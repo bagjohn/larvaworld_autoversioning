@@ -34,6 +34,7 @@ __all__ = [
 
 
 class DEB(NestedConf):
+    id = param.String('DEB model', doc='The unique ID of the DEB model')
     species = param.Selector(objects=['default', 'rover', 'sitter'], label='phenotype',
                              doc='The phenotype/species-specific fitted DEB model to use.')  # Drosophila model by default
     assimilation_mode = param.Selector(objects=['gut', 'sim', 'deb'], label='assimilation mode',
@@ -45,14 +46,14 @@ class DEB(NestedConf):
     use_gut = param.Boolean(True, doc='Whether to use the gut module.')
     hunger_gain = param.Magnitude(0.0, label='hunger sensitivity to reserve reduction',
                                   doc='The sensitivy of the hunger drive in deviations of the DEB reserve density.')
-    dt = PositiveNumber(1/(24*60),doc='The timestep of the DEB energetics module in seconds.')
+    dt = PositiveNumber(1/(24*60),doc='The timestep of the DEB energetics module in days.')
     hours_as_larva = PositiveNumber(0.0, doc='The age since eclosion')
     substrate = ClassAttr(Substrate, doc='The substrate where the agent feeds')
 
-    def __init__(self, id='DEB model', cv=0, T=298.15, eb=1.0,
+    def __init__(self, T=298.15, eb=1.0,
                  print_output=False, save_dict=True,
                  save_to=None, V_bite=0.0005, base_hunger=0.5,
-                 simulation=True, intermitter=None, gut_params=None, **kwargs):
+                 simulation=True, intermitter=None, gut_params={}, **kwargs):
         super().__init__(**kwargs)
 
         # Drosophila model by default
@@ -66,8 +67,8 @@ class DEB(NestedConf):
         self.T = T
         self.L0 = 10 ** -10
         self.sim_start = self.hours_as_larva
-        self.id = id
-        self.cv = cv
+        # self.id = id
+        # self.cv = cv
         self.eb = eb
 
         self.save_to = save_to
@@ -75,7 +76,6 @@ class DEB(NestedConf):
         self.simulation = simulation
         self.epochs = []
         self.epoch_qs = []
-        self.dict_file = None
 
         # Larva stage flags
         self.stage = 'embryo'
@@ -100,14 +100,10 @@ class DEB(NestedConf):
         self.f = self.base_f
         self.V_bite = V_bite
 
-        if gut_params is None:
-            gut_params = reg.par.get_null('gut')
-
         self.gut = deb.Gut(deb=self, save_dict=save_dict, **gut_params) if self.use_gut else None
         self.scale_time()
         self.run_embryo_stage()
         self.predict_larva_stage(f=self.base_f)
-
         self.dict = self.init_dict() if save_dict else None
 
     @property
@@ -172,7 +168,7 @@ class DEB(NestedConf):
 
         Lb = self.Lb = lb * self.Lm
         self.Lwb = Lb / self.del_M
-        self.tau_b = self.get_tau_b(eb=self.eb)
+        self.tau_b = deb.get_tau_b(g=self.g, lb=self.lb,eb=self.eb)
         self.t_b = self.tau_b / k_M / self.T_factor
         # print(Lb)
         self.k_E = v / Lb
@@ -205,16 +201,6 @@ class DEB(NestedConf):
         # self.r = self.g * self.k_M * (self.e/self.lb -1)/(self.e+self.g) # growth rate at  constant food where e=f
         # self.k_E = self.v/self.Lb # Reserve turnover
         pass
-
-    def get_tau_b(self, eb=1.0):
-        from scipy.integrate import quad
-        def get_tb(x, ab, xb):
-            return x ** (-2 / 3) / (1 - x) / (ab - deb.beta0(x, xb))
-
-        g = self.g
-        xb = g / (eb + g)
-        ab = 3 * g * xb ** (1 / 3) / self.lb
-        return 3 * quad(func=get_tb, a=1e-15, b=xb, args=(ab, xb))[0]
 
     def predict_larva_stage(self, f=1.0):
         g = self.g
@@ -397,22 +383,17 @@ class DEB(NestedConf):
 
         return h
 
-    def run(self, f=None, X_V=0, assimilation_mode=None):
-        if f is None:
-            f = self.base_f
-        if assimilation_mode is None:
-            assimilation_mode = self.assimilation_mode
-        self.f = f
+    def run(self, **kwargs):
         self.age += self.dt
-        kap = self.kap
-        E_G = self.E_G
         if self.E_R < self.E_Rj:
-            p_A = self.get_p_A(f=f, assimilation_mode=assimilation_mode, X_V=X_V)
+            k = self.kap
+            E_G = self.E_G
+            p_A = self.get_p_A(**kwargs)
             p_S = self.p_M_dt * self.V
-            p_C = self.E * (E_G * self.k_E_dt + p_S / self.V) / (kap * self.E / self.V + E_G)
-            p_G = kap * p_C - p_S
+            p_C = self.E * (E_G * self.k_E_dt + p_S / self.V) / (k * self.E / self.V + E_G)
+            p_G = k * p_C - p_S
             p_J = self.k_J_dt * self.E_Hb
-            p_R = (1 - kap) * p_C - p_J
+            p_R = (1 - k) * p_C - p_J
             self.E += (p_A - p_C)
             self.V += p_G / E_G
             self.E_R += p_R
@@ -515,7 +496,7 @@ class DEB(NestedConf):
             'sim_p_A',
             'EEB'
         ]
-        d = {k: [] for k in self.dict_keys}
+        d = aux.AttrDict({k: [] for k in self.dict_keys})
         return d
 
     def update_dict(self):
@@ -580,17 +561,20 @@ class DEB(NestedConf):
                 # raise ValueError ('No path to save DEB dict')
         if self.dict is not None:
             os.makedirs(path, exist_ok=True)
-            self.dict_file = f'{path}/{self.id}.txt'
             if self.gut is not None:
                 d = {**self.dict, **self.gut.dict}
             else:
                 d = self.dict
-            aux.save_dict(d, self.dict_file)
+            aux.save_dict(d, f'{path}/{self.id}.txt')
 
-    def get_p_A(self, f, assimilation_mode, X_V):
+    def get_p_A(self, f=None, assimilation_mode=None, X_V=0.0):
+        if f is None:
+            f = self.base_f
+        self.f = f
         self.deb_p_A = self.p_Amm_dt * self.base_f * self.V
         self.sim_p_A = self.p_Amm_dt * f * self.V
-
+        if assimilation_mode is None:
+            assimilation_mode = self.assimilation_mode
         if assimilation_mode == 'sim':
             return self.sim_p_A
         elif assimilation_mode == 'gut' and self.gut is not None:
