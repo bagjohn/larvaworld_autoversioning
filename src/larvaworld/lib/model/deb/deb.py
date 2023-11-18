@@ -37,7 +37,7 @@ __all__ = [
 class DEB_basic(NestedConf):
     F_m = PositiveNumber(6.5,doc='maximum surface-area specific searching rate (l cm**-2 d**-1)')
     kap_X = param.Magnitude(0.8, doc='assimilation efficiency')
-    # p_Am = PositiveNumber(doc='maximum surface-area specific assimilation rate (J cm**-2 d**-1)')
+    p_Am = PositiveNumber(229.0, doc='maximum surface-area specific assimilation rate (J cm**-2 d**-1)')
     E_G = PositiveNumber(4400.0,doc='volume-specific cost of structure (J/cm**3)')
     v = PositiveNumber(0.12,doc='energy conductance (cm/d)')
     p_M = PositiveNumber(210.0,doc='volume-specific somatic maintenance (J cm**-3 d**-1)')
@@ -85,7 +85,7 @@ class DEB_basic(NestedConf):
         super().__init__(**kwargs)
         self.print_output = print_output
 
-        self.p_Am = self.z*self.p_M/self.kap
+        # self.p_Am = self.z*self.p_M/self.kap
         self.E_M = self.p_Am / self.v #maximum reserve density
         self.k_M = self.p_M / self.E_G
         self.g = self.E_G / (self.kap * self.E_M)
