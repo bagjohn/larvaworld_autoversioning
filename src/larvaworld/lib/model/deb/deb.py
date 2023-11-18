@@ -105,16 +105,19 @@ class DEB_basic(NestedConf):
         self.E_V = self.mu_V * self.d_V / self.w_V
 
         self.T_factor = np.exp(self.T_A / self.T_ref - self.T_A / self.T)  # Arrhenius factor
-        self.lb = deb.get_lb(kap=self.kap, E_Hb=self.E_Hb, v=self.v, p_Am=self.p_Am, E_G=self.E_G, k_J=self.k_J,
-                             p_M=self.p_M, eb=self.eb)
-        self.E0 = deb.get_E0(kap=self.kap, v=self.v, p_M=self.p_M, p_Am=self.p_Am, E_G=self.E_G, eb=self.eb, lb=self.lb)
-        self.E_Rm = deb.get_E_Rm(kap=self.kap, v=self.v, p_M=self.p_M, p_Am=self.p_Am, E_G=self.E_G, lb=self.lb)
+        self.lb = self.get_lb()
+        self.k_E = self.g * self.k_M / self.lb
+
+        self.E0 = self.get_E0()
 
         self.Lb = self.lb * self.Lm
         self.Lwb = self.Lb / self.del_M
-        self.tau_b = deb.get_tau_b(g=self.g, lb=self.lb, eb=self.eb)
+
+        self.E_Rm = (self.kap-1) * self.E_M * self.g *(1-self.lb)/ (1+self.lb)
+        # self.E_Rm = (1 - self.kap) * self.g * self.E_M * (self.k_E + self.k_M) / (self.k_E - self.g * self.k_M)
+
+        self.tau_b = self.get_tau_b()
         self.t_b = self.tau_b / self.k_M / self.T_factor
-        self.k_E = self.v / self.Lb
 
         # For the larva the volume specific max assimilation rate p_Amm is used instead of the surface-specific p_Am
         self.p_Amm = self.p_Am / self.Lb
@@ -146,6 +149,78 @@ class DEB_basic(NestedConf):
         self.E_H = 0
         self.E_R = 0
         self.V = self.L0 ** 3
+
+    def get_lb(self):
+        g = self.g
+        n = 1000 + round(1000 * max(0, self.k - 1))
+        xb = g / (g + self.eb)
+        xb3 = xb ** (1 / 3)
+        x = np.linspace(10 ** -5, xb, n)
+        dx = xb / n
+        x3 = x ** (1 / 3)
+
+        b = deb.beta0(x, xb) / (3 * g)
+
+        t0 = xb * g * self.vHb
+        i = 0
+        norm = 1
+        ni = 100
+
+        lb = self.vHb ** (1 / 3)
+
+        while i < ni and norm > 1e-18:
+            l = x3 / (xb3 / lb - b)
+            s = (self.k - x) / (1 - x) * l / g / x
+            vv = np.exp(- dx * np.cumsum(s))
+            vb = vv[- 1]
+            r = (g + l)
+            rv = r / vv
+            t = t0 / lb ** 3 / vb - dx * np.sum(rv)
+            dl = xb3 / lb ** 2 * l ** 2. / x3
+            dlnv = np.exp(- dx * np.cumsum(s * dl / l))
+            dlnvb = dlnv[- 1]
+            dt = - t0 / lb ** 3 / vb * (3 / lb + dlnvb) - dx * np.sum((dl / r - dlnv) * rv)
+            lb -= t / dt  # Newton Raphson step
+            norm = t ** 2
+            i += 1
+        return lb
+
+    def get_tau_b(self):
+        from scipy.integrate import quad
+        def get_tb(x, ab, xb):
+            return x ** (-2 / 3) / (1 - x) / (ab - deb.beta0(x, xb))
+
+        xb = self.g / (self.eb + self.g)
+        ab = 3 * self.g * xb ** (1 / 3) / self.lb
+        return 3 * quad(func=get_tb, a=1e-15, b=xb, args=(ab, xb))[0]
+
+    def get_E0(self):
+        """
+            This function calculates the maximum reserve density (E0) that an organism can achieve given its energy budget parameters.
+
+            Parameters:
+                kap (float): Fraction of assimilated energy that is used for somatic maintenance.
+                v (float): Energy conductance.
+                p_M (float): Specific somatic maintenance costs.
+                p_Am (float): Maximum surface-specific assimilation rate.
+                E_G (float): Energy investment ratio.
+                eb (float, optional): Allocation fraction to reserve production. Defaults to 1.0.
+                lb (float, optional): Length at birth. If not provided, it is calculated from the other parameters. Defaults to None.
+
+            Returns:
+                float: Maximum reserve density that an organism can achieve.
+        """
+        g = self.g
+        xb = g / (g + self.eb)
+
+        # Calculate uE0 using the equation in the Dynamic Energy Budget textbook
+        uE0 = np.real((3 * g / (3 * g * xb ** (1 / 3) / self.lb - deb.beta0(0, xb))) ** 3)
+
+        # Calculate U0 and E0 using the equations in the Dynamic Energy Budget textbook
+        U0 = uE0 * self.v ** 2 / g ** 2 / self.k_M ** 3
+        E0 = U0 * self.p_Am
+        return E0
+
 
     def predict_larva_stage(self, f=1.0):
         g = self.g
@@ -243,8 +318,7 @@ class DEB(DEB_basic):
         self.age = 0
         self.birth_time_in_hours = np.nan
         self.pupation_time_in_hours = np.nan
-        self.emergence_time_in_hours = np.nan
-        self.death_time_in_hours = np.nan
+        # self.death_time_in_hours = np.nan
 
         self.deb_p_A = 0
         self.sim_p_A = 0
@@ -323,7 +397,6 @@ class DEB(DEB_basic):
         self.E_H = self.E_He
         # self.update()
 
-        self.emergence_time_in_hours = self.pupation_time_in_hours + np.round(self.t_e * 24, 1)
         self.stage = 'imago'
         self.age = self.t_e
         if self.print_output:
@@ -334,6 +407,17 @@ class DEB(DEB_basic):
             print(f'Physical length (mm) :      {np.round(self.Lwe * 10, 3)}')
 
     @property
+    def emergence_time_in_hours(self):
+        return self.pupation_time_in_hours + np.round(self.t_e * 24, 1)
+
+    @property
+    def death_time_in_hours(self):
+        if not self.alive:
+            return self.age * 24
+        else:
+            return np.nan
+
+    @property
     def time_to_death_by_starvation(self):
         return self.v ** -1 * self.L * np.log(self.kap ** -1)
 
@@ -342,7 +426,7 @@ class DEB(DEB_basic):
         #     self.sG = 1e-10
         # self.uh_a =self.h_a/ self.k_M ** 2 # scaled Weibull aging coefficient
         self.lT = self.p_T / (self.p_M * self.Lm)  # scaled heating length {p_T}/[p_M]Lm
-        self.li = f - self.lT;
+        self.li = f - self.lT
         # self.hW3 = self.ha * f * self.g/ 6/ self.li
         # self.hW = self.hW3**(1/3) # scaled Weibull aging rate
         # self.hG = self.sG * f * self.g * self.li**2
@@ -468,7 +552,7 @@ class DEB(DEB_basic):
             self.E_R += p_R
             self.update_hunger()
         elif self.stage == 'larva':
-            self.pupation_time_in_hours = np.round(self.age * 24, 1)
+            self.pupation_time_in_hours = np.round(self.age * 24, 2)
             self.stage = 'pupa'
         if self.dict is not None:
             self.update_dict()
@@ -480,7 +564,6 @@ class DEB(DEB_basic):
 
     def die(self):
         self.alive = False
-        self.death_time_in_hours = self.age * 24
         if self.print_output:
             print(f'Dead after {self.age} days')
 
