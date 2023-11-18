@@ -183,6 +183,14 @@ class Epoch(NestedConf):
         kwargs = expand_kws_shortcuts(kwargs)
         super().__init__(**kwargs)
 
+    @property
+    def start(self):
+        return self.age_range[0]
+
+    @property
+    def end(self):
+        return self.age_range[1]
+
 
 class Life(NestedConf):
     age = OptionalPositiveNumber(default=0.0, softmax=100.0, hardmax=250.0,
@@ -235,6 +243,8 @@ class Life(NestedConf):
         if reach_pupation:
             subs.append(sub_p)
         return cls.from_epoch_ticks(ticks=ticks, subs=subs, reach_pupation=reach_pupation)
+
+
 
 
 class AirPuff(NestedConf):

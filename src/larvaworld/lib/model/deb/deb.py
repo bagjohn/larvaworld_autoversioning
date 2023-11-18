@@ -494,6 +494,7 @@ class DEB(NestedConf):
             self.gut.update()
 
     def grow_larva2(self, epochs, **kwargs):
+
         # tb = self.birth_time_in_hours
         # tp = self.pupation_time_in_hours
 
