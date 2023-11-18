@@ -473,28 +473,6 @@ class DEB(NestedConf):
         return self.V * (1 + omegaV * self.e)
 
     def grow_larva(self, epochs, **kwargs):
-        tb = self.birth_time_in_hours
-        tp = self.pupation_time_in_hours
-
-        for e in epochs:
-            if not isinstance(e.substrate, Substrate):
-                e.substrate = Substrate(**e.substrate)
-            c = {'assimilation_mode': 'sim', 'f': e.substrate.get_f(K=self.K)}
-            t0, t1 = e.age_range
-            if t1 is None:
-                while self.stage == 'larva':
-                    self.run(**c)
-            else:
-                for i in range(int((t1 - t0)*60*60/self.dt)):
-                    if self.stage == 'larva':
-                        self.run(**c)
-        self.epochs = [[e.age_range[0] + tb, e.age_range[1] + tb if e.age_range[1] is not None else tp] for e in epochs]
-        self.epoch_qs = [e.substrate.quality for e in epochs]
-        self.hours_as_larva = self.age * 24 - tb
-        if self.gut is not None:
-            self.gut.update()
-
-    def grow_larva2(self, epochs, **kwargs):
         for e in epochs:
             c = {'assimilation_mode': 'sim', 'f': e.substrate.get_f(K=self.K)}
             if e.end is None:
@@ -504,6 +482,13 @@ class DEB(NestedConf):
                 for i in range(e.ticks(self.dt)):
                     if self.stage == 'larva':
                         self.run(**c)
+        tb = self.birth_time_in_hours
+        tp = self.pupation_time_in_hours
+        self.epochs = [[e.start + tb, e.end + tb if e.end is not None else tp] for e in epochs]
+        self.epoch_qs = [e.substrate.quality for e in epochs]
+        self.hours_as_larva = self.age * 24 - tb
+        if self.gut is not None:
+            self.gut.update()
 
     @property
     def pupation_buffer(self):
@@ -688,18 +673,6 @@ class DEB_runner(DEB):
 
 def deb_default(id='DEB model', epochs={}, age=None, **kwargs):
     deb = DEB(id=id, simulation=False, use_gut=False, **kwargs)
-    # N = len(epochs)
-    #
-    # if N == 0:
-    #     epochs = {0: Epoch().nestedConf}
-    # elif str(N - 1) in epochs:
-    #     t1 = epochs[str(N - 1)].age_range[1]
-    #     if t1 is not None:
-    #         epochs.update({N: Epoch(age_range=(t1, None)).nestedConf})
-    # elif N - 1 in epochs:
-    #     t1 = epochs[N - 1].age_range[1]
-    #     if t1 is not None:
-    #         epochs.update({N: Epoch(age_range=(t1, None)).nestedConf})
     deb.grow_larva(epochs=epochs)
     return deb.finalize_dict()
 
@@ -713,8 +686,7 @@ def get_best_EEB(deb, cRef):
     return np.clip(z(s), a_min=0, a_max=1)
 
 
-def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=False, model_id=None, save_dict=True,
-            **kwargs):
+def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=False, model_id=None, **kwargs):
     from ..modules.intermitter import OfflineIntermitter
     c = reg.conf.Ref.getRef(refID)
     kws2 = c['intermitter']
@@ -725,7 +697,7 @@ def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=Fals
 
     if deb_dt is None:
         deb_dt = dt
-    D = DEB(id=id, assimilation_mode='gut', dt=deb_dt, save_dict=save_dict, **kwargs)
+    D = DEB(id=id, assimilation_mode='gut', dt=deb_dt, **kwargs)
     if EEB is None:
         EEB = get_best_EEB(D, c)
     D.base_hunger = EEB
@@ -760,7 +732,7 @@ def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=Fals
     if model_id is None:
         return d_sim
     else:
-        d_mod = deb_default(id=model_id, save_dict=save_dict, **kwargs)
+        d_mod = deb_default(id=model_id, **kwargs)
         return d_sim, d_mod
 
 
