@@ -99,11 +99,11 @@ class DEB_basic(NestedConf):
         self.xb = self.g / (self.eb + self.g)
         self.Ucoeff = self.g ** 2 * self.k_M ** 3 / self.v ** 2
 
-        ii = self.Ucoeff / (1 - self.kap)
-        self.U_Hb = self.E_Hb / self.p_Am
-        self.vHb = self.U_Hb * ii
-        self.U_He = self.E_He / self.p_Am
-        self.vHe = self.U_He * ii
+        # ii = self.Ucoeff / (1 - self.kap)
+        # self.U_Hb = self.E_Hb / self.p_Am
+        self.vHb = self.E_Hb / self.p_Am * self.Ucoeff / (1 - self.kap)
+        # self.U_He = self.E_He / self.p_Am
+        self.vHe = self.E_He / self.p_Am * self.Ucoeff / (1 - self.kap)
 
         self.J_E_Am = self.p_Am / self.mu_E
         self.J_X_Am = self.J_E_Am / self.y_E_X
@@ -120,7 +120,8 @@ class DEB_basic(NestedConf):
 
         self.Lb = self.lb * self.Lm
         self.Lwb = self.Lb / self.del_M
-
+        # self.Vb=self.Lb**3
+        self.Wwb=self.Lb**3 * self.d_V + self.E0 * self.w_E / self.mu_E
         self.E_Rm = (self.kap - 1) * self.E_M * self.g * (1 - self.lb) / (1 + self.lb)
         # self.E_Rm = (1 - self.kap) * self.g * self.E_M * (self.k_E + self.k_M) / (self.k_E - self.g * self.k_M)
 
@@ -476,7 +477,7 @@ class DEB(DEB_basic):
         L_b = self.V ** (1 / 3)
         Lw_b = L_b / self.del_M
 
-        self.Wwb = self.compute_Ww(V=self.Lb ** 3, E=self.Eb)  # g, wet weight at birth
+        Wwb = self.compute_Ww()  # g, wet weight at birth
         self.birth_time_in_hours = np.round(self.t_b * 24, 2)
         self.sim_start += self.birth_time_in_hours
         self.stage = 'larva'
@@ -485,7 +486,7 @@ class DEB(DEB_basic):
             print('-------------Embryo stage-------------')
             print(f'Duration         (d) :      predicted {np.round(self.t_b, 3)} VS computed {np.round(t, 3)}')
             print('----------------Birth----------------')
-            print(f'Wet weight      (mg) :      {np.round(self.Wwb * 1000, 5)}')
+            print(f'Wet weight      (mg) :      predicted {np.round(self.Wwb * 1000, 5)} VS computed {np.round(self.compute_Ww()*1000, 5)}')
             print(
                 f'Physical length (mm) :      predicted {np.round(self.Lwb * 10, 3)} VS computed {np.round(Lw_b * 10, 3)}')
 
