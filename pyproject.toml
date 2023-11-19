@@ -1,6 +1,6 @@
 [tool.poetry]
 name='larvaworld'
-version = "0.0.373"
+version = "0.0.374"
 description='Drosophila larva behavioral analysis and simulation platform'
 authors=['Panagiotis Sakagiannis']
 license = "GPL-3"
@@ -26,7 +26,6 @@ pygame = "*"
 argparse = "*"
 pint = "*"
 pint_pandas = "*"
-#tables = "*"
 matplotlib = "*"
 seaborn = "*"
 scikit-learn = "*"

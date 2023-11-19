@@ -60,8 +60,9 @@ class DEB_basic(NestedConf):
     K = OptionalPositiveNumber(doc='half-saturation coefficient')
 
     p_T = PositiveNumber(0.0, doc='??')
-    kap_V = param.Magnitude(0.99, doc='??')
-    kap_P = param.Magnitude(0.18, doc='??')
+    kap_V = param.Magnitude(0.99,
+                            doc='fraction of energy in mobilised larval structure fixed in pupal reserve: ylEV /yEV')
+    kap_P = param.Magnitude(0.18, doc='fraction of food energy fixed in faeces')
 
     eb = PositiveNumber(1.0, doc='scaled reserve density at birth')
     s_j = PositiveNumber(0.999, doc='??')
@@ -88,6 +89,7 @@ class DEB_basic(NestedConf):
     w_P = PositiveNumber(23.9, doc='molar weight of compound P')
     y_E_X = PositiveNumber(0.7, doc='yield coefficient that couples mass flux E to mass flux X')
     y_P_X = PositiveNumber(0.2, doc='yield coefficient that couples mass flux P to mass flux X')
+    y_E_V = PositiveNumber(0.2, doc='yield coefficient that couples mass flux E to mass flux V')
 
     def __init__(self, print_output=False, **kwargs):
         super().__init__(**kwargs)
@@ -100,7 +102,9 @@ class DEB_basic(NestedConf):
         self.L0 = 10 ** -10
         self.E_H = 0
         self.E_R = 0
-        self.V = self.L0 ** 3
+        self.V = self.L0 ** 3  # larval structure
+        self.V2 = 0  # adult structur
+        self.E_egg = 0  # egg buffer
 
         self.derive_pars()
         self.compute_initial_state()
@@ -318,14 +322,19 @@ class DEB_basic(NestedConf):
 
     @property
     def stage(self):
-        if self.E_H<self.E_Hb :
+        if self.E_H < self.E_Hb:
             return 'embryo'
         elif self.E_R < self.E_Rj:
             return 'larva'
-        elif self.E_H<self.E_He :
+        elif self.E_H < self.E_He:
             return 'pupa'
-        else :
+        else:
             return 'imago'
+
+    @property
+    def M_V(self):
+        "number of C-atoms per unit of structural body volume V : dV /wV"
+        return self.d_V / self.w_V
 
     @property
     def T_factor(self):
@@ -484,8 +493,8 @@ class DEB(DEB_basic):
 
     def run_embryo_stage(self):
         t = 0
-        while self.stage=='embryo':
-            self.apply_fluxes(p_A=0)
+        while self.stage == 'embryo':
+            self.apply_fluxes()
             t += self.dt
         self.t_b_comp = t
         self.age += self.t_b_comp
@@ -503,8 +512,8 @@ class DEB(DEB_basic):
 
     def run_larva_stage(self, f=1.0):
         t = 0
-        while self.stage=='larva':
-            self.apply_fluxes(p_A=self.p_Amm_dt * f * self.V)
+        while self.stage == 'larva':
+            self.apply_fluxes(f=f, assimilation_mode='deb')
             t += self.dt
         self.t_j_comp = t
         self.age += self.t_j_comp
@@ -526,30 +535,103 @@ class DEB(DEB_basic):
             print(
                 f'Physical length (mm) :      predicted {np.round(self.Lwj * 10, 3)} VS computed {np.round(self.Lw_j_comp * 10, 3)}')
 
-    def apply_fluxes(self, p_A):
-        if self.stage == 'larva':
-            p_S = self.p_M_dt * self.V
-            a = self.k_E_dt
-            p_J = self.k_J_dt * self.E_Hb
-        elif self.stage == 'embryo':
-            p_S = self.p_M_dt * self.V + self.p_T_dt * self.V ** (2 / 3)
-            a = self.v_dt / self.V ** (1 / 3)
-            p_J = self.k_J_dt * self.E_H
-        p_C = self.E * (self.E_G * a + p_S / self.V) / (self.kap * self.E / self.V + self.E_G)
-        p_G = self.kap * p_C - p_S
-        p_R = (1 - self.kap) * p_C - p_J
-        self.E += (p_A - p_C)
-        self.V += p_G / self.E_G
-        if self.stage == 'larva':
-            self.E_R += p_R
-        elif self.stage == 'embryo':
+    def apply_fluxes(self, **kwargs):
+        """
+        Energy fluxes at different life stages of holometabolous insects.
+        Based on 'A dynamic energy budget for the whole life-cycle of holometabolous insects' Llandres(2015) Table 5
+        """
+        ST = self.stage
+
+        V = self.V  # larval structure
+        V2 = self.V2  # imago structure
+        E = self.E
+
+        k = self.kap
+        kR = self.kap_R
+        kV = self.kap_V
+        EG = self.E_G
+
+        pM = self.p_M_dt
+        pT = self.p_T_dt
+        v = self.v_dt
+        vj = self.v_dt
+        kJ = self.k_J_dt
+
+        kE = self.k_E_dt
+
+        if ST == 'embryo':
+            p_S = pM * V + pT * V ** (2 / 3)
+            p_C = E * (EG * v / V ** (1 / 3) + p_S) / (k * E / V + EG)
+            p_G = k * p_C - p_S
+            p_J = kJ * self.E_H
+            p_R = (1 - k) * p_C - p_J
+            self.E -= p_C
+            self.V += p_G / EG
             self.E_H += p_R
+        elif ST == 'larva':
+            p_A = self.get_p_A(**kwargs)
+            p_S = pM * V
+            p_C = E * (EG * kE + p_S) / (k * E / V + EG)
+            p_G = k * p_C - p_S
+            p_J = kJ * self.E_Hb
+            p_R = (1 - k) * p_C - p_J
+            self.E += (p_A - p_C)
+            self.V += p_G / EG
+            self.E_R += p_R
+        elif ST == 'pupa':
+            p_L = V * kV  # kEl #Transformation of larval structure
+            p_S = pM * V2
+            p_C = E * (EG * vj / V2 ** (1 / 3) + p_S) / (k * E / V + EG)
+            p_G = k * p_C - p_S
+            p_J = kJ * self.E_H
+            p_R = (1 - k) * p_C - p_J
+            p_C2 = self.E_R * kE  # Mobilization of ER
+            p_RO = (1 - kR) * p_C2  # Reproduction overhead
+            p_R2 = p_C2 - p_RO  # Egg flux
+            self.E += (p_L * self.y_E_V * self.mu_E * self.M_V - p_C)
+            self.V -= p_L
+            self.V2 += p_G / EG
+            self.E_H += p_R
+            self.E_R -= p_C2
+            self.E_egg += p_R2
+        elif ST == 'imago':
+            p_C = E * kE
+            p_S = pM * V2
+            p_J = kJ * self.E_He
+            p_R = p_C - p_S - p_J
+            p_A = p_S + p_J
+            p_C2 = self.E_R * kE  # Mobilization of ER
+            p_RO = (1 - kR) * p_C2  # Reproduction overhead
+            p_R2 = p_C2 - p_RO  # Egg flux
+            self.E += (p_A - p_C)
+            self.E_R += (p_R - p_C2)
+            self.E_egg += p_R2
+        else:
+            raise
+
+    def run_stage(self, stage, **kwargs):
+        Lw1 = self.V ** (1 / 3) / self.del_M
+        Ww1 = self.compute_Ww()
+        t = 0
+        while self.stage == stage:
+            self.apply_fluxes(**kwargs)
+            t += self.dt
+        # self.t_j_comp = t
+        # self.age += self.t_j_comp
+        Lw2 = self.V ** (1 / 3) / self.del_M
+        Ww2 = self.compute_Ww()
+        if self.print_output:
+            print(f'-------------{stage} stage-------------')
+            print(f'Duration         (d) :      {np.round(t, 3)}')
+            print(f'Wet weight      (mg) :      {np.round(Ww1 * 1000, 5)} --> {np.round(Ww2 * 1000, 5)}')
+            print(f'Physical length (mm) :      {np.round(Lw1 * 10, 3)} --> {np.round(Lw2 * 10, 3)}')
+
 
 
     def run(self, **kwargs):
         self.age += self.dt
         if self.stage == 'larva':
-            self.apply_fluxes(p_A=self.get_p_A(**kwargs))
+            self.apply_fluxes(**kwargs)
             self.update_hunger()
         elif self.stage == 'pupa':
             self.pupation_time_in_hours_sim = np.round(self.age * 24, 2)
