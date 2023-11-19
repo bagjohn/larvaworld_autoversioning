@@ -307,24 +307,24 @@ class DEB_basic(NestedConf):
         self.predict_pupa_stage()
         self.predict_imago_stage(f=f)
 
-        Es = np.round(1000 * np.array([self.E0, self.Eb, self.Ej, self.Ee, self.Ei]), 5)
-        Wws = np.round(1000 * np.array([self.Ww0, self.Wwb, self.Wwj, self.Wwe, self.Wwi]), 5)
-        Lws = np.round(10 * np.array([self.Lw0, self.Lwb, self.Lwj, self.Lwe, self.Lwi]), 3)
-        Durs = np.round(np.array([self.t_b, self.t_j, self.t_e, self.t_i]), 3)
-
-        def print_state(i):
-            print(f'---{self.stage_events[i]}---')
-            print(f'        Reserve energy  (mJ) :       {Es[i]}')
-            print(f'        Wet weight      (mg) :      {Wws[i]}')
-            print(f'        Physical length (mm) :      {Lws[i]}')
-            try:
-                print(f'***{self.stages[i]} stage duration (d) : {Durs[i]} ')
-            except:
-                pass
+        Es = [self.E0, self.Eb, self.Ej, self.Ee, self.Ei]
+        Wws = [self.Ww0, self.Wwb, self.Wwj, self.Wwe, self.Wwi]
+        Lws = [self.Lw0, self.Lwb, self.Lwj, self.Lwe, self.Lwi]
+        Durs = [self.t_b, self.t_j, self.t_e, self.t_i]
 
         if self.print_output:
-            for i in range(5):
-                print_state(i)
+            self.print_life_history(Es, Wws, Lws, Durs)
+
+    def print_life_history(self, Es, Wws, Lws, Durs):
+        for i in range(5):
+            print(f'---{self.stage_events[i]}---')
+            print(f'        Reserve energy  (mJ) :       {np.round(1000 * Es[i], 5)}')
+            print(f'        Wet weight      (mg) :      {np.round(1000 * Wws[i], 5)}')
+            print(f'        Physical length (mm) :      {np.round(10 * Lws[i], 3)}')
+            try:
+                print(f'***{self.stages[i]} stage duration (d) : {np.round(Durs[i], 3)} ')
+            except:
+                pass
 
     @property
     def M_V(self):
@@ -507,14 +507,13 @@ class DEB(DEB_basic):
         self.t_b_comp = t
         self.age += self.t_b_comp
         self.Lw_b_comp = self.V ** (1 / 3) / self.del_M
-        self.Wwb_comp = self.compute_Ww()
         if self.print_output:
             print('-------------Embryo stage-------------')
             print(
                 f'Duration         (d) :      predicted {np.round(self.t_b, 3)} VS computed {np.round(self.t_b_comp, 3)}')
             print('----------------Birth----------------')
             print(
-                f'Wet weight      (mg) :      predicted {np.round(self.Wwb * 1000, 5)} VS computed {np.round(self.Wwb_comp * 1000, 5)}')
+                f'Wet weight      (mg) :      predicted {np.round(self.Wwb * 1000, 5)} VS computed {np.round(self.Ww * 1000, 5)}')
             print(
                 f'Physical length (mm) :      predicted {np.round(self.Lwb * 10, 3)} VS computed {np.round(self.Lw_b_comp * 10, 3)}')
 
@@ -526,7 +525,6 @@ class DEB(DEB_basic):
         self.t_j_comp = t
         self.age += self.t_j_comp
         self.Lw_j_comp = self.V ** (1 / 3) / self.del_M
-        self.Wwj_comp = self.compute_Ww()
         # Ej = self.Ej = self.E
         # self.Uj = Ej / self.p_Am
         # self.uEj = self.lj ** 3 * (self.kap * self.kap_V + f / self.g)
@@ -539,7 +537,7 @@ class DEB(DEB_basic):
                 f'Duration         (d) :      predicted {np.round(self.t_j, 3)} VS computed {np.round(self.t_j_comp, 3)}')
             print('---------------Pupation---------------')
             print(
-                f'Wet weight      (mg) :      predicted {np.round(self.Wwj * 1000, 5)} VS computed {np.round(self.Wwj_comp * 1000, 5)}')
+                f'Wet weight      (mg) :      predicted {np.round(self.Wwj * 1000, 5)} VS computed {np.round(self.Ww * 1000, 5)}')
             print(
                 f'Physical length (mm) :      predicted {np.round(self.Lwj * 10, 3)} VS computed {np.round(self.Lw_j_comp * 10, 3)}')
 
@@ -618,21 +616,27 @@ class DEB(DEB_basic):
             raise
 
     def run_stage(self, stage, assimilation_mode='deb', **kwargs):
-        Lw1 = (self.V + self.V2) ** (1 / 3) / self.del_M
-        Ww1 = self.compute_Ww()
         t = 0
         while self.stage == stage:
             self.apply_fluxes(assimilation_mode=assimilation_mode, **kwargs)
             t += self.dt
-        # self.t_j_comp = t
-        # self.age += self.t_j_comp
-        Lw2 = (self.V + self.V2) ** (1 / 3) / self.del_M
-        Ww2 = self.compute_Ww()
+        self.age += t
+        return t
+
+    def run_life_history(self, **kwargs):
+        if not self.age == 0:
+            return
+        Es, Wws, Lws, Durs = [self.E], [self.Ww], [self.Lw], []
+        for st in self.stages:
+            assert self.stage == st
+            t = self.run_stage(st, **kwargs)
+            Durs.append(t)
+            Es.append(self.E)
+            Wws.append(self.Ww)
+            Lws.append(self.Lw)
+
         if self.print_output:
-            print(f'-------------{stage} stage-------------')
-            print(f'Duration         (d) :      {np.round(t, 3)}')
-            print(f'Wet weight      (mg) :      {np.round(Ww1 * 1000, 5)} --> {np.round(Ww2 * 1000, 5)}')
-            print(f'Physical length (mm) :      {np.round(Lw1 * 10, 3)} --> {np.round(Lw2 * 10, 3)}')
+            self.print_life_history(Es, Wws, Lws, Durs)
 
     def run(self, **kwargs):
         self.age += self.dt
