@@ -111,6 +111,8 @@ class DEB_basic(NestedConf):
         self.E = self.E0
         self.predict_embryo_stage()
         self.predict_larva_stage()
+        self.predict_pupa_stage()
+        self.predict_imago_stage()
 
 
     def derive_pars(self):
@@ -309,6 +311,10 @@ class DEB_basic(NestedConf):
         # self.tG3 = self.hG3/ self.hW3 # scaled Gompertz aging rate
         # # self.tau_m = sol.t_events[0][0]
         # # self.lm, self.uEm=sol.y_events[0][0][:2]
+        # TODO compute tau_i and uEi
+        self.tau_i=self.tau_e
+        self.uEi=self.uEe
+
         self.t_i = self.tau_i / self.k_M / self.T_factor
         self.Li = self.li * self.Lm
         self.Lwi = self.Li / self.del_M
@@ -326,7 +332,7 @@ class DEB_basic(NestedConf):
     def stage(self):
         if self.E_H < self.E_Hb:
             return 'embryo'
-        elif self.E_R < self.E_Rj:
+        elif self.E_R < self.E_Rj and self.E_H < self.E_He:
             return 'larva'
         elif self.E_H < self.E_He:
             return 'pupa'
@@ -611,12 +617,12 @@ class DEB(DEB_basic):
         else:
             raise
 
-    def run_stage(self, stage, **kwargs):
+    def run_stage(self, stage, assimilation_mode='deb',**kwargs):
         Lw1 = (self.V+self.V2) ** (1 / 3) / self.del_M
         Ww1 = self.compute_Ww()
         t = 0
         while self.stage == stage:
-            self.apply_fluxes(**kwargs)
+            self.apply_fluxes(assimilation_mode=assimilation_mode,**kwargs)
             t += self.dt
         # self.t_j_comp = t
         # self.age += self.t_j_comp
