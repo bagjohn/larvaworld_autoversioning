@@ -316,15 +316,25 @@ class DEB_basic(NestedConf):
             self.print_life_history(Es, Wws, Lws, Durs)
 
     def print_life_history(self, Es, Wws, Lws, Durs):
+        l1='                      '
+        lt='Duration        (d)  :'
+        lE='Reserve energy  (J)  :'
+        lW='Wet weight      (mg) :'
+        lL='Physical length (mm) :'
+
         for i in range(5):
-            print(f'---{self.stage_events[i]}---')
-            print(f'        Reserve energy  (mJ) :       {np.round(1000 * Es[i], 5)}')
-            print(f'        Wet weight      (mg) :      {np.round(1000 * Wws[i], 5)}')
-            print(f'        Physical length (mm) :      {np.round(10 * Lws[i], 3)}')
+            l1+=f'*{self.stage_events[i]}*  '
+            lt += '                         '
+            lE+=f'{np.round(Es[i], 2)}          '
+            lW+=f'{np.round(1000 * Wws[i], 5)}          '
+            lL+=f'{np.round(10 * Lws[i], 3)}            '
             try:
-                print(f'***{self.stages[i]} stage duration (d) : {np.round(Durs[i], 3)} ')
+                l1+=f'--{self.stages[i]}--'
+                lt += f'{np.round(Durs[i], 3)}'
             except:
                 pass
+        for l in [l1,lt,lE,lL,lW]:
+            print(l)
 
     @property
     def M_V(self):
