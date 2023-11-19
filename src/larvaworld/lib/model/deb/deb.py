@@ -321,7 +321,7 @@ class DEB_model(NestedConf):
         lW = 'Wet weight      (mg) :'
         lL = 'Physical length (mm) :'
 
-        for i in range(5):
+        for i in range(len(Es)):
             le += f'{self.stage_events[i]}'
             ls += '                 '
             lt += '                 '
@@ -899,11 +899,7 @@ class DEB(DEB_basic):
             EEB = np.clip(z(ff), a_min=0, a_max=1)
         kws2['EEB'] = EEB
         from ..modules.intermitter import OfflineIntermitter
-        intermitter = OfflineIntermitter(**kws2)
-
-
-        # kwargs = c['intermitter']
-        d = cls(id=id, assimilation_mode='gut', substrate=substrate,intermitter=intermitter, **kwargs)
+        d = cls(id=id, assimilation_mode='gut', substrate=substrate,intermitter=OfflineIntermitter(**kws2), **kwargs)
         d.run_stage(stage='embryo')
         d.run_larva_stage_offline()
         return d.finalize_dict()
