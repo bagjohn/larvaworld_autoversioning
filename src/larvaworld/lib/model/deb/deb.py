@@ -110,6 +110,8 @@ class DEB_basic(NestedConf):
         self.compute_initial_state()
         self.E = self.E0
         self.predict_embryo_stage()
+        self.predict_larva_stage()
+
 
     def derive_pars(self):
         # self.p_Am = self.z*self.p_M/self.kap
@@ -346,11 +348,11 @@ class DEB_basic(NestedConf):
 
     @property
     def L(self):
-        return self.V ** (1 / 3)
+        return (self.V+self.V2) ** (1 / 3)
 
     def compute_Ww(self, V=None, E=None):
         if V is None:
-            V = self.V
+            V = (self.V+self.V2)
         if E is None:
             E = self.E + self.E_R
         return V * self.d_V + E * self.w_E / self.mu_E
@@ -426,8 +428,8 @@ class DEB(DEB_basic):
 
         self.gut = deb.Gut(deb=self, save_dict=save_dict, **gut_params) if self.use_gut else None
         self.scale_time()
-        self.run_embryo_stage()
-        self.predict_larva_stage(f=self.base_f)
+
+
         self.dict = self.init_dict() if save_dict else None
 
     def scale_time(self):
@@ -610,7 +612,7 @@ class DEB(DEB_basic):
             raise
 
     def run_stage(self, stage, **kwargs):
-        Lw1 = self.V ** (1 / 3) / self.del_M
+        Lw1 = (self.V+self.V2) ** (1 / 3) / self.del_M
         Ww1 = self.compute_Ww()
         t = 0
         while self.stage == stage:
@@ -618,7 +620,7 @@ class DEB(DEB_basic):
             t += self.dt
         # self.t_j_comp = t
         # self.age += self.t_j_comp
-        Lw2 = self.V ** (1 / 3) / self.del_M
+        Lw2 = (self.V+self.V2) ** (1 / 3) / self.del_M
         Ww2 = self.compute_Ww()
         if self.print_output:
             print(f'-------------{stage} stage-------------')
@@ -664,6 +666,7 @@ class DEB(DEB_basic):
         return freq
 
     def grow_larva(self, epochs, **kwargs):
+        self.run_embryo_stage()
         for e in epochs:
             c = {'assimilation_mode': 'sim', 'f': e.substrate.get_f(K=self.K)}
             if e.end is None:
