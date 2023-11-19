@@ -95,19 +95,14 @@ class DEB_basic(NestedConf):
         super().__init__(**kwargs)
         self.print_output = print_output
 
-        # Larva stage flags
-        # self.stage = 'embryo'
         self.alive = True
 
         self.L0 = 10 ** -10
-
 
         self.derive_pars()
         self.compute_initial_state()
 
         self.predict_life_history()
-
-
 
     def derive_pars(self):
         # self.p_Am = self.z*self.p_M/self.kap
@@ -196,7 +191,7 @@ class DEB_basic(NestedConf):
         self.lb = self.get_lb()
         self.E0 = self.get_E0()
         self.Lw0 = self.L0 / self.del_M
-        self.Ww0 = self.E0 * self.w_E / self.mu_E  # g, initial wet weight
+        self.Ww0 = self.compute_Ww(V=self.L0 ** 3, E=self.E0)
 
     def predict_embryo_stage(self):
         self.k_E = self.g * self.k_M / self.lb
@@ -280,7 +275,6 @@ class DEB_basic(NestedConf):
         self.Ee = self.uEe / self.Ucoeff * self.p_Am
         self.Wwe = self.compute_Ww(V=self.Le ** 3, E=self.Ee + self.E_Rj)  # g, wet weight at emergence
 
-
     def predict_imago_stage(self, f=1.0):
         # if np.abs(self.sG) < 1e-10:
         #     self.sG = 1e-10
@@ -296,8 +290,8 @@ class DEB_basic(NestedConf):
         # # self.tau_m = sol.t_events[0][0]
         # # self.lm, self.uEm=sol.y_events[0][0][:2]
         # TODO compute tau_i and uEi
-        self.tau_i=self.tau_e
-        self.uEi=self.uEe
+        self.tau_i = self.tau_e
+        self.uEi = self.uEe
 
         self.t_i = self.tau_i / self.k_M / self.T_factor
         self.Li = self.li * self.Lm
@@ -311,29 +305,23 @@ class DEB_basic(NestedConf):
         self.predict_pupa_stage()
         self.predict_imago_stage(f=f)
 
-        Es=np.round(1000 * np.array([self.E0, self.Eb, self.Ej, self.Ee, self.Ei]), 5)
-        Wws=np.round(1000 * np.array([self.Ww0, self.Wwb, self.Wwj, self.Wwe, self.Wwi]), 5)
-        Lws=np.round(10 * np.array([self.Lw0, self.Lwb, self.Lwj, self.Lwe, self.Lwi]), 3)
-        Durs=np.round(np.array([self.t_b, self.t_j, self.t_e, self.t_i]), 3)
+        Es = np.round(1000 * np.array([self.E0, self.Eb, self.Ej, self.Ee, self.Ei]), 5)
+        Wws = np.round(1000 * np.array([self.Ww0, self.Wwb, self.Wwj, self.Wwe, self.Wwi]), 5)
+        Lws = np.round(10 * np.array([self.Lw0, self.Lwb, self.Lwj, self.Lwe, self.Lwi]), 3)
+        Durs = np.round(np.array([self.t_b, self.t_j, self.t_e, self.t_i]), 3)
 
         def print_state(i):
             print(f'Reserve energy  (mJ) :       {Es[i]}')
             print(f'Wet weight      (mg) :      {Wws[i]}')
             print(f'Physical length (mm) :      {Lws[i]}')
 
-
         if self.print_output:
-            for i,st in enumerate(['embryo','larva','pupa','imago']):
+            for i, st in enumerate(['embryo', 'larva', 'pupa', 'imago']):
                 print(f'------------------Egg------------------')
                 print_state(i)
                 print(f'-------------{st} stage-------------')
                 print(f'Duration         (d) :      {Durs[i]} ')
-                print_state(i+1)
-
-
-
-
-
+                print_state(i + 1)
 
     @property
     def M_V(self):
@@ -344,12 +332,8 @@ class DEB_basic(NestedConf):
     def T_factor(self):
         return np.exp(self.T_A / self.T_ref - self.T_A / self.T)  # Arrhenius factor
 
-
-
     def compute_Ww(self, V, E):
         return V * self.d_V + E * self.w_E / self.mu_E
-
-
 
     @classmethod
     def from_file(cls, species='default', **kwargs):
@@ -391,7 +375,6 @@ class DEB(DEB_basic):
         self.V2 = 0  # adult structur
         self.E_egg = 0  # egg buffer
         self.E = self.E0
-
 
         self.set_intermitter(intermitter, base_hunger)
         self.save_to = save_to
@@ -631,24 +614,22 @@ class DEB(DEB_basic):
         else:
             raise
 
-    def run_stage(self, stage, assimilation_mode='deb',**kwargs):
-        Lw1 = (self.V+self.V2) ** (1 / 3) / self.del_M
+    def run_stage(self, stage, assimilation_mode='deb', **kwargs):
+        Lw1 = (self.V + self.V2) ** (1 / 3) / self.del_M
         Ww1 = self.compute_Ww()
         t = 0
         while self.stage == stage:
-            self.apply_fluxes(assimilation_mode=assimilation_mode,**kwargs)
+            self.apply_fluxes(assimilation_mode=assimilation_mode, **kwargs)
             t += self.dt
         # self.t_j_comp = t
         # self.age += self.t_j_comp
-        Lw2 = (self.V+self.V2) ** (1 / 3) / self.del_M
+        Lw2 = (self.V + self.V2) ** (1 / 3) / self.del_M
         Ww2 = self.compute_Ww()
         if self.print_output:
             print(f'-------------{stage} stage-------------')
             print(f'Duration         (d) :      {np.round(t, 3)}')
             print(f'Wet weight      (mg) :      {np.round(Ww1 * 1000, 5)} --> {np.round(Ww2 * 1000, 5)}')
             print(f'Physical length (mm) :      {np.round(Lw1 * 10, 3)} --> {np.round(Lw2 * 10, 3)}')
-
-
 
     def run(self, **kwargs):
         self.age += self.dt
