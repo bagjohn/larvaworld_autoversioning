@@ -566,9 +566,11 @@ class DEB_basic(DEB_model):
         if not self.age == 0:
             return
         Es, Wws, Lws, Durs = [self.E], [self.Ww], [self.Lw], []
-        for st in self.stages:
-            assert self.stage == st
-            t = self.run_stage(st, **kwargs)
+        while self.alive :
+        # for st in self.stages:
+        #     if self.alive :
+        #         assert self.stage == st
+            t = self.run_stage(self.stage, **kwargs)
             Durs.append(t)
             Es.append(self.E)
             Wws.append(self.Ww)
@@ -592,7 +594,7 @@ class DEB_basic(DEB_model):
         if self.time_buffer >= self.dt_in_sec:
             self.run(X_V=self.X_V_buffer)
             self.X_V_buffer = 0
-            self.tick_buffer = 0
+            self.time_buffer = 0
 
     def update(self):
         pass
@@ -702,10 +704,10 @@ class DEB(DEB_basic):
     def set_intermitter(self, base_hunger=0.5, intermitter=None, intermitter_from=None, offline=False,EEB=None):
         if intermitter is None and offline:
             if intermitter_from is not None:
-                c = reg.conf.Ref.getRef(intermitter_from)
-                kwargs = c['intermitter']
+                kwargs = intermitter_from['intermitter']
                 if EEB is None:
-                    EEB=self.get_best_EEB(cRef=c)
+                    z = np.poly1d(intermitter_from['EEB_poly1d'])
+                    EEB= np.clip(z(self.fr_feed), a_min=0, a_max=1)
                 kwargs['EEB'] = EEB
                 from ..modules.intermitter import OfflineIntermitter
                 intermitter = OfflineIntermitter(**kwargs)
@@ -862,8 +864,12 @@ class DEB(DEB_basic):
 
 
     @classmethod
-    def sim_run(cls, refID, id='DEB sim', EEB=None, **kwargs):
-        d = cls(id=id, assimilation_mode='gut', intermitter_from=refID, offline=True,EEB=EEB, **kwargs)
+    def sim_run(cls, refID=None, id='DEB sim', EEB=None, **kwargs):
+        if refID is None:
+            refID=reg.default_refID
+        c = reg.conf.Ref.getRef(refID)
+        # kwargs = c['intermitter']
+        d = cls(id=id, assimilation_mode='gut', intermitter_from=c, offline=True,EEB=EEB, **kwargs)
         d.run_stage(stage='embryo')
         d.run_larva_stage_offline()
         return d.finalize_dict()
