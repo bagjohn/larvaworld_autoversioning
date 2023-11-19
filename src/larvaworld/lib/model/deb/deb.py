@@ -109,10 +109,8 @@ class DEB_basic(NestedConf):
         self.derive_pars()
         self.compute_initial_state()
         self.E = self.E0
-        self.predict_embryo_stage()
-        self.predict_larva_stage()
-        self.predict_pupa_stage()
-        self.predict_imago_stage()
+        self.predict_life_history()
+
 
 
     def derive_pars(self):
@@ -201,12 +199,8 @@ class DEB_basic(NestedConf):
     def compute_initial_state(self):
         self.lb = self.get_lb()
         self.E0 = self.get_E0()
+        self.Lw0 = self.L0 / self.del_M
         self.Ww0 = self.E0 * self.w_E / self.mu_E  # g, initial wet weight
-
-        if self.print_output:
-            print('------------------Egg------------------')
-            print(f'Reserve energy  (mJ) :       {int(1000 * self.E0)}')
-            print(f'Wet weight      (mg) :       {np.round(1000 * self.Ww0, 5)}')
 
     def predict_embryo_stage(self):
         self.k_E = self.g * self.k_M / self.lb
@@ -290,12 +284,6 @@ class DEB_basic(NestedConf):
         self.Ee = self.uEe / self.Ucoeff * self.p_Am
         self.Wwe = self.compute_Ww(V=self.Le ** 3, E=self.Ee + self.E_Rj)  # g, wet weight at emergence
 
-        if self.print_output:
-            print('-------------Pupa stage-------------')
-            print(f'Duration         (d) :      {np.round(self.t_e, 3)}')
-            print('-------------Emergence--------------')
-            print(f'Wet weight      (mg) :      {np.round(self.Wwe * 1000, 5)}')
-            print(f'Physical length (mm) :      {np.round(self.Lwe * 10, 3)}')
 
     def predict_imago_stage(self, f=1.0):
         # if np.abs(self.sG) < 1e-10:
@@ -321,12 +309,33 @@ class DEB_basic(NestedConf):
         self.Ei = self.uEi / self.Ucoeff * self.p_Am
         self.Wwi = self.compute_Ww(V=self.Li ** 3, E=self.Ei + self.E_Rj)  # g, imago wet weight
 
+    def predict_life_history(self, f=1.0):
+        self.predict_embryo_stage()
+        self.predict_larva_stage(f=f)
+        self.predict_pupa_stage()
+        self.predict_imago_stage(f=f)
+
+        Es=np.round(1000 * np.array([self.E0, self.Eb, self.Ej, self.Ee, self.Ei]), 5)
+        Wws=np.round(1000 * np.array([self.Ww0, self.Wwb, self.Wwj, self.Wwe, self.Wwi]), 5)
+        Lws=np.round(10 * np.array([self.Lw0, self.Lwb, self.Lwj, self.Lwe, self.Lwi]), 3)
+        Durs=np.round(np.array([self.t_b, self.t_j, self.t_e, self.t_i]), 3)
+
+        def print_state(i):
+            print(f'Reserve energy  (mJ) :       {Es[i]}')
+            print(f'Wet weight      (mg) :      {Wws[i]}')
+            print(f'Physical length (mm) :      {Lws[i]}')
+
+
         if self.print_output:
-            print('-------------Imago stage-------------')
-            print(f'Duration         (d) :      {np.round(self.t_i, 3)}')
-            print('---------------Emergence---------------')
-            print(f'Wet weight      (mg) :      {np.round(self.Wwi * 1000, 5)}')
-            print(f'Physical length (mm) :      {np.round(self.Lwi * 10, 3)}')
+            for i,st in enumerate(['embryo','larva','pupa','imago']):
+                print(f'------------------Egg------------------')
+                print_state(i)
+                print(f'-------------{st} stage-------------')
+                print(f'Duration         (d) :      {Durs[i]} ')
+                print_state(i+1)
+
+
+
 
     @property
     def stage(self):
@@ -434,8 +443,6 @@ class DEB(DEB_basic):
 
         self.gut = deb.Gut(deb=self, save_dict=save_dict, **gut_params) if self.use_gut else None
         self.scale_time()
-
-
         self.dict = self.init_dict() if save_dict else None
 
     def scale_time(self):
