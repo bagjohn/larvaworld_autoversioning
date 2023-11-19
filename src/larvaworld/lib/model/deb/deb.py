@@ -98,7 +98,6 @@ class DEB_model(NestedConf):
 
         self.derive_pars()
         self.compute_initial_state()
-
         self.predict_life_history()
 
     def derive_pars(self):
@@ -362,6 +361,12 @@ class DEB_model(NestedConf):
             d = json.load(tfp)
         kwargs.update(**d)
         return cls(**kwargs)
+
+    # def get_fr_feed(self, X, V_bite):
+    #     F= self.J_X_Am * self.F_m / (self.Lb * (self.J_X_Am + X * self.F_m))
+    #     freq = F / V_bite * self.T_factor
+    #     freq /= (24 * 60 * 60)
+    #     return freq
 
 
 class DEB_basic(DEB_model):
@@ -692,31 +697,50 @@ class DEB(DEB_basic):
     hunger_gain = param.Magnitude(0.0, label='hunger sensitivity to reserve reduction',
                                   doc='The sensitivy of the hunger drive in deviations of the DEB reserve density.')
 
-    def __init__(self, save_dict=True, save_to=None, base_hunger=0.5, intermitter=None, intermitter_from=None, offline=False,EEB=None,
+    def __init__(self, save_dict=True, save_to=None, base_hunger=0.5, intermitter=None,
+    # def __init__(self, save_dict=True, save_to=None, base_hunger=0.5, intermitter=None, intermitter_from=None, offline=False,EEB=None,
                  **kwargs):
         super().__init__(**kwargs)
-        self.set_intermitter(base_hunger, intermitter, intermitter_from, offline,EEB)
+        self.set_intermitter(base_hunger, intermitter)
+        # self.set_intermitter(base_hunger, intermitter, intermitter_from, offline,EEB)
 
         self.save_to = save_to
 
         self.dict = self.init_dict() if save_dict else None
 
-    def set_intermitter(self, base_hunger=0.5, intermitter=None, intermitter_from=None, offline=False,EEB=None):
-        if intermitter is None and offline:
-            if intermitter_from is not None:
-                kwargs = intermitter_from['intermitter']
-                if EEB is None:
-                    z = np.poly1d(intermitter_from['EEB_poly1d'])
-                    EEB= np.clip(z(self.fr_feed), a_min=0, a_max=1)
-                kwargs['EEB'] = EEB
-                from ..modules.intermitter import OfflineIntermitter
-                intermitter = OfflineIntermitter(**kwargs)
+    def set_intermitter(self, base_hunger=0.5, intermitter=None):
+        # if intermitter is None and offline:
+        #     if intermitter_from is not None:
+        #         kwargs = intermitter_from['intermitter']
+        #         if EEB is None:
+        #             z = np.poly1d(intermitter_from['EEB_poly1d'])
+        #             EEB= np.clip(z(self.fr_feed), a_min=0, a_max=1)
+        #         kwargs['EEB'] = EEB
+        #         from ..modules.intermitter import OfflineIntermitter
+        #         intermitter = OfflineIntermitter(**kwargs)
         self.intermitter = intermitter
         if self.intermitter is not None:
             if self.hunger_as_EEB:
                 base_hunger = self.intermitter.base_EEB
         self.base_hunger = base_hunger
         self.update_hunger()
+
+    # def set_intermitter(self, base_hunger=0.5, intermitter=None, intermitter_from=None, offline=False,EEB=None):
+    #     if intermitter is None and offline:
+    #         if intermitter_from is not None:
+    #             kwargs = intermitter_from['intermitter']
+    #             if EEB is None:
+    #                 z = np.poly1d(intermitter_from['EEB_poly1d'])
+    #                 EEB= np.clip(z(self.fr_feed), a_min=0, a_max=1)
+    #             kwargs['EEB'] = EEB
+    #             from ..modules.intermitter import OfflineIntermitter
+    #             intermitter = OfflineIntermitter(**kwargs)
+    #     self.intermitter = intermitter
+    #     if self.intermitter is not None:
+    #         if self.hunger_as_EEB:
+    #             base_hunger = self.intermitter.base_EEB
+    #     self.base_hunger = base_hunger
+    #     self.update_hunger()
 
     def update(self):
         self.update_hunger()
@@ -864,12 +888,22 @@ class DEB(DEB_basic):
 
 
     @classmethod
-    def sim_run(cls, refID=None, id='DEB sim', EEB=None, **kwargs):
+    def sim_run(cls, refID=None, id='DEB sim', EEB=None, substrate=Substrate(type='standard'),**kwargs):
         if refID is None:
             refID=reg.default_refID
         c = reg.conf.Ref.getRef(refID)
+        kws2 = c['intermitter']
+        if EEB is None:
+            ff=DEB_basic(substrate=substrate,**kwargs).fr_feed
+            z = np.poly1d(c['EEB_poly1d'])
+            EEB = np.clip(z(ff), a_min=0, a_max=1)
+        kws2['EEB'] = EEB
+        from ..modules.intermitter import OfflineIntermitter
+        intermitter = OfflineIntermitter(**kws2)
+
+
         # kwargs = c['intermitter']
-        d = cls(id=id, assimilation_mode='gut', intermitter_from=c, offline=True,EEB=EEB, **kwargs)
+        d = cls(id=id, assimilation_mode='gut', substrate=substrate,intermitter=intermitter, **kwargs)
         d.run_stage(stage='embryo')
         d.run_larva_stage_offline()
         return d.finalize_dict()
