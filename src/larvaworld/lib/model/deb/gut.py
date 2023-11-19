@@ -3,10 +3,10 @@ import param
 
 from ...param import PositiveNumber, NestedConf
 
-
 __all__ = [
     'Gut',
 ]
+
 
 class Gut(NestedConf):
     M_gm = PositiveNumber(10 ** -2, doc='gut capacity in C-moles for unit of gut volume')
@@ -19,23 +19,23 @@ class Gut(NestedConf):
     f_dig = param.Magnitude(1.0, doc='scaled functional response for digestion : M_X/(M_X+M_K_X)')
     k_c = PositiveNumber(1.0, doc='release rate of carriers')
     k_g = PositiveNumber(1.0, doc='decay rate of enzyme')
-    M_c_per_cm2 = PositiveNumber(5 * 10 ** -8, doc='area specific amount of carriers in the gut per unit of gut surface')
-    J_g_per_cm2 = PositiveNumber(10 ** -2 / (24 * 60 * 60), doc='secretion rate of enzyme per unit of gut surface per day')
-    constant_M_c = param.Boolean(True,label='constant carrier density', doc='Whether to assume a constant amount of carrier enzymes on the gut surface.')
+    M_c_per_cm2 = PositiveNumber(5 * 10 ** -8,
+                                 doc='area specific amount of carriers in the gut per unit of gut surface')
+    J_g_per_cm2 = PositiveNumber(10 ** -2 / (24 * 60 * 60),
+                                 doc='secretion rate of enzyme per unit of gut surface per day')
+    constant_M_c = param.Boolean(True, label='constant carrier density',
+                                 doc='Whether to assume a constant amount of carrier enzymes on the gut surface.')
 
-
-
-    def __init__(self, deb, save_dict=True,**kwargs):
+    def __init__(self, deb, save_dict=True, **kwargs):
 
         super().__init__(**kwargs)
         self.deb = deb
         # Arbitrary parameters
-        r_gut_w2L=0.5*self.r_w2l * self.r_gut_w # gut radius relative to body length
+        r_gut_w2L = 0.5 * self.r_w2l * self.r_gut_w  # gut radius relative to body length
         self.r_gut_V = np.pi * r_gut_w2L  # gut volume per unit of body volume
-        self.r_gut_A = 2* np.pi * r_gut_w2L  # gut surface area per unit of body surface area
+        self.r_gut_A = 2 * np.pi * r_gut_w2L  # gut surface area per unit of body surface area
         self.A_g = self.r_gut_A * self.deb.L ** 2  # Gut surface area
         self.V_gm = self.r_gut_V * self.deb.V
-
 
         self.M_c_max = self.M_c_per_cm2 * self.A_g  # amount of carriers in the gut surface
         self.J_g = self.J_g_per_cm2 * self.A_g  # total secretion rate of enzyme in the gut surface
@@ -62,13 +62,12 @@ class Gut(NestedConf):
         else:
             self.dict = None
 
-
     def update(self, V_X=0):
 
         self.A_g = self.r_gut_A * self.deb.L ** 2  # Gut surface area
         self.V_gm = self.r_gut_V * self.deb.V
         self.M_c_max = self.M_c_per_cm2 * self.A_g  # amount of carriers in the gut surface
-        self.J_g = self.J_g_per_cm2 * self.A_g # total secretion rate of enzyme in the gut surface
+        self.J_g = self.J_g_per_cm2 * self.A_g  # total secretion rate of enzyme in the gut surface
 
         if V_X > 0:
             self.Nfeeds += 1
@@ -80,22 +79,22 @@ class Gut(NestedConf):
         self.resolve_occupancy()
 
     def resolve_occupancy(self):
-        dM=self.M_X + self.M_P-self.Cmax
-        if dM>0 :
-            rP=self.M_P/(self.M_P+self.M_X)
-            dP=rP*dM
-            self.M_P-=dP
-            self.mol_not_absorbed+=dP
-            dX=(1-rP)*dM
-            self.M_X-=dX
+        dM = self.M_X + self.M_P - self.Cmax
+        if dM > 0:
+            rP = self.M_P / (self.M_P + self.M_X)
+            dP = rP * dM
+            self.M_P -= dP
+            self.mol_not_absorbed += dP
+            dX = (1 - rP) * dM
+            self.M_X -= dX
             self.mol_not_digested += dX
 
     def digest(self):
 
-        dt = self.deb.dt*24*60*60
+        dt = self.deb.dt * 24 * 60 * 60
         # print(dt)
         # FIXME there should be another term A_g after J_g
-        self.M_g += (self.J_g*dt - self.k_g * self.M_g)
+        self.M_g += (self.J_g * dt - self.k_g * self.M_g)
         if self.M_X > 0:
             temp = self.k_dig * self.f_dig * self.M_g
             dM_X = - np.min([self.M_X, temp])
@@ -120,11 +119,10 @@ class Gut(NestedConf):
         self.p_A = dM_Pu * self.deb.mu_E
 
     def get_residence_time(self, f, J_X_Am, Lb):
-        if f==0.0 :
+        if f == 0.0:
             return 0.0
         else:
-            return self.r_gut_V*self.M_gm / (J_X_Am / Lb) / f
-
+            return self.r_gut_V * self.M_gm / (J_X_Am / Lb) / f
 
     def get_residence_ticks(self, dt):
         # print(dt,self.residence_time)
@@ -132,7 +130,7 @@ class Gut(NestedConf):
 
     @property
     def M_ingested(self):
-        return self.mol_ingested * self.deb.w_X * 1000
+        return self.mol_ingested * self.deb.substrate.get_w_X() * 1000
 
     @property
     def M_faeces(self):
@@ -140,7 +138,7 @@ class Gut(NestedConf):
 
     @property
     def M_not_digested(self):
-        return self.mol_not_digested * self.deb.w_X * 1000
+        return self.mol_not_digested * self.deb.substrate.get_w_X() * 1000
 
     @property
     def M_not_absorbed(self):
@@ -221,7 +219,7 @@ class Gut(NestedConf):
             self.p_A / self.deb.V,
             self.M_X,
             self.M_P,
-            self.M_Pu*1000,
+            self.M_Pu * 1000,
             self.M_g,
             self.M_c,
             self.R_M_c,
@@ -234,7 +232,7 @@ class Gut(NestedConf):
             self.dict[k].append(v)
 
     def ingested_mass(self, unit='g'):
-        m = self.mol_ingested * self.deb.w_X
+        m = self.mol_ingested * self.deb.substrate.get_w_X()
         if unit == 'g':
             return m
         elif unit == 'mg':
@@ -249,5 +247,5 @@ class Gut(NestedConf):
 
     @property
     def ingested_volume(self):
-        return self.mol_ingested * self.deb.w_X / self.deb.d_X
-
+        return self.mol_ingested /self.deb.substrate.X
+        # return self.mol_ingested * self.deb.w_X / self.deb.d_X

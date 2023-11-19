@@ -94,7 +94,7 @@ class DEB_basic(NestedConf):
         self.print_output = print_output
 
         # Larva stage flags
-        self.stage = 'embryo'
+        # self.stage = 'embryo'
         self.alive = True
 
         self.L0 = 10 ** -10
@@ -123,13 +123,6 @@ class DEB_basic(NestedConf):
         self.J_E_Am = self.p_Am / self.mu_E
         self.J_X_Am = self.J_E_Am / self.y_E_X
         self.K = self.J_X_Am / self.F_m
-
-
-
-
-
-
-
 
     def get_lb(self):
         g = self.g
@@ -213,7 +206,7 @@ class DEB_basic(NestedConf):
         self.Lwb = self.Lb / self.del_M
 
         # TODO Compute Eb and Ej
-        self.Eb=self.E0
+        self.Eb = self.E0
         self.Wwb = self.compute_Ww(V=self.Lb ** 3, E=self.Eb)  # g, wet weight at birth
 
         self.v_Rm = (1 + self.lb / self.g) / (1 - self.lb)  # scaled max reprod buffer density
@@ -236,9 +229,6 @@ class DEB_basic(NestedConf):
 
         # self.U0 = self.uE0 * v ** 2 / g ** 2 / k_M ** 3
         # self.E0 = self.U0 * p_Am
-
-
-
 
     def predict_larva_stage(self, f=1.0):
         g = self.g
@@ -292,13 +282,6 @@ class DEB_basic(NestedConf):
         self.Ee = self.uEe / self.Ucoeff * self.p_Am
         self.Wwe = self.compute_Ww(V=self.Le ** 3, E=self.Ee + self.E_Rj)  # g, wet weight at emergence
 
-        # self.V = self.Le ** 3
-        # self.E = self.Ee
-        # self.E_H = self.E_He
-        # self.update()
-
-        # self.stage = 'imago'
-        # self.age = self.t_e
         if self.print_output:
             print('-------------Pupa stage-------------')
             print(f'Duration         (d) :      {np.round(self.t_e, 3)}')
@@ -320,7 +303,7 @@ class DEB_basic(NestedConf):
         # self.tG3 = self.hG3/ self.hW3 # scaled Gompertz aging rate
         # # self.tau_m = sol.t_events[0][0]
         # # self.lm, self.uEm=sol.y_events[0][0][:2]
-        # self.t_m = self.tau_m / self.k_M / self.T_factor
+        self.t_i = self.tau_i / self.k_M / self.T_factor
         self.Li = self.li * self.Lm
         self.Lwi = self.Li / self.del_M
         self.Ei = self.uEi / self.Ucoeff * self.p_Am
@@ -328,10 +311,21 @@ class DEB_basic(NestedConf):
 
         if self.print_output:
             print('-------------Imago stage-------------')
-            print(f'Duration         (d) :      {np.round(self.t_i_cor, 3)}')
+            print(f'Duration         (d) :      {np.round(self.t_i, 3)}')
             print('---------------Emergence---------------')
             print(f'Wet weight      (mg) :      {np.round(self.Wwi * 1000, 5)}')
             print(f'Physical length (mm) :      {np.round(self.Lwi * 10, 3)}')
+
+    @property
+    def stage(self):
+        if self.E_H<self.E_Hb :
+            return 'embryo'
+        elif self.E_R < self.E_Rj:
+            return 'larva'
+        elif self.E_H<self.E_He :
+            return 'pupa'
+        else :
+            return 'imago'
 
     @property
     def T_factor(self):
@@ -397,7 +391,7 @@ class DEB(DEB_basic):
     dt = PositiveNumber(1 / (24 * 60), doc='The timestep of the DEB energetics module in days.')
     substrate = ClassAttr(Substrate, doc='The substrate where the agent feeds')
 
-    def __init__(self, species='default', save_dict=True, save_to=None, V_bite=0.0005, base_hunger=0.5,
+    def __init__(self, species='default', save_dict=True, save_to=None, V_bite=0.001, base_hunger=0.5,
                  simulation=True, intermitter=None, gut_params={}, **kwargs):
 
         # Drosophila model by default
@@ -414,7 +408,6 @@ class DEB(DEB_basic):
         # Stage duration parameters
         self.age = 0
 
-
         self.deb_p_A = 0
         self.sim_p_A = 0
 
@@ -430,14 +423,10 @@ class DEB(DEB_basic):
 
     def scale_time(self):
         dt = self.dt * self.T_factor
-        # self.F_m_dt = self.F_m * dt
         self.v_dt = self.v * dt
         self.p_M_dt = self.p_M * dt
         self.p_T_dt = self.p_T * dt if self.p_T != 0.0 else 0.0
         self.k_J_dt = self.k_J * dt
-        # self.h_a_dt = self.h_a * dt ** 2
-
-        # self.p_Am_dt = self.p_Am * dt
         self.p_Amm_dt = self.p_Am / self.Lb * dt
         self.J_X_Amm_dt = self.J_X_Am / self.Lb * dt
         self.J_E_Amm_dt = self.J_E_Am / self.Lb * dt
@@ -460,8 +449,6 @@ class DEB(DEB_basic):
         # self.k_E = self.v/self.Lb # Reserve turnover
         pass
 
-
-
     @property
     def birth_time_in_hours(self):
         try:
@@ -477,8 +464,8 @@ class DEB(DEB_basic):
         except:
             try:
                 t = self.t_j_comp
-            except :
-                t=self.t_j
+            except:
+                t = self.t_j
             return self.birth_time_in_hours + np.round(t * 24, 1)
 
     @property
@@ -495,22 +482,19 @@ class DEB(DEB_basic):
         else:
             return np.nan
 
-
-
     def run_embryo_stage(self):
         t = 0
-        while self.E_H < self.E_Hb:
-            # This is in e/t and below needs to be volume-specific
+        while self.stage=='embryo':
             self.apply_fluxes(p_A=0)
             t += self.dt
-        self.t_b_comp=t
-        self.age+=self.t_b_comp
+        self.t_b_comp = t
+        self.age += self.t_b_comp
         self.Lw_b_comp = self.V ** (1 / 3) / self.del_M
         self.Wwb_comp = self.compute_Ww()
-        self.stage = 'larva'
         if self.print_output:
             print('-------------Embryo stage-------------')
-            print(f'Duration         (d) :      predicted {np.round(self.t_b, 3)} VS computed {np.round(self.t_b_comp, 3)}')
+            print(
+                f'Duration         (d) :      predicted {np.round(self.t_b, 3)} VS computed {np.round(self.t_b_comp, 3)}')
             print('----------------Birth----------------')
             print(
                 f'Wet weight      (mg) :      predicted {np.round(self.Wwb * 1000, 5)} VS computed {np.round(self.Wwb_comp * 1000, 5)}')
@@ -519,10 +503,10 @@ class DEB(DEB_basic):
 
     def run_larva_stage(self, f=1.0):
         t = 0
-        while self.E_R < self.E_Rj:
+        while self.stage=='larva':
             self.apply_fluxes(p_A=self.p_Amm_dt * f * self.V)
             t += self.dt
-        self.t_j_comp=t
+        self.t_j_comp = t
         self.age += self.t_j_comp
         self.Lw_j_comp = self.V ** (1 / 3) / self.del_M
         self.Wwj_comp = self.compute_Ww()
@@ -532,16 +516,15 @@ class DEB(DEB_basic):
         # self.Wwj = self.compute_Ww(V=self.Lj ** 3,E=self.Ej + self.E_Rj)  # g, wet weight at pupation, including reprod buffer
         # self.Wwj = self.Lj**3 * (1 + f * self.w_V) # g, wet weight at pupation, excluding reprod buffer at pupation
         # self.Wwj += self.E_Rj * self.w_E/ self.mu_E/ self.d_E # g, wet weight including reprod buffer
-        self.stage = 'pupa'
         if self.print_output:
             print('-------------Larva stage-------------')
-            print(f'Duration         (d) :      predicted {np.round(self.t_j, 3)} VS computed {np.round(self.t_j_comp, 3)}')
+            print(
+                f'Duration         (d) :      predicted {np.round(self.t_j, 3)} VS computed {np.round(self.t_j_comp, 3)}')
             print('---------------Pupation---------------')
-            print(f'Wet weight      (mg) :      predicted {np.round(self.Wwj * 1000, 5)} VS computed {np.round(self.Wwj_comp * 1000, 5)}')
+            print(
+                f'Wet weight      (mg) :      predicted {np.round(self.Wwj * 1000, 5)} VS computed {np.round(self.Wwj_comp * 1000, 5)}')
             print(
                 f'Physical length (mm) :      predicted {np.round(self.Lwj * 10, 3)} VS computed {np.round(self.Lw_j_comp * 10, 3)}')
-
-
 
     def apply_fluxes(self, p_A):
         if self.stage == 'larva':
@@ -550,7 +533,7 @@ class DEB(DEB_basic):
             p_J = self.k_J_dt * self.E_Hb
         elif self.stage == 'embryo':
             p_S = self.p_M_dt * self.V + self.p_T_dt * self.V ** (2 / 3)
-            a=self.v_dt / self.V ** (1 / 3)
+            a = self.v_dt / self.V ** (1 / 3)
             p_J = self.k_J_dt * self.E_H
         p_C = self.E * (self.E_G * a + p_S / self.V) / (self.kap * self.E / self.V + self.E_G)
         p_G = self.kap * p_C - p_S
@@ -563,23 +546,18 @@ class DEB(DEB_basic):
             self.E_H += p_R
 
 
-    def compute_hunger(self):
-        return np.clip(self.base_hunger + self.hunger_gain * (1 - self.e), a_min=0, a_max=1)
-
-
     def run(self, **kwargs):
         self.age += self.dt
-        if self.E_R < self.E_Rj:
+        if self.stage == 'larva':
             self.apply_fluxes(p_A=self.get_p_A(**kwargs))
             self.update_hunger()
-        elif self.stage == 'larva':
+        elif self.stage == 'pupa':
             self.pupation_time_in_hours_sim = np.round(self.age * 24, 2)
-            self.stage = 'pupa'
         if self.dict is not None:
             self.update_dict()
 
     def update_hunger(self):
-        self.hunger = self.compute_hunger()
+        self.hunger = np.clip(self.base_hunger + self.hunger_gain * (1 - self.e), a_min=0, a_max=1)
         if self.hunger_as_EEB and self.intermitter is not None:
             self.intermitter.base_EEB = self.hunger
 
@@ -593,11 +571,9 @@ class DEB(DEB_basic):
         return self.J_X_Am / self.Lb * self.V * self.base_f
 
     @property
-    def F(self):  # Vol specific filtering rate (cm**3/(d*cm**3) -> vol of environment/vol of individual*day
-        # F = self.F_mm * self.K/(self.K + self.substrate.X)
-        F = ((self.F_m / self.Lb) ** -1 + self.substrate.X * (self.J_X_Am / self.Lb) ** -1) ** -1
-        # F = (self.F_mm ** -1 + self.substrate.X * self.J_X_Amm ** -1) ** -1
-        return F
+    def F(self):
+        """Vol specific filtering rate (cm**3/(d*cm**3) -> vol of environment/vol of individual*day"""
+        return self.J_X_Am * self.F_m / (self.Lb * (self.J_X_Am + self.substrate.X * self.F_m))
 
     @property
     def fr_feed(self):
@@ -616,7 +592,8 @@ class DEB(DEB_basic):
                     if self.stage == 'larva':
                         self.run(**c)
         tb = self.birth_time_in_hours
-        self.epochs = [[e.start + tb, e.end + tb if e.end is not None else self.pupation_time_in_hours_sim] for e in epochs]
+        self.epochs = [[e.start + tb, e.end + tb if e.end is not None else self.pupation_time_in_hours_sim] for e in
+                       epochs]
         self.epoch_qs = [e.substrate.quality for e in epochs]
         if self.gut is not None:
             self.gut.update()
@@ -674,7 +651,7 @@ class DEB(DEB_basic):
             d['id'] = self.id
             d['simulation'] = self.simulation
             d['hours_as_larva'] = self.age * 24 - self.birth_time_in_hours
-            d['sim_start'] = self.birth_time_in_hours if len(self.epochs)==0 else self.epochs[-1][1]
+            d['sim_start'] = self.birth_time_in_hours if len(self.epochs) == 0 else self.epochs[-1][1]
             d['epochs'] = self.epochs
             d['epoch_qs'] = self.epoch_qs
             d['fr'] = 1 / (self.dt * 24 * 60 * 60)
@@ -687,9 +664,6 @@ class DEB(DEB_basic):
                 d['mean_feed_freq'] = self.gut.Nfeeds / (self.age - self.birth_time_in_hours) / (60 * 60)
                 d['gut_residence_time'] = self.gut.residence_time
                 d.update(self.gut.dict)
-                # print(self.id, self.gut.Nfeeds, self.intermitter.base_EEB, self.base_hunger)
-
-        # self.save_dict(path)
         return d
 
     def return_dict(self):
@@ -829,10 +803,11 @@ def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=Fals
         EEB = get_best_EEB(D, c)
     D.base_hunger = EEB
     I = OfflineIntermitter(**kws2, EEB=EEB)
+    Niter = round(D.dt * (24 * 60 * 60) / I.dt)
     cum_feeds = 0
     while (D.stage != 'pupa' and D.alive):
         I.step()
-        if I.total_ticks % round(D.dt * (24 * 60 * 60) / I.dt) == 0:
+        if I.total_ticks % Niter == 0:
             D.run(X_V=D.V_bite * D.V * (I.Nfeeds - cum_feeds))
             cum_feeds = I.Nfeeds
             if use_hunger:
