@@ -190,10 +190,11 @@ def plot_debs(deb_dicts=None, name=None, save_to=None, mode='full', roversVSsitt
 
     t0s, t1s, t2s, t3s, max_ages = [], [], [], [], []
     for jj, (d, id, c) in enumerate(zip(deb_dicts, ids, cols)):
-        t0_sim, t0, t1, t2, t3, age = d['sim_start'], d['birth'], d['pupation'], d['death'], d['hours_as_larva'] + d[
-            'birth'], np.array(d['age'])
+        t0, t1, t2, age = d['birth'], d['pupation'], d['death'], np.array(d['age'])
+        t3=age[-1]
         t00 = 0
         epochs = np.array(d['epochs'])
+        t0_sim = t0 if epochs.shape[0] == 0 else epochs[-1,1]
         if 'epoch_qs' in d:
             epoch_qs = np.array(d['epoch_qs'])
         else:
@@ -250,8 +251,10 @@ def plot_debs(deb_dicts=None, name=None, save_to=None, mode='full', roversVSsitt
 
 
 
-            if d['simulation']:
+            try:
                 ax.axvspan(t0, t3, color='grey', alpha=0.05)
+            except:
+                pass
             for (st0, st1), qq in zip(epochs, epoch_qs):
                 q_col = aux.col_range(qq, low=(255, 0, 0), high=(255, 255, 255)) if color_epoch_quality else c
                 ax.axvspan(st0, st1, color=q_col, alpha=0.2)

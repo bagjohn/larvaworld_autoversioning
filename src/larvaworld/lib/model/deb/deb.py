@@ -404,6 +404,9 @@ class DEB_basic(DEB_model):
         # Stage duration parameters
         self.age = 0
 
+        self.epochs = []
+        self.epoch_qs = []
+
         self.deb_p_A = 0
         self.sim_p_A = 0
 
@@ -614,18 +617,19 @@ class DEB_basic(DEB_model):
 
     def grow_larva(self, epochs, **kwargs):
         self.run_stage(stage='embryo')
+        tb=self.age*24
         for e in epochs:
-            c = {'assimilation_mode': 'sim', 'f': e.substrate.get_f(K=self.K)}
-            if e.end is None:
-                self.run_stage(stage='larva', **c)
-            else:
-                for i in range(e.ticks(self.dt)):
-                    if self.stage == 'larva':
-                        self.run(**c)
-        tb = self.birth_time_in_hours
-        self.epochs = [[e.start + tb, e.end + tb if e.end is not None else self.pupation_time_in_hours_sim] for e in
-                       epochs]
-        self.epoch_qs = [e.substrate.quality for e in epochs]
+            if self.stage == 'larva':
+                c = {'assimilation_mode': 'sim', 'f': e.substrate.get_f(K=self.K)}
+                if e.end is None:
+                    self.run_stage(stage='larva', **c)
+                else:
+                    for i in range(e.ticks(self.dt)):
+                        if self.stage == 'larva':
+                            self.run(**c)
+
+                self.epochs.append([e.start + tb,self.age*24])
+                self.epoch_qs.append(e.substrate.quality)
         if self.gut is not None:
             self.gut.update()
 
@@ -689,7 +693,7 @@ class DEB(DEB_basic):
                                   doc='The sensitivy of the hunger drive in deviations of the DEB reserve density.')
 
 
-    def __init__(self, save_dict=True, save_to=None, base_hunger=0.5,simulation=True, intermitter=None, **kwargs):
+    def __init__(self, save_dict=True, save_to=None, base_hunger=0.5,intermitter=None, **kwargs):
         super().__init__(**kwargs)
         self.intermitter = intermitter
         if self.intermitter is not None:
@@ -697,9 +701,7 @@ class DEB(DEB_basic):
         self.base_hunger = base_hunger
         self.update_hunger()
         self.save_to = save_to
-        self.simulation = simulation
-        self.epochs = []
-        self.epoch_qs = []
+
         self.dict = self.init_dict() if save_dict else None
 
 
@@ -797,12 +799,8 @@ class DEB(DEB_basic):
             d = self.dict
             d['birth'] = self.birth_time_in_hours
             d['pupation'] = self.pupation_time_in_hours
-            # d['emergence'] = self.emergence_time_in_hours
             d['death'] = self.death_time_in_hours
             d['id'] = self.id
-            d['simulation'] = self.simulation
-            d['hours_as_larva'] = self.age * 24 - self.birth_time_in_hours
-            d['sim_start'] = self.birth_time_in_hours if len(self.epochs) == 0 else self.epochs[-1][1]
             d['epochs'] = self.epochs
             d['epoch_qs'] = self.epoch_qs
             d['fr'] = 1 / (self.dt * 24 * 60 * 60)
@@ -840,13 +838,7 @@ class DEB(DEB_basic):
 
 
 
-    @property
-    def deb_f_mean(self):
-        return np.mean(self.dict['f'])
 
-    @property
-    def deb_f_deviation_mean(self):
-        return np.mean(np.array(self.dict['f']) - 1)
 
 
 class DEB_runner(DEB):
@@ -880,8 +872,8 @@ class DEB_runner(DEB):
 # p.257 in S. a. L. M. Kooijman, “Dynamic Energy Budget theory for metabolic organisation : Summary of concepts of the third edition,” Water, vol. 365, p. 68, 2010.
 
 
-def deb_default(id='DEB model', epochs={}, age=None, **kwargs):
-    deb = DEB(id=id, simulation=False, use_gut=False, **kwargs)
+def deb_default(id='DEB model', epochs={}, **kwargs):
+    deb = DEB(id=id, use_gut=False, **kwargs)
     deb.grow_larva(epochs=epochs)
     return deb.finalize_dict()
 
