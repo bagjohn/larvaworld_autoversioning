@@ -799,16 +799,29 @@ class DEB(DEB_basic):
     def finalize_dict(self):
         if self.dict is not None:
             d = self.dict
+            d['species'] = self.species
             d['birth'] = self.birth_time_in_hours
             d['pupation'] = self.pupation_time_in_hours
             d['death'] = self.death_time_in_hours
             d['id'] = self.id
+            d['EEB'] = self.EEB
             d['epochs'] = self.epochs
             d['epoch_qs'] = self.epoch_qs
-            d['fr'] = 1 / (self.dt * 24 * 60 * 60)
+            d['fr'] = 1 / self.dt_in_sec
             d['feed_freq_estimate'] = self.fr_feed
             d['f_mean'] = np.mean(d['f'])
             d['f_deviation_mean'] = np.mean(np.array(d['f']) - 1)
+
+            if self.intermitter is not None:
+                try:
+                    d['feed_freq_simulated'] = self.intermitter.mean_feed_freq
+                    d_inter = self.intermitter.build_dict()
+                    d.update({
+                        **{f'{q} ratio': np.round(d_inter[nam.dur_ratio(p)], 2) for p, q in
+                           zip(['stridechain', 'pause', 'feedchain'], ['crawl', 'pause', 'feed'])},
+                    })
+                except:
+                    pass
 
             if self.gut is not None:
                 d['Nfeeds'] = self.gut.Nfeeds
@@ -817,11 +830,6 @@ class DEB(DEB_basic):
                 d.update(self.gut.dict)
         return d
 
-    def return_dict(self):
-        if self.gut is None:
-            return self.dict
-        else:
-            return {**self.dict, **self.gut.dict}
 
     def save_dict(self, path=None):
         if path is None:
@@ -851,27 +859,14 @@ class DEB(DEB_basic):
             I.step()
             self.run_check(dt=I.dt, X_V=self.V_bite * self.V * (I.Nfeeds - cum_feeds))
             cum_feeds = I.Nfeeds
-            # if I.total_ticks % Niter == 0:
-            #     D.run(X_V=D.V_bite * D.V * (I.Nfeeds - cum_feeds))
+
 
     @classmethod
     def sim_run(cls, refID, id='DEB sim', EEB=None, **kwargs):
-        D = cls(id=id, assimilation_mode='gut', intermitter_from=refID, offline=True,EEB=EEB, **kwargs)
-        D.run_stage(stage='embryo')
-        D.run_larva_stage_offline()
-        D.finalize_dict()
-        I = D.intermitter
-        d_sim = D.return_dict()
-        d_inter = I.build_dict()
-        d_sim.update({
-            'DEB model': D.species,
-            'EEB': np.round(I.EEB, 2),
-            **{f'{q} ratio': np.round(d_inter[nam.dur_ratio(p)], 2) for p, q in
-               zip(['stridechain', 'pause', 'feedchain'], ['crawl', 'pause', 'feed'])},
-            f"{nam.freq('feed')}_exp": np.round(I.mean_feed_freq, 2),
-            f"{nam.freq('feed')}_est": np.round(D.fr_feed, 2)
-        })
-        return d_sim
+        d = cls(id=id, assimilation_mode='gut', intermitter_from=refID, offline=True,EEB=EEB, **kwargs)
+        d.run_stage(stage='embryo')
+        d.run_larva_stage_offline()
+        return d.finalize_dict()
 
 
 # p.257 in S. a. L. M. Kooijman, “Dynamic Energy Budget theory for metabolic organisation : Summary of concepts of the third edition,” Water, vol. 365, p. 68, 2010.
