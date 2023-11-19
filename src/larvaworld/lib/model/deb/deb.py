@@ -100,15 +100,11 @@ class DEB_basic(NestedConf):
         self.alive = True
 
         self.L0 = 10 ** -10
-        self.E_H = 0
-        self.E_R = 0
-        self.V = self.L0 ** 3  # larval structure
-        self.V2 = 0  # adult structur
-        self.E_egg = 0  # egg buffer
+
 
         self.derive_pars()
         self.compute_initial_state()
-        self.E = self.E0
+
         self.predict_life_history()
 
 
@@ -337,16 +333,7 @@ class DEB_basic(NestedConf):
 
 
 
-    @property
-    def stage(self):
-        if self.E_H < self.E_Hb:
-            return 'embryo'
-        elif self.E_R < self.E_Rj and self.E_H < self.E_He:
-            return 'larva'
-        elif self.E_H < self.E_He:
-            return 'pupa'
-        else:
-            return 'imago'
+
 
     @property
     def M_V(self):
@@ -357,40 +344,12 @@ class DEB_basic(NestedConf):
     def T_factor(self):
         return np.exp(self.T_A / self.T_ref - self.T_A / self.T)  # Arrhenius factor
 
-    @property
-    def Lw(self):
-        return self.L / self.del_M
 
-    @property
-    def L(self):
-        return (self.V+self.V2) ** (1 / 3)
 
-    def compute_Ww(self, V=None, E=None):
-        if V is None:
-            V = (self.V+self.V2)
-        if E is None:
-            E = self.E + self.E_R
+    def compute_Ww(self, V, E):
         return V * self.d_V + E * self.w_E / self.mu_E
 
-    @property
-    def Ww(self):
-        return self.V * self.d_V + (self.E + self.E_R) * self.w_E / self.mu_E
 
-    @property
-    def e(self):
-        return self.E / self.V / self.E_M
-
-    @property
-    def Vw(self):
-        return self.V + self.w_E / self.d_E / self.mu_E * self.E
-
-    @property
-    def pupation_buffer(self):
-        return self.E_R / self.E_Rj
-
-    @property
-    def time_to_death_by_starvation(self):
-        return self.v ** -1 * self.L * np.log(self.kap ** -1)
 
     @classmethod
     def from_file(cls, species='default', **kwargs):
@@ -425,6 +384,15 @@ class DEB(DEB_basic):
             species_dict = json.load(tfp)
         kwargs.update(**species_dict)
         super().__init__(species=species, **kwargs)
+
+        self.E_H = 0
+        self.E_R = 0
+        self.V = self.L0 ** 3  # larval structure
+        self.V2 = 0  # adult structur
+        self.E_egg = 0  # egg buffer
+        self.E = self.E0
+
+
         self.set_intermitter(intermitter, base_hunger)
         self.save_to = save_to
         self.simulation = simulation
@@ -444,6 +412,45 @@ class DEB(DEB_basic):
         self.gut = deb.Gut(deb=self, save_dict=save_dict, **gut_params) if self.use_gut else None
         self.scale_time()
         self.dict = self.init_dict() if save_dict else None
+
+    @property
+    def stage(self):
+        if self.E_H < self.E_Hb:
+            return 'embryo'
+        elif self.E_R < self.E_Rj and self.E_H < self.E_He:
+            return 'larva'
+        elif self.E_H < self.E_He:
+            return 'pupa'
+        else:
+            return 'imago'
+
+    @property
+    def Lw(self):
+        return self.L / self.del_M
+
+    @property
+    def L(self):
+        return (self.V + self.V2) ** (1 / 3)
+
+    @property
+    def Ww(self):
+        return self.compute_Ww(V=self.V, E=self.E + self.E_R)
+
+    @property
+    def e(self):
+        return self.E / self.V / self.E_M
+
+    @property
+    def Vw(self):
+        return self.V + self.w_E / self.d_E / self.mu_E * self.E
+
+    @property
+    def pupation_buffer(self):
+        return self.E_R / self.E_Rj
+
+    @property
+    def time_to_death_by_starvation(self):
+        return self.v ** -1 * self.L * np.log(self.kap ** -1)
 
     def scale_time(self):
         dt = self.dt * self.T_factor
