@@ -94,6 +94,8 @@ class DEB_basic(NestedConf):
     def __init__(self, print_output=False, **kwargs):
         super().__init__(**kwargs)
         self.print_output = print_output
+        self.stages = ['embryo', 'larva', 'pupa', 'imago']
+        self.stage_events = ['oviposition', 'eclosion', 'pupation', 'emergence', 'death']
 
         self.alive = True
 
@@ -311,17 +313,18 @@ class DEB_basic(NestedConf):
         Durs = np.round(np.array([self.t_b, self.t_j, self.t_e, self.t_i]), 3)
 
         def print_state(i):
-            print(f'Reserve energy  (mJ) :       {Es[i]}')
-            print(f'Wet weight      (mg) :      {Wws[i]}')
-            print(f'Physical length (mm) :      {Lws[i]}')
+            print(f'---{self.stage_events[i]}---')
+            print(f'        Reserve energy  (mJ) :       {Es[i]}')
+            print(f'        Wet weight      (mg) :      {Wws[i]}')
+            print(f'        Physical length (mm) :      {Lws[i]}')
+            try:
+                print(f'***{self.stages[i]} stage duration (d) : {Durs[i]} ')
+            except:
+                pass
 
         if self.print_output:
-            for i, st in enumerate(['embryo', 'larva', 'pupa', 'imago']):
-                print(f'------------------Egg------------------')
+            for i in range(5):
                 print_state(i)
-                print(f'-------------{st} stage-------------')
-                print(f'Duration         (d) :      {Durs[i]} ')
-                print_state(i + 1)
 
     @property
     def M_V(self):
