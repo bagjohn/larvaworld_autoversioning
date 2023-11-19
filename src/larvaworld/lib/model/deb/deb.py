@@ -316,24 +316,36 @@ class DEB_basic(NestedConf):
             self.print_life_history(Es, Wws, Lws, Durs)
 
     def print_life_history(self, Es, Wws, Lws, Durs):
-        l1='                      '
-        lt='Duration        (d)  :'
-        lE='Reserve energy  (J)  :'
-        lW='Wet weight      (mg) :'
-        lL='Physical length (mm) :'
+        ages=np.cumsum(Durs).tolist()
+        ages.insert(0, 0)
+
+        ls = 'Life stage           :'
+        le = 'Life events          :'
+        lt = 'Duration        (d)  :'
+        la = 'Age             (d)  :'
+        lE = 'Reserve energy  (J)  :'
+        lW = 'Wet weight      (mg) :'
+        lL = 'Physical length (mm) :'
 
         for i in range(5):
-            l1+=f'*{self.stage_events[i]}*  '
-            lt += '                         '
-            lE+=f'{np.round(Es[i], 2)}          '
-            lW+=f'{np.round(1000 * Wws[i], 5)}          '
-            lL+=f'{np.round(10 * Lws[i], 3)}            '
+            le += f'* {self.stage_events[i]} *'
+            ls += '                 '
+            lt += '                 '
+            la += f'  {np.round(ages[i], 3)}    '
+            lE += f'  {np.round(Es[i], 3)}    '
+            lW += f'  {np.round(1000 * Wws[i], 3)}    '
+            lL += f'  {np.round(10 * Lws[i], 3)}  '
             try:
-                l1+=f'--{self.stages[i]}--'
-                lt += f'{np.round(Durs[i], 3)}'
+                ls += f'-- {self.stages[i]} --'
+                lt += f'    {np.round(Durs[i], 3)}  '
+                le += '                 '
+                la += '                 '
+                lE += '                 '
+                lW += '                 '
+                lL += '                 '
             except:
                 pass
-        for l in [l1,lt,lE,lL,lW]:
+        for l in [ls,le, lt, lE, lL, lW]:
             print(l)
 
     @property
