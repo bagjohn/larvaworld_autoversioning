@@ -201,16 +201,19 @@ class LarvaMotile(LarvaSegmented):
     def build_energetics(self, energetic_pars, life_history):
         from larvaworld.lib.model.deb.deb import DEB_runner
         if energetic_pars is not None:
-            self.deb = DEB_runner(model=self.model, id=self.unique_id,
+            try :
+                im=self.brain.locomotor.intermitter
+            except:
+                im=None
+
+
+            self.deb = DEB_runner(model=self.model, id=self.unique_id,intermitter=im,
                                   life_history=life_history, gut_params=energetic_pars.gut,
                                   **energetic_pars.DEB)
             self.length = self.deb.Lw * 10 / 1000
             self.mass = self.deb.Ww
             self.V = self.deb.V
-            try:
-                self.deb.set_intermitter(self.brain.locomotor.intermitter)
-            except:
-                pass
+
         else:
             self.deb = None
             self.V = self.length ** 3

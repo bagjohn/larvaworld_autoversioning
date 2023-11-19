@@ -26,6 +26,7 @@ Larvae were reared from egg-hatch to mid- third-instar (96±2h post-hatch) in 25
 '''
 
 __all__ = [
+    'DEB_model',
     'DEB_basic',
     'DEB',
     'deb_default',
@@ -35,7 +36,7 @@ __all__ = [
 ]
 
 
-class DEB_basic(NestedConf):
+class DEB_model(NestedConf):
     F_m = PositiveNumber(6.5, doc='maximum surface-area specific searching rate (l cm**-2 d**-1)')
     kap_X = param.Magnitude(0.8, doc='assimilation efficiency')
     p_Am = PositiveNumber(229.0, doc='maximum surface-area specific assimilation rate (J cm**-2 d**-1)')
@@ -97,7 +98,7 @@ class DEB_basic(NestedConf):
         self.stages = ['embryo', 'larva', 'pupa', 'imago']
         self.stage_events = ['oviposition', 'eclosion', 'pupation', 'emergence', 'death']
 
-        self.alive = True
+
 
         self.L0 = 10 ** -10
 
@@ -328,7 +329,7 @@ class DEB_basic(NestedConf):
         lL = 'Physical length (mm) :'
 
         for i in range(5):
-            le += f'* {self.stage_events[i]} *'
+            le += f'{self.stage_events[i]}'
             ls += '                 '
             lt += '                 '
             la += f'  {np.round(ages[i], 3)}    '
@@ -347,6 +348,9 @@ class DEB_basic(NestedConf):
                 pass
         for l in [ls,le, lt, lE, lL, lW]:
             print(l)
+
+
+
 
     @property
     def M_V(self):
@@ -369,24 +373,19 @@ class DEB_basic(NestedConf):
         return cls(**kwargs)
 
 
-class DEB(DEB_basic):
+class DEB_basic(DEB_model):
     id = param.String('DEB model', doc='The unique ID of the DEB model')
     species = param.Selector(objects=['default', 'rover', 'sitter'], label='phenotype',
                              doc='The phenotype/species-specific fitted DEB model to use.')  # Drosophila model by default
-    assimilation_mode = param.Selector(objects=['gut', 'sim', 'deb'], label='assimilation mode',
-                                       doc='The method used to calculate the DEB assimilation energy flow.')
     starvation_strategy = param.Boolean(False, doc='Whether starvation strategy is active')
     aging = param.Boolean(False, doc='Whether aging is active')
-    hunger_as_EEB = param.Boolean(False,
-                                  doc='Whether the DEB-generated hunger drive informs the exploration-exploitation balance.')
-    use_gut = param.Boolean(True, doc='Whether to use the gut module.')
-    hunger_gain = param.Magnitude(0.0, label='hunger sensitivity to reserve reduction',
-                                  doc='The sensitivy of the hunger drive in deviations of the DEB reserve density.')
     dt = PositiveNumber(1 / (24 * 60), doc='The timestep of the DEB energetics module in days.')
     substrate = ClassAttr(Substrate, doc='The substrate where the agent feeds')
+    assimilation_mode = param.Selector(objects=['gut', 'sim', 'deb'], label='assimilation mode',
+                                       doc='The method used to calculate the DEB assimilation energy flow.')
+    use_gut = param.Boolean(True, doc='Whether to use the gut module.')
 
-    def __init__(self, species='default', save_dict=True, save_to=None, V_bite=0.001, base_hunger=0.5,
-                 simulation=True, intermitter=None, gut_params={}, **kwargs):
+    def __init__(self, species='default', save_dict=True, V_bite=0.001, gut_params={}, **kwargs):
 
         # Drosophila model by default
         with open(f'{reg.ROOT_DIR}/lib/model/deb/models/deb_{species}.csv') as tfp:
@@ -401,11 +400,6 @@ class DEB(DEB_basic):
         self.E_egg = 0  # egg buffer
         self.E = self.E0
 
-        self.set_intermitter(intermitter, base_hunger)
-        self.save_to = save_to
-        self.simulation = simulation
-        self.epochs = []
-        self.epoch_qs = []
 
         # Stage duration parameters
         self.age = 0
@@ -419,10 +413,15 @@ class DEB(DEB_basic):
 
         self.gut = deb.Gut(deb=self, save_dict=save_dict, **gut_params) if self.use_gut else None
         self.scale_time()
-        self.dict = self.init_dict() if save_dict else None
+
+    @property
+    def alive(self):
+        return self.E > 0
 
     @property
     def stage(self):
+        if not self.alive :
+            return 'dead'
         if self.E_H < self.E_Hb:
             return 'embryo'
         elif self.E_R < self.E_Rj and self.E_H < self.E_He:
@@ -475,11 +474,7 @@ class DEB(DEB_basic):
             self.gut.get_residence_ticks(dt)
             self.J_X_A_array = np.ones(self.gut.residence_ticks) * self.J_X_A
 
-    def set_intermitter(self, intermitter, base_hunger=0.5):
-        self.intermitter = intermitter
-        if self.hunger_as_EEB and self.intermitter is not None:
-            base_hunger = self.intermitter.base_EEB
-        self.base_hunger = base_hunger
+
 
     def hex_model(self):
         # p.161    [1] S. a. L. M. Kooijman, “Comments on Dynamic Energy Budget theory,” Changes, 2010.
@@ -488,80 +483,8 @@ class DEB(DEB_basic):
         # self.k_E = self.v/self.Lb # Reserve turnover
         pass
 
-    @property
-    def birth_time_in_hours(self):
-        try:
-            t = self.t_b_comp
-        except:
-            t = self.t_b
-        return np.round(t * 24, 1)
 
-    @property
-    def pupation_time_in_hours(self):
-        try:
-            return self.pupation_time_in_hours_sim
-        except:
-            try:
-                t = self.t_j_comp
-            except:
-                t = self.t_j
-            return self.birth_time_in_hours + np.round(t * 24, 1)
 
-    @property
-    def emergence_time_in_hours(self):
-        try:
-            return self.pupation_time_in_hours + np.round(self.t_e * 24, 1)
-        except:
-            return np.nan
-
-    @property
-    def death_time_in_hours(self):
-        if not self.alive:
-            return self.age * 24
-        else:
-            return np.nan
-
-    def run_embryo_stage(self):
-        t = 0
-        while self.stage == 'embryo':
-            self.apply_fluxes()
-            t += self.dt
-        self.t_b_comp = t
-        self.age += self.t_b_comp
-        self.Lw_b_comp = self.V ** (1 / 3) / self.del_M
-        if self.print_output:
-            print('-------------Embryo stage-------------')
-            print(
-                f'Duration         (d) :      predicted {np.round(self.t_b, 3)} VS computed {np.round(self.t_b_comp, 3)}')
-            print('----------------Birth----------------')
-            print(
-                f'Wet weight      (mg) :      predicted {np.round(self.Wwb * 1000, 5)} VS computed {np.round(self.Ww * 1000, 5)}')
-            print(
-                f'Physical length (mm) :      predicted {np.round(self.Lwb * 10, 3)} VS computed {np.round(self.Lw_b_comp * 10, 3)}')
-
-    def run_larva_stage(self, f=1.0):
-        t = 0
-        while self.stage == 'larva':
-            self.apply_fluxes(f=f, assimilation_mode='deb')
-            t += self.dt
-        self.t_j_comp = t
-        self.age += self.t_j_comp
-        self.Lw_j_comp = self.V ** (1 / 3) / self.del_M
-        # Ej = self.Ej = self.E
-        # self.Uj = Ej / self.p_Am
-        # self.uEj = self.lj ** 3 * (self.kap * self.kap_V + f / self.g)
-        # self.Wwj = self.compute_Ww(V=self.Lj ** 3,E=self.Ej + self.E_Rj)  # g, wet weight at pupation, including reprod buffer
-        # self.Wwj = self.Lj**3 * (1 + f * self.w_V) # g, wet weight at pupation, excluding reprod buffer at pupation
-        # self.Wwj += self.E_Rj * self.w_E/ self.mu_E/ self.d_E # g, wet weight including reprod buffer
-        if self.print_output:
-            print('-------------Larva stage-------------')
-            print(
-                f'Duration         (d) :      predicted {np.round(self.t_j, 3)} VS computed {np.round(self.t_j_comp, 3)}')
-            print('---------------Pupation---------------')
-            print(
-                f'Wet weight      (mg) :      predicted {np.round(self.Wwj * 1000, 5)} VS computed {np.round(self.Ww * 1000, 5)}')
-            print(
-                f'Physical length (mm) :      predicted {np.round(self.Lwj * 10, 3)} VS computed {np.round(self.Lw_j_comp * 10, 3)}')
 
     def apply_fluxes(self, **kwargs):
         """
@@ -639,7 +562,7 @@ class DEB(DEB_basic):
 
     def run_stage(self, stage, assimilation_mode='deb', **kwargs):
         t = 0
-        while self.stage == stage:
+        while self.stage == stage and self.alive:
             self.apply_fluxes(assimilation_mode=assimilation_mode, **kwargs)
             t += self.dt
         self.age += t
@@ -661,24 +584,18 @@ class DEB(DEB_basic):
             self.print_life_history(Es, Wws, Lws, Durs)
 
     def run(self, **kwargs):
-        self.age += self.dt
-        if self.stage == 'larva':
-            self.apply_fluxes(**kwargs)
-            self.update_hunger()
-        elif self.stage == 'pupa':
-            self.pupation_time_in_hours_sim = np.round(self.age * 24, 2)
-        if self.dict is not None:
-            self.update_dict()
+        if self.alive :
+            self.age += self.dt
+            if self.stage == 'larva':
+                self.apply_fluxes(**kwargs)
+            elif self.stage == 'pupa':
+                self.pupation_time_in_hours_sim = np.round(self.age * 24, 2)
+        self.update()
 
-    def update_hunger(self):
-        self.hunger = np.clip(self.base_hunger + self.hunger_gain * (1 - self.e), a_min=0, a_max=1)
-        if self.hunger_as_EEB and self.intermitter is not None:
-            self.intermitter.base_EEB = self.hunger
 
-    def die(self):
-        self.alive = False
-        if self.print_output:
-            print(f'Dead after {self.age} days')
+    def update(self):
+        pass
+
 
     @property
     def J_X_A(self):
@@ -696,12 +613,11 @@ class DEB(DEB_basic):
         return freq
 
     def grow_larva(self, epochs, **kwargs):
-        self.run_embryo_stage()
+        self.run_stage(stage='embryo')
         for e in epochs:
             c = {'assimilation_mode': 'sim', 'f': e.substrate.get_f(K=self.K)}
             if e.end is None:
-                while self.stage == 'larva':
-                    self.run(**c)
+                self.run_stage(stage='larva', **c)
             else:
                 for i in range(e.ticks(self.dt)):
                     if self.stage == 'larva':
@@ -712,6 +628,126 @@ class DEB(DEB_basic):
         self.epoch_qs = [e.substrate.quality for e in epochs]
         if self.gut is not None:
             self.gut.update()
+
+    def get_p_A(self, f=None, assimilation_mode=None, X_V=0.0):
+        if f is None:
+            f = self.base_f
+        self.f = f
+        self.deb_p_A = self.p_Amm_dt * self.base_f * self.V
+        self.sim_p_A = self.p_Amm_dt * f * self.V
+        if assimilation_mode is None:
+            assimilation_mode = self.assimilation_mode
+        if assimilation_mode == 'sim':
+            return self.sim_p_A
+        elif assimilation_mode == 'gut' and self.gut is not None:
+            self.gut.update(X_V)
+            return self.gut.p_A
+        elif assimilation_mode == 'deb':
+            return self.deb_p_A
+
+    @property
+    def steps_per_day(self):
+        return int(1 / self.dt)
+
+
+    @property
+    def ingested_body_mass_ratio(self):
+        return self.gut.ingested_mass() / self.Ww * 100
+
+    @property
+    def ingested_body_volume_ratio(self):
+        return self.gut.ingested_volume / self.V * 100
+
+    @property
+    def ingested_gut_volume_ratio(self):
+        return self.gut.ingested_volume / (self.V * self.gut.V_gm) * 100
+
+    @property
+    def ingested_body_area_ratio(self):
+        return (self.gut.ingested_volume / self.V) ** (1 / 2) * 100
+
+    @property
+    def amount_absorbed(self):
+        return self.gut.absorbed_mass('mg')
+
+    @property
+    def volume_ingested(self):
+        return self.gut.ingested_volume
+
+    @property
+    def deb_f_deviation(self):
+        return self.f - 1
+
+
+
+class DEB(DEB_basic):
+
+    # hunger_as_EEB = param.Boolean(False,
+    #                               doc='Whether the DEB-generated hunger drive informs the exploration-exploitation balance.')
+
+    hunger_gain = param.Magnitude(0.0, label='hunger sensitivity to reserve reduction',
+                                  doc='The sensitivy of the hunger drive in deviations of the DEB reserve density.')
+
+
+    def __init__(self, save_dict=True, save_to=None, base_hunger=0.5,simulation=True, intermitter=None, **kwargs):
+        super().__init__(**kwargs)
+        self.intermitter = intermitter
+        if self.intermitter is not None:
+            base_hunger = self.intermitter.base_EEB
+        self.base_hunger = base_hunger
+        self.update_hunger()
+        self.save_to = save_to
+        self.simulation = simulation
+        self.epochs = []
+        self.epoch_qs = []
+        self.dict = self.init_dict() if save_dict else None
+
+
+
+
+    def update(self):
+        self.update_hunger()
+        if self.dict is not None:
+            self.update_dict()
+
+
+    @property
+    def birth_time_in_hours(self):
+        try:
+            t = self.t_b_comp
+        except:
+            t = self.t_b
+        return np.round(t * 24, 1)
+
+    @property
+    def pupation_time_in_hours(self):
+        try:
+            return self.pupation_time_in_hours_sim
+        except:
+            try:
+                t = self.t_j_comp
+            except:
+                t = self.t_j
+            return self.birth_time_in_hours + np.round(t * 24, 1)
+
+
+    @property
+    def death_time_in_hours(self):
+        if not self.alive:
+            return self.age * 24
+        else:
+            return np.nan
+
+
+
+
+    def update_hunger(self):
+        self.hunger = np.clip(self.base_hunger + self.hunger_gain * (1 - self.e), a_min=0, a_max=1)
+        if self.intermitter is not None:
+            self.intermitter.EEB = self.hunger
+
+
+
 
     @property
     def EEB(self):
@@ -761,7 +797,7 @@ class DEB(DEB_basic):
             d = self.dict
             d['birth'] = self.birth_time_in_hours
             d['pupation'] = self.pupation_time_in_hours
-            d['emergence'] = self.emergence_time_in_hours
+            # d['emergence'] = self.emergence_time_in_hours
             d['death'] = self.death_time_in_hours
             d['id'] = self.id
             d['simulation'] = self.simulation
@@ -802,57 +838,11 @@ class DEB(DEB_basic):
                 d = self.dict
             aux.save_dict(d, f'{path}/{self.id}.txt')
 
-    def get_p_A(self, f=None, assimilation_mode=None, X_V=0.0):
-        if f is None:
-            f = self.base_f
-        self.f = f
-        self.deb_p_A = self.p_Amm_dt * self.base_f * self.V
-        self.sim_p_A = self.p_Amm_dt * f * self.V
-        if assimilation_mode is None:
-            assimilation_mode = self.assimilation_mode
-        if assimilation_mode == 'sim':
-            return self.sim_p_A
-        elif assimilation_mode == 'gut' and self.gut is not None:
-            self.gut.update(X_V)
-            return self.gut.p_A
-        elif assimilation_mode == 'deb':
-            return self.deb_p_A
 
-    @property
-    def steps_per_day(self):
-        return int(1 / self.dt)
 
     @property
     def deb_f_mean(self):
         return np.mean(self.dict['f'])
-
-    @property
-    def ingested_body_mass_ratio(self):
-        return self.gut.ingested_mass() / self.Ww * 100
-
-    @property
-    def ingested_body_volume_ratio(self):
-        return self.gut.ingested_volume / self.V * 100
-
-    @property
-    def ingested_gut_volume_ratio(self):
-        return self.gut.ingested_volume / (self.V * self.gut.V_gm) * 100
-
-    @property
-    def ingested_body_area_ratio(self):
-        return (self.gut.ingested_volume / self.V) ** (1 / 2) * 100
-
-    @property
-    def amount_absorbed(self):
-        return self.gut.absorbed_mass('mg')
-
-    @property
-    def volume_ingested(self):
-        return self.gut.ingested_volume
-
-    @property
-    def deb_f_deviation(self):
-        return self.f - 1
 
     @property
     def deb_f_deviation_mean(self):
