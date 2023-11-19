@@ -105,10 +105,10 @@ class LifeTab(gui_aux.GuiTab):
                 w.write_event_value('Draw', 'Draw the initial plot')
         elif e == 'Draw':
             if q > 0:
-                from ...lib.model.deb.deb import deb_default
+                from ...lib.model.deb.deb import DEB
                 from ...lib.plot.deb import plot_debs
 
-                D = deb_default(**self.get(w, v, c))
+                D = DEB.default_growth(**self.get(w, v, c))
                 for Sii in [S0, S1, Sa]:
                     w.Element(Sii).Update(range=(0.0, D['pupation'] - D['birth']))
                 fig, save_to, filename = plot_debs(deb_dicts=[D], mode=v[self.graphlist_k][0], return_fig=True)

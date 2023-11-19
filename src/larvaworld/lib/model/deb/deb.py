@@ -29,10 +29,6 @@ __all__ = [
     'DEB_model',
     'DEB_basic',
     'DEB',
-    'deb_default',
-    'DEB_runner',
-    'get_best_EEB',
-    'deb_sim',
 ]
 
 
@@ -97,8 +93,6 @@ class DEB_model(NestedConf):
         self.print_output = print_output
         self.stages = ['embryo', 'larva', 'pupa', 'imago']
         self.stage_events = ['oviposition', 'eclosion', 'pupation', 'emergence', 'death']
-
-
 
         self.L0 = 10 ** -10
 
@@ -317,7 +311,7 @@ class DEB_model(NestedConf):
             self.print_life_history(Es, Wws, Lws, Durs)
 
     def print_life_history(self, Es, Wws, Lws, Durs):
-        ages=np.cumsum(Durs).tolist()
+        ages = np.cumsum(Durs).tolist()
         ages.insert(0, 0)
 
         ls = 'Life stage           :'
@@ -346,11 +340,8 @@ class DEB_model(NestedConf):
                 lL += '                 '
             except:
                 pass
-        for l in [ls,le, lt, lE, lL, lW]:
+        for l in [ls, le, lt, lE, lL, lW]:
             print(l)
-
-
-
 
     @property
     def M_V(self):
@@ -400,7 +391,6 @@ class DEB_basic(DEB_model):
         self.E_egg = 0  # egg buffer
         self.E = self.E0
 
-
         # Stage duration parameters
         self.age = 0
 
@@ -413,9 +403,15 @@ class DEB_basic(DEB_model):
         self.base_f = self.substrate.get_f(K=self.K)
         self.f = self.base_f
         self.V_bite = V_bite
+        self.X_V_buffer = 0
+        self.time_buffer = 0
 
         self.gut = deb.Gut(deb=self, save_dict=save_dict, **gut_params) if self.use_gut else None
         self.scale_time()
+
+    @property
+    def dt_in_sec(self):
+        return self.dt * 24 * 60 * 60
 
     @property
     def alive(self):
@@ -423,7 +419,7 @@ class DEB_basic(DEB_model):
 
     @property
     def stage(self):
-        if not self.alive :
+        if not self.alive:
             return 'dead'
         if self.E_H < self.E_Hb:
             return 'embryo'
@@ -477,17 +473,12 @@ class DEB_basic(DEB_model):
             self.gut.get_residence_ticks(dt)
             self.J_X_A_array = np.ones(self.gut.residence_ticks) * self.J_X_A
 
-
-
     def hex_model(self):
         # p.161    [1] S. a. L. M. Kooijman, “Comments on Dynamic Energy Budget theory,” Changes, 2010.
         # For the larva stage
         # self.r = self.g * self.k_M * (self.e/self.lb -1)/(self.e+self.g) # growth rate at  constant food where e=f
         # self.k_E = self.v/self.Lb # Reserve turnover
         pass
-
-
-
 
     def apply_fluxes(self, **kwargs):
         """
@@ -587,7 +578,7 @@ class DEB_basic(DEB_model):
             self.print_life_history(Es, Wws, Lws, Durs)
 
     def run(self, **kwargs):
-        if self.alive :
+        if self.alive:
             self.age += self.dt
             if self.stage == 'larva':
                 self.apply_fluxes(**kwargs)
@@ -595,10 +586,16 @@ class DEB_basic(DEB_model):
                 self.pupation_time_in_hours_sim = np.round(self.age * 24, 2)
         self.update()
 
+    def run_check(self, dt, X_V=0):
+        self.X_V_buffer += X_V
+        self.time_buffer += dt
+        if self.time_buffer >= self.dt_in_sec:
+            self.run(X_V=self.X_V_buffer)
+            self.X_V_buffer = 0
+            self.tick_buffer = 0
 
     def update(self):
         pass
-
 
     @property
     def J_X_A(self):
@@ -615,9 +612,13 @@ class DEB_basic(DEB_model):
         freq /= (24 * 60 * 60)
         return freq
 
+    def get_best_EEB(self, cRef):
+        z = np.poly1d(cRef['EEB_poly1d'])
+        return np.clip(z(self.fr_feed), a_min=0, a_max=1)
+
     def grow_larva(self, epochs, **kwargs):
         self.run_stage(stage='embryo')
-        tb=self.age*24
+        tb = self.age * 24
         for e in epochs:
             if self.stage == 'larva':
                 c = {'assimilation_mode': 'sim', 'f': e.substrate.get_f(K=self.K)}
@@ -628,7 +629,7 @@ class DEB_basic(DEB_model):
                         if self.stage == 'larva':
                             self.run(**c)
 
-                self.epochs.append([e.start + tb,self.age*24])
+                self.epochs.append([e.start + tb, self.age * 24])
                 self.epoch_qs.append(e.substrate.quality)
         if self.gut is not None:
             self.gut.update()
@@ -652,7 +653,6 @@ class DEB_basic(DEB_model):
     @property
     def steps_per_day(self):
         return int(1 / self.dt)
-
 
     @property
     def ingested_body_mass_ratio(self):
@@ -683,35 +683,43 @@ class DEB_basic(DEB_model):
         return self.f - 1
 
 
-
 class DEB(DEB_basic):
-
-    # hunger_as_EEB = param.Boolean(False,
-    #                               doc='Whether the DEB-generated hunger drive informs the exploration-exploitation balance.')
+    hunger_as_EEB = param.Boolean(True,
+                                  doc='Whether the DEB-generated hunger drive informs the exploration-exploitation balance.')
 
     hunger_gain = param.Magnitude(0.0, label='hunger sensitivity to reserve reduction',
                                   doc='The sensitivy of the hunger drive in deviations of the DEB reserve density.')
 
-
-    def __init__(self, save_dict=True, save_to=None, base_hunger=0.5,intermitter=None, **kwargs):
+    def __init__(self, save_dict=True, save_to=None, base_hunger=0.5, intermitter=None, intermitter_from=None, offline=False,EEB=None,
+                 **kwargs):
         super().__init__(**kwargs)
-        self.intermitter = intermitter
-        if self.intermitter is not None:
-            base_hunger = self.intermitter.base_EEB
-        self.base_hunger = base_hunger
-        self.update_hunger()
+        self.set_intermitter(base_hunger, intermitter, intermitter_from, offline,EEB)
+
         self.save_to = save_to
 
         self.dict = self.init_dict() if save_dict else None
 
-
-
+    def set_intermitter(self, base_hunger=0.5, intermitter=None, intermitter_from=None, offline=False,EEB=None):
+        if intermitter is None and offline:
+            if intermitter_from is not None:
+                c = reg.conf.Ref.getRef(intermitter_from)
+                kwargs = c['intermitter']
+                if EEB is None:
+                    EEB=self.get_best_EEB(cRef=c)
+                kwargs['EEB'] = EEB
+                from ..modules.intermitter import OfflineIntermitter
+                intermitter = OfflineIntermitter(**kwargs)
+        self.intermitter = intermitter
+        if self.intermitter is not None:
+            if self.hunger_as_EEB:
+                base_hunger = self.intermitter.base_EEB
+        self.base_hunger = base_hunger
+        self.update_hunger()
 
     def update(self):
         self.update_hunger()
         if self.dict is not None:
             self.update_dict()
-
 
     @property
     def birth_time_in_hours(self):
@@ -732,7 +740,6 @@ class DEB(DEB_basic):
                 t = self.t_j
             return self.birth_time_in_hours + np.round(t * 24, 1)
 
-
     @property
     def death_time_in_hours(self):
         if not self.alive:
@@ -740,16 +747,11 @@ class DEB(DEB_basic):
         else:
             return np.nan
 
-
-
-
     def update_hunger(self):
         self.hunger = np.clip(self.base_hunger + self.hunger_gain * (1 - self.e), a_min=0, a_max=1)
         if self.intermitter is not None:
-            self.intermitter.EEB = self.hunger
-
-
-
+            if self.hunger_as_EEB:
+                self.intermitter.EEB = self.hunger
 
     @property
     def EEB(self):
@@ -836,92 +838,41 @@ class DEB(DEB_basic):
                 d = self.dict
             aux.save_dict(d, f'{path}/{self.id}.txt')
 
+    @classmethod
+    def default_growth(cls, id='DEB default', epochs={}, **kwargs):
+        d = cls(id=id, use_gut=False, **kwargs)
+        d.grow_larva(epochs=epochs)
+        return d.finalize_dict()
 
+    def run_larva_stage_offline(self):
+        I = self.intermitter
+        cum_feeds = 0
+        while self.stage == 'larva':
+            I.step()
+            self.run_check(dt=I.dt, X_V=self.V_bite * self.V * (I.Nfeeds - cum_feeds))
+            cum_feeds = I.Nfeeds
+            # if I.total_ticks % Niter == 0:
+            #     D.run(X_V=D.V_bite * D.V * (I.Nfeeds - cum_feeds))
 
-
-
-
-class DEB_runner(DEB):
-    f_decay = PositiveNumber(default=0.1, doc='The exponential decay coefficient of the DEB functional response.')
-
-    def __init__(self, model=None, dt=None, life_history=None, **kwargs):
-        if life_history is None:
-            life_history = aux.AttrDict({'epochs': {}, 'age': None})
-        self.model = model
-        if self.model is not None:
-            if dt is None:
-                dt = self.model.dt / (24 * 60 * 60)
-        super().__init__(dt=dt, **kwargs)
-        self.grow_larva(**life_history)
-        self.temp_cum_V_eaten = 0
-
-    @property
-    def valid(self):
-        return self.model.Nticks % int(self.model.dt / self.dt) == 0
-
-    def update(self, V_eaten=0):
-        self.temp_cum_V_eaten += V_eaten
-        if self.valid:
-            if self.temp_cum_V_eaten > 0:
-                self.f += self.gut.k_abs
-            self.f *= np.exp(-self.f_decay * self.model.dt)
-            self.run(X_V=self.temp_cum_V_eaten)
-            self.temp_cum_V_eaten = 0
+    @classmethod
+    def sim_run(cls, refID, id='DEB sim', EEB=None, **kwargs):
+        D = cls(id=id, assimilation_mode='gut', intermitter_from=refID, offline=True,EEB=EEB, **kwargs)
+        D.run_stage(stage='embryo')
+        D.run_larva_stage_offline()
+        D.finalize_dict()
+        I = D.intermitter
+        d_sim = D.return_dict()
+        d_inter = I.build_dict()
+        d_sim.update({
+            'DEB model': D.species,
+            'EEB': np.round(I.EEB, 2),
+            **{f'{q} ratio': np.round(d_inter[nam.dur_ratio(p)], 2) for p, q in
+               zip(['stridechain', 'pause', 'feedchain'], ['crawl', 'pause', 'feed'])},
+            f"{nam.freq('feed')}_exp": np.round(I.mean_feed_freq, 2),
+            f"{nam.freq('feed')}_est": np.round(D.fr_feed, 2)
+        })
+        return d_sim
 
 
 # p.257 in S. a. L. M. Kooijman, “Dynamic Energy Budget theory for metabolic organisation : Summary of concepts of the third edition,” Water, vol. 365, p. 68, 2010.
 
-
-def deb_default(id='DEB model', epochs={}, **kwargs):
-    deb = DEB(id=id, use_gut=False, **kwargs)
-    deb.grow_larva(epochs=epochs)
-    return deb.finalize_dict()
-
-
-def get_best_EEB(deb, cRef):
-    z = np.poly1d(cRef['EEB_poly1d'])
-    if type(deb) == dict:
-        s = deb['feed_freq_estimate']
-    else:
-        s = deb.fr_feed
-    return np.clip(z(s), a_min=0, a_max=1)
-
-
-def deb_sim(refID, id='DEB sim', EEB=None, deb_dt=None, dt=None, use_hunger=False, model_id=None, **kwargs):
-    from ..modules.intermitter import OfflineIntermitter
-    c = reg.conf.Ref.getRef(refID)
-    kws2 = c['intermitter']
-    if dt is not None:
-        kws2['dt'] = dt
-    if deb_dt is None:
-        deb_dt = kws2['dt'] / (24 * 60 * 60)
-    D = DEB(id=id, assimilation_mode='gut', dt=deb_dt, **kwargs)
-    if EEB is None:
-        EEB = get_best_EEB(D, c)
-    D.base_hunger = EEB
-    I = OfflineIntermitter(**kws2, EEB=EEB)
-    Niter = round(D.dt * (24 * 60 * 60) / I.dt)
-    cum_feeds = 0
-    while (D.stage != 'pupa' and D.alive):
-        I.step()
-        if I.total_ticks % Niter == 0:
-            D.run(X_V=D.V_bite * D.V * (I.Nfeeds - cum_feeds))
-            cum_feeds = I.Nfeeds
-            if use_hunger:
-                I.EEB = D.hunger
-    D.finalize_dict()
-    d_sim = D.return_dict()
-    d_inter = I.build_dict()
-    d_sim.update({
-        'DEB model': D.species,
-        'EEB': np.round(EEB, 2),
-        **{f'{q} ratio': np.round(d_inter[nam.dur_ratio(p)], 2) for p, q in
-           zip(['stridechain', 'pause', 'feedchain'], ['crawl', 'pause', 'feed'])},
-        f"{nam.freq('feed')}_exp": np.round(I.mean_feed_freq, 2),
-        f"{nam.freq('feed')}_est": np.round(D.fr_feed, 2)
-    })
-    if model_id is None:
-        return d_sim
-    else:
-        d_mod = deb_default(id=model_id, **kwargs)
-        return d_sim, d_mod

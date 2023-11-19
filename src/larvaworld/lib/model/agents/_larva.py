@@ -199,17 +199,20 @@ class LarvaMotile(LarvaSegmented):
             return 0
 
     def build_energetics(self, energetic_pars, life_history):
-        from larvaworld.lib.model.deb.deb import DEB_runner
+        from larvaworld.lib.model.deb.deb import DEB
         if energetic_pars is not None:
             try :
                 im=self.brain.locomotor.intermitter
             except:
                 im=None
+            if life_history is None:
+                life_history = aux.AttrDict({'epochs': {}, 'age': None})
 
 
-            self.deb = DEB_runner(model=self.model, id=self.unique_id,intermitter=im,
-                                  life_history=life_history, gut_params=energetic_pars.gut,
+            self.deb = DEB(model=self.model, id=self.unique_id,intermitter=im,
+                                  gut_params=energetic_pars.gut,
                                   **energetic_pars.DEB)
+            self.grow_larva(life_history.epochs)
             self.length = self.deb.Lw * 10 / 1000
             self.mass = self.deb.Ww
             self.V = self.deb.V
@@ -221,7 +224,7 @@ class LarvaMotile(LarvaSegmented):
             self.length = None
 
     def run_energetics(self, V_eaten):
-        self.deb.update(V_eaten)
+        self.deb.run_check(dt=self.model.dt,X_V=V_eaten)
         self.length = self.deb.Lw * 10 / 1000
         self.mass = self.deb.Ww
         self.V = self.deb.V
