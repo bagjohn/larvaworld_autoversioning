@@ -685,8 +685,8 @@ class ParamLarvaDataset(param.Parameterized):
         self.e[f'{nam.mean(nam.num(chunk))}_{on}'] = self.e[cc_N_on] / CT
 
     def detect_bouts(self, vel_thr=0.3, strides_enabled=True, castsNweathervanes=True):
-        s, e, c = self.data
-        aux.fft_freqs(s, e, c)
+        # s, e, c = self.data
+        self.comp_freqs()
         Dtur = self.turn_annotation()
         Dcr = self.crawl_annotation(strides_enabled=strides_enabled, vel_thr=vel_thr)
         Dpa = self.patch_residency_annotation()

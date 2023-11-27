@@ -10,9 +10,10 @@ import scipy as sp
 from typing import Optional
 from scipy.signal import find_peaks
 
-from . import nam, cols_exist, flatten_list, rotate_points_around_point, AttrDict, fft_max
+from . import nam, cols_exist, flatten_list, rotate_points_around_point, AttrDict
 
 __all__ = [
+    'fft_max',
     'detect_strides',
     'stride_interp',
     'mean_stride_curve',
@@ -53,6 +54,49 @@ __all__ = [
     'epoch_overlap',
     'epoch_slices',
 ]
+
+
+def fft_max(a, dt, fr_range=(0.0, +np.inf), return_amps=False):
+    """
+    Power-spectrum of signal.
+
+    Compute the power spectrum of a signal and its dominant frequency within some range.
+
+    Parameters
+    ----------
+    a : array
+        1D np.array : signal timeseries
+    dt : float
+        Timestep of the timeseries
+    fr_range : Tuple[float,float]
+        Frequency range allowed. Default is (0.0, +np.inf)
+    return_amps: bool
+        whether to return the whole array of frequency powers
+
+    Returns
+    -------
+    yf : array
+        Array of computed frequency powers.
+    fr : float
+        Dominant frequency within range.
+
+    """
+    from scipy.fft import fft
+    a = np.nan_to_num(a)
+    N = len(a)
+    xf = np.fft.fftfreq(N, dt)[:N // 2]
+    yf = fft(a, norm="ortho")
+    yf = 2.0 / N * np.abs(yf[:N // 2])
+    yf = 1000 * yf / np.sum(yf)
+
+    fr_min, fr_max = fr_range
+    xf_trunc = xf[(xf >= fr_min) & (xf <= fr_max)]
+    yf_trunc = yf[(xf >= fr_min) & (xf <= fr_max)]
+    fr = xf_trunc[np.argmax(yf_trunc)]
+    if return_amps:
+        return fr, yf
+    else:
+        return fr
 
 def detect_strides(a, dt, vel_thr=0.3, stretch=(0.75, 2.0), fr=None):
     """
