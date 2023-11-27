@@ -13,6 +13,7 @@ __all__ = [
     'get_vfunc',
     'vpar',
     'param_to_arg',
+    'gConf',
 ]
 
 __displayname__ = 'Parameterization helper methods'
@@ -118,3 +119,19 @@ def param_to_arg(k, p):
     return d
 
 
+def gConf(mdict, **kwargs):
+    if mdict is None:
+        return None
+    elif isinstance(mdict, param.Parameterized):
+        return mdict.v
+    elif isinstance(mdict, dict):
+        conf = aux.AttrDict()
+        for d, p in mdict.items():
+            if isinstance(p, param.Parameterized):
+                conf[d] = p.v
+            else:
+                conf[d] = gConf(mdict=p)
+            conf.update_existingdict(kwargs)
+        return conf
+    else:
+        return aux.AttrDict(mdict)

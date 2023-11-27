@@ -1,3 +1,7 @@
+"""
+Methods for fitting and sampling between simulated and experimental datasets
+"""
+
 import random
 from typing import Tuple, List
 import numpy as np
@@ -5,14 +9,12 @@ import param
 
 from .. import reg, aux
 from ..aux import nam
-from ..param.param_aux import vpar, get_vfunc
+from ..param.param_aux import vpar, get_vfunc, gConf
 
 __all__ = [
     'SAMPLING_PARS',
     'init2mdict',
-    'gConf',
-    'get_ks',
-    'LarvaworldParam',
+    # 'LarvaworldParam',
     'get_LarvaworldParam',
     'prepare_LarvaworldParam',
     'build_LarvaworldParam',
@@ -43,33 +45,7 @@ def init2mdict(d0):
     return aux.AttrDict(d)
 
 
-def gConf(mdict, **kwargs):
-    if mdict is None:
-        return None
-    elif isinstance(mdict, param.Parameterized):
-        return mdict.v
-    elif isinstance(mdict, dict):
-        conf = aux.AttrDict()
-        for d, p in mdict.items():
-            if isinstance(p, param.Parameterized):
-                conf[d] = p.v
-            else:
-                conf[d] = gConf(mdict=p)
-            conf.update_existingdict(kwargs)
-        return conf
-    else:
-        return aux.AttrDict(mdict)
 
-
-def get_ks(d0, k0=None, ks=[]):
-    for k, p in d0.items():
-        if k0 is not None:
-            k = f'{k0}.{k}'
-        if isinstance(p, param.Parameterized):
-            ks.append(k)
-        else:
-            ks = get_ks(p, k0=k, ks=ks)
-    return ks
 
 
 class LarvaworldParam(param.Parameterized):
@@ -312,11 +288,11 @@ SAMPLING_PARS = aux.bidict(
             nam.std(nam.scal(nam.chunk_track('stride', nam.dst('')))): 'brain.crawler_params.stride_dst_std',
             nam.freq('feed'): 'brain.feeder_params.freq',
             nam.max(nam.chunk_track('stride', nam.scal(nam.vel('')))): 'brain.crawler_params.max_scaled_vel',
-            aux.nam.phi(aux.nam.max(aux.nam.scal(aux.nam.vel('')))): 'brain.crawler_params.max_vel_phase',
+            nam.phi(nam.max(nam.scal(nam.vel('')))): 'brain.crawler_params.max_vel_phase',
             'attenuation': 'brain.interference_params.attenuation',
             nam.max('attenuation'): 'brain.interference_params.attenuation_max',
             nam.freq(nam.vel(nam.orient(('front')))): 'brain.turner_params.freq',
-            aux.nam.phi(nam.max('attenuation')): 'brain.interference_params.max_attenuation_phase',
+            nam.phi(nam.max('attenuation')): 'brain.interference_params.max_attenuation_phase',
         }
     )
 )

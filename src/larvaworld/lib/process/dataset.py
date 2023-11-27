@@ -1556,7 +1556,7 @@ class ParamLarvaDataset(param.Parameterized):
             ors = np.random.uniform(low=0, high=2 * np.pi, size=len(ids)).tolist()
 
         if ps is None:
-            ps = list(util.SAMPLING_PARS.keys())
+            ps = list(reg.SAMPLING_PARS.keys())
         ps = self.end_ps.existing(ps)
         flatnames = reg.getPar(p=ps, to_return='flatname')
         dic = aux.AttrDict(

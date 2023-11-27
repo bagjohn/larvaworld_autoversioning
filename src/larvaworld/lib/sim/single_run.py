@@ -88,7 +88,6 @@ class ExpRun(BaseRun):
         for gID, gConf in larva_groups.items():
             lg = reg.generators.LarvaGroup(**gConf)
             confs += lg(parameter_dict=parameter_dict)
-        # confs = util.generate_agentConfs(larva_groups=larva_groups, parameter_dict=parameter_dict)
         self.place_agents(confs)
 
     def eliminate_overlap(self):

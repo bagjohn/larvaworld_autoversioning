@@ -3,7 +3,7 @@ The core functionalities of the larvaworld platform
 """
 
 
-from . import aux, param, reg, plot, model, process, screen, sim, util
+from . import aux, param, reg, plot, model, process, screen, sim
 # from .aux import *
 # from .reg import *
 # import aux, param

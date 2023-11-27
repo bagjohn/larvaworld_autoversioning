@@ -27,7 +27,7 @@ def modelConfTable(mID, **kwargs):
 @reg.funcs.graph('mtable')
 def mtable(k, columns=['symbol', 'value', 'description'], figsize=(14, 11),
            show=False, save_to=None, save_as=None, **kwargs):
-    mdict = util.init2mdict(reg.par.PI[k])
+    mdict = reg.init2mdict(reg.par.PI[k])
     data = [[getattr(p, col) for col in columns] for p in mdict.values()]
 
     df = pd.DataFrame(data, columns=columns)

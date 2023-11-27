@@ -562,11 +562,11 @@ def build_aux_module_dict(d0):
             continue
 
         for p, vs in d0[k].args.items():
-            d[k].args[p] = util.build_LarvaworldParam(p=p, **vs)
+            d[k].args[p] = reg.build_LarvaworldParam(p=p, **vs)
     for k in ['energetics', 'sensorimotor']:
         for m, mdic in d0[k].mode.items():
             for p, vs in mdic.args.items():
-                d[k].mode[m].args[p] = util.build_LarvaworldParam(p=p, **vs)
+                d[k].mode[m].args[p] = reg.build_LarvaworldParam(p=p, **vs)
     return d
 
 
@@ -575,7 +575,7 @@ def build_brain_module_dict(d0):
     for k in d0.keys():
         for m, mdic in d0[k].mode.items():
             for p, vs in mdic.args.items():
-                d[k].mode[m].args[p] = util.build_LarvaworldParam(p=p, **vs)
+                d[k].mode[m].args[p] = reg.build_LarvaworldParam(p=p, **vs)
     return d
 
 

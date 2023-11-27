@@ -102,8 +102,10 @@ class FunctionDict:
 funcs = FunctionDict()
 
 from . import keymap
-from .distro import *
 controls = keymap.ControlRegistry()
+
+from .distro import *
+from .data_aux import *
 
 from . import parDB, parFunc, stored_confs
 

@@ -300,7 +300,7 @@ class LarvaGroup(NestedConf):
 
             if d is not None:
                 sample_ks = [k for k in m.flatten() if m.flatten()[k] == 'sample']
-                Sinv = util.SAMPLING_PARS.inverse
+                Sinv = reg.SAMPLING_PARS.inverse
                 sample_ps = aux.SuperList([Sinv[k] for k in aux.existing_cols(Sinv, sample_ks)]).flatten
                 sample_dict = d.sample_larvagroup(N=Nids, ps=sample_ps)
             else:

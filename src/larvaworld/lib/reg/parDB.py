@@ -1461,7 +1461,7 @@ class ParamClass:
                **kws})
 
     def add(self, **kwargs):
-        prepar = util.prepare_LarvaworldParam(**kwargs)
+        prepar = reg.prepare_LarvaworldParam(**kwargs)
         self.dict[prepar.k] = prepar
         self.dict_entries.append(prepar)
 
@@ -2041,7 +2041,7 @@ class ParamClass:
     def finalize_dict(self, entries):
         dic = aux.AttrDict()
         for prepar in entries:
-            p = util.get_LarvaworldParam(**prepar)
+            p = reg.get_LarvaworldParam(**prepar)
             dic[p.k] = p
         return dic
 
