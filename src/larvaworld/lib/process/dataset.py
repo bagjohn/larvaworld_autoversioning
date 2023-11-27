@@ -722,7 +722,7 @@ class ParamLarvaDataset(param.Parameterized):
                 df = self._load_step(h5_ks=[])[['x', 'y']]
             elif mode in ['origin', 'center']:
                 s = self._load_step(h5_ks=['contour', 'midline'])
-                df = process.spatial.align_trajectories(s, c=self.config, replace=False, transposition=mode)[
+                df = aux.align_trajectories(s, c=self.config, replace=False, transposition=mode)[
                     ['x', 'y']]
             else:
                 raise ValueError('Not implemented')

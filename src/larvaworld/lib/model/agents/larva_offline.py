@@ -170,6 +170,5 @@ def sim_multi_agents(Nticks, Nids, ms, group_id, dt=0.1, ids=None, p0s=None, fo0
     e['num_ticks'] = Nticks
     e['length'] = [m.body.length for m in ms]
 
-    from ...process.spatial import scale_to_length
-    scale_to_length(s, e, keys=['v'])
+
     return s, e

@@ -1,7 +1,7 @@
 """
 Methods for managing spatial metrics (2D x-y arrays)
 """
-
+import copy
 import random
 from shapely import geometry, ops
 import numpy as np
@@ -9,9 +9,10 @@ import pandas as pd
 import scipy as sp
 from typing import Optional
 
-from . import nam, cols_exist
+from . import nam, cols_exist, flatten_list, rotate_points_around_point
 
 __all__ = [
+    'comp_PI',
     'rolling_window',
     'straightness_index',
     'sense_food',
@@ -42,8 +43,22 @@ __all__ = [
     'eudiNxN',
     'compute_dst',
     'comp_extrema',
-
+    'align_trajectories',
+    'fixate_larva',
 ]
+
+def comp_PI(arena_xdim, xs, return_num=False):
+    N = len(xs)
+    r = 0.2 * arena_xdim
+    xs = np.array(xs)
+    N_l = len(xs[xs <= -r / 2])
+    N_r = len(xs[xs >= +r / 2])
+    # N_m = len(xs[(xs <= +r / 2) & (xs >= -r / 2)])
+    pI = np.round((N_l - N_r) / N, 3)
+    if return_num:
+        return pI, N
+    else:
+        return pI
 
 def rolling_window(a, w):
     # Get windows of size w from array a
@@ -681,3 +696,98 @@ def comp_extrema(a, order=3, threshold=None, return_2D=True):
         aa[i_min] = -1
         aa[i_max] = 1
     return aa
+
+
+def align_trajectories(s, c, d=None, track_point=None, arena_dims=None, transposition='origin', replace=True, **kwargs):
+
+    if transposition in ['', None, np.nan]:
+        return
+    mode = transposition
+
+    xy_flat = c.all_xy.existing(s)
+    xy_pairs = xy_flat.in_pairs
+    # xy_flat=np.unique(aux.flatten_list(xy_pairs))
+    # xy_pairs = aux.group_list_by_n(xy_flat, 2)
+
+    if replace:
+        ss = s
+    else:
+        ss = copy.deepcopy(s[xy_flat])
+
+    if mode == 'arena':
+        # reg.vprint('Centralizing trajectories in arena center')
+        if arena_dims is None:
+            arena_dims = c.env_params.arena.dims
+        x0, y0 = arena_dims
+        X, Y = x0 / 2, y0 / 2
+
+        for x, y in xy_pairs:
+            ss[x] -= X
+            ss[y] -= Y
+        return ss
+    else:
+        if track_point is None:
+            track_point = c.point
+        XY = nam.xy(track_point) if cols_exist(nam.xy(track_point), s) else ['x', 'y']
+        if not cols_exist(XY, s):
+            raise ValueError('Defined point xy coordinates do not exist. Can not align trajectories! ')
+        ids = s.index.unique(level='AgentID').values
+        Nticks = len(s.index.unique('Step'))
+        if mode == 'origin':
+            # reg.vprint('Aligning trajectories to common origin')
+            xy = [s[XY].xs(id, level='AgentID').dropna().values[0] for id in ids]
+        elif mode == 'center':
+            # reg.vprint('Centralizing trajectories in trajectory center using min-max positions')
+            xy_max = [s[XY].xs(id, level='AgentID').max().values for id in ids]
+            xy_min = [s[XY].xs(id, level='AgentID').min().values for id in ids]
+            xy = [(max + min) / 2 for max, min in zip(xy_max, xy_min)]
+        else:
+            raise ValueError('Supported modes are "arena", "origin" and "center"!')
+        xs = np.array([x for x, y in xy] * Nticks)
+        ys = np.array([y for x, y in xy] * Nticks)
+
+        for jj, (x, y) in enumerate(xy_pairs):
+            ss[x] = ss[x].values - xs
+            ss[y] = ss[y].values - ys
+
+        if d is not None:
+            d.store(ss, f'traj.{mode}')
+            # reg.vprint(f'traj_aligned2{mode} stored')
+        return ss
+
+
+def fixate_larva(s, c, P1, P2=None):
+    # if not isinstance(c, reg.generators.DatasetConfig):
+    #     c = reg.generators.DatasetConfig(**c)
+
+    pars = c.all_xy.existing(s)
+    if not nam.xy(P1).exist_in(s):
+        raise ValueError(f" The requested {P1} is not part of the dataset")
+    # reg.vprint(f'Fixing {P1} to arena center')
+    X, Y = c.env_params.arena.dims
+    xy = s[nam.xy(P1)].values
+    xy_start = s[nam.xy(P1)].dropna().values[0]
+    bg_x = (xy[:, 0] - xy_start[0]) / X
+    bg_y = (xy[:, 1] - xy_start[1]) / Y
+
+    for x, y in pars.in_pairs:
+        s[[x, y]] -= xy
+
+    N = s.index.unique('Step').size
+    if P2 is not None:
+        if not nam.xy(P2).exist_in(s):
+            raise ValueError(f" The requested secondary {P2} is not part of the dataset")
+        # reg.vprint(f'Fixing {P2} as secondary point on vertical axis')
+        xy_sec = s[nam.xy(P2)].values
+        bg_a = np.arctan2(xy_sec[:, 1], xy_sec[:, 0]) - np.pi / 2
+
+        s[pars] = [
+            flatten_list(rotate_points_around_point(points=np.reshape(s[pars].values[i, :], (-1, 2)),
+                                                            radians=bg_a[i])) for i in range(N)]
+    else:
+        bg_a = np.zeros(N)
+
+    bg = np.vstack((bg_x, bg_y, bg_a))
+    # reg.vprint('Fixed-point dataset generated')
+    #
+    return s, bg
