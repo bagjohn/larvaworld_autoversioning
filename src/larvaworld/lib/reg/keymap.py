@@ -1,5 +1,4 @@
 import json
-import os
 
 from .. import reg, aux
 
@@ -131,4 +130,3 @@ class ControlRegistry:
             c = json.load(tfp)
         return aux.AttrDict(c)
 
-# controls=ControlRegistry()

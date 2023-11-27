@@ -3,10 +3,7 @@ Methods for processing spatial metrics in timeseries
 """
 
 import copy
-import itertools
-
 import numpy as np
-import pandas as pd
 
 from .. import reg, aux
 from ..aux import nam
@@ -16,14 +13,10 @@ __all__ = [
     'align_trajectories',
     'fixate_larva',
     'comp_PI',
-    # 'comp_dataPI',
     'scale_to_length',
 ]
 
 
-
-
-# @reg.funcs.proc("length")
 def comp_length(s, e, c, mode='minimal', recompute=False):
     if 'length' in e.columns.values and not recompute:
         reg.vprint('Length is already computed. If you want to recompute it, set recompute_length to True', 1)
@@ -55,11 +48,6 @@ def comp_length(s, e, c, mode='minimal', recompute=False):
     reg.vprint('All lengths computed.', 1)
 
 
-
-
-
-
-# @reg.funcs.preproc("transposition")
 def align_trajectories(s, c, d=None, track_point=None, arena_dims=None, transposition='origin', replace=True, **kwargs):
     if not isinstance(c, reg.generators.DatasetConfig):
         c = reg.generators.DatasetConfig(**c)
@@ -157,8 +145,6 @@ def fixate_larva(s, c, P1, P2=None):
     return s, bg
 
 
-
-
 def comp_PI(arena_xdim, xs, return_num=False):
     N = len(xs)
     r = 0.2 * arena_xdim
@@ -171,9 +157,6 @@ def comp_PI(arena_xdim, xs, return_num=False):
         return pI, N
     else:
         return pI
-
-
-
 
 
 def scale_to_length(s, e, c=None, pars=None, keys=None):
