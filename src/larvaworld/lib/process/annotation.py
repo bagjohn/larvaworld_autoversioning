@@ -503,14 +503,15 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
                                                                                return_idx=True)
                 stride_sdsts = stride_dsts / e[l].loc[id]
                 stride_Dor = np.array([np.trapz(a_fov[s0:s1 + 1]) for s0, s1 in strides])
-                str_fovs = np.abs(a_fov[stride_idx])
-                str_vs[jj, :] = [np.nanmean(stride_dsts),
-                                 np.nanstd(stride_dsts),
-                                 np.nanmean(a_sv[stride_idx]),
-                                 np.nanmean(str_fovs),
-                                 np.nanstd(str_fovs),
-                                 np.nansum(str_chain_ls),
-                                 ]
+                if stride_idx!=[]:
+                    str_fovs = np.abs(a_fov[stride_idx])
+                    str_vs[jj, :] = [np.nanmean(stride_dsts),
+                                     np.nanstd(stride_dsts),
+                                     np.nanmean(a_sv[stride_idx]),
+                                     np.nanmean(str_fovs),
+                                     np.nanstd(str_fovs),
+                                     np.nansum(str_chain_ls),
+                                     ]
             else:
                 runs = detect_runs(a_sv, dt, vel_thr=vel_thr)
             pauses = detect_pauses(a_sv, dt, vel_thr=vel_thr, runs=runs)
