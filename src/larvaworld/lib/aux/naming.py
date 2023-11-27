@@ -211,3 +211,6 @@ class NamingRegistry(AttrDict):
         return 'on_food'
 
 
+    @property
+    def off_food(self):
+        return 'off_food'

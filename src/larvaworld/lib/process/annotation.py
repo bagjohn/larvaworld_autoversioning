@@ -35,8 +35,10 @@ __all__ = [
     'crawl_annotation',
 ]
 
-def epoch_durs(epochs,dt):
+
+def epoch_durs(epochs, dt):
     return (np.diff(epochs).flatten()) * dt
+
 
 def epoch_slices(epochs):
     if epochs.shape[0] == 0:
@@ -44,13 +46,16 @@ def epoch_slices(epochs):
     else:
         return [np.arange(r0, r1, 1) for r0, r1 in epochs]
 
-def epoch_amps(epochs,a,dt):
+
+def epoch_amps(epochs, a, dt):
     slices = epoch_slices(epochs)
     return np.array([np.trapz(a[p][~np.isnan(a[p])], dx=dt) for p in slices])
 
-def epoch_maxs(epochs,a):
+
+def epoch_maxs(epochs, a):
     slices = epoch_slices(epochs)
     return np.array([np.max(a[p]) for p in slices])
+
 
 def epoch_idx(epochs):
     slices = epoch_slices(epochs)
@@ -61,12 +66,13 @@ def epoch_idx(epochs):
     else:
         return np.concatenate(slices)
 
-def epoch_overlap(epochs1,epochs2):
+
+def epoch_overlap(epochs1, epochs2):
     valid = []
     if epochs1.shape[0] != 0 and epochs2.shape[0] != 0:
         for v in epochs1:
-            temp=epochs2[epochs2[:,0]<=v[0] and epochs2[:,1]>=v[1]]
-            if temp.shape[0]!=0:
+            temp = epochs2[epochs2[:, 0] <= v[0] and epochs2[:, 1] >= v[1]]
+            if temp.shape[0] != 0:
                 valid.append(v)
     return np.array(valid)
 
@@ -141,6 +147,7 @@ def detect_epochs(idx, dt, min_dur=None):
     epochs = np.vstack([p0s, p1s]).T
     durs = (np.diff(epochs).flatten()) * dt
     return epochs[durs >= min_dur]
+
 
 def detect_patch_residency(a, dt, min_dur=None):
     idx = np.where(a == True)[0]
@@ -319,9 +326,6 @@ def weathervanesNheadcasts(run_idx, pause_idx, turn_slices, Tamps):
     return wvane_min, wvane_max, cast_min, cast_max
 
 
-
-
-
 def stride_interp(a, strides, Nbins=64):
     x = np.linspace(0, 2 * np.pi, Nbins)
     aa = np.zeros([strides.shape[0], Nbins])
@@ -438,7 +442,7 @@ def turn_mode_annotation(e, chunk_dicts):
     wNh_ps = ['weathervane_q25_amp', 'weathervane_q75_amp', 'headcast_q25_amp', 'headcast_q75_amp']
     for jj, id in enumerate(e.index.values):
         dic = chunk_dicts[id]
-        turn_slice=epoch_slices(dic.Lturn) + epoch_slices(dic.Rturn)
+        turn_slice = epoch_slices(dic.Lturn) + epoch_slices(dic.Rturn)
         wNh[id] = dict(zip(wNh_ps, weathervanesNheadcasts(dic.run_idx, dic.pause_idx, turn_slice, dic.turn_amp)))
     e[wNh_ps] = pd.DataFrame.from_dict(wNh).T
 
@@ -473,9 +477,11 @@ def turn_annotation(s, e, c):
             turn_vs[Rturns[:, 1], jj, 1] = Rdurs
             turn_vs[Rturns[:, 1], jj, 3] = Rdurs
             turn_vs[Rturns[:, 1], jj, 4] = Rmaxs
-        turn_dict[id] = {'Lturn': Lturns, 'Rturn': Rturns, 'turn_slice': Lturn_slices + Rturn_slices, 'turn_amp': np.concatenate([Lamps, Ramps]),
-                         'Lturn_amp': Lamps,'Rturn_amp': Ramps,
-                         'turn_dur': np.concatenate([Ldurs, Rdurs]), 'Lturn_dur': Ldurs, 'Rturn_dur': Rdurs, 'turn_vel_max': np.concatenate([Lmaxs, Rmaxs])}
+        turn_dict[id] = {'Lturn': Lturns, 'Rturn': Rturns, 'turn_slice': Lturn_slices + Rturn_slices,
+                         'turn_amp': np.concatenate([Lamps, Ramps]),
+                         'Lturn_amp': Lamps, 'Rturn_amp': Ramps,
+                         'turn_dur': np.concatenate([Ldurs, Rdurs]), 'Lturn_dur': Ldurs, 'Rturn_dur': Rdurs,
+                         'turn_vel_max': np.concatenate([Lmaxs, Rmaxs])}
         eTur_vs[jj, :] = [Lturns_N, Rturns_N, turns_N, tur_H]
     s[turn_ps] = turn_vs.reshape(-1, len(turn_ps))
     e[eTur_ps] = eTur_vs
@@ -504,21 +510,22 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
     crawl_dict = {}
 
     for jj, id in enumerate(c.agent_ids):
-        sv_minima, sv_maxima,strides, str_chain_ls, stride_Dor, stride_durs, stride_dsts, stride_sdsts, strides1 = [], [], [], [], [], [], [],[],[]
+        sv_minima, sv_maxima, strides, str_chain_ls, stride_Dor, stride_durs, stride_dsts, stride_sdsts, strides1 = [], [], [], [], [], [], [], [], []
         a_v = s[v].xs(id, level="AgentID").values
         a_fov = s[fov].xs(id, level="AgentID").values
 
         if c.Npoints > 1:
             a_sv = s[sv].xs(id, level="AgentID").values
             if strides_enabled:
-                sv_minima, sv_maxima,strides, runs, str_chain_ls = detect_strides(a_sv, dt, fr=e[fv].loc[id], vel_thr=vel_thr,
-                                                             return_extrema=True)
+                sv_minima, sv_maxima, strides, runs, str_chain_ls = detect_strides(a_sv, dt, fr=e[fv].loc[id],
+                                                                                   vel_thr=vel_thr,
+                                                                                   return_extrema=True)
                 strides1, stride_durs, stride_slices, stride_dsts, stride_idx, stride_maxs = process_epochs(a_v,
                                                                                                             strides, dt,
-                                                                               return_idx=True)
+                                                                                                            return_idx=True)
                 stride_sdsts = stride_dsts / e[l].loc[id]
                 stride_Dor = np.array([np.trapz(a_fov[s0:s1 + 1]) for s0, s1 in strides])
-                if stride_idx!=[]:
+                if stride_idx != []:
                     str_fovs = np.abs(a_fov[stride_idx])
                     str_vs[jj, :] = [np.nanmean(stride_dsts),
                                      np.nanstd(stride_dsts),
@@ -536,9 +543,9 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
             pauses = detect_pauses(a_v, dt, runs=runs, vel_thr=vel_thr)
 
         pauses1, pause_durs, pause_slices, pause_dsts, pause_idx, pause_maxs = process_epochs(a_v, pauses, dt,
-                                                                               return_idx=True)
+                                                                                              return_idx=True)
         runs1, run_durs, run_slices, run_dsts, run_idx, run_maxs = process_epochs(a_v, runs, dt,
-                                                                               return_idx=True)
+                                                                                  return_idx=True)
         if pauses1 != []:
             run_vs[pauses1, jj, 0] = pause_durs
         if strides1 != []:
@@ -564,18 +571,18 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
         if run_idx != []:
             run_fovs = np.abs(a_fov[run_idx])
             run_foas = a_foa[run_idx]
-            run_vvs=a_v[run_idx]
-            run_aas=a_acc[run_idx]
-        else :
-            run_fovs,run_foas = [], []
-            run_vvs,run_aas = [], []
+            run_vvs = a_v[run_idx]
+            run_aas = a_acc[run_idx]
+        else:
+            run_fovs, run_foas = [], []
+            run_vvs, run_aas = [], []
         if pause_idx != []:
             pau_fovs = np.abs(a_fov[pause_idx])
             pau_foas = a_foa[pause_idx]
             pau_vvs = a_v[pause_idx]
             pau_aas = a_acc[pause_idx]
-        else :
-            pau_fovs,pau_foas = [], []
+        else:
+            pau_fovs, pau_foas = [], []
             pau_vvs, pau_aas = [], []
 
         lin_vs[jj, :] = [
@@ -595,7 +602,8 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
             np.nanmin(pause_durs) if len(pause_durs) > 0 else dt,
             np.nanmax(pause_durs) if len(pause_durs) > 0 else 100,
         ]
-        crawl_dict[id] = {'vel_minima': sv_minima, 'vel_maxima': sv_maxima,'stride': strides, 'stride_Dor': stride_Dor, 'exec': runs, 'pause': pauses,
+        crawl_dict[id] = {'vel_minima': sv_minima, 'vel_maxima': sv_maxima, 'stride': strides, 'stride_Dor': stride_Dor,
+                          'exec': runs, 'pause': pauses,
                           'run_idx': run_idx, 'pause_idx': pause_idx, 'stride_dur': stride_durs,
                           'run_count': str_chain_ls, 'run_dur': run_durs, 'run_dst': run_dsts, 'pause_dur': pause_durs}
     s[run_ps] = run_vs.reshape(-1, len(run_ps))
@@ -614,5 +622,3 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
         e[str_sd_std] = e[str_d_std] / e[l]
     # print(s.columns)
     return crawl_dict
-
-

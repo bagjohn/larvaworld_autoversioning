@@ -804,25 +804,3 @@ def fixate_larva(s, c, P1, P2=None):
     #
     return s, bg
 
-
-# def comp_chunk_bearing(s, c, chunk, **kwargs):
-#     x0p, x1p, xdp = nam.atStartStopChunk('x', chunk)
-#     y0p, y1p, ydp = nam.atStartStopChunk('y', chunk)
-#     ho = nam.unwrap(nam.orient('front'))
-#     ho0p, ho1p, hodp = nam.atStartStopChunk(ho, chunk)
-#
-#     c0 = nam.start(chunk)
-#     c1 = nam.stop(chunk)
-#     # ho = nam.unwrap(nam.orient('front'))
-#     ho0s = s[ho0p].dropna().values
-#     ho1s = s[ho1p].dropna().values
-#     for n, pos in c.sources.items():
-#         b0_par, b1_par, db_par = nam.atStartStopChunk(nam.bearing_to(n), chunk)
-#         b0 = comp_bearing(s[x0p].dropna().values, s[y0p].dropna().values, ho0s, loc=pos)
-#         b1 = comp_bearing(s[x1p].dropna().values, s[y1p].dropna().values, ho1s, loc=pos)
-#         s[b0_par] = np.nan
-#         s.loc[s[c0] == True, b0_par] = b0
-#         s[b1_par] = np.nan
-#         s.loc[s[c1] == True, b1_par] = b1
-#         s[db_par] = np.nan
-#         s.loc[s[c1] == True, db_par] = np.abs(b0) - np.abs(b1)
