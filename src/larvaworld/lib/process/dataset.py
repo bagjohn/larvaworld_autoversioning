@@ -320,27 +320,19 @@ class ParamLarvaDataset(param.Parameterized):
         return (np.diff(epochs).flatten()) * self.c.dt
 
     def epoch_amps(self, epochs, a):
-        if epochs.shape[0] == 0:
-            return np.array([])
-        else :
-            slices = [np.arange(r0, r1, 1) for r0, r1 in epochs]
-            return np.array([np.trapz(a[p][~np.isnan(a[p])], dx=self.c.dt) for p in slices])
+        return np.array([np.trapz(a[p][~np.isnan(a[p])], dx=self.c.dt) for p in aux.epoch_slices(epochs)])
 
     def epoch_maxs(self, epochs, a):
-        if epochs.shape[0] == 0:
-            return np.array([])
-        else :
-            slices = [np.arange(r0, r1, 1) for r0, r1 in epochs]
-            return np.array([np.max(a[p]) for p in slices])
+        return np.array([np.max(a[p]) for p in aux.epoch_slices(epochs)])
 
     def epoch_idx(self, epochs):
-        if epochs.shape[0] == 0:
+        slices=aux.epoch_slices(epochs)
+        if len(slices) == 0:
             return np.array([])
-        elif epochs.shape[0] == 1:
-            r0, r1 = epochs[0,:]
-            return np.arange(r0, r1, 1)
+        elif len(slices) == 1:
+            return slices[0]
         else:
-            return np.concatenate([np.arange(r0, r1, 1) for r0, r1 in epochs])
+            return np.concatenate(slices)
 
     def comp_chunk_bearing(self, chunk):
         for n, loc in self.c.sources.items():
@@ -385,8 +377,7 @@ class ParamLarvaDataset(param.Parameterized):
 
 
         """
-        idx = np.where(a >= vel_thr)[0]
-        return self.detect_epochs(idx, min_dur)
+        return self.detect_epochs(np.where(a >= vel_thr)[0], min_dur)
 
     def detect_pauses(self, a, vel_thr=0.3, runs=None, min_dur=None):
         """
@@ -585,7 +576,8 @@ class ParamLarvaDataset(param.Parameterized):
                 D.vel_minima, D.vel_maxima, D.stride, D.run_count = np.array([]), np.array([]), np.array([]), np.array([])
                 D.stride_Dor, D.stride_dur, D.stride_dst, D.stride_idx = np.array([]), np.array([]), np.array([]), np.array([])
                 a = a_v
-                D.exec = self.detect_runs(a_v, vel_thr=vel_thr)
+                D.exec = self.detect_epochs(np.where(a_v >= vel_thr)[0])
+                # D.exec = self.detect_runs(a_v, vel_thr=vel_thr)
 
             D.run_dur = self.epoch_durs(D.exec)
             D.run_dst = self.epoch_amps(D.exec, a_v)
@@ -638,16 +630,12 @@ class ParamLarvaDataset(param.Parameterized):
         wNh_ps = ['weathervane_q25_amp', 'weathervane_q75_amp', 'headcast_q25_amp', 'headcast_q75_amp']
         for jj, id in enumerate(self.ids):
             D = self.chunk_dicts[id]
-            if D.Lturn.shape[0] == 0:
-                Lslices =  np.array([])
-            else:
-                Lslices = [np.arange(r0, r1, 1) for r0, r1 in D.Lturn]
-            if D.Rturn.shape[0] == 0:
-                Rslices =  np.array([])
-            else:
-                Rslices = [np.arange(r0, r1, 1) for r0, r1 in D.Rturn]
-            turn_slice = Lslices + Rslices
-            wNh[id] = dict(zip(wNh_ps, aux.weathervanesNheadcasts(D.run_idx, D.pause_idx, turn_slice, D.turn_amp)))
+            T = aux.epoch_slices(D.Lturn) + aux.epoch_slices(D.Rturn)
+            wvane_idx = [ii for ii, t in enumerate(T) if all([tt in D.run_idx for tt in t])]
+            cast_idx = [ii for ii, t in enumerate(T) if all([tt in D.pause_idx for tt in t])]
+            Awvane = D.turn_amp[wvane_idx]
+            Acast = D.turn_amp[cast_idx]
+            wNh[id] = np.nanquantile(Awvane, 0.25), np.nanquantile(Awvane, 0.75), np.nanquantile(Acast, 0.25), np.nanquantile(Acast, 0.75)
         self.e[wNh_ps] = pd.DataFrame.from_dict(wNh).T
 
     def patch_residency_annotation(self):

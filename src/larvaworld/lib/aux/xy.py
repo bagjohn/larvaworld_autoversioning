@@ -47,7 +47,7 @@ __all__ = [
     'align_trajectories',
     'fixate_larva',
     'epoch_overlap',
-    'weathervanesNheadcasts',
+    'epoch_slices',
 ]
 
 
@@ -815,11 +815,11 @@ def epoch_overlap(epochs1, epochs2):
                 valid.append(v)
     return np.array(valid)
 
-def weathervanesNheadcasts(run_idx, pause_idx, turn_slices, Tamps):
-    wvane_idx = [ii for ii, t in enumerate(turn_slices) if all([tt in run_idx for tt in t])]
-    cast_idx = [ii for ii, t in enumerate(turn_slices) if all([tt in pause_idx for tt in t])]
-    wvane_amps = Tamps[wvane_idx]
-    cast_amps = Tamps[cast_idx]
-    wvane_min, wvane_max = np.nanquantile(wvane_amps, 0.25), np.nanquantile(wvane_amps, 0.75)
-    cast_min, cast_max = np.nanquantile(cast_amps, 0.25), np.nanquantile(cast_amps, 0.75)
-    return wvane_min, wvane_max, cast_min, cast_max
+
+
+
+def epoch_slices(epochs):
+    if epochs.shape[0] == 0:
+        return []
+    else:
+        return [np.arange(r0, r1, 1) for r0, r1 in epochs]
