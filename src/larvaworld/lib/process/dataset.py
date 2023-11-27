@@ -254,34 +254,27 @@ class ParamLarvaDataset(param.Parameterized):
             b1s = ss.loc[t1s].values
             return b0s, b1s
         else:
-            return np.array([[],[],[]]), np.array([[],[],[]])
+            return np.array([[], [], []]), np.array([[], [], []])
 
     def epochs_bearing_by_ID(self, chunk, id, loc=(0.0, 0.0)):
         b0s, b1s = self.epochs_pose_by_ID(chunk, id)
-        p0=np.array([aux.comp_bearing_solo(x,y,o,loc=loc) for x,y,o in b0s])
-        p1=np.array([aux.comp_bearing_solo(x,y,o,loc=loc) for x,y,o in b1s])
-        return p0,p1
+        p0 = np.array([aux.comp_bearing_solo(x, y, o, loc=loc) for x, y, o in b0s])
+        p1 = np.array([aux.comp_bearing_solo(x, y, o, loc=loc) for x, y, o in b1s])
+        return p0, p1
 
     def comp_chunk_bearing(self, chunk):
-        c=self.config
+        c = self.config
         for n, loc in c.sources.items():
             A = self.empty_df(dim3=3)
             for i, id in enumerate(c.agent_ids):
                 epochs = self.epoch_dicts[chunk][id]
                 if epochs.shape[0] > 0:
                     t0s, t1s = epochs[:, 0], epochs[:, 1]
-                    b0s, b1s = self.epochs_bearing_by_ID(chunk, id,loc=loc)
+                    b0s, b1s = self.epochs_bearing_by_ID(chunk, id, loc=loc)
                     A[t0s, i, 0] = b0s
                     A[t1s, i, 1] = b1s
                     A[t1s, i, 2] = b1s - b0s
             self.s[nam.atStartStopChunk(nam.bearing_to(n), chunk)] = A.reshape([-1, 3])
-    # def track_par_in_chunk_bounds(self, chunk, par, id):
-    #     epochs = self.epoch_dicts[chunk][id]
-    #     try:
-    #         ss = self.s[par].xs(id, level='AgentID')
-    #         return ss.loc[epochs[:, 0]].values, ss.loc[epochs[:, 1]].values
-    #     except:
-    #         return np.array([]), np.array([])
 
     def crawl_annotation(self, strides_enabled=True, vel_thr=0.3):
         from ..process.annotation import detect_strides, detect_pauses, detect_runs, epoch_idx, epoch_durs, epoch_amps
@@ -365,12 +358,39 @@ class ParamLarvaDataset(param.Parameterized):
         self.e[ps] = vs
         return DD
 
+    def patch_residency_annotation(self):
+        from ..process.annotation import detect_patch_residency, epoch_durs, epoch_amps
+        c = self.config
+        dt=c.dt
+        on = nam.on_food
+        dst,on_tr,on_t_mu, cum_on_d, on_d_mu, on_v_mu, cum_on_t, cum_t = reg.getPar(['d', 'on_food_tr','on_food_t_mu',
+                                                                                     'cum_on_food_d','on_food_d_mu','on_food_v_mu', 'cum_on_food_t', 'cum_t'])
+        Sps = [cum_on_t, on_t_mu, cum_on_d, on_d_mu]
+        Svs = np.zeros([c.N, len(Sps)]) * np.nan
+        DD = {}
+        for jj, id in enumerate(c.agent_ids):
+            ss = self.s.xs(id, level="AgentID")
+            D = aux.AttrDict()
+            D.on_food = np.array([])
+            if on in self.s.columns:
+                D.on_food = detect_patch_residency(ss[on].values, dt)
+            D.on_food_dur = epoch_durs(D.on_food, dt)
+            D.on_food_dst = epoch_amps(D.on_food, ss[dst].values, dt)
+            DD[id] = D
+            Svs[jj, :] = [np.nansum(D.on_food_dur),np.nanmean(D.on_food_dur),np.nansum(D.on_food_dst),np.nanmean(D.on_food_dst)]
+        self.e[Sps] = Svs
+        self.e[on_tr] = self.e[cum_on_t] / self.e[cum_t]
+        self.e[on_v_mu] = self.e[cum_on_d] / self.e[cum_t]
+        return DD
+
     def detect_bouts(self, vel_thr=0.3, strides_enabled=True, castsNweathervanes=True):
         s, e, c = self.data
         aux.fft_freqs(s, e, c)
         turn_dict = process.annotation.turn_annotation(s, e, c)
         crawl_dict = process.annotation.crawl_annotation(s, e, c, strides_enabled=strides_enabled, vel_thr=vel_thr)
-        self.chunk_dicts = aux.AttrDict({id: {**turn_dict[id], **crawl_dict[id]} for id in c.agent_ids})
+        patch_dict = self.patch_residency_annotation()
+        self.chunk_dicts = aux.AttrDict(
+            {id: {**turn_dict[id], **crawl_dict[id], **patch_dict[id]} for id in c.agent_ids})
         if castsNweathervanes:
             process.annotation.turn_mode_annotation(e, self.chunk_dicts)
         reg.vprint(f'Completed bout detection.', 1)
@@ -470,64 +490,92 @@ class ParamLarvaDataset(param.Parameterized):
         if 'interference' in anot_keys:
             self.comp_interference()
         if 'source_attraction' in anot_keys:
-            s, e, c = self.data
+            # s, e, c = self.data
             for b in ['stride', 'pause', 'turn']:
                 try:
                     self.comp_chunk_bearing(b)
-                    # aux.comp_chunk_bearing(s, c, chunk=b)
                     if b == 'turn':
                         self.comp_chunk_bearing('Lturn')
                         self.comp_chunk_bearing('Rturn')
-                        # aux.comp_chunk_bearing(s, c, chunk='Lturn')
-                        # aux.comp_chunk_bearing(s, c, chunk='Rturn')
+
                 except:
                     pass
         if 'patch_residency' in anot_keys:
+            on = nam.on_food
+            # off = 'off_food'
+            on_cumt = nam.cum(nam.dur(on))
             s, e, c = self.data
-            on = 'on_food'
-            if on in s.columns and nam.dur_ratio(on) in e.columns:
-                cum_t = nam.cum('dur')
-                on = 'on_food'
-                off = 'off_food'
-                on_tr = nam.dur_ratio(on)
-                on_cumt = nam.cum(nam.dur(on))
-                off_cumt = nam.cum(nam.dur(off))
-                s_on = s[s[on] == True]
-                s_off = s[s[on] == False]
-
-                e[on_cumt] = e[cum_t] * e[on_tr]
-                e[off_cumt] = e[cum_t] * (1 - e[on_tr])
-
-                for c in ['Lturn', 'turn', 'pause']:
-                    dur = nam.dur(c)
-                    cdur = nam.cum(dur)
-                    cdur_on = f'{cdur}_{on}'
-                    cdur_off = f'{cdur}_{off}'
-                    N = nam.num(c)
-
-                    e[f'{N}_{on}'] = s_on[dur].groupby('AgentID').count()
-                    e[f'{N}_{off}'] = s_off[dur].groupby('AgentID').count()
-
-                    e[cdur_on] = s_on[dur].groupby('AgentID').sum()
-                    e[cdur_off] = s_off[dur].groupby('AgentID').sum()
-
-                    e[f'{nam.dur_ratio(c)}_{on}'] = e[cdur_on] / e[on_cumt]
-                    e[f'{nam.dur_ratio(c)}_{off}'] = e[cdur_off] / e[off_cumt]
-                    e[f'{nam.mean(N)}_{on}'] = e[f'{N}_{on}'] / e[on_cumt]
-                    e[f'{nam.mean(N)}_{off}'] = e[f'{N}_{off}'] / e[off_cumt]
-
-                dst = nam.dst('')
-                cdst = nam.cum(dst)
-                cdst_on = f'{cdst}_{on}'
-                cdst_off = f'{cdst}_{off}'
-                v_mu = nam.mean(nam.vel(''))
-                e[cdst_on] = s_on[dst].dropna().groupby('AgentID').sum()
-                e[cdst_off] = s_off[dst].dropna().groupby('AgentID').sum()
-
-                e[f'{v_mu}_{on}'] = e[cdst_on] / e[on_cumt]
-                e[f'{v_mu}_{off}'] = e[cdst_off] / e[off_cumt]
-                e[f'handedness_score_{on}'] = e[f"{nam.num('Lturn')}_{on}"] / e[f"{nam.num('turn')}_{on}"]
-                e[f'handedness_score_{off}'] = e[f"{nam.num('Lturn')}_{off}"] / e[f"{nam.num('turn')}_{off}"]
+            ep_on_food = self.epoch_dicts['on_food']
+            for cc in ['Lturn', 'turn', 'pause']:
+                dur = nam.dur(cc)
+                cdur_on = f'{nam.cum(dur)}_{on}'
+                cc_N = nam.num(cc)
+                cc_N_on = f'{cc_N}_{on}'
+                Sps = [cdur_on, cc_N_on]
+                Svs = np.zeros([c.N, len(Sps)]) * np.nan
+                epochs = self.epoch_dicts[cc]
+                for jj, id in enumerate(c.agent_ids):
+                    ep_valid = process.annotation.epoch_overlap(epochs[id], ep_on_food[id])
+                    ep_valid_durs = process.annotation.epoch_durs(ep_valid, c.dt)
+                    np.nansum(ep_valid_durs)
+                    Svs[jj, :] = [np.nansum(ep_valid_durs), ep_valid_durs.shape[0]]
+                e[Sps] = Svs
+                e[f'{nam.dur_ratio(cc)}_{on}'] = e[cdur_on] / e[on_cumt]
+                e[f'{nam.mean(cc_N)}_{on}'] = e[cc_N_on] / e[on_cumt]
+            e[f'handedness_score_{on}'] = e[f"{nam.num('Lturn')}_{on}"] / e[f"{nam.num('turn')}_{on}"]
+            # e[f'handedness_score_{off}'] = e[f"{nam.num('Lturn')}_{off}"] / e[f"{nam.num('turn')}_{off}"]
+            # on = nam.on_food
+            # if on in s.columns:
+            #     for jj, id in enumerate(c.agent_ids):
+            #         ss = self.s[on].xs(id, level="AgentID").values
+            #         epochs = process.annotation.detect_patch_residency(ss, c.dt)
+            # v_mu = nam.mean(nam.vel(''))
+            # CT = e[nam.cum('dur')]
+            #
+            # # on = 'on_food'
+            # # off = 'off_food'
+            # on_cumt = nam.cum(nam.dur(on))
+            # off_cumt = nam.cum(nam.dur(off))
+            # on_tr = nam.dur_ratio(on)
+            # if on in s.columns and on_tr in e.columns:
+            #     TRon = e[on_tr]
+            #
+            #     s_on = s[s[on] == True]
+            #     s_off = s[s[on] == False]
+            #
+            #     e[on_cumt] = CT * TRon
+            #     e[off_cumt] = CT * (1 - TRon)
+            #
+            #     for c in ['Lturn', 'turn', 'pause']:
+            #         dur = nam.dur(c)
+            #         cdur = nam.cum(dur)
+            #         cdur_on = f'{cdur}_{on}'
+            #         cdur_off = f'{cdur}_{off}'
+            #         N = nam.num(c)
+            #
+            #         e[f'{N}_{on}'] = s_on[dur].groupby('AgentID').count()
+            #         e[f'{N}_{off}'] = s_off[dur].groupby('AgentID').count()
+            #
+            #         e[cdur_on] = s_on[dur].groupby('AgentID').sum()
+            #         e[cdur_off] = s_off[dur].groupby('AgentID').sum()
+            #
+            #         e[f'{nam.dur_ratio(c)}_{on}'] = e[cdur_on] / e[on_cumt]
+            #         e[f'{nam.dur_ratio(c)}_{off}'] = e[cdur_off] / e[off_cumt]
+            #         e[f'{nam.mean(N)}_{on}'] = e[f'{N}_{on}'] / e[on_cumt]
+            #         e[f'{nam.mean(N)}_{off}'] = e[f'{N}_{off}'] / e[off_cumt]
+            #
+            #     # dst = nam.dst('')
+            #     # cdst = nam.cum(dst)
+            #     # cdst_on = f'{cdst}_{on}'
+            #     # cdst_off = f'{cdst}_{off}'
+            #
+            #     # e[cdst_on] = s_on[dst].dropna().groupby('AgentID').sum()
+            #     # e[cdst_off] = s_off[dst].dropna().groupby('AgentID').sum()
+            #
+            #     # e[f'{v_mu}_{on}'] = e[cdst_on] / e[on_cumt]
+            #     # e[f'{v_mu}_{off}'] = e[cdst_off] / e[off_cumt]
+            #     e[f'handedness_score_{on}'] = e[f"{nam.num('Lturn')}_{on}"] / e[f"{nam.num('turn')}_{on}"]
+            #     e[f'handedness_score_{off}'] = e[f"{nam.num('Lturn')}_{off}"] / e[f"{nam.num('turn')}_{off}"]
 
         if is_last:
             self.save()

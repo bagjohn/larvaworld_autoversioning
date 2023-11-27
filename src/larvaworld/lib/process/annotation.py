@@ -15,10 +15,12 @@ __all__ = [
     'epoch_amps',
     'epoch_maxs',
     'epoch_idx',
+    'epoch_overlap',
     'process_epochs',
     'stride_interp',
     'detect_pauses',
     'detect_epochs',
+    'detect_patch_residency',
     'detect_runs',
     'detect_strides',
     'detect_turns',
@@ -58,6 +60,15 @@ def epoch_idx(epochs):
         return np.array(slices[0])
     else:
         return np.concatenate(slices)
+
+def epoch_overlap(epochs1,epochs2):
+    valid = []
+    if epochs1.shape[0] != 0 and epochs2.shape[0] != 0:
+        for v in epochs1:
+            temp=epochs2[epochs2[:,0]<=v[0] and epochs2[:,1]>=v[1]]
+            if temp.shape[0]!=0:
+                valid.append(v)
+    return np.array(valid)
 
 
 def process_epochs(a, epochs, dt, return_idx=False):
@@ -130,6 +141,10 @@ def detect_epochs(idx, dt, min_dur=None):
     epochs = np.vstack([p0s, p1s]).T
     durs = (np.diff(epochs).flatten()) * dt
     return epochs[durs >= min_dur]
+
+def detect_patch_residency(a, dt, min_dur=None):
+    idx = np.where(a == True)[0]
+    return detect_epochs(idx, dt, min_dur)
 
 
 def detect_runs(a, dt, vel_thr=0.3, min_dur=0.5):

@@ -206,4 +206,8 @@ class NamingRegistry(AttrDict):
             self.chunk_track(chunk, p)
         ]
 
+    @property
+    def on_food(self):
+        return 'on_food'
+
 
