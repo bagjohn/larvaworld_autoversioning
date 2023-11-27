@@ -432,10 +432,62 @@ class ParamLarvaDataset(param.Parameterized):
             self.comp_interference()
         if 'source_attraction' in anot_keys:
             s, e, c = self.data
-            process.patch.comp_bearing_to_source(s, e, c)
+            for b in ['stride', 'pause', 'turn']:
+                try:
+                    aux.comp_chunk_bearing(s, c, chunk=b)
+                    if b == 'turn':
+                        aux.comp_chunk_bearing(s, c, chunk='Lturn')
+                        aux.comp_chunk_bearing(s, c, chunk='Rturn')
+                except:
+                    pass
         if 'patch_residency' in anot_keys:
             s, e, c = self.data
-            process.patch.comp_time_on_patch(s, e, c)
+            on = 'on_food'
+            if on in s.columns and nam.dur_ratio(on) in e.columns:
+                cum_t = nam.cum('dur')
+                on = 'on_food'
+                off = 'off_food'
+                on_tr = nam.dur_ratio(on)
+                on_cumt = nam.cum(nam.dur(on))
+                off_cumt = nam.cum(nam.dur(off))
+                s_on = s[s[on] == True]
+                s_off = s[s[on] == False]
+
+                e[on_cumt] = e[cum_t] * e[on_tr]
+                e[off_cumt] = e[cum_t] * (1 - e[on_tr])
+
+                for c in ['Lturn', 'turn', 'pause']:
+                    dur = nam.dur(c)
+                    cdur = nam.cum(dur)
+                    cdur_on = f'{cdur}_{on}'
+                    cdur_off = f'{cdur}_{off}'
+                    N = nam.num(c)
+
+                    e[f'{N}_{on}'] = s_on[dur].groupby('AgentID').count()
+                    e[f'{N}_{off}'] = s_off[dur].groupby('AgentID').count()
+
+                    e[cdur_on] = s_on[dur].groupby('AgentID').sum()
+                    e[cdur_off] = s_off[dur].groupby('AgentID').sum()
+
+                    e[f'{nam.dur_ratio(c)}_{on}'] = e[cdur_on] / e[on_cumt]
+                    e[f'{nam.dur_ratio(c)}_{off}'] = e[cdur_off] / e[off_cumt]
+                    e[f'{nam.mean(N)}_{on}'] = e[f'{N}_{on}'] / e[on_cumt]
+                    e[f'{nam.mean(N)}_{off}'] = e[f'{N}_{off}'] / e[off_cumt]
+
+                dst = nam.dst('')
+                cdst = nam.cum(dst)
+                cdst_on = f'{cdst}_{on}'
+                cdst_off = f'{cdst}_{off}'
+                v_mu = nam.mean(nam.vel(''))
+                e[cdst_on] = s_on[dst].dropna().groupby('AgentID').sum()
+                e[cdst_off] = s_off[dst].dropna().groupby('AgentID').sum()
+
+                e[f'{v_mu}_{on}'] = e[cdst_on] / e[on_cumt]
+                e[f'{v_mu}_{off}'] = e[cdst_off] / e[off_cumt]
+                e[f'handedness_score_{on}'] = e[f"{nam.num('Lturn')}_{on}"] / e[f"{nam.num('turn')}_{on}"]
+                e[f'handedness_score_{off}'] = e[f"{nam.num('Lturn')}_{off}"] / e[f"{nam.num('turn')}_{off}"]
+
+
         if is_last:
             self.save()
 

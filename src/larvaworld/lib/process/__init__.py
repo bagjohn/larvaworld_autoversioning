@@ -4,6 +4,6 @@ This module contains all methods and classes relevant in data management,analysi
 """
 
 
-from . import patch, calibration, annotation, evaluation
+from . import calibration, annotation, evaluation
 
 __displayname__ = 'Data management'
