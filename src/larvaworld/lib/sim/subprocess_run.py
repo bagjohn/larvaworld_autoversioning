@@ -50,7 +50,7 @@ class Exec:
     def retrieve(self, res=None):
         if self.mode == 'batch':
             if res is None and self.run_externally:
-                f = f'{reg.SIM_DIR}/batch_runs/{self.type}/{self.conf['id']}/results.h5'
+                f = f'{reg.SIM_DIR}/batch_runs/{self.type}/{self.conf["id"]}/results.h5'
                 try:
                     res = pd.read_hdf(f, key='results')
                 except:
