@@ -8,10 +8,14 @@ import numpy as np
 import pandas as pd
 import scipy as sp
 from typing import Optional
+from scipy.signal import find_peaks
 
-from . import nam, cols_exist, flatten_list, rotate_points_around_point
+from . import nam, cols_exist, flatten_list, rotate_points_around_point, AttrDict, fft_max
 
 __all__ = [
+    'detect_strides',
+    'stride_interp',
+    'mean_stride_curve',
     'comp_PI',
     'rolling_window',
     'straightness_index',
@@ -49,6 +53,71 @@ __all__ = [
     'epoch_overlap',
     'epoch_slices',
 ]
+
+def detect_strides(a, dt, vel_thr=0.3, stretch=(0.75, 2.0), fr=None):
+    """
+    Annotates strides-runs and pauses in timeseries.
+
+    Extended description of function.
+
+    Parameters
+    ----------
+    a : array
+        1D np.array : forward velocity timeseries
+    dt : float
+        Timestep of the timeseries
+    vel_thr : float
+        Maximum velocity threshold
+    stretch : Tuple[float,float]
+        The min-max stretch of a stride relative to the default derived from the dominnt frequency
+    fr : float, optional
+        The dominant crawling frequency.
+
+    Returns
+    -------
+    strides : list
+        A list of pairs of the start-end indices of the strides.
+
+
+    """
+    if fr is None:
+        fr = fft_max(a, dt, fr_range=(1, 2.5))
+    tmin = stretch[0] // (fr * dt)
+    tmax = stretch[1] // (fr * dt)
+    i_min = find_peaks(-a, height=-3 * vel_thr, distance=tmin)[0]
+    i_max = find_peaks(a, height=vel_thr, distance=tmin)[0]
+    strides = []
+    for m in i_max:
+        try:
+            s0, s1 = [i_min[i_min < m][-1], i_min[i_min > m][0]]
+            if ((s1 - s0) <= tmax) and ([s0, s1] not in strides):
+                strides.append([s0, s1])
+        except:
+            pass
+    return np.array(strides)
+
+
+
+def stride_interp(a, strides, Nbins=64):
+    x = np.linspace(0, 2 * np.pi, Nbins)
+    aa = np.zeros([strides.shape[0], Nbins])
+    for ii, (s0, s1) in enumerate(strides):
+        aa[ii, :] = np.interp(x, np.linspace(0, 2 * np.pi, s1 - s0), a[s0:s1])
+    return aa
+
+def mean_stride_curve(a, strides, da, Nbins=64):
+    aa = stride_interp(a, strides, Nbins)
+    aa_minus = aa[da < 0]
+    aa_plus = aa[da > 0]
+    aa_norm = np.vstack([aa_plus, -aa_minus])
+    dic = AttrDict({
+        'abs': np.nanquantile(np.abs(aa), q=0.5, axis=0).tolist(),
+        'plus': np.nanquantile(aa_plus, q=0.5, axis=0).tolist(),
+        'minus': np.nanquantile(aa_minus, q=0.5, axis=0).tolist(),
+        'norm': np.nanquantile(aa_norm, q=0.5, axis=0).tolist(),
+    })
+
+    return dic
 
 
 def comp_PI(arena_xdim, xs, return_num=False):

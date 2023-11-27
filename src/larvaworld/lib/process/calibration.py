@@ -15,7 +15,6 @@ from sklearn.linear_model import LinearRegression
 
 from .. import reg, aux
 from ..aux import nam
-from ..process.annotation import detect_strides, process_epochs
 
 
 __all__ = [
@@ -201,6 +200,35 @@ def comp_spatial(s, e, c, mode='minimal'):
     scale_to_length(s, e, c, pars=pars)
     reg.vprint('All spatial parameters computed')
 
+
+
+def process_epochs(a, epochs, dt, return_idx=False):
+    if epochs.shape[0] == 0:
+        stops = np.array([])
+        durs = np.array([])
+        slices = []
+        amps = np.array([])
+        idx = np.array([])
+        maxs = np.array([])
+        if return_idx:
+            return stops, durs, slices, amps, idx, maxs
+        else:
+            return durs, amps, maxs
+
+    else:
+        if epochs.shape == (2,):
+            epochs = np.array([epochs, ])
+        durs = (np.diff(epochs).flatten()) * dt
+        slices = [np.arange(r0, r1, 1) for r0, r1 in epochs]
+        amps = np.array([np.trapz(a[p][~np.isnan(a[p])], dx=dt) for p in slices])
+        maxs = np.array([np.max(a[p]) for p in slices])
+        if return_idx:
+            stops = epochs[:, 1]
+            idx = np.concatenate(slices) if len(slices) > 1 else slices[0]
+            return stops, durs, slices, amps, idx, maxs
+        else:
+            return durs, amps, maxs
+
 def vel_definition(d) :
     s, e, c = d.data
     assert isinstance(c,reg.generators.DatasetConfig)
@@ -252,7 +280,6 @@ def comp_stride_variation(s, e, c):
         comp_spatial(s, e, c, mode='full')
 
     if not aux.cols_exist(lvels,s):
-        from ..process.angular import comp_orientations
         comp_orientations(s, e, c, mode='full')
         comp_linear(s, e, c, mode='full')
 
@@ -273,7 +300,7 @@ def comp_stride_variation(s, e, c):
             cum_dur = ss[vv].dropna().values.shape[0] * c.dt
             a = ss[vv].values
             fr = aux.fft_max(a, c.dt, fr_range=(1, 2.5))
-            strides = detect_strides(a, fr=fr, dt=c.dt, return_extrema=False, return_runs=False)
+            strides = aux.detect_strides(a, fr=fr, dt=c.dt)
             if len(strides) == 0:
                 row = [fr, 0, np.nan, np.nan, np.nan,
                        np.nan, np.nan, np.nan, np.nan]

@@ -148,7 +148,6 @@ def stride_cycle_all_points(name='stride cycle multi', idx=0, Nbins=64, short='f
     pi2 = 2 * np.pi
     x = np.linspace(0, pi2, Nbins)
 
-    from ..process.annotation import stride_interp, detect_strides
     l, sv, fv, fov = reg.getPar(['l', 'sv', 'fv', 'fov'])
 
     for d in P.datasets:
@@ -156,12 +155,12 @@ def stride_cycle_all_points(name='stride cycle multi', idx=0, Nbins=64, short='f
         id = c.agent_ids[idx]
         ee = e.loc[id]
         ss = s.xs(id, level='AgentID')
-        strides = detect_strides(ss[sv], c.dt, fr=ee[fv], return_runs=False, return_extrema=False)
+        strides = aux.detect_strides(ss[sv], c.dt, fr=ee[fv])
 
         if short is not None:
             par, ylab1 = reg.getPar(short, to_return=['d', 'l'])
             da = np.array([np.trapz(ss[fov].values[s0:s1]) for ii, (s0, s1) in enumerate(strides)])
-            aa = stride_interp(ss[par].values, strides, Nbins)
+            aa = aux.stride_interp(ss[par].values, strides, Nbins)
             aa_minus = aa[da < 0]
             aa_plus = aa[da > 0]
             aa_norm = np.vstack([aa_plus, -aa_minus])

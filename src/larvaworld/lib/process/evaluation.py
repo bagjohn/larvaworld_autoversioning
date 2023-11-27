@@ -177,6 +177,17 @@ def col_df(shorts, groups):
     return df
 
 
+def cycle_curve_dict(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
+    strides = aux.detect_strides(s[reg.getPar('sv')], dt)
+    da = np.array([np.trapz(s[reg.getPar('fov')][s0:s1].dropna()) for ii, (s0, s1) in enumerate(strides)])
+    dic = {sh: aux.mean_stride_curve(s[reg.getPar(sh)], strides, da) for sh in shs}
+    return aux.AttrDict(dic)
+
+
+def cycle_curve_dict_multi(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
+    return aux.AttrDict({id : cycle_curve_dict(s.xs(id, level="AgentID"), dt=dt, shs=shs) for id in s.index.unique('AgentID').values})
+
+
 
 class Evaluation(NestedConf):
     refID = reg.conf.Ref.confID_selector()
@@ -261,7 +272,6 @@ class Evaluation(NestedConf):
     @property
     def func_cycle_curve_solo(self):
         def func(ss):
-            from ..process.annotation import cycle_curve_dict
             c0 = cycle_curve_dict(s=ss, dt=self.target.config.dt, shs=self.cycle_curve_metrics)
             eval_curves = aux.AttrDict(({sh: c0[sh][mode] for sh, mode in self.cycle_modes.items()}))
             return aux.AttrDict(
@@ -272,8 +282,6 @@ class Evaluation(NestedConf):
     @property
     def func_cycle_curve_multi(self):
         def gfunc(s):
-            from ..process.annotation import cycle_curve_dict_multi
-
             rss0 = cycle_curve_dict_multi(s=s, dt=self.target.config.dt, shs=self.cycle_curve_metrics)
             rss = aux.AttrDict(
                 {id: {sh: dic[sh][mod] for sh, mod in self.cycle_modes.items()} for id, dic in rss0.items()})

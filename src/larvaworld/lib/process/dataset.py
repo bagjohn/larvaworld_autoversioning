@@ -326,7 +326,7 @@ class ParamLarvaDataset(param.Parameterized):
         return np.array([np.max(a[p]) for p in aux.epoch_slices(epochs)])
 
     def epoch_idx(self, epochs):
-        slices=aux.epoch_slices(epochs)
+        slices = aux.epoch_slices(epochs)
         if len(slices) == 0:
             return np.array([])
         elif len(slices) == 1:
@@ -346,7 +346,7 @@ class ParamLarvaDataset(param.Parameterized):
                     A[ep[:, 1], i, 2] = b1s - b0s
             self.s[nam.atStartStopChunk(nam.bearing_to(n), chunk)] = A.reshape([-1, 3])
 
-    def detect_epochs(self, idx,  min_dur=None):
+    def detect_epochs(self, idx, min_dur=None):
         dt = self.c.dt
         if min_dur is None:
             min_dur = 2 * dt
@@ -573,8 +573,10 @@ class ParamLarvaDataset(param.Parameterized):
                 D.stride_dst = self.epoch_amps(D.stride, a)
                 D.stride_idx = self.epoch_idx(D.stride)
             else:
-                D.vel_minima, D.vel_maxima, D.stride, D.run_count = np.array([]), np.array([]), np.array([]), np.array([])
-                D.stride_Dor, D.stride_dur, D.stride_dst, D.stride_idx = np.array([]), np.array([]), np.array([]), np.array([])
+                D.vel_minima, D.vel_maxima, D.stride, D.run_count = np.array([]), np.array([]), np.array([]), np.array(
+                    [])
+                D.stride_Dor, D.stride_dur, D.stride_dst, D.stride_idx = np.array([]), np.array([]), np.array(
+                    []), np.array([])
                 a = a_v
                 D.exec = self.detect_epochs(np.where(a_v >= vel_thr)[0])
                 # D.exec = self.detect_runs(a_v, vel_thr=vel_thr)
@@ -582,7 +584,7 @@ class ParamLarvaDataset(param.Parameterized):
             D.run_dur = self.epoch_durs(D.exec)
             D.run_dst = self.epoch_amps(D.exec, a_v)
             D.run_idx = self.epoch_idx(D.exec)
-            D.pause = self.detect_pauses(a,vel_thr=vel_thr, runs=D.exec)
+            D.pause = self.detect_pauses(a, vel_thr=vel_thr, runs=D.exec)
             D.pause_dur = self.epoch_durs(D.pause)
             D.pause_idx = self.epoch_idx(D.pause)
 
@@ -635,7 +637,9 @@ class ParamLarvaDataset(param.Parameterized):
             cast_idx = [ii for ii, t in enumerate(T) if all([tt in D.pause_idx for tt in t])]
             Awvane = D.turn_amp[wvane_idx]
             Acast = D.turn_amp[cast_idx]
-            wNh[id] = np.nanquantile(Awvane, 0.25), np.nanquantile(Awvane, 0.75), np.nanquantile(Acast, 0.25), np.nanquantile(Acast, 0.75)
+            wNh[id] = np.nanquantile(Awvane, 0.25), np.nanquantile(Awvane, 0.75), np.nanquantile(Acast,
+                                                                                                 0.25), np.nanquantile(
+                Acast, 0.75)
         self.e[wNh_ps] = pd.DataFrame.from_dict(wNh).T
 
     def patch_residency_annotation(self):
@@ -665,7 +669,7 @@ class ParamLarvaDataset(param.Parameterized):
     def detect_epoch_on_food_overlap(self, chunk):
         on = nam.on_food
         # off = 'off_food'
-        CT=self.e[nam.cum(nam.dur(on))]
+        CT = self.e[nam.cum(nam.dur(on))]
         D0 = self.epoch_dicts['on_food']
         cdur_on = f'{nam.cum(nam.dur(chunk))}_{on}'
         cc_N_on = f'{nam.num(chunk)}_{on}'
@@ -758,10 +762,58 @@ class ParamLarvaDataset(param.Parameterized):
         except:
             pass
 
-    def comp_interference(self, **kwargs):
-        s, e, c = self.data
+    def comp_cycle_curves(self, Nbins=64):
+        CC = {}
+        for sh in ['sv', 'fov', 'rov', 'foa', 'b']:
+            curves_abs = np.zeros([self.c.N, Nbins]) * np.nan
+            curves_plus = np.zeros([self.c.N, Nbins]) * np.nan
+            curves_minus = np.zeros([self.c.N, Nbins]) * np.nan
+            curves_norm = np.zeros([self.c.N, Nbins]) * np.nan
+            for jj, id in enumerate(self.ids):
+                ss = self.s.xs(id, level="AgentID")
+                D = self.chunk_dicts[id]
+                dic = aux.mean_stride_curve(ss[reg.getPar(sh)].values, D.stride, D.stride_Dor)
+
+                # aa = aux.stride_interp(ss[par].values, D.stride, Nbins=64)
+                # strDor=D.stride_Dor
+                # aa_plus = aa[strDor > 0]
+                # aa_minus = aa[strDor < 0]
+                # aa_norm = np.vstack([aa_plus, -aa_minus])
+                curves_abs[jj, :] = dic.abs
+                # curves_abs[jj, :] = np.nanquantile(np.abs(aa), q=0.5, axis=0)
+                curves_plus[jj, :] = dic.plus
+                # curves_plus[jj, :] = np.nanquantile(aa_plus, q=0.5, axis=0)
+                curves_minus[jj, :] = dic.minus
+                # curves_minus[jj, :] = np.nanquantile(aa_minus, q=0.5, axis=0)
+                curves_norm[jj, :] = dic.norm
+                # curves_norm[jj, :] = np.nanquantile(aa_norm, q=0.5, axis=0)
+            CC[sh] = aux.AttrDict({
+                'abs': curves_abs,
+                'plus': curves_plus,
+                'minus': curves_minus,
+                'norm': curves_norm,
+            })
+        return CC
+
+    def comp_attenuation(self, Nbins=64):
+        p_sv, pau_fov_mu = reg.getPar(['sv', 'pau_fov_mu'])
+        x = np.linspace(0, 2 * np.pi, Nbins)
+        CC = self.cycle_curves
+        att0s, att1s = np.min(CC['fov'].abs, axis=1), np.max(CC['fov'].abs, axis=1)
+
+        self.e[nam.phi(nam.max('attenuation'))] = x[np.argmax(CC['fov'].abs, axis=1)]
+        self.e[nam.phi(nam.max(p_sv))] = x[np.argmax(CC['sv'].abs, axis=1)]
+        self.e[reg.getPar('str_sv_max')] = np.max(CC['sv'].abs, axis=1)
         try:
-            self.cycle_curves = process.annotation.compute_interference(s, e, c, chunk_dicts=self.chunk_dicts, **kwargs)
+            self.e['attenuation'] = att0s / self.e[pau_fov_mu]
+            self.e[nam.max('attenuation')] = (att1s - att0s) / self.e[pau_fov_mu]
+        except:
+            pass
+
+    def comp_interference(self, Nbins=64):
+        try:
+            self.cycle_curves = self.comp_cycle_curves(Nbins=Nbins)
+            self.comp_attenuation(Nbins=Nbins)
             self.comp_pooled_cycle_curves()
             reg.vprint(f'Completed stridecycle interference analysis.', 1)
         except:
@@ -786,7 +838,7 @@ class ParamLarvaDataset(param.Parameterized):
         if 'interference' in anot_keys:
             self.comp_interference()
         if 'source_attraction' in anot_keys:
-            for chunk in ['stride', 'pause','Lturn', 'Rturn', 'turn']:
+            for chunk in ['stride', 'pause', 'Lturn', 'Rturn', 'turn']:
                 try:
                     self.comp_chunk_bearing(chunk)
                 except:
@@ -796,7 +848,7 @@ class ParamLarvaDataset(param.Parameterized):
             for chunk in ['Lturn', 'Rturn', 'pause']:
                 self.detect_epoch_on_food_overlap(chunk)
             self.e[f'handedness_score_{on}'] = self.e[f"{nam.num('Lturn')}_{on}"] / (
-                        self.e[f"{nam.num('Lturn')}_{on}"] + self.e[f"{nam.num('Rturn')}_{on}"])
+                    self.e[f"{nam.num('Lturn')}_{on}"] + self.e[f"{nam.num('Rturn')}_{on}"])
         if is_last:
             self.save()
 
