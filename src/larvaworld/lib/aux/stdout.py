@@ -5,6 +5,7 @@ Methods for managing context and attributes
 import functools
 import os
 import sys
+import pandas as pd
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 
 __all__ = [
@@ -15,6 +16,7 @@ __all__ = [
     'rsetattr',
     'rgetattr',
     'try_except',
+    'storeH5',
 ]
 
 
@@ -72,3 +74,28 @@ def try_except(success, failure, *exceptions):
         return success()
     except exceptions or Exception:
         return failure() if callable(failure) else failure
+
+def storeH5(df, path=None, key=None, mode=None, **kwargs):
+    if path is not None:
+        if mode is None:
+            if os.path.isfile(path):
+                mode = 'a'
+            else:
+                mode = 'w'
+
+        if key is not None:
+
+            try:
+                store = pd.HDFStore(path, mode=mode)
+                store[key] = df
+                store.close()
+            except:
+                if mode == 'a':
+                    storeH5(df, path=path, key=key, mode='w', **kwargs)
+        elif key is None and isinstance(df, dict):
+            store = pd.HDFStore(path, mode=mode)
+            for k, v in df.items():
+                store[k] = v
+            store.close()
+        else:
+            raise ValueError('H5key not provided.')

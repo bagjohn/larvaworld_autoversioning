@@ -1,5 +1,6 @@
 import subprocess
 import argparse
+import pandas as pd
 
 import larvaworld
 from larvaworld.lib import reg, aux, sim
@@ -49,8 +50,11 @@ class Exec:
     def retrieve(self, res=None):
         if self.mode == 'batch':
             if res is None and self.run_externally:
-                args = {'experiment': self.type, 'id': self.conf['id']}
-                res = aux.retrieve_results(**args)
+                f = f'{reg.SIM_DIR}/batch_runs/{self.type}/{self.conf['id']}/results.h5'
+                try:
+                    res = pd.read_hdf(f, key='results')
+                except:
+                    res = None
             return res
         elif self.mode == 'sim':
             id = self.conf['id']

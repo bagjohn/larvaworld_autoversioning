@@ -89,12 +89,12 @@ class BatchTab(gui_aux.GuiTab):
             if len(stor_ids) > 0:
                 traj0 = stor_ids[0]
                 w.Element(self.batch_id_key).Update(value=traj0)
-                df, fig_dict = aux.retrieve_results(id0, traj0)
+                df, fig_dict = retrieve_results(id0, traj0)
                 self.draw(df, fig_dict, w)
 
         elif e == f'REMOVE {self.k_stored}':
             for stor_id in stor_ids:
-                aux.delete_traj(id0, stor_id)
+                delete_traj(id0, stor_id)
             self.DL1.add(w, stored_trajs(id0), replace=True)
 
         if e == f'STOP {self.k_active}':
@@ -128,6 +128,23 @@ def stored_trajs(experiment):
         return dic
     except:
         return {}
+
+def retrieve_results(experiment, id):
+    # from .. import reg
+    f = f'{reg.SIM_DIR}/batch_runs/{experiment}/{id}/results.h5'
+    try:
+        df = pd.read_hdf(f, key='results')
+    except:
+        df = None
+    figs = {}
+    return df, figs
+
+def delete_traj(experiment, key):
+    # from .. import reg
+    path = f'{reg.SIM_DIR}/batch_runs/{experiment}/{experiment}.hdf5'
+    store = pd.HDFStore(path, mode='a')
+    del store[key]
+    store.close()
 
 
 if __name__ == "__main__":
