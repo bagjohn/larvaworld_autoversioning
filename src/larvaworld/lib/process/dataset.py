@@ -523,9 +523,9 @@ class ParamLarvaDataset(param.Parameterized):
                     pass
         if 'patch_residency' in anot_keys:
             on = nam.on_food
-            for cc in ['Lturn', 'turn', 'pause']:
+            for cc in ['Lturn', 'Rturn', 'pause']:
                 self.detect_epoch_on_food_overlap(cc)
-            self.e[f'handedness_score_{on}'] = self.e[f"{nam.num('Lturn')}_{on}"] / self.e[f"{nam.num('turn')}_{on}"]
+            self.e[f'handedness_score_{on}'] = self.e[f"{nam.num('Lturn')}_{on}"] / (self.e[f"{nam.num('Lturn')}_{on}"]+self.e[f"{nam.num('Rturn')}_{on}"])
             # e[f'handedness_score_{off}'] = e[f"{nam.num('Lturn')}_{off}"] / e[f"{nam.num('turn')}_{off}"]
             # on = nam.on_food
             # if on in s.columns:
