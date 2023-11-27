@@ -1702,9 +1702,7 @@ class ParamClass:
         b_l = self.dict['l']
 
         def func(d):
-            from larvaworld.lib.process.spatial import scale_to_length
-            s, e, c = d.data
-            scale_to_length(s, e, c, pars=[b.d], keys=None)
+            d.scale_to_length(pars=[b.d])
 
         kws = {
             'p': nam.scal(b.p),
@@ -1936,7 +1934,9 @@ class ParamClass:
             'Rtur': 'Rturn',
             'exec': 'exec',
             'str_c': nam.chain('stride'),
-            'fee_c': nam.chain('feed')
+            'fee_c': nam.chain('feed'),
+            'on_food' : 'on_food',
+            'off_food' : 'off_food'
         }
         for kc, pc in d0.items():
             temp = self.func_dict.chunk(kc)
