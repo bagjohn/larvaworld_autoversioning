@@ -524,16 +524,18 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
                                                                                return_idx=True)
         runs1, run_durs, run_slices, run_dsts, run_idx, run_maxs = process_epochs(a_v, runs, dt,
                                                                                return_idx=True)
+        if pauses1 != []:
+            run_vs[pauses1, jj, 0] = pause_durs
+        if strides1 != []:
+            run_vs[runs1, jj, 1] = run_durs
+            run_vs[runs1, jj, 2] = run_dsts
+            run_vs[runs1, jj, 3] = str_chain_ls
+        if strides1 != []:
+            run_vs[strides1, jj, 4] = stride_durs
+            run_vs[strides1, jj, 5] = stride_dsts
+            run_vs[strides1, jj, 6] = stride_sdsts
 
-        run_vs[pauses1, jj, 0] = pause_durs
-        run_vs[runs1, jj, 1] = run_durs
-        run_vs[runs1, jj, 2] = run_dsts
-        run_vs[runs1, jj, 3] = str_chain_ls
-        run_vs[strides1, jj, 4] = stride_durs
-        run_vs[strides1, jj, 5] = stride_dsts
-        run_vs[strides1, jj, 6] = stride_sdsts
-
-        if b in s.columns:
+        if b in s.columns and pause_idx != []:
             pau_bs = s[b].xs(id, level="AgentID").abs().values[pause_idx]
             pau_bvs = s[bv].xs(id, level="AgentID").abs().values[pause_idx]
             pau_bas = s[ba].xs(id, level="AgentID").abs().values[pause_idx]
@@ -543,15 +545,29 @@ def crawl_annotation(s, e, c, strides_enabled=True, vel_thr=0.3):
             pau_b_temp = [np.nan] * 6
         a_foa = s[foa].xs(id, level="AgentID").abs().values
         a_acc = s[acc].xs(id, level="AgentID").values
-        pau_fovs = np.abs(a_fov[pause_idx])
-        run_fovs = np.abs(a_fov[run_idx])
-        pau_foas = a_foa[pause_idx]
-        run_foas = a_foa[run_idx]
+
+        if run_idx != []:
+            run_fovs = np.abs(a_fov[run_idx])
+            run_foas = a_foa[run_idx]
+            run_vvs=a_v[run_idx]
+            run_aas=a_acc[run_idx]
+        else :
+            run_fovs,run_foas = [], []
+            run_vvs,run_aas = [], []
+        if pause_idx != []:
+            pau_fovs = np.abs(a_fov[pause_idx])
+            pau_foas = a_foa[pause_idx]
+            pau_vvs = a_v[pause_idx]
+            pau_aas = a_acc[pause_idx]
+        else :
+            pau_fovs,pau_foas = [], []
+            pau_vvs, pau_aas = [], []
+
         lin_vs[jj, :] = [
-            np.mean(a_v[run_idx]),
-            np.mean(a_v[pause_idx]),
-            np.mean(a_acc[run_idx]),
-            np.mean(a_acc[pause_idx]),
+            np.mean(run_vvs),
+            np.mean(pau_vvs),
+            np.mean(run_aas),
+            np.mean(pau_aas),
             np.mean(run_fovs), np.std(run_fovs),
             np.mean(pau_fovs), np.std(pau_fovs),
             np.mean(run_foas),
