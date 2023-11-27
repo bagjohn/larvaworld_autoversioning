@@ -383,16 +383,37 @@ class ParamLarvaDataset(param.Parameterized):
         self.e[on_v_mu] = self.e[cum_on_d] / self.e[cum_t]
         return DD
 
+    def detect_epoch_on_food_overlap(self, chunk):
+        from ..process.annotation import epoch_overlap, epoch_durs
+        c = self.config
+        on = nam.on_food
+        # off = 'off_food'
+        on_cumt = nam.cum(nam.dur(on))
+        D0 = self.epoch_dicts['on_food']
+        cdur_on = f'{nam.cum(nam.dur(chunk))}_{on}'
+        cc_N_on = f'{nam.num(chunk)}_{on}'
+        Sps = [cdur_on, cc_N_on]
+        Svs = np.zeros([c.N, len(Sps)]) * np.nan
+        D = self.epoch_dicts[chunk]
+        for jj, id in enumerate(c.agent_ids):
+            valid = epoch_overlap(D[id], D0[id])
+            valid_durs = epoch_durs(valid, c.dt)
+            Svs[jj, :] = [np.nansum(valid_durs), valid_durs.shape[0]]
+        self.e[Sps] = Svs
+        self.e[f'{nam.dur_ratio(chunk)}_{on}'] = self.e[cdur_on] / self.e[on_cumt]
+        self.e[f'{nam.mean(nam.num(chunk))}_{on}'] = self.e[cc_N_on] / self.e[on_cumt]
+
+
     def detect_bouts(self, vel_thr=0.3, strides_enabled=True, castsNweathervanes=True):
+        from ..process.annotation import turn_annotation, crawl_annotation, turn_mode_annotation
         s, e, c = self.data
         aux.fft_freqs(s, e, c)
-        turn_dict = process.annotation.turn_annotation(s, e, c)
-        crawl_dict = process.annotation.crawl_annotation(s, e, c, strides_enabled=strides_enabled, vel_thr=vel_thr)
-        patch_dict = self.patch_residency_annotation()
-        self.chunk_dicts = aux.AttrDict(
-            {id: {**turn_dict[id], **crawl_dict[id], **patch_dict[id]} for id in c.agent_ids})
+        Dtur = turn_annotation(s, e, c)
+        Dcr = crawl_annotation(s, e, c, strides_enabled=strides_enabled, vel_thr=vel_thr)
+        Dpa = self.patch_residency_annotation()
+        self.chunk_dicts = aux.AttrDict( {id: {**Dtur[id], **Dcr[id], **Dpa[id]} for id in c.agent_ids})
         if castsNweathervanes:
-            process.annotation.turn_mode_annotation(e, self.chunk_dicts)
+            turn_mode_annotation(e, self.chunk_dicts)
         reg.vprint(f'Completed bout detection.', 1)
 
     def comp_pooled_epochs(self):
@@ -502,27 +523,9 @@ class ParamLarvaDataset(param.Parameterized):
                     pass
         if 'patch_residency' in anot_keys:
             on = nam.on_food
-            # off = 'off_food'
-            on_cumt = nam.cum(nam.dur(on))
-            s, e, c = self.data
-            ep_on_food = self.epoch_dicts['on_food']
             for cc in ['Lturn', 'turn', 'pause']:
-                dur = nam.dur(cc)
-                cdur_on = f'{nam.cum(dur)}_{on}'
-                cc_N = nam.num(cc)
-                cc_N_on = f'{cc_N}_{on}'
-                Sps = [cdur_on, cc_N_on]
-                Svs = np.zeros([c.N, len(Sps)]) * np.nan
-                epochs = self.epoch_dicts[cc]
-                for jj, id in enumerate(c.agent_ids):
-                    ep_valid = process.annotation.epoch_overlap(epochs[id], ep_on_food[id])
-                    ep_valid_durs = process.annotation.epoch_durs(ep_valid, c.dt)
-                    np.nansum(ep_valid_durs)
-                    Svs[jj, :] = [np.nansum(ep_valid_durs), ep_valid_durs.shape[0]]
-                e[Sps] = Svs
-                e[f'{nam.dur_ratio(cc)}_{on}'] = e[cdur_on] / e[on_cumt]
-                e[f'{nam.mean(cc_N)}_{on}'] = e[cc_N_on] / e[on_cumt]
-            e[f'handedness_score_{on}'] = e[f"{nam.num('Lturn')}_{on}"] / e[f"{nam.num('turn')}_{on}"]
+                self.detect_epoch_on_food_overlap(cc)
+            self.e[f'handedness_score_{on}'] = self.e[f"{nam.num('Lturn')}_{on}"] / self.e[f"{nam.num('turn')}_{on}"]
             # e[f'handedness_score_{off}'] = e[f"{nam.num('Lturn')}_{off}"] / e[f"{nam.num('turn')}_{off}"]
             # on = nam.on_food
             # if on in s.columns:
