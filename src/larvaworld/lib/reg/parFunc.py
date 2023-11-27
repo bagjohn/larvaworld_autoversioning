@@ -39,16 +39,12 @@ def track_par_func(chunk, par):
 def chunk_func(kc):
     if kc in ['str', 'pau', 'exec', 'str_c', 'run']:
         def func(d):
-            from ..process.annotation import crawl_annotation
-            s, e, c = d.data
-            crawl_annotation(s, e, c, strides_enabled=True)
+            d.crawl_annotation()
 
         required_ks = ['a', 'sa', 'ba', 'foa', 'fv']
     elif kc in ['tur', 'Ltur', 'Rtur']:
         def func(d):
-            from ..process.annotation import turn_annotation
-            s, e, c = d.data
-            turn_annotation(s, e, c)
+            d.turn_annotation()
 
         required_ks = ['fov']
     else:

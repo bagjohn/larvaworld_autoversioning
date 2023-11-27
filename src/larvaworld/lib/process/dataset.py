@@ -10,7 +10,7 @@ import shutil
 import numpy as np
 import pandas as pd
 import warnings
-
+from scipy.signal import find_peaks
 import param
 
 from .. import reg, aux, process, util
@@ -316,6 +316,32 @@ class ParamLarvaDataset(param.Parameterized):
         p1 = np.array([aux.comp_bearing_solo(x, y, o, loc=loc) for x, y, o in b1s])
         return p0, p1
 
+    def epoch_durs(self, epochs):
+        return (np.diff(epochs).flatten()) * self.c.dt
+
+    def epoch_amps(self, epochs, a):
+        if epochs.shape[0] == 0:
+            return np.array([])
+        else :
+            slices = [np.arange(r0, r1, 1) for r0, r1 in epochs]
+            return np.array([np.trapz(a[p][~np.isnan(a[p])], dx=self.c.dt) for p in slices])
+
+    def epoch_maxs(self, epochs, a):
+        if epochs.shape[0] == 0:
+            return np.array([])
+        else :
+            slices = [np.arange(r0, r1, 1) for r0, r1 in epochs]
+            return np.array([np.max(a[p]) for p in slices])
+
+    def epoch_idx(self, epochs):
+        if epochs.shape[0] == 0:
+            return np.array([])
+        elif epochs.shape[0] == 1:
+            r0, r1 = epochs[0,:]
+            return np.arange(r0, r1, 1)
+        else:
+            return np.concatenate([np.arange(r0, r1, 1) for r0, r1 in epochs])
+
     def comp_chunk_bearing(self, chunk):
         for n, loc in self.c.sources.items():
             A = self.empty_df(dim3=3)
@@ -328,12 +354,211 @@ class ParamLarvaDataset(param.Parameterized):
                     A[ep[:, 1], i, 2] = b1s - b0s
             self.s[nam.atStartStopChunk(nam.bearing_to(n), chunk)] = A.reshape([-1, 3])
 
-    def crawl_annotation(self, strides_enabled=True, vel_thr=0.3):
-        from ..process.annotation import detect_strides, detect_pauses, detect_runs, epoch_idx, epoch_durs, epoch_amps
+    def detect_epochs(self, idx,  min_dur=None):
         dt = self.c.dt
+        if min_dur is None:
+            min_dur = 2 * dt
+        p0s = idx[np.where(np.diff(idx, prepend=[-np.inf]) != 1)[0]]
+        p1s = idx[np.where(np.diff(idx, append=[np.inf]) != 1)[0]]
+        epochs = np.vstack([p0s, p1s]).T
+        return epochs[self.epoch_durs(epochs) >= min_dur]
+
+    def detect_runs(self, a, vel_thr=0.3, min_dur=0.5):
+        """
+        Annotates crawl-runs in timeseries.
+
+        Extended description of function.
+
+        Parameters
+        ----------
+        a : array
+            1D np.array : forward velocity timeseries
+        vel_thr : float
+            Maximum velocity threshold
+         min_dur : float, optional
+            The minimum required duration for a turn
+
+        Returns
+        -------
+        runs : list
+            A list of pairs of the start-end indices of the runs.
+
+
+        """
+        idx = np.where(a >= vel_thr)[0]
+        return self.detect_epochs(idx, min_dur)
+
+    def detect_pauses(self, a, vel_thr=0.3, runs=None, min_dur=None):
+        """
+        Annotates crawl-pauses in timeseries.
+
+        Extended description of function.
+
+        Parameters
+        ----------
+        a : array
+            1D np.array : forward velocity timeseries
+        vel_thr : float
+            Maximum velocity threshold
+        runs : list
+            A list of pairs of the start-end indices of the runs.
+            If provided pauses that overlap with runs will be excluded.
+        min_dur : float, optional
+            The minimum required duration for a turn
+
+        Returns
+        -------
+        pauses : list
+            A list of pairs of the start-end indices of the pauses.
+
+        """
+        idx = np.where(a <= vel_thr)[0]
+        if runs is not None:
+            for r0, r1 in runs:
+                idx = idx[(idx <= r0) | (idx >= r1)]
+        return self.detect_epochs(idx, min_dur)
+
+    def detect_strides(self, a, vel_thr=0.3, stretch=(0.75, 2.0), fr=None, return_extrema=True):
+        """
+        Annotates strides-runs and pauses in timeseries.
+
+        Extended description of function.
+
+        Parameters
+        ----------
+        a : array
+            1D np.array : forward velocity timeseries
+        vel_thr : float
+            Maximum velocity threshold
+        stretch : Tuple[float,float]
+            The min-max stretch of a stride relative to the default derived from the dominnt frequency
+        fr : float, optional
+            The dominant crawling frequency.
+        return_extrema : boolean
+            Whether to additionally return the stride extrema
+
+
+        Returns
+        -------
+        strides : list
+            A list of pairs of the start-end indices of the strides.
+        i_min : array
+            Indices of the local minima.
+        i_max : array
+            Indices of the local maxima
+
+        """
+        dt = self.c.dt
+        if fr is None:
+            fr = aux.fft_max(a, dt, fr_range=(1, 2.5))
+        tmin = stretch[0] // (fr * dt)
+        tmax = stretch[1] // (fr * dt)
+        i_min = find_peaks(-a, height=-3 * vel_thr, distance=tmin)[0]
+        i_max = find_peaks(a, height=vel_thr, distance=tmin)[0]
+        strides = []
+        for m in i_max:
+            try:
+                s0, s1 = [i_min[i_min < m][-1], i_min[i_min > m][0]]
+                if ((s1 - s0) <= tmax) and ([s0, s1] not in strides):
+                    strides.append([s0, s1])
+            except:
+                pass
+        strides = np.array(strides)
+        if return_extrema:
+            return i_min, i_max, strides
+        else:
+            return strides
+
+    def detect_strideschains(self, strides):
+        """
+        Annotates stridechains-runs by concatenating consecutive strides.
+
+        Extended description of function.
+
+        Parameters
+        ----------
+        strides : array
+            2D np.array : the start-end tics of the stride epochs
+
+        Returns
+        -------
+
+        runs : list
+             A list of pairs of the start-end indices of the runs/stridechains.
+        run_counts : list
+             Stride-counts of the runs/stridechains.
+
+        """
+        runs, run_counts = [], []
+        s00, s11 = None, None
+
+        count = 0
+        for ii, (s0, s1) in enumerate(strides.tolist()):
+            if ii == 0:
+                s00, s11 = s0, s1
+                count = 1
+                continue
+            if s11 == s0:
+                s11 = s1
+                count += 1
+            else:
+                runs.append([s00, s11])
+                run_counts.append(count)
+                count = 1
+                s00, s11 = s0, s1
+            if ii == len(strides) - 1:
+                runs.append([s00, s11])
+                run_counts.append(count)
+                break
+        runs = np.array(runs)
+        return runs, run_counts
+
+    def detect_turns(self, a, min_dur=None):
+        """
+        Annotates turns in timeseries.
+
+        Extended description of function.
+
+        Parameters
+        ----------
+        a : array
+            1D np.array : angular velocity timeseries
+        min_dur : float, optional
+            The minimum required duration for a turn
+
+        Returns
+        -------
+        Lturns : list
+            A list of pairs of the start-end indices of the Left turns.
+        Rturns : list
+            A list of pairs of the start-end indices of the Right turns.
+
+
+        """
+        dt = self.c.dt
+        if type(a) != pd.core.series.Series:
+            a = pd.Series(a)
+        if min_dur is None:
+            min_dur = 2 * dt
+        i_zeros = np.where(np.sign(a).diff().ne(0) == True)[0]
+        Rturns, Lturns = [], []
+        for s0, s1 in zip(i_zeros[:-1], i_zeros[1:]):
+            if (s1 - s0) <= 2:
+                continue
+            elif np.isnan(np.sum(a[s0:s1])):
+                continue
+            else:
+                if all(a[s0:s1] >= 0):
+                    Lturns.append([s0, s1])
+                elif all(a[s0:s1] <= 0):
+                    Rturns.append([s0, s1])
+        Lturns = np.array(Lturns)
+        Rturns = np.array(Rturns)
+        return Lturns[self.epoch_durs(Lturns) >= min_dur], Rturns[self.epoch_durs(Rturns) >= min_dur]
+
+    def crawl_annotation(self, strides_enabled=True, vel_thr=0.3):
         if self.c.Npoints <= 1:
             strides_enabled = False
-        kws = {'dt': dt, 'vel_thr': vel_thr}
         l, v, sv, dst, fov = reg.getPar(['l', 'v', 'sv', 'd', 'fov'])
         str_d_mu, str_d_std, str_sd_mu, str_sd_std, run_tr, pau_tr, cum_run_t, cum_pau_t, cum_t = \
             reg.getPar(
@@ -350,23 +575,24 @@ class ParamLarvaDataset(param.Parameterized):
             a_fov = S[fov].values
             if strides_enabled:
                 a = S[sv].values
-                D.vel_minima, D.vel_maxima, D.stride, D.exec, D.run_count = detect_strides(a, return_extrema=True,
-                                                                                           **kws)
+                D.vel_minima, D.vel_maxima, D.stride = self.detect_strides(a, vel_thr=vel_thr)
+                D.exec, D.run_count = self.detect_strideschains(D.stride)
+                D.stride_Dor = np.array([np.trapz(a_fov[s0:s1 + 1]) for s0, s1 in D.stride])
+                D.stride_dur = self.epoch_durs(D.stride)
+                D.stride_dst = self.epoch_amps(D.stride, a)
+                D.stride_idx = self.epoch_idx(D.stride)
             else:
-                D.vel_minima, D.vel_maxima, D.stride, D.run_count = np.array([]), np.array([]), np.array([]), np.array(
-                    [])
+                D.vel_minima, D.vel_maxima, D.stride, D.run_count = np.array([]), np.array([]), np.array([]), np.array([])
+                D.stride_Dor, D.stride_dur, D.stride_dst, D.stride_idx = np.array([]), np.array([]), np.array([]), np.array([])
                 a = a_v
-                D.exec = detect_runs(a, **kws)
-            D.stride_Dor = np.array([np.trapz(a_fov[s0:s1 + 1]) for s0, s1 in D.stride])
-            D.stride_dur = epoch_durs(D.stride, dt)
-            D.stride_dst = epoch_amps(D.stride, a, dt)
-            D.stride_idx = epoch_idx(D.stride)
-            D.run_dur = epoch_durs(D.exec, dt)
-            D.run_dst = epoch_amps(D.exec, a_v, dt)
-            D.run_idx = epoch_idx(D.exec)
-            D.pause = detect_pauses(a, runs=D.exec, **kws)
-            D.pause_dur = epoch_durs(D.pause, dt)
-            D.pause_idx = epoch_idx(D.pause)
+                D.exec = self.detect_runs(a_v, vel_thr=vel_thr)
+
+            D.run_dur = self.epoch_durs(D.exec)
+            D.run_dst = self.epoch_amps(D.exec, a_v)
+            D.run_idx = self.epoch_idx(D.exec)
+            D.pause = self.detect_pauses(a,vel_thr=vel_thr, runs=D.exec)
+            D.pause_dur = self.epoch_durs(D.pause)
+            D.pause_idx = self.epoch_idx(D.pause)
 
             Svs[jj, :] = [np.nanmean(D.stride_dst), np.nanstd(D.stride_dst),
                           np.nanmean(a[D.stride_idx]), np.nansum(D.run_count),
@@ -382,8 +608,6 @@ class ParamLarvaDataset(param.Parameterized):
         return DD
 
     def turn_annotation(self, min_dur=None):
-        from ..process.annotation import detect_turns, process_epochs
-        dt = self.c.dt
         S = self.s[reg.getPar('fov')]
         ps = reg.getPar(['Ltur_N', 'Rtur_N', 'tur_N', 'tur_H'])
         vs = np.zeros([self.c.N, len(ps)]) * np.nan
@@ -391,9 +615,13 @@ class ParamLarvaDataset(param.Parameterized):
         for j, id in enumerate(self.ids):
             D = aux.AttrDict()
             a = S.xs(id, level="AgentID")
-            D.Lturn, D.Rturn = detect_turns(a, dt, min_dur=min_dur)
-            D.Lturn_dur, D.Lturn_amp, Lmaxs = process_epochs(a.values, D.Lturn, dt)
-            D.Rturn_dur, D.Rturn_amp, Rmaxs = process_epochs(a.values, D.Rturn, dt)
+            D.Lturn, D.Rturn = self.detect_turns(a, min_dur=min_dur)
+            D.Lturn_dur = self.epoch_durs(D.Lturn)
+            D.Rturn_dur = self.epoch_durs(D.Rturn)
+            D.Lturn_amp = self.epoch_amps(D.Lturn, a.values)
+            D.Rturn_amp = self.epoch_amps(D.Rturn, a.values)
+            Lmaxs = self.epoch_maxs(D.Lturn, a.values)
+            Rmaxs = self.epoch_maxs(D.Rturn, a.values)
             D.turn_dur = np.concatenate([D.Lturn_dur, D.Rturn_dur])
             D.turn_amp = np.concatenate([D.Lturn_amp, D.Rturn_amp])
             D.turn_vel_max = np.concatenate([Lmaxs, Rmaxs])
@@ -405,9 +633,24 @@ class ParamLarvaDataset(param.Parameterized):
         self.e[ps] = vs
         return DD
 
+    def turn_mode_annotation(self):
+        wNh = {}
+        wNh_ps = ['weathervane_q25_amp', 'weathervane_q75_amp', 'headcast_q25_amp', 'headcast_q75_amp']
+        for jj, id in enumerate(self.ids):
+            D = self.chunk_dicts[id]
+            if D.Lturn.shape[0] == 0:
+                Lslices =  np.array([])
+            else:
+                Lslices = [np.arange(r0, r1, 1) for r0, r1 in D.Lturn]
+            if D.Rturn.shape[0] == 0:
+                Rslices =  np.array([])
+            else:
+                Rslices = [np.arange(r0, r1, 1) for r0, r1 in D.Rturn]
+            turn_slice = Lslices + Rslices
+            wNh[id] = dict(zip(wNh_ps, aux.weathervanesNheadcasts(D.run_idx, D.pause_idx, turn_slice, D.turn_amp)))
+        self.e[wNh_ps] = pd.DataFrame.from_dict(wNh).T
+
     def patch_residency_annotation(self):
-        from ..process.annotation import detect_patch_residency, epoch_durs, epoch_amps
-        dt = self.c.dt
         on = nam.on_food
         dst, on_tr, on_t_mu, cum_on_d, on_d_mu, on_v_mu, cum_on_t, cum_t = reg.getPar(
             ['d', 'on_food_tr', 'on_food_t_mu',
@@ -420,9 +663,9 @@ class ParamLarvaDataset(param.Parameterized):
             D = aux.AttrDict()
             D.on_food = np.array([])
             if on in self.s.columns:
-                D.on_food = detect_patch_residency(S[on].values, dt)
-            D.on_food_dur = epoch_durs(D.on_food, dt)
-            D.on_food_dst = epoch_amps(D.on_food, S[dst].values, dt)
+                D.on_food = self.detect_epochs(np.where(S[on].values == True)[0])
+            D.on_food_dur = self.epoch_durs(D.on_food)
+            D.on_food_dst = self.epoch_amps(D.on_food, S[dst].values)
             DD[id] = D
             Svs[jj, :] = [np.nansum(D.on_food_dur), np.nanmean(D.on_food_dur), np.nansum(D.on_food_dst),
                           np.nanmean(D.on_food_dst)]
@@ -432,7 +675,6 @@ class ParamLarvaDataset(param.Parameterized):
         return DD
 
     def detect_epoch_on_food_overlap(self, chunk):
-        from ..process.annotation import epoch_overlap, epoch_durs
         on = nam.on_food
         # off = 'off_food'
         CT=self.e[nam.cum(nam.dur(on))]
@@ -443,23 +685,22 @@ class ParamLarvaDataset(param.Parameterized):
         Svs = np.zeros([self.c.N, len(Sps)]) * np.nan
         D = self.epoch_dicts[chunk]
         for jj, id in enumerate(self.ids):
-            valid = epoch_overlap(D[id], D0[id])
-            durs = epoch_durs(valid, self.c.dt)
+            valid = aux.epoch_overlap(D[id], D0[id])
+            durs = self.epoch_durs(valid)
             Svs[jj, :] = [np.nansum(durs), durs.shape[0]]
         self.e[Sps] = Svs
         self.e[f'{nam.dur_ratio(chunk)}_{on}'] = self.e[cdur_on] / CT
         self.e[f'{nam.mean(nam.num(chunk))}_{on}'] = self.e[cc_N_on] / CT
 
     def detect_bouts(self, vel_thr=0.3, strides_enabled=True, castsNweathervanes=True):
-        from ..process.annotation import turn_annotation, crawl_annotation, turn_mode_annotation
         s, e, c = self.data
         aux.fft_freqs(s, e, c)
-        Dtur = turn_annotation(s, e, c)
-        Dcr = crawl_annotation(s, e, c, strides_enabled=strides_enabled, vel_thr=vel_thr)
+        Dtur = self.turn_annotation()
+        Dcr = self.crawl_annotation(strides_enabled=strides_enabled, vel_thr=vel_thr)
         Dpa = self.patch_residency_annotation()
         self.chunk_dicts = aux.AttrDict({id: {**Dtur[id], **Dcr[id], **Dpa[id]} for id in self.ids})
         if castsNweathervanes:
-            turn_mode_annotation(e, self.chunk_dicts)
+            self.turn_mode_annotation()
         reg.vprint(f'Completed bout detection.', 1)
 
     def comp_pooled_epochs(self):

@@ -46,7 +46,8 @@ __all__ = [
     'comp_extrema',
     'align_trajectories',
     'fixate_larva',
-    # 'comp_chunk_bearing',
+    'epoch_overlap',
+    'weathervanesNheadcasts',
 ]
 
 
@@ -804,3 +805,21 @@ def fixate_larva(s, c, P1, P2=None):
     #
     return s, bg
 
+
+def epoch_overlap(epochs1, epochs2):
+    valid = []
+    if epochs1.shape[0] != 0 and epochs2.shape[0] != 0:
+        for v in epochs1:
+            temp = epochs2[epochs2[:, 0] <= v[0] and epochs2[:, 1] >= v[1]]
+            if temp.shape[0] != 0:
+                valid.append(v)
+    return np.array(valid)
+
+def weathervanesNheadcasts(run_idx, pause_idx, turn_slices, Tamps):
+    wvane_idx = [ii for ii, t in enumerate(turn_slices) if all([tt in run_idx for tt in t])]
+    cast_idx = [ii for ii, t in enumerate(turn_slices) if all([tt in pause_idx for tt in t])]
+    wvane_amps = Tamps[wvane_idx]
+    cast_amps = Tamps[cast_idx]
+    wvane_min, wvane_max = np.nanquantile(wvane_amps, 0.25), np.nanquantile(wvane_amps, 0.75)
+    cast_min, cast_max = np.nanquantile(cast_amps, 0.25), np.nanquantile(cast_amps, 0.75)
+    return wvane_min, wvane_max, cast_min, cast_max
