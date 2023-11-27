@@ -144,28 +144,21 @@ def stride_cycle_all_points(name='stride cycle multi', idx=0, Nbins=64, short='f
                             axx=None, **kwargs):
     P = plot.AutoPlot(name=name, subfolder=subfolder, build_kws={'Nrows': 2, 'w': 15, 'h': 6, 'sharex': True},
                       **kwargs)
-
     pi2 = 2 * np.pi
     x = np.linspace(0, pi2, Nbins)
-
     l, sv, fv, fov = reg.getPar(['l', 'sv', 'fv', 'fov'])
-
     for d in P.datasets:
         s, e, c = d.data
-        id = c.agent_ids[idx]
-        ee = e.loc[id]
+        id = d.ids[idx]
         ss = s.xs(id, level='AgentID')
-        strides = aux.detect_strides(ss[sv], c.dt, fr=ee[fv])
-
+        D = d.chunk_dicts[id]
+        strides = D.stride
         if short is not None:
             par, ylab1 = reg.getPar(short, to_return=['d', 'l'])
-            da = np.array([np.trapz(ss[fov].values[s0:s1]) for ii, (s0, s1) in enumerate(strides)])
+            da = D.stride_Dor
             aa = aux.stride_interp(ss[par].values, strides, Nbins)
-            aa_minus = aa[da < 0]
-            aa_plus = aa[da > 0]
-            aa_norm = np.vstack([aa_plus, -aa_minus])
 
-            plot.plot_quantiles(df=aa_norm, axis=P.axs[1], color='blue', x=x, label='experiment')
+            plot.plot_quantiles(df=np.vstack([aa[da > 0], -aa[da < 0]]), axis=P.axs[1], color='blue', x=x, label='experiment')
         else:
             ylab1 = None
 
@@ -183,7 +176,7 @@ def stride_cycle_all_points(name='stride cycle multi', idx=0, Nbins=64, short='f
         for p, col in zip(points, pointcols):
             v_p = nam.vel(p)
             a = ss[v_p] if v_p in ss.columns else aux.eudist(ss[nam.xy(p)].values) / c.dt
-            a = a / ee[l]
+            a = a / e[l].loc[id]
             aa = np.zeros([len(strides), Nbins])
             for ii, (s0, s1) in enumerate(strides):
                 aa[ii, :] = np.interp(x, np.linspace(0, pi2, s1 - s0), a[s0:s1])

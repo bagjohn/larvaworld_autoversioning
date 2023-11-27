@@ -763,36 +763,27 @@ class ParamLarvaDataset(param.Parameterized):
             pass
 
     def comp_cycle_curves(self, Nbins=64):
-        CC = {}
+        CC = aux.AttrDict()
         for sh in ['sv', 'fov', 'rov', 'foa', 'b']:
-            curves_abs = np.zeros([self.c.N, Nbins]) * np.nan
-            curves_plus = np.zeros([self.c.N, Nbins]) * np.nan
-            curves_minus = np.zeros([self.c.N, Nbins]) * np.nan
-            curves_norm = np.zeros([self.c.N, Nbins]) * np.nan
-            for jj, id in enumerate(self.ids):
-                ss = self.s.xs(id, level="AgentID")
-                D = self.chunk_dicts[id]
-                dic = aux.mean_stride_curve(ss[reg.getPar(sh)].values, D.stride, D.stride_Dor)
-
-                # aa = aux.stride_interp(ss[par].values, D.stride, Nbins=64)
-                # strDor=D.stride_Dor
-                # aa_plus = aa[strDor > 0]
-                # aa_minus = aa[strDor < 0]
-                # aa_norm = np.vstack([aa_plus, -aa_minus])
-                curves_abs[jj, :] = dic.abs
-                # curves_abs[jj, :] = np.nanquantile(np.abs(aa), q=0.5, axis=0)
-                curves_plus[jj, :] = dic.plus
-                # curves_plus[jj, :] = np.nanquantile(aa_plus, q=0.5, axis=0)
-                curves_minus[jj, :] = dic.minus
-                # curves_minus[jj, :] = np.nanquantile(aa_minus, q=0.5, axis=0)
-                curves_norm[jj, :] = dic.norm
-                # curves_norm[jj, :] = np.nanquantile(aa_norm, q=0.5, axis=0)
+            ss=self.s[reg.getPar(sh)]
             CC[sh] = aux.AttrDict({
-                'abs': curves_abs,
-                'plus': curves_plus,
-                'minus': curves_minus,
-                'norm': curves_norm,
+                'abs': np.zeros([self.c.N, Nbins]) * np.nan,
+                'plus': np.zeros([self.c.N, Nbins]) * np.nan,
+                'minus': np.zeros([self.c.N, Nbins]) * np.nan,
+                'norm': np.zeros([self.c.N, Nbins]) * np.nan,
             })
+
+            for jj, id in enumerate(self.ids):
+                D = self.chunk_dicts[id]
+                aa = aux.stride_interp(ss.xs(id, level="AgentID").values, D.stride, Nbins)
+                aa_minus = aa[D.stride_Dor < 0]
+                aa_plus = aa[D.stride_Dor > 0]
+                aa_norm = np.vstack([aa_plus, -aa_minus])
+                CC[sh].abs[jj, :] = np.nanquantile(np.abs(aa), q=0.5, axis=0)
+                CC[sh].plus[jj, :] = np.nanquantile(aa_plus, q=0.5, axis=0)
+                CC[sh].minus[jj, :] = np.nanquantile(aa_minus, q=0.5, axis=0)
+                CC[sh].norm[jj, :] = np.nanquantile(aa_norm, q=0.5, axis=0)
+
         return CC
 
     def comp_attenuation(self, Nbins=64):
