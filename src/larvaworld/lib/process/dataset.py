@@ -722,7 +722,7 @@ class ParamLarvaDataset(param.Parameterized):
                 df = self._load_step(h5_ks=[])[['x', 'y']]
             elif mode in ['origin', 'center']:
                 s = self._load_step(h5_ks=['contour', 'midline'])
-                df = reg.funcs.preprocessing["transposition"](s, c=self.config, replace=False, transposition=mode)[
+                df = process.spatial.align_trajectories(s, c=self.config, replace=False, transposition=mode)[
                     ['x', 'y']]
             else:
                 raise ValueError('Not implemented')
@@ -980,13 +980,12 @@ class ParamLarvaDataset(param.Parameterized):
 
     @valid(required={'ps': ['x', 'y', 'dst']})
     def comp_tortuosity(self, dur=20, **kwargs):
-        from ..process.spatial import rolling_window, straightness_index
         s, e, c = self.data
         p = reg.getPar(f'tor{dur}')
         w = int(dur / c.dt / 2)
         ticks = np.arange(c.Nticks)
-        s[p] = self.apply_per_agent(pars=['x', 'y', 'dst'], func=straightness_index,
-                                    rolling_ticks=rolling_window(ticks, w), **kwargs).flatten()
+        s[p] = self.apply_per_agent(pars=['x', 'y', 'dst'], func=aux.straightness_index,
+                                    rolling_ticks=aux.rolling_window(ticks, w), **kwargs).flatten()
         e[nam.mean(p)] = s[p].groupby('AgentID').mean()
         e[nam.std(p)] = s[p].groupby('AgentID').std()
 

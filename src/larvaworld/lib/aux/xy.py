@@ -9,9 +9,11 @@ import pandas as pd
 import scipy as sp
 from typing import Optional
 
-from . import nam
+from . import nam, cols_exist
 
 __all__ = [
+    'rolling_window',
+    'straightness_index',
     'sense_food',
     'generate_seg_shapes',
     'Collision',
@@ -42,6 +44,32 @@ __all__ = [
     'comp_extrema',
 
 ]
+
+def rolling_window(a, w):
+    # Get windows of size w from array a
+    if a.ndim != 1:
+        raise ValueError("Input array must be 1-dimensional")
+    return np.vstack([np.roll(a, -i) for i in range(w)]).T[:-w + 1]
+
+def straightness_index(ss, rolling_ticks):
+    ps = ['x', 'y', 'dst']
+    assert cols_exist(ps, ss)
+    sss = ss[ps].values
+    temp = sss[rolling_ticks]
+    Ds = np.nansum(temp[:, :, 2], axis=1)
+    xys = temp[:, :, :2]
+
+    k0, k1 = len(ss), rolling_ticks.shape[0]
+    dk = int((k0 - k1) / 2)
+    SI0 = np.zeros(k0) * np.nan
+    for i in range(k1):
+        D = Ds[i]
+        if D != 0:
+            xy = xys[i][~np.isnan(xys[i]).any(axis=1)]
+            if xy.shape[0] >= 2:
+                L = np.sqrt(np.nansum(np.array(xy[-1, :] - xy[0, :]) ** 2))
+                SI0[dk + i] = 1 - L / D
+    return SI0
 
 def sense_food(pos, sources=None, grid=None, radius=None):
     if grid:

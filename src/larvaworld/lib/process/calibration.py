@@ -14,7 +14,7 @@ from sklearn.linear_model import LinearRegression
 
 
 from .. import reg, aux
-from ..process.spatial import comp_centroid
+from ..aux import nam
 from ..process.annotation import detect_strides, process_epochs
 
 
@@ -24,6 +24,182 @@ __all__ = [
     'fit_metric_definition',
     'comp_segmentation',
 ]
+
+def comp_orientations(s, e, c, mode='minimal'):
+    Np = c.Npoints
+    if Np == 1:
+        comp_orientation_1point(s, e)
+        return
+
+    xy_pars = c.midline_xy
+    Axy = s[xy_pars].values
+
+    reg.vprint(f'Computing front/rear body-vector and head/tail orientation angles')
+    vector_idx = c.vector_dict
+
+    if mode == 'full':
+        reg.vprint(f'Computing additional orients for {c.Nsegs} spinesegments')
+        for i, vec in enumerate(c.midline_segs):
+            vector_idx[vec] = (i + 1, i)
+
+    for vec, (idx1, idx2) in vector_idx.items():
+        par = aux.nam.orient(vec)
+        x, y = Axy[:, 2 * idx2] - Axy[:, 2 * idx1], Axy[:, 2 * idx2 + 1] - Axy[:, 2 * idx1 + 1]
+        aa = np.arctan2(y, x)
+        aa[aa < 0] += 2 * np.pi
+        s[par] = aa
+        e[aux.nam.initial(par)] = s[par].dropna().groupby('AgentID').first()
+    reg.vprint('All orientations computed')
+
+
+def comp_orientation_1point(s, e):
+    def func(ss):
+        x, y = ss[:, 0].values, ss[:, 1].values
+        dx, dy = np.diff(x, prepend=np.nan), np.diff(y, prepend=np.nan)
+        aa = np.arctan2(dy, dx)
+        aa[aa < 0] += 2 * np.pi
+        return aa
+
+    return aux.apply_per_level(s[['x', 'y']], func).flatten()
+
+def comp_length(s, e, c, mode='minimal', recompute=False):
+    if 'length' in e.columns.values and not recompute:
+        reg.vprint('Length is already computed. If you want to recompute it, set recompute_length to True', 1)
+        return
+    if not c.midline_xy.exist_in(s):
+        reg.vprint(f'XY coordinates not found for the {c.Npoints} midline points. Body length can not be computed.', 1)
+        return
+    xy = s[c.midline_xy].values
+
+    if mode == 'full':
+        segs = c.midline_segs
+        t = len(s)
+        S = np.zeros([c.Nsegs, t]) * np.nan
+        L = np.zeros([1, t]) * np.nan
+        reg.vprint(f'Computing lengths for {c.Nsegs} segments and total body length', 1)
+        for j in range(t):
+            for i, seg in enumerate(segs):
+                S[i, j] = np.sqrt(np.nansum((xy[j, 2 * i:2 * i + 2] - xy[j, 2 * i + 2:2 * i + 4]) ** 2))
+            L[:, j] = np.nansum(S[:, j])
+        for i, seg in enumerate(segs):
+            s[seg] = S[i, :].flatten()
+    elif mode == 'minimal':
+        reg.vprint(f'Computing body length')
+        xy2 = xy.reshape(xy.shape[0], c.Npoints, 2)
+        xy3 = np.sum(np.diff(xy2, axis=1) ** 2, axis=2)
+        L = np.sum(np.sqrt(xy3), axis=1)
+    s['length'] = L
+    e['length'] = s['length'].groupby('AgentID').quantile(q=0.5)
+    reg.vprint('All lengths computed.', 1)
+
+def scale_to_length(s, e, c=None, pars=None, keys=None):
+    l_par = 'length'
+    if l_par not in e.columns:
+        comp_length(s, e, c=c, mode='minimal', recompute=True)
+    l = e[l_par]
+    if pars is None:
+        if keys is not None:
+            pars = reg.getPar(keys)
+        else:
+            raise ValueError('No parameter names or keys provided.')
+    s_pars = aux.existing_cols(pars, s)
+
+    if len(s_pars) > 0:
+        ids = s.index.get_level_values('AgentID').values
+        ls = l.loc[ids].values
+        s[nam.scal(s_pars)] = (s[s_pars].values.T / ls).T
+    e_pars = aux.existing_cols(pars, e)
+    if len(e_pars) > 0:
+        e[nam.scal(e_pars)] = (e[e_pars].values.T / l.values).T
+
+def comp_linear(s, e, c, mode='minimal'):
+    assert isinstance(c, reg.generators.DatasetConfig)
+    points = c.midline_points
+    if mode == 'full':
+        reg.vprint(f'Computing linear distances, velocities and accelerations for {c.Npoints - 1} points')
+        points = points[1:]
+        orientations = c.seg_orientations
+    elif mode == 'minimal':
+        if c.point == 'centroid' or c.point == points[0]:
+            reg.vprint('Defined point is either centroid or head. Orientation of front segment not defined.')
+            return
+        else:
+            reg.vprint(f'Computing linear distances, velocities and accelerations for a single spinepoint')
+            points = [c.point]
+            orientations = ['rear_orientation']
+
+    if not aux.cols_exist(orientations, s):
+        reg.vprint('Required orients not found. Component linear metrics not computed.')
+        return
+
+    all_d = [s.xs(id, level='AgentID', drop_level=True) for id in c.agent_ids]
+    dsts = nam.lin(nam.dst(points))
+    cum_dsts = nam.cum(nam.lin(dsts))
+    vels = nam.lin(nam.vel(points))
+    accs = nam.lin(nam.acc(points))
+
+    for p, dst, cum_dst, vel, acc, orient in zip(points, dsts, cum_dsts, vels, accs, orientations):
+        D = np.zeros([c.Nticks, c.N]) * np.nan
+        Dcum = np.zeros([c.Nticks, c.N]) * np.nan
+        V = np.zeros([c.Nticks, c.N]) * np.nan
+        A = np.zeros([c.Nticks, c.N]) * np.nan
+
+        for i, data in enumerate(all_d):
+            v, d = aux.compute_component_velocity(xy=data[nam.xy(p)].values, angles=data[orient].values, dt=c.dt,
+                                                  return_dst=True)
+            a = np.diff(v) / c.dt
+            cum_d = np.nancumsum(d)
+            D[:, i] = d
+            Dcum[:, i] = cum_d
+            V[:, i] = v
+            A[1:, i] = a
+
+        s[dst] = D.flatten()
+        s[cum_dst] = Dcum.flatten()
+        s[vel] = V.flatten()
+        s[acc] = A.flatten()
+        e[nam.cum(dst)] = Dcum[-1, :]
+    pars = nam.xy(points) + dsts + cum_dsts + vels + accs
+    scale_to_length(s, e, c, pars=pars)
+    reg.vprint('All linear parameters computed')
+
+
+def comp_spatial(s, e, c, mode='minimal'):
+    if mode == 'full':
+        reg.vprint(f'Computing distances, velocities and accelerations for {c.Npoints} points', 1)
+        points = c.midline_points + ['centroid', '']
+    elif mode == 'minimal':
+        reg.vprint(f'Computing distances, velocities and accelerations for a single spinepoint', 1)
+        points = [c.point, '']
+    else:
+        raise ValueError(f'{mode} not in supported modes : [minimal, full]')
+    points = [p for p in aux.unique_list(points) if nam.xy(p).exist_in(s)]
+
+    dsts = nam.dst(points)
+    cum_dsts = nam.cum(dsts)
+    vels = nam.vel(points)
+    accs = nam.acc(points)
+
+    for p, dst, cum_dst, vel, acc in zip(points, dsts, cum_dsts, vels, accs):
+        D = np.zeros([c.Nticks, c.N]) * np.nan
+        Dcum = np.zeros([c.Nticks, c.N]) * np.nan
+        V = np.zeros([c.Nticks, c.N]) * np.nan
+        A = np.zeros([c.Nticks, c.N]) * np.nan
+
+        for i, id in enumerate(c.agent_ids):
+            D[:, i] = aux.eudist(s[nam.xy(p)].xs(id, level='AgentID').values)
+            Dcum[:, i] = np.nancumsum(D[:, i])
+            V[:, i] = D[:, i] / c.dt
+            A[1:, i] = np.diff(V[:, i]) / c.dt
+        s[dst] = D.flatten()
+        s[cum_dst] = Dcum.flatten()
+        s[vel] = V.flatten()
+        s[acc] = A.flatten()
+        e[nam.cum(dst)] = s[cum_dst].dropna().groupby('AgentID').last()
+
+    pars = nam.xy(points) + dsts + cum_dsts + vels + accs
+    scale_to_length(s, e, c, pars=pars)
+    reg.vprint('All spatial parameters computed')
 
 def vel_definition(d) :
     s, e, c = d.data
@@ -72,18 +248,15 @@ def comp_stride_variation(s, e, c):
 
 
     if not aux.cols_exist(vels + [cvel],s):
-        from ..process.spatial import comp_spatial
-        comp_centroid(s, c, recompute=False)
+        s[c.centroid_xy] = np.sum(s[c.contour_xy].values.reshape([-1, c.Ncontour, 2]), axis=1) / c.Ncontour
         comp_spatial(s, e, c, mode='full')
 
     if not aux.cols_exist(lvels,s):
-        from ..process.spatial import comp_linear
         from ..process.angular import comp_orientations
         comp_orientations(s, e, c, mode='full')
         comp_linear(s, e, c, mode='full')
 
     if not aux.cols_exist(all_vels,s):
-        from ..process.spatial import scale_to_length
         scale_to_length(s, e, c, pars=all_vels0)
 
     svels = aux.existing_cols(all_vels,s)

@@ -5,6 +5,7 @@ It is initialized automatically when importing the package and serves as an acce
 
 import os
 from os.path import dirname, abspath
+from pint import UnitRegistry
 import warnings
 
 warnings.simplefilter(action='ignore')
@@ -40,7 +41,9 @@ def vprint(text='', verbose=0):
         print(text)
 
 
-vprint("Initializing larvaworld registry", 2)
+from ... import __version__
+
+vprint(f"Initializing larvaworld v.{__version__} registry", 2)
 
 ROOT_DIR = dirname(dirname(dirname(abspath(__file__))))
 DATA_DIR = f'{ROOT_DIR}/data'
@@ -55,9 +58,6 @@ SIMTYPES = ['Exp', 'Batch', 'Ga', 'Eval', 'Replay']
 CONFTYPES = ['Env', 'LabFormat', 'Ref', 'Model', 'Trial', 'Exp', 'Batch', 'Ga']
 # GROUPTYPES = ['LarvaGroup', 'FoodGroup', 'epoch']
 
-vprint("Initializing function registry")
-
-from pint import UnitRegistry
 
 units = UnitRegistry()
 units.default_format = "~P"
@@ -69,12 +69,10 @@ funcs = facade.FunctionDict()
 controls = keymap.ControlRegistry()
 distro_database = distro.generate_distro_database()
 
-vprint("Initializing parameter registry")
 from . import parDB, parFunc, stored_confs
 
 par = parDB.ParamRegistry()
 
-vprint("Initializing configuration registry")
 from .config import conf
 from .generators import gen
 from . import config, generators, models, graph
@@ -89,6 +87,7 @@ def getPar(k=None, p=None, d=None, to_return='d'):
 
 def loadRef(id, **kwargs):
     return conf.Ref.loadRef(id=id, **kwargs)
+
 
 def loadRefs(ids, **kwargs):
     return conf.Ref.loadRefs(ids=ids, **kwargs)

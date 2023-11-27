@@ -59,21 +59,14 @@ def chunk_func(kc):
 @funcs.param("dsp")
 def dsp_func(range):
     r0, r1 = range
-
     def func(d):
-        from ..process.spatial import comp_dispersion
-        s, e, c = d.data
-        comp_dispersion(s, e, c,d=d, recompute=True, dsp_starts=[r0], dsp_stops=[r1])
-
+        d.comp_dispersal(r0, r1)
     return func
 
 @funcs.param("tor")
 def tor_func(dur):
     def func(d):
-        from ..process.spatial import comp_straightness_index
-        s, e, c = d.data
-        comp_straightness_index(s, e=e, c=c,d=d, dt=c.dt, tor_durs=[dur])
-
+        d.comp_tortuosity(dur)
     return func
 
 @funcs.param("mean")

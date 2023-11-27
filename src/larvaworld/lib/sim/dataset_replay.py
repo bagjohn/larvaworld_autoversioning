@@ -192,13 +192,15 @@ class ReplayRun(BaseRun):
         s[['x', 'y']] = s[xy_pars]
 
         if c.fix_point is not None:
-            s, bg = reg.funcs.preprocessing['fixation'](s, c, P1=c.fix_point, P2=c.fix_point2)
+            from ..process.spatial import fixate_larva
+            s, bg = fixate_larva(s, c, P1=c.fix_point, P2=c.fix_point2)
         else:
             bg = None
         self.background_motion = bg
 
         if p.transposition is not None:
-            s = reg.funcs.preprocessing["transposition"](s, c=c, transposition=p.transposition, replace=True)
+            from ..process.spatial import align_trajectories
+            s = align_trajectories(s, c=c, transposition=p.transposition, replace=True)
             xy_max = 2 * np.max(s[nam.xy(c.point)].dropna().abs().values.flatten())
             p.env_params.arena = reg.gen.Arena(dims=(xy_max, xy_max)).nestedConf
 
