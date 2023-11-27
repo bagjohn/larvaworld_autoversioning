@@ -32,7 +32,6 @@ __all__ = [
 def track_par_func(chunk, par):
     def func(d):
         d.track_par_in_chunk(chunk, par)
-
     return func
 
 @funcs.param("chunk")
@@ -40,12 +39,10 @@ def chunk_func(kc):
     if kc in ['str', 'pau', 'exec', 'str_c', 'run']:
         def func(d):
             d.crawl_annotation()
-
         required_ks = ['a', 'sa', 'ba', 'foa', 'fv']
     elif kc in ['tur', 'Ltur', 'Rtur']:
         def func(d):
             d.turn_annotation()
-
         required_ks = ['fov']
     else:
         func = None
@@ -68,92 +65,78 @@ def tor_func(dur):
 @funcs.param("mean")
 def mean_func(par):
     def func(d):
-        d.endpoint_data[nam.mean(par)] = d.step_data[par].dropna().groupby('AgentID').mean()
-
+        d.e[nam.mean(par)] = d.s[par].dropna().groupby('AgentID').mean()
     return func
 
 @funcs.param("std")
 def std_func(par):
     def func(d):
-        d.endpoint_data[nam.std(par)] = d.step_data[par].dropna().groupby('AgentID').std()
-
+        d.e[nam.std(par)] = d.s[par].dropna().groupby('AgentID').std()
     return func
 
 @funcs.param("var")
 def var_func(par):
     def func(d):
-        d.endpoint_data[nam.var(par)] = d.step_data[par].dropna().groupby('AgentID').mean()/d.step_data[par].dropna().groupby('AgentID').std()
-
+        d.e[nam.var(par)] = d.s[par].dropna().groupby('AgentID').mean()/d.s[par].dropna().groupby('AgentID').std()
     return func
 
 @funcs.param("min")
 def min_func(par):
     def func(d):
-        d.endpoint_data[nam.min(par)] = d.step_data[par].dropna().groupby('AgentID').min()
-
+        d.e[nam.min(par)] = d.s[par].dropna().groupby('AgentID').min()
     return func
 
 @funcs.param("max")
 def max_func(par):
     def func(d):
-        d.endpoint_data[nam.max(par)] = d.step_data[par].dropna().groupby('AgentID').max()
-
+        d.e[nam.max(par)] = d.s[par].dropna().groupby('AgentID').max()
     return func
 
 @funcs.param("final")
 def fin_func(par):
     def func(d):
-        d.endpoint_data[nam.final(par)] = d.step_data[par].dropna().groupby('AgentID').last()
-
+        d.e[nam.final(par)] = d.s[par].dropna().groupby('AgentID').last()
     return func
 
 @funcs.param("initial")
 def init_func(par):
     def func(d):
-        d.endpoint_data[nam.initial(par)] = d.step_data[par].dropna().groupby('AgentID').first()
-
+        d.e[nam.initial(par)] = d.s[par].dropna().groupby('AgentID').first()
     return func
 
 @funcs.param("cum")
 def cum_func(par):
     def func(d):
-        d.endpoint_data[nam.cum(par)] = d.step_data[par].dropna().groupby('AgentID').sum()
-
+        d.e[nam.cum(par)] = d.s[par].dropna().groupby('AgentID').sum()
     return func
 
 @funcs.param("freq")
 def freq_func(par):
     def func(d):
         d.comp_freq(par=par, fr_range=(0.0, +np.inf))
-
     return func
 
 @funcs.param("tr")
 def tr_func(pc):
     def func(d):
-        e = d.endpoint_data
-        e[nam.dur_ratio(pc)] = e[nam.cum(nam.dur(pc))] / e[nam.cum(nam.dur(''))]
-
+        d.e[nam.dur_ratio(pc)] = d.e[nam.cum(nam.dur(pc))] / d.e[nam.cum(nam.dur(''))]
     return func
 
 @funcs.param("unwrap")
 def unwrap_func(par, in_deg):
-
     def func(d):
-        s = copy.deepcopy(d.step_data[par])
-        d.step_data[nam.unwrap(par)] = aux.apply_per_level(s, aux.unwrap_deg).flatten()
+        s = copy.deepcopy(d.s[par])
+        d.s[nam.unwrap(par)] = aux.apply_per_level(s, aux.unwrap_deg).flatten()
     return func
 
 @funcs.param("dst")
 def dst_func(point=''):
     def func(d):
-        aux.compute_dst(d.step_data, point)
+        aux.compute_dst(d.s, point)
     return func
 
 @funcs.param("vel")
 def func_v_spatial(p_d, p_v):
     def func(d):
-        s, e, c = d.data
-        s[p_v] = s[p_d] / c.dt
-
+        d.s[p_v] = d.s[p_d] / d.c.dt
     return func

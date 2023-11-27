@@ -17,8 +17,9 @@ from .naming import *
 
 nam = NamingRegistry()
 
-from .xy import *
+
 
 from .freq import *
+from .xy import *
 
 __displayname__ = 'Auxilliary methods'
