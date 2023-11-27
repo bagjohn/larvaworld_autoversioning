@@ -231,12 +231,10 @@ class ParamLarvaDataset(param.Parameterized):
         self.config.pooled_cycle_curves = d
 
     def track_par_in_chunk(self, chunk, par):
-        s, e, c = self.data
         A = self.empty_df(dim3=3)
-        d0 = self.epoch_dicts[chunk]
-        for i, id in enumerate(c.agent_ids):
-            epochs = d0[id]
-            ss = s[par].xs(id, level='AgentID')
+        for i, id in enumerate(self.config.agent_ids):
+            epochs = self.epoch_dicts[chunk][id]
+            ss = self.s[par].xs(id, level='AgentID')
             if epochs.shape[0] > 0:
                 t0s, t1s = epochs[:, 0], epochs[:, 1]
                 b0s = ss.loc[t0s].values
@@ -244,7 +242,46 @@ class ParamLarvaDataset(param.Parameterized):
                 A[t0s, i, 0] = b0s
                 A[t1s, i, 1] = b1s
                 A[t1s, i, 2] = b1s - b0s
-        s[aux.nam.atStartStopChunk(par, chunk)] = A.reshape([-1, 3])
+        self.s[aux.nam.atStartStopChunk(par, chunk)] = A.reshape([-1, 3])
+
+    def epochs_pose_by_ID(self, chunk, id):
+        ps = self.config.traj_xy + [nam.unwrap(nam.orient('front'))]
+        ss = self.s[ps].xs(id, level='AgentID')
+        epochs = self.epoch_dicts[chunk][id]
+        if epochs.shape[0] > 0:
+            t0s, t1s = epochs[:, 0], epochs[:, 1]
+            b0s = ss.loc[t0s].values
+            b1s = ss.loc[t1s].values
+            return b0s, b1s
+        else:
+            return np.array([[],[],[]]), np.array([[],[],[]])
+
+    def epochs_bearing_by_ID(self, chunk, id, loc=(0.0, 0.0)):
+        b0s, b1s = self.epochs_pose_by_ID(chunk, id)
+        p0=np.array([aux.comp_bearing_solo(x,y,o,loc=loc) for x,y,o in b0s])
+        p1=np.array([aux.comp_bearing_solo(x,y,o,loc=loc) for x,y,o in b1s])
+        return p0,p1
+
+    def comp_chunk_bearing(self, chunk):
+        c=self.config
+        for n, loc in c.sources.items():
+            A = self.empty_df(dim3=3)
+            for i, id in enumerate(c.agent_ids):
+                epochs = self.epoch_dicts[chunk][id]
+                if epochs.shape[0] > 0:
+                    t0s, t1s = epochs[:, 0], epochs[:, 1]
+                    b0s, b1s = self.epochs_bearing_by_ID(chunk, id,loc=loc)
+                    A[t0s, i, 0] = b0s
+                    A[t1s, i, 1] = b1s
+                    A[t1s, i, 2] = b1s - b0s
+            self.s[nam.atStartStopChunk(nam.bearing_to(n), chunk)] = A.reshape([-1, 3])
+    # def track_par_in_chunk_bounds(self, chunk, par, id):
+    #     epochs = self.epoch_dicts[chunk][id]
+    #     try:
+    #         ss = self.s[par].xs(id, level='AgentID')
+    #         return ss.loc[epochs[:, 0]].values, ss.loc[epochs[:, 1]].values
+    #     except:
+    #         return np.array([]), np.array([])
 
     def crawl_annotation(self, strides_enabled=True, vel_thr=0.3):
         from ..process.annotation import detect_strides, detect_pauses, detect_runs, epoch_idx, epoch_durs, epoch_amps
@@ -258,7 +295,8 @@ class ParamLarvaDataset(param.Parameterized):
             reg.getPar(
                 ['str_d_mu', 'str_d_std', 'str_sd_mu', 'str_sd_std', 'run_tr', 'pau_tr', 'cum_run_t', 'cum_pau_t',
                  'cum_t'])
-        Sps = [str_d_mu, str_d_std]+reg.getPar(['str_sv_mu','str_N','run_v_mu', 'pau_v_mu'])+[cum_run_t, cum_pau_t]
+        Sps = [str_d_mu, str_d_std] + reg.getPar(['str_sv_mu', 'str_N', 'run_v_mu', 'pau_v_mu']) + [cum_run_t,
+                                                                                                    cum_pau_t]
         Svs = np.zeros([c.N, len(Sps)]) * np.nan
         DD = {}
         for jj, id in enumerate(c.agent_ids):
@@ -268,9 +306,11 @@ class ParamLarvaDataset(param.Parameterized):
             a_fov = ss[fov].values
             if strides_enabled:
                 a = ss[sv].values
-                D.vel_minima, D.vel_maxima, D.stride, D.exec, D.run_count = detect_strides(a, return_extrema=True, **kws)
+                D.vel_minima, D.vel_maxima, D.stride, D.exec, D.run_count = detect_strides(a, return_extrema=True,
+                                                                                           **kws)
             else:
-                D.vel_minima, D.vel_maxima, D.stride, D.run_count = np.array([]), np.array([]), np.array([]), np.array([])
+                D.vel_minima, D.vel_maxima, D.stride, D.run_count = np.array([]), np.array([]), np.array([]), np.array(
+                    [])
                 a = a_v
                 D.exec = detect_runs(a, **kws)
             D.stride_Dor = np.array([np.trapz(a_fov[s0:s1 + 1]) for s0, s1 in D.stride])
@@ -284,10 +324,10 @@ class ParamLarvaDataset(param.Parameterized):
             D.pause_dur = epoch_durs(D.pause, dt)
             D.pause_idx = epoch_idx(D.pause)
 
-            Svs[jj, :] = [np.nanmean(D.stride_dst),np.nanstd(D.stride_dst),
-                          np.nanmean(a[D.stride_idx]),np.nansum(D.run_count),
-                          np.mean(a_v[D.run_idx]),np.mean(a_v[D.pause_idx]),
-                          np.sum(D.run_dur),np.sum(D.pause_dur)]
+            Svs[jj, :] = [np.nanmean(D.stride_dst), np.nanstd(D.stride_dst),
+                          np.nanmean(a[D.stride_idx]), np.nansum(D.run_count),
+                          np.mean(a_v[D.run_idx]), np.mean(a_v[D.pause_idx]),
+                          np.sum(D.run_dur), np.sum(D.pause_dur)]
             DD[id] = D
         self.e[Sps] = Svs
         self.e[run_tr] = self.e[cum_run_t] / self.e[cum_t]
@@ -300,7 +340,7 @@ class ParamLarvaDataset(param.Parameterized):
     def turn_annotation(self, min_dur=None):
         from ..process.annotation import detect_turns, process_epochs
         c = self.config
-        dt=c.dt
+        dt = c.dt
         A = self.s[reg.getPar('fov')]
 
         ps = reg.getPar(['Ltur_N', 'Rtur_N', 'tur_N', 'tur_H'])
@@ -308,7 +348,7 @@ class ParamLarvaDataset(param.Parameterized):
         DD = {}
 
         for j, id in enumerate(c.agent_ids):
-            D=aux.AttrDict()
+            D = aux.AttrDict()
             a = A.xs(id, level="AgentID")
             D.Lturn, D.Rturn = detect_turns(a, dt, min_dur=min_dur)
             D.Lturn_dur, D.Lturn_amp, Lmaxs = process_epochs(a.values, D.Lturn, dt)
@@ -320,9 +360,8 @@ class ParamLarvaDataset(param.Parameterized):
             N = LN + RN
             H = LN / N if N != 0 else 0
 
-
             vs[j, :] = [LN, RN, N, H]
-            DD[id]=D
+            DD[id] = D
         self.e[ps] = vs
         return DD
 
@@ -434,10 +473,13 @@ class ParamLarvaDataset(param.Parameterized):
             s, e, c = self.data
             for b in ['stride', 'pause', 'turn']:
                 try:
-                    aux.comp_chunk_bearing(s, c, chunk=b)
+                    self.comp_chunk_bearing(b)
+                    # aux.comp_chunk_bearing(s, c, chunk=b)
                     if b == 'turn':
-                        aux.comp_chunk_bearing(s, c, chunk='Lturn')
-                        aux.comp_chunk_bearing(s, c, chunk='Rturn')
+                        self.comp_chunk_bearing('Lturn')
+                        self.comp_chunk_bearing('Rturn')
+                        # aux.comp_chunk_bearing(s, c, chunk='Lturn')
+                        # aux.comp_chunk_bearing(s, c, chunk='Rturn')
                 except:
                     pass
         if 'patch_residency' in anot_keys:
@@ -486,7 +528,6 @@ class ParamLarvaDataset(param.Parameterized):
                 e[f'{v_mu}_{off}'] = e[cdst_off] / e[off_cumt]
                 e[f'handedness_score_{on}'] = e[f"{nam.num('Lturn')}_{on}"] / e[f"{nam.num('turn')}_{on}"]
                 e[f'handedness_score_{off}'] = e[f"{nam.num('Lturn')}_{off}"] / e[f"{nam.num('turn')}_{off}"]
-
 
         if is_last:
             self.save()

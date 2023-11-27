@@ -20,6 +20,7 @@ __all__ = [
     'Collision',
     'rearrange_contour',
     'comp_bearing',
+    'comp_bearing_solo',
     'compute_dispersal_solo',
     'compute_dispersal_multi',
     'compute_component_velocity',
@@ -45,8 +46,9 @@ __all__ = [
     'comp_extrema',
     'align_trajectories',
     'fixate_larva',
-    'comp_chunk_bearing',
+    # 'comp_chunk_bearing',
 ]
+
 
 def comp_PI(arena_xdim, xs, return_num=False):
     N = len(xs)
@@ -61,11 +63,13 @@ def comp_PI(arena_xdim, xs, return_num=False):
     else:
         return pI
 
+
 def rolling_window(a, w):
     # Get windows of size w from array a
     if a.ndim != 1:
         raise ValueError("Input array must be 1-dimensional")
     return np.vstack([np.roll(a, -i) for i in range(w)]).T[:-w + 1]
+
 
 def straightness_index(ss, rolling_ticks):
     ps = ['x', 'y', 'dst']
@@ -86,6 +90,7 @@ def straightness_index(ss, rolling_ticks):
                 L = np.sqrt(np.nansum(np.array(xy[-1, :] - xy[0, :]) ** 2))
                 SI0[dk + i] = 1 - L / D
     return SI0
+
 
 def sense_food(pos, sources=None, grid=None, radius=None):
     if grid:
@@ -220,6 +225,14 @@ def comp_bearing(xs, ys, ors, loc=(0.0, 0.0), in_deg=True):
     return drads if in_deg else np.deg2rad(drads)
 
 
+def comp_bearing_solo(x, y, o, loc=(0.0, 0.0)):
+    x0, y0 = loc
+    b = (o - np.arctan2(y0 - y, x0 - x)) % (2 * np.pi)
+    if b > np.pi:
+        b -= 2 * np.pi
+    return b
+
+
 def compute_dispersal_solo(xy, min_valid_proportion=0.2, max_start_proportion=0.1, min_end_proportion=0.9):
     """
     Compute dispersal values for a given trajectory.
@@ -274,7 +287,6 @@ def compute_dispersal_solo(xy, min_valid_proportion=0.2, max_start_proportion=0.
 #         s1 = int(t1 / dt)
 #         df_slice = df.loc[(slice(s0, s1), slice(None)), :]
 #         return df_slice
-
 
 
 def compute_dispersal_multi(xy0, t0, t1, dt, **kwargs):
@@ -700,7 +712,6 @@ def comp_extrema(a, order=3, threshold=None, return_2D=True):
 
 
 def align_trajectories(s, c, d=None, track_point=None, arena_dims=None, transposition='origin', replace=True, **kwargs):
-
     if transposition in ['', None, np.nan]:
         return
     mode = transposition
@@ -784,7 +795,7 @@ def fixate_larva(s, c, P1, P2=None):
 
         s[pars] = [
             flatten_list(rotate_points_around_point(points=np.reshape(s[pars].values[i, :], (-1, 2)),
-                                                            radians=bg_a[i])) for i in range(N)]
+                                                    radians=bg_a[i])) for i in range(N)]
     else:
         bg_a = np.zeros(N)
 
@@ -793,22 +804,25 @@ def fixate_larva(s, c, P1, P2=None):
     #
     return s, bg
 
-def comp_chunk_bearing(s, c, chunk, **kwargs):
-    c0 = nam.start(chunk)
-    c1 = nam.stop(chunk)
-    ho = nam.unwrap(nam.orient('front'))
-    ho0s = s[nam.at(ho, c0)].dropna().values
-    ho1s = s[nam.at(ho, c1)].dropna().values
-    for n, pos in c.sources.items():
-        b = nam.bearing_to(n)
-        b0_par = nam.at(b, c0)
-        b1_par = nam.at(b, c1)
-        db_par = nam.chunk_track(chunk, b)
-        b0 = comp_bearing(s[nam.at('x', c0)].dropna().values, s[nam.at('y', c0)].dropna().values, ho0s, loc=pos)
-        b1 = comp_bearing(s[nam.at('x', c1)].dropna().values, s[nam.at('y', c1)].dropna().values, ho1s, loc=pos)
-        s[b0_par] = np.nan
-        s.loc[s[c0] == True, b0_par] = b0
-        s[b1_par] = np.nan
-        s.loc[s[c1] == True, b1_par] = b1
-        s[db_par] = np.nan
-        s.loc[s[c1] == True, db_par] = np.abs(b0) - np.abs(b1)
+
+# def comp_chunk_bearing(s, c, chunk, **kwargs):
+#     x0p, x1p, xdp = nam.atStartStopChunk('x', chunk)
+#     y0p, y1p, ydp = nam.atStartStopChunk('y', chunk)
+#     ho = nam.unwrap(nam.orient('front'))
+#     ho0p, ho1p, hodp = nam.atStartStopChunk(ho, chunk)
+#
+#     c0 = nam.start(chunk)
+#     c1 = nam.stop(chunk)
+#     # ho = nam.unwrap(nam.orient('front'))
+#     ho0s = s[ho0p].dropna().values
+#     ho1s = s[ho1p].dropna().values
+#     for n, pos in c.sources.items():
+#         b0_par, b1_par, db_par = nam.atStartStopChunk(nam.bearing_to(n), chunk)
+#         b0 = comp_bearing(s[x0p].dropna().values, s[y0p].dropna().values, ho0s, loc=pos)
+#         b1 = comp_bearing(s[x1p].dropna().values, s[y1p].dropna().values, ho1s, loc=pos)
+#         s[b0_par] = np.nan
+#         s.loc[s[c0] == True, b0_par] = b0
+#         s[b1_par] = np.nan
+#         s.loc[s[c1] == True, b1_par] = b1
+#         s[db_par] = np.nan
+#         s.loc[s[c1] == True, db_par] = np.abs(b0) - np.abs(b1)
