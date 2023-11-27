@@ -69,14 +69,14 @@ class Intermitter(Timer):
             if stridechain_dist is None or stridechain_dist.range is None:
                 stridechain_dist = default_bout_distros.run_count
             self.stridechain_min, self.stridechain_max = stridechain_dist.range
-            self.stridechain_dist = util.BoutGenerator(**stridechain_dist, dt=1)
+            self.stridechain_dist = reg.BoutGenerator(**stridechain_dist, dt=1)
             self.run_dist = None
 
         elif self.run_mode == 'exec':
             if run_dist is not None or run_dist.range is None:
                 run_dist = default_bout_distros.run_dur
             self.stridechain_min, self.stridechain_max = run_dist.range
-            self.run_dist = util.BoutGenerator(**run_dist, dt=self.dt)
+            self.run_dist = reg.BoutGenerator(**run_dist, dt=self.dt)
             self.stridechain_dist = None
         else:
             raise ValueError('None of stidechain or exec distribution exist')
@@ -84,7 +84,7 @@ class Intermitter(Timer):
         if pause_dist is None or pause_dist.range is None:
             pause_dist = default_bout_distros.pause_dur
         self.pau_min, self.pau_max = (np.array(pause_dist.range) / self.dt).astype(int)
-        self.pause_dist = util.BoutGenerator(**pause_dist, dt=self.dt)
+        self.pause_dist = reg.BoutGenerator(**pause_dist, dt=self.dt)
 
         self.Nstrides = 0
         self.Nstridechains = 0
@@ -321,10 +321,10 @@ class BranchIntermitter(Intermitter):
         super().__init__(**kwargs)
 
     def generate_stridechain(self):
-        return util.exp_bout(beta=self.beta, tmax=self.stridechain_max, tmin=self.stridechain_min)
+        return aux.exp_bout(beta=self.beta, tmax=self.stridechain_max, tmin=self.stridechain_min)
 
     def generate_pause(self):
-        return util.critical_bout(c=self.c, sigma=self.sigma, N=1000, tmax=self.pau_max, tmin=self.pau_min) * self.dt
+        return aux.critical_bout(c=self.c, sigma=self.sigma, N=1000, tmax=self.pau_max, tmin=self.pau_min) * self.dt
 
 
 class FittedIntermitter(OfflineIntermitter):

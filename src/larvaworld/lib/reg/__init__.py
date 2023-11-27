@@ -24,7 +24,6 @@ __all__ = [
     'units',
     'funcs',
     'controls',
-    'distro_database',
     'par',
     'model',
     'graphs',
@@ -42,7 +41,6 @@ def vprint(text='', verbose=0):
 
 
 from .. import aux
-# from ... import __version__
 
 vprint(f"Initializing larvaworld registry", 2)
 # vprint(f"Initializing larvaworld v.{__version__} registry", 2)
@@ -103,10 +101,9 @@ class FunctionDict:
 
 funcs = FunctionDict()
 
-from . import keymap, distro
-
+from . import keymap
+from .distro import *
 controls = keymap.ControlRegistry()
-distro_database = distro.generate_distro_database()
 
 from . import parDB, parFunc, stored_confs
 

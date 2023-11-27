@@ -24,7 +24,7 @@ def plot_single_bout(x0, bout, color, label, ax, fit_dic=None, plot_fits='best',
     lws = [2] * len(distro_ls)
 
     if fit_dic is None:
-        fit_dic = util.fit_bout_distros(x0, bout=bout, **kwargs)
+        fit_dic = reg.fit_bout_distros(x0, bout=bout, **kwargs)
     idx_Kmax = fit_dic['idx_Kmax']
     xrange, du2, c2, y = fit_dic['values']
     lws[idx_Kmax] = 4

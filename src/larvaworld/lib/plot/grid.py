@@ -105,7 +105,7 @@ def model_summary(mID, refID=None, refDataset=None, Nids=1, model_table=False, *
                 'save_to': None, 'title':None},
            N=len(shorts), w=29, h=32, h0=hh0 + 18, share_w=True, x0=True)
 
-    ds = util.test_boutGens(**{'mID': mID, 'refDataset': refDataset})
+    ds = reg.test_boutGens(**{'mID': mID, 'refDataset': refDataset})
     P.plot(func='epochs', kws={'datasets': ds, 'save_to': None},
            N=2, w=29, h0=hh0 + 56, share_h=True, dw=1, x0=True)
 

@@ -5,10 +5,12 @@ Methods for managing context and attributes
 import functools
 import os
 import sys
+import time
 import pandas as pd
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 
 __all__ = [
+    'TimeUtil',
     'suppress_stdout_stderr',
     'suppress_stdout',
     'remove_prefix',
@@ -19,6 +21,29 @@ __all__ = [
     'storeH5',
 ]
 
+
+class TimeUtil:
+    """
+    Class for managing simulation time
+    """
+
+    @staticmethod
+    def current_time_millis():
+        return int(round(time.time() * 1000))
+
+    @staticmethod
+    def current_time_sec():
+        return int(round(time.time()))
+
+    @staticmethod
+    def format_time_seconds(seconds):
+        m, s = divmod(seconds, 60)
+        h, m = divmod(m, 60)
+        return "%d:%02d:%02d" % (h, m, s)
+
+    @staticmethod
+    def format_date_time():
+        return time.strftime("%Y-%m-%d_%H.%M.%S")
 
 @contextmanager
 def suppress_stdout_stderr():

@@ -2,13 +2,18 @@ import numpy as np
 import powerlaw
 import typing
 import scipy
+from scipy.stats import levy, norm, rv_discrete, ks_2samp
+import warnings
 
 from .. import reg, aux
 from ..aux import nam
 
 __all__ = [
-    'generate_distro_database',
+    'distroDB',
     'get_dist',
+    'fit_bout_distros',
+    'BoutGenerator',
+    'test_boutGens',
 ]
 
 
@@ -159,6 +164,7 @@ def generate_distro_database():
     })
     return d
 
+distroDB = generate_distro_database()
 
 def get_dist(k, k0='intermitter', v=None, return_tabrows=False, return_all=False):
     """
@@ -181,13 +187,345 @@ def get_dist(k, k0='intermitter', v=None, return_tabrows=False, return_all=False
          'v0': {'fit': True, 'name': None, 'range': None}}
 
     if return_tabrows:
-        dist_v = reg.distro_database[v.name].lab_func(v)
+        dist_v = distroDB[v.name].lab_func(v)
         vs1 = [k0, dispD, symD, dist_v, '-']
         vs2 = [k0, dispR, symR, v.range, uname]
         return vs1, vs2
     elif return_all:
-        pD = {'disp': dispD, 'k': kD, 'v0': None, 'vs': list(reg.distro_database.keys()), 'sym': symD, 'dtype': str}
+        pD = {'disp': dispD, 'k': kD, 'v0': None, 'vs': list(distroDB.keys()), 'sym': symD, 'dtype': str}
         pR = {'disp': dispR, 'k': kR, 'u_name': uname, 'u': u, 'sym': symR, 'v0': None, 'dtype': typing.Tuple[float]}
         return p, pD, pR
     else:
         return p
+
+
+
+def fit_bout_distros(x0, xmin=None, xmax=None, discrete=False, xmid=np.nan, overlap=0.0, Nbins=64, print_fits=False,
+                     dataset_id='dataset', bout='pause', combine=True, fit_by='pdf', eval_func_id='KS2'):
+
+    def compute_density(x, xmin, xmax, Nbins=64):
+        log_range = np.linspace(np.log2(xmin), np.log2(xmax), Nbins)
+        bins = np.unique((2 * 2 ** (log_range)) / 2)
+        x_filt = x[x >= xmin]
+        x_filt = x_filt[x_filt <= xmax]
+        cdf = np.ones(len(bins))
+        pdf = np.zeros(len(bins) - 1)
+        for i in range(len(bins)):
+            cdf[i] = 1 - np.mean(x_filt < bins[i])
+            if i >= 1:
+                pdf[i - 1] = -(cdf[i] - cdf[i - 1]) / (bins[i] - bins[i - 1])
+        bins1 = 0.5 * (bins[:-1] + bins[1:])
+        return bins, bins1, pdf, cdf
+
+    def KS(a1, a2):
+        return np.max(np.abs(a1 - a2))
+
+    def MSE(a1, a2, scaled=False):
+        if scaled:
+            s1 = sum(a1)
+            s2 = sum(a2)
+        else:
+            s1, s2 = 1, 1
+        return np.sum((a1 / s1 - a2 / s2) ** 2) / a1.shape[0]
+
+    def KS2(a1, a2):
+        if len(a1) == 0 or len(a2) == 0:
+            return np.nan
+        else:
+            return ks_2samp(a1, a2)[0]
+
+    eval_func_dic = {
+        'MSE': MSE,
+        'KS': KS,
+        'KS2': KS2,
+    }
+    F = eval_func_dic[eval_func_id]
+
+    if xmin is None:
+        xmin = np.nanmin(x0)
+    if xmax is None:
+        xmax = np.nanmax(x0)
+    with aux.suppress_stdout(False):
+        warnings.filterwarnings('ignore')
+
+
+
+        def get_powerlaw_alpha(dur, dur0=None, dur1=None, discrete=False):
+            from powerlaw import Fit
+            if dur0 is None:
+                dur0 = np.min(dur)
+            if dur1 is None:
+                dur1 = np.max(dur)
+            with aux.stdout.suppress_stdout_stderr():
+
+                return Fit(dur, xmin=dur0, xmax=dur1, discrete=discrete).power_law.alpha
+
+        def get_lognormal(dur):
+            d = np.log(dur)
+            return np.mean(d), np.std(d)
+
+        def get_logNpow(x, xmax, xmid, overlap=0, discrete=False):
+            r = len(x[x < xmid]) / len(x)
+            m, s = get_lognormal(x[x < xmid + overlap * (xmax - xmid)])
+            a = get_powerlaw_alpha(x[x >= xmid], xmid, xmax, discrete=discrete)
+            return m, s, a, r
+
+        D = distroDB
+        x = x0[x0 >= xmin]
+        x = x[x <= xmax]
+
+        u2, du2, c2, c2cum = compute_density(x, xmin, xmax, Nbins=Nbins)
+
+        a2 = 1 + len(x) / np.sum(np.log(x / xmin))
+        a = get_powerlaw_alpha(x, xmin, xmax, discrete=discrete)
+        p_cdf = 1 - D.powerlaw['cdf'](u2, xmin, a)
+        p_pdf = D.powerlaw['pdf'](du2, xmin, a)
+
+        b = len(x) / np.sum(x - xmin)
+        e_cdf = 1 - D.exponential['cdf'](u2, xmin, b)
+        e_pdf = D.exponential['pdf'](du2, xmin, b)
+
+        m, s = get_lognormal(x)
+        l_cdf = 1 - D.lognormal['cdf'](u2, m, s)
+        l_pdf = D.lognormal['pdf'](du2, m, s)
+
+        m_lev, s_lev = levy.fit(x)
+        lev_cdf = 1 - D.levy['cdf'](u2, m_lev, s_lev)
+        lev_pdf = D.levy['pdf'](du2, m_lev, s_lev)
+
+        m_nor, s_nor = norm.fit(x)
+        nor_cdf = 1 - D.normal['cdf'](u2, m_nor, s_nor)
+        nor_pdf = D.normal['pdf'](du2, m_nor, s_nor)
+
+        uni_cdf = 1 - D.uniform['cdf'](u2, xmin, xmin + xmax)
+        uni_pdf = D.uniform['pdf'](du2, xmin, xmin + xmax)
+
+        if np.isnan(xmid) and combine:
+            def logNpow_switch(x, xmax, u2, du2, c2cum, c2, discrete=False, fit_by='cdf'):
+                xmids = u2[1:-int(len(u2) / 3)][::2]
+                overlaps = np.linspace(0, 1, 6)
+                temp = np.ones([len(xmids), len(overlaps)])
+                for i, xmid in enumerate(xmids):
+                    for j, ov in enumerate(overlaps):
+                        mm, ss, aa, r = get_logNpow(x, xmax, xmid, discrete=discrete, overlap=ov)
+                        lp_cdf = 1 - D.logNpow['cdf'](u2, mm, ss, aa, xmid, r)
+                        lp_pdf = D.logNpow['pdf'](du2, mm, ss, aa, xmid, r)
+                        if fit_by == 'cdf':
+                            temp[i, j] = MSE(c2cum, lp_cdf)
+                        elif fit_by == 'pdf':
+                            temp[i, j] = MSE(c2, lp_pdf)
+
+                if all(np.isnan(temp.flatten())):
+                    return np.nan, np.nan
+                else:
+                    ii, jj = np.unravel_index(np.nanargmin(temp), temp.shape)
+                    return xmids[ii], overlaps[jj]
+
+            xmid, overlap = logNpow_switch(x, xmax, u2, du2, c2cum, c2, discrete, fit_by)
+
+        if not np.isnan(xmid):
+            mm, ss, aa, r = get_logNpow(x, xmax, xmid, discrete=discrete, overlap=overlap)
+            lp_cdf = 1 - D.logNpow['cdf'](u2, mm, ss, aa, xmid, r)
+            lp_pdf = D.logNpow['pdf'](du2, mm, ss, aa, xmid, r)
+        else:
+            mm, ss, aa, r = np.nan, np.nan, np.nan, np.nan
+            lp_cdf, lp_pdf = None, None
+        pdfs = [p_pdf, e_pdf, l_pdf, lp_pdf, lev_pdf, nor_pdf, uni_pdf]
+        cdfs = [p_cdf, e_cdf, l_cdf, lp_cdf, lev_cdf, nor_cdf, uni_cdf]
+
+        if fit_by == 'cdf':
+            Ks = np.array([F(c2cum, cdf0) if cdf0 is not None else np.nan for cdf0 in cdfs])
+        elif fit_by == 'pdf':
+            Ks = np.array([F(c2, pdf0) if pdf0 is not None else np.nan for pdf0 in pdfs])
+        # if fit_by == 'cdf':
+        #     KS_pow = F(c2cum, p_cdf)
+        #     KS_exp = F(c2cum, e_cdf)
+        #     KS_logn = F(c2cum, l_cdf)
+        #     KS_lognNpow = F(c2cum, lp_cdf) if lp_cdf is not None else np.nan
+        #     KS_lev = F(c2cum, lev_cdf)
+        #     KS_norm = F(c2cum, nor_cdf)
+        #     KS_uni = F(c2cum, uni_cdf)
+        # elif fit_by == 'pdf':
+        #     KS_pow = F(c2, p_pdf)
+        #     KS_exp = F(c2, e_pdf)
+        #     KS_logn = F(c2, l_pdf)
+        #     KS_lognNpow = F(c2, lp_pdf) if lp_pdf is not None else np.nan
+        #     KS_lev = F(c2, lev_pdf)
+        #     KS_norm = F(c2, nor_pdf)
+        #     KS_uni = F(c2, uni_pdf)
+        #
+        # Ks = np.array([KS_pow, KS_exp, KS_logn, KS_lognNpow, KS_lev, KS_norm, KS_uni])
+        idx_Kmax = np.nanargmin(Ks)
+        KS_pow, KS_exp, KS_logn, KS_lognNpow, KS_lev, KS_norm, KS_uni=Ks
+        res = np.round(
+            [a, KS_pow, b, KS_exp, m, s, KS_logn, mm, ss, aa, xmid, r, overlap, KS_lognNpow, m_lev, s_lev, KS_lev,
+             m_nor, s_nor, KS_norm, KS_uni, xmin, xmax], 5)
+
+    p = bout
+
+    names = [f'alpha_{p}', f'KS_pow_{p}',
+             f'beta_{p}', f'KS_exp_{p}',
+             f'mu_log_{p}', f'sigma_log_{p}', f'KS_log_{p}',
+             f'mu_logNpow_{p}', f'sigma_logNpow_{p}', f'alpha_logNpow_{p}', f'switch_logNpow_{p}', f'ratio_logNpow_{p}',
+             f'overlap_logNpow_{p}', f'KS_logNpow_{p}',
+             f'mu_levy_{p}', f'sigma_levy_{p}', f'KS_levy_{p}',
+             f'mu_norm_{p}', f'sigma_norm_{p}', f'KS_norm_{p}',
+             f'KS_uni_{p}',
+             f'min_{p}', f'max_{p}']
+
+    names2 = ['alpha', 'KS_pow',
+              'beta', 'KS_exp',
+              'mu_log', 'sigma_log', 'KS_log',
+              'mu_logNpow', 'sigma_logNpow', 'alpha_logNpow', 'switch_logNpow', 'ratio_logNpow',
+              'overlap_logNpow', 'KS_logNpow',
+              f'mu_levy', f'sigma_levy', f'KS_levy',
+              f'mu_norm', f'sigma_norm', f'KS_norm',
+              f'KS_uni',
+              'xmin', 'xmax']
+
+    def get_best_distro(bout, f, idx_Kmax=None):
+        k = bout
+        r = (f[f'min_{k}'], f[f'max_{k}'])
+        if idx_Kmax is None:
+            idx_Kmax = np.argmin([f[f'KS_{d}_{k}'] for d in ['pow', 'exp', 'log', 'logNpow', 'levy', 'norm', 'uni']])
+        if idx_Kmax == 0:
+            return {'range': r,
+                      'name': 'powerlaw',
+                      'alpha': f[f'alpha_{k}']}
+        elif idx_Kmax == 1:
+            return {'range': r,
+                      'name': 'exponential',
+                      'beta': f[f'beta_{k}']}
+        elif idx_Kmax == 2:
+            return {'range': r,
+                      'name': 'lognormal',
+                      'mu': f[f'mu_log_{k}'],
+                      'sigma': f[f'sigma_log_{k}']}
+        elif idx_Kmax == 3:
+            n = 'logNpow'
+            return {'range': r,
+                      'name': n,
+                      'mu': f[f'mu_{n}_{k}'],
+                      'sigma': f[f'sigma_{n}_{k}'],
+                      'alpha': f[f'alpha_{n}_{k}'],
+                      'switch': f[f'switch_{n}_{k}'],
+                      'ratio': f[f'ratio_{n}_{k}'],
+                      'overlap': f[f'overlap_{n}_{k}'],
+                      }
+        elif idx_Kmax == 4:
+            return {'range': r,
+                      'name': 'levy',
+                      'mu': f[f'mu_levy_{k}'],
+                      'sigma': f[f'sigma_levy_{k}']}
+        elif idx_Kmax == 5:
+            return {'range': r,
+                      'name': 'normal',
+                      'mu': f[f'mu_norm_{k}'],
+                      'sigma': f[f'sigma_norm_{k}']}
+        elif idx_Kmax == 6:
+            return {'range': r,
+                      'name': 'uniform'}
+        else:
+            raise ValueError
+
+    dic = aux.AttrDict({
+        'values': [u2, du2, c2, c2cum], 'pdfs': pdfs, 'cdfs': cdfs, 'Ks': Ks, 'idx_Kmax': idx_Kmax, 'res': res,
+        'best': get_best_distro(p, dict(zip(names, res)), idx_Kmax=idx_Kmax), 'fits': dict(zip(names2, res))
+    })
+
+    if print_fits:
+        print()
+        print(f'-----{dataset_id}-{bout}----------')
+        print(f'initial range : {np.min(x0)} - {np.max(x0)}, Nbouts : {len(x0)}')
+        print(f'accepted range : {xmin} - {xmax}, Nbouts : {len(x)}')
+        print("powerlaw exponent MLE:", a2)
+        print("powerlaw exponent powerlaw package:", a)
+        print("exponential exponent MLE:", b)
+        print("lognormal mean,std:", m, s)
+        print("lognormal-powerlaw mean,std, alpha, switch, ratio, overlap :", mm, ss, aa, xmid, r, overlap)
+        print("levy loc,scale:", m_lev, s_lev)
+        print("normal loc,scale:", m_nor, s_nor)
+        print('MSE pow', KS_pow)
+        print('MSE exp', KS_exp)
+        print('MSE logn', KS_logn)
+        print('MSE lognNpow', KS_lognNpow)
+        print('MSE levy', KS_lev)
+        print('MSE normal', KS_norm)
+        print('MSE uniform', KS_uni)
+
+        print()
+        print(f'---{dataset_id}-{bout}-distro')
+        print(dic.best)
+        print()
+
+    return dic
+
+
+
+
+
+
+
+class BoutGenerator:
+    """
+    Class for generating behavioral epochs of given temporal-duration distribution
+    """
+
+    def __init__(self, name, range, dt, **kwargs):
+        self.name = name
+        self.dt = dt
+        self.range = range
+        self.xmin, self.xmax = range
+        kwargs.update({'xmin': self.xmin, 'xmax': self.xmax})
+        self.args = {a: kwargs[a] for a in distroDB[self.name]['args']}
+
+        self.dist = self.build(**self.args)
+
+    def sample(self, size=1):
+        vs = self.dist.rvs(size=size) * self.dt
+        return vs[0] if size == 1 else vs
+
+    def build(self, **kwargs):
+        x0, x1 = int(self.xmin / self.dt), int(self.xmax / self.dt)
+        xx = np.arange(x0, x1 + 1)
+        pmf = distroDB[self.name]['pdf'](xx * self.dt, **kwargs)
+        mask = ~np.isnan(pmf)
+        pmf = pmf[mask]
+        xx = xx[mask]
+        pmf /= pmf.sum()
+        return rv_discrete(values=(xx, pmf))
+
+    def get(self, x, mode):
+        func = distroDB[self.name][mode]
+        return func(x=x, **self.args)
+
+
+def test_boutGens(mID, refID=None, refDataset=None, **kwargs):
+    if refDataset is None:
+        refDataset = reg.conf.Ref.loadRef(refID, load=True)
+    c = refDataset.config
+    aux_dic = refDataset.pooled_epochs
+    Npau = aux_dic['pause_dur'].shape[0]
+    Nrun = aux_dic['run_dur'].shape[0]
+
+    m = reg.conf.Model.getID(mID)
+    m = c.get_sample_bout_distros(m.get_copy())
+    dicM = m.brain.intermitter_params
+    dic = {}
+    for n, n0 in zip(['pause', 'run', 'stridechain'], ['pause_dur', 'run_dur', 'run_count']):
+        N = Npau if n == 'pause' else Nrun
+        discr = True if n == 'stridechain' else False
+        dt = 1 if n == 'stridechain' else c.dt
+
+        k = f'{n}_dist'
+        kk = dicM[k]
+        if kk is not None:
+            B = BoutGenerator(**kk, dt=dt)
+            vs = B.sample(N)
+            dic[n0] = fit_bout_distros(vs, dataset_id=mID, bout=n, combine=False, discrete=discr)
+    datasets = [{'id': 'model', 'fitted_epochs': dic, 'color': 'blue'},
+                {'id': 'experiment', 'fitted_epochs': refDataset.fitted_epochs, 'color': 'red'}]
+    return [aux.AttrDict(dd) for dd in datasets]
+
+
+

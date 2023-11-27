@@ -189,7 +189,7 @@ def init_brain_modules():
         return aux.AttrDict(d)
 
     def Im0():
-        dist_args = {k: reg.distro.get_dist(k=k) for k in ['stridechain_dist', 'run_dist', 'pause_dist']}
+        dist_args = {k: reg.get_dist(k=k) for k in ['stridechain_dist', 'run_dist', 'pause_dist']}
 
         IMargs = {
             'run_mode': {'dtype': str, 'v0': 'stridechain', 'vs': ['stridechain', 'exec'],
@@ -692,7 +692,7 @@ class ModelRegistry:
                         v = m.brain[f'{mkey}_params'][var_k]
                         if v is not None:
                             if v.name is not None:
-                                vs1, vs2 = reg.distro.get_dist(k=var_k, k0=mkey, v=v, return_tabrows=True)
+                                vs1, vs2 = reg.get_dist(k=var_k, k0=mkey, v=v, return_tabrows=True)
                                 data.append(vs1)
                                 data.append(vs2)
                 else:

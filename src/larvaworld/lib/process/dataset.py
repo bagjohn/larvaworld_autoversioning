@@ -723,7 +723,7 @@ class ParamLarvaDataset(param.Parameterized):
             fitted = {}
             for k, v in dic.items():
                 try:
-                    fitted[k] = util.fit_bout_distros(np.abs(v), bout=k, combine=False,
+                    fitted[k] = reg.fit_bout_distros(np.abs(v), bout=k, combine=False,
                                                       discrete=True if k == 'run_count' else False)
                 except:
                     fitted[k] = None

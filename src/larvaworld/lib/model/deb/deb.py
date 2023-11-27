@@ -7,8 +7,7 @@ import numpy as np
 import param
 
 from ... import reg, aux
-from ...aux import nam
-from ...util.fitting import simplex, beta0
+from ...aux import nam, simplex, beta0
 
 from ...model import deb
 from ...param import Substrate, NestedConf, PositiveNumber, PositiveInteger, ClassAttr, substrate_dict, \
