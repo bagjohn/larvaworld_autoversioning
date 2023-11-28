@@ -1419,39 +1419,47 @@ def buildDefaultDict(d0):
 
 
 class ParamClass:
-    def __init__(self, func_dict, in_rad=True, in_m=True):
-        self.func_dict = func_dict
-        self.dict_entries = self.build(in_rad=in_rad, in_m=in_m)
+    def __init__(self, in_rad=True, in_m=True):
+        self.func_dict = reg.funcs.param_computing
+        self.build(in_rad=in_rad, in_m=in_m)
 
-        self.kdict = self.finalize_dict(self.dict_entries)
+        self.kdict = aux.AttrDict({k: reg.get_LarvaworldParam(**prepar) for k, prepar in self.dict.items()})
+        self.ddict = aux.AttrDict({p.d: p for k, p in self.kdict.items()})
+        self.pdict = aux.AttrDict({p.p: p for k, p in self.kdict.items()})
+
+    @property
+    def pkeys(self):
+        return aux.SuperList([p.d for k, p in self.kdict.items()]).sorted
+
+    @property
+    def ks(self):
+        return aux.SuperList(self.kdict.keys()).sorted
 
     def build(self, in_rad=True, in_m=True):
         self.dict = aux.AttrDict()
-        self.dict_entries = []
         self.build_initial()
         self.build_angular(in_rad)
         self.build_spatial(in_m)
         self.build_chunks()
         self.build_sim_pars()
         self.build_deb_pars()
-        return self.dict_entries
 
     def add(self, **kwargs):
         prepar = reg.prepare_LarvaworldParam(**kwargs)
         self.dict[prepar.k] = prepar
-        self.dict_entries.append(prepar)
+
 
     def build_initial(self):
-        kws = {'u': reg.units.s}
-        self.add( **{'p': 't', 'sym': '$t$', 'lim': (0.0, None), 'v0': 0.0,'vfunc': param.Number,**kws})
+        kws1 = {'vfunc': param.Number,'lim': (0.0, None), 'u': reg.units.s}
+        kws2 = {'vfunc': param.Integer,'lim': (0, None),'v0': 0,'dv': 1, 'u': reg.units.dimensionless}
+        self.add( **{'p': 't', 'sym': '$t$','v0': 0.0,**kws1})
         self.add_operators(k0='t')
-        self.add(**{'p': 'num_ts', 'k': 'N_ts', 'sym': nam.tex.sub('N', 'ts'), 'dtype': int, 'lim': (0, None), 'dv': 1})
-        self.add(**{'p': 'tick', 'sym': '$tick$', 'lim': (0, None), 'v0': 0, 'dtype': int, **kws})
+        self.add(**{'p': 'num_ts', 'k': 'N_ts', 'sym': nam.tex.sub('N', 'ts'), **kws2})
+        self.add(**{'p': 'tick', 'sym': '$tick$', **kws2})
         self.add_operators(k0='tick')
-        self.add(**{'p': 'num_ticks', 'k': 'N_ticks', 'sym': nam.tex.sub('N', 'ticks'), 'dtype': int, 'lim': (0, None),
-               'dv': 1})
-        self.add(**{'p': 'model.dt', 'd': 'dt', 'sym': '$dt$', 'lim': (0.01, 0.5),  'v0': 0.1,'vfunc': param.Number, **kws})
-        self.add(**{'p': 'cum_dur', 'k': nam.cum('t'), 'sym': nam.tex.sub('t', 'cum'), 'lim': (0.0, None), 'v0': 0.0,'vfunc': param.Number,**kws})
+        self.add(**{'p': 'num_ticks', 'k': 'N_ticks', 'sym': nam.tex.sub('N', 'ticks'), **kws2})
+        self.add(**{'p': 'model.dt', 'd': 'dt', 'sym': '$dt$', 'v0': 0.1, **kws1})
+        self.add(**{'p': 'cum_dur', 'k': nam.cum('t'), 'sym': nam.tex.sub('t', 'cum'), 'v0': 0.0,**kws1})
 
     def add_rate(self, k0=None, k_time='t', p=None, k=None, d=None, sym=None, k_num=None, k_den=None, **kwargs):
         if k0 is not None:
@@ -1561,18 +1569,18 @@ class ParamClass:
              'sym': nam.tex.subsup('t', kc, '1'),
              'disp': f'{pc} end',
              **f_kws},
-            {
-                'p': nam.id(pc),
-                'k': f'{kc}_id',
-                'sym': nam.tex.sub('idx', kc),
-                'disp': f'{pc} idx',
-                'dtype': str
-            },
+            # {
+            #     'p': nam.id(pc),
+            #     'k': f'{kc}_id',
+            #     'sym': nam.tex.sub('idx', kc),
+            #     'disp': f'{pc} idx',
+            #     'dtype': str
+            # },
             {'p': ptr,
              'k': ktr,
              'sym': nam.tex.sub('r', kc),
              'disp': f'time fraction in {pc}s',
-             'lim': (0.0, 1.0),
+             'vfunc': param.Magnitude,
              'required_ks': [nam.cum(nam.dur(pc)), nam.cum(nam.dur(''))],
              'func': self.func_dict.tr(pc)},
             {
@@ -1581,6 +1589,7 @@ class ParamClass:
                 'k': kN,
                 'sym': nam.tex.sub('N', f'{pc}s'),
                 'disp': f'# {pc}s',
+                'vfunc': param.Integer,
                 'dtype': int,
                 **f_kws
             },
@@ -1589,6 +1598,7 @@ class ParamClass:
                 'k': kt,
                 'sym': nam.tex.sub(nam.tex.Delta('t'), kc),
                 'disp': f'{pc} duration',
+                'vfunc': param.Number,
                 'u': reg.units.s,
                 **f_kws
             }]
@@ -1809,7 +1819,7 @@ class ParamClass:
         p = f'{a}_{r0}_{r1}'
         k = f'{k0}_{r0}_{r1}'
 
-        self.add(**{'p': p, 'k': k, 'u': u, 'sym': nam.tex.subsup(s0, f'{r0}', f'{r1}'),
+        self.add(**{'p': p, 'k': k, 'u': u, 'sym': nam.tex.subsup(s0, f'{r0}', f'{r1}'),'vfunc': param.Number,
                     'func': self.func_dict.dsp(range), 'required_ks': ['x', 'y'],
                     'disp': f'dispersal in {dur}"'})
         self.add_scaled(k0=k)
@@ -1821,8 +1831,8 @@ class ParamClass:
         k0 = 'tor'
         k = f'{k0}{dur}'
         self.add(
-            **{'p': f'{p0}_{dur}', 'k': k, 'lim': (0.0, 1.0), 'sym': nam.tex.sub(k0, str(dur)),
-               'disp': f"{p0} over {dur}''",
+            **{'p': f'{p0}_{dur}', 'k': k, 'sym': nam.tex.sub(k0, str(dur)),
+               'disp': f"{p0} over {dur}''",'vfunc': param.Magnitude,
                'func': self.func_dict.tor(dur)})
         self.add_operators(k0=k)
 
@@ -1865,9 +1875,6 @@ class ParamClass:
             self.add_operators(k0=k0)
 
     def build_spatial(self, in_m=True):
-        # tor_durs = [1, 2, 5, 10, 20, 60, 120, 240, 300, 600]
-        # dsp_ranges = [(0, 40), (0, 60), (0, 70), (0, 80), (10, 60), (10, 70), (10, 80), (20, 60), (20, 70), (20, 80),
-        #               (10, 100), (20, 100), (0, 120), (0, 240), (0, 300), (0, 600), (60, 120), (60, 300)]
         if in_m:
             u = reg.units.m
             s = 1
@@ -2030,23 +2037,15 @@ class ParamClass:
         for k, p, d, disp in zip(ks, ps, ds, disps):
             self.add(**{'p': p, 'k': k, 'd': d, 'disp': disp})
 
-    def finalize_dict(self, entries):
-        dic = aux.AttrDict()
-        for prepar in entries:
-            p = reg.get_LarvaworldParam(**prepar)
-            dic[p.k] = p
-        return dic
 
 
-class ParamRegistry:
+
+class ParamRegistry(ParamClass):
     def __init__(self):
+        super().__init__()
         self.PI = buildInitDict()
         self.DEF = buildDefaultDict(self.PI)
 
-        self.dict = None
-
-        self.ddict=aux.AttrDict({p.d: p for k, p in self.kdict.items()})
-        self.pdict=aux.AttrDict({p.p: p for k, p in self.kdict.items()})
 
     def null(self, name, key='v', **kwargs):
         if key != 'v':
@@ -2134,19 +2133,7 @@ class ParamRegistry:
                 dic[k][d.id] = vs
         return aux.AttrDict(dic)
 
-    @property
-    def kdict(self):
-        if self.dict is None:
-            self.dict = ParamClass(func_dict=reg.funcs.param_computing).kdict
-        return self.dict
 
-    @property
-    def pkeys(self):
-        return aux.SuperList([p.d for k, p in self.kdict.items()]).sorted
-
-    @property
-    def ks(self):
-        return aux.SuperList(self.kdict.keys()).sorted
 
     def df_to_pint(self, df):
         '''
