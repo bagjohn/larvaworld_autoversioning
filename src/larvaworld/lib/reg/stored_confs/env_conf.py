@@ -55,7 +55,7 @@ def Env_dict():
         'thermo_arena': env((0.3, 0.3), th={}),
         'windy_arena': env((0.3, 0.3), w={'wind_speed': 10.0}),
         'windy_blob_arena': env((0.5, 0.2),
-                                FC.sgs(4, qs=np.ones(4), cs=aux.N_colors(4), N=1, scale=(0.04, 0.02), loc=(0.005, 0.0),
+                                FC.sgs(Ngs=4, qs=np.ones(4), cs=aux.N_colors(4), N=1, scale=(0.04, 0.02), loc=(0.005, 0.0),
                                        mode='uniform', shape='rect', can_be_displaced=True, regeneration=True, os='D',
                                        regeneration_pos={'loc': (0.005, 0.0), 'scale': (0.0, 0.0)}),
                                 w={'wind_speed': 100.0}, o='D'),
@@ -72,7 +72,7 @@ def Env_dict():
         'CS_UCS_off_food': env(0.1, FC.CS_UCS(), 'G'),
 
         'patchy_food': env((0.2, 0.2), FC.sg(N=8, scale=(0.07, 0.07), mode='periphery', a=0.001, odor=Odor.oG(2)), 'G'),
-        'random_food': env((0.1, 0.1), FC.sgs(4, N=1, scale=(0.04, 0.04), mode='uniform', shape='rect')),
+        'random_food': env((0.1, 0.1), FC.sgs(Ngs=4, N=1, scale=(0.04, 0.04), mode='uniform', shape='rect')),
         'uniform_food': env(0.05, FC.sg(N=2000, scale=(0.025, 0.025), a=0.01, r=0.0001)),
         'patch_grid': env((0.2, 0.2), FC.sg(N=5 * 5, scale=(0.2, 0.2), a=0.01, r=0.007, mode='grid', shape='rect',
                                             odor=Odor.oG(0.2)), 'G'),
