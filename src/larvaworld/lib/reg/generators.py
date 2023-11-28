@@ -11,7 +11,8 @@ from ..param import Area, BoundedArea, NestedConf, Larva_Distro, ClassAttr, SimT
     SimMetricOps, ClassDict, EnrichConf, OptionalPositiveRange, OptionalSelector, OptionalPositiveInteger, \
     generate_xyNor_distro, Odor, Life, class_generator, SimOps, RuntimeOps, Epoch, RuntimeDataOps, RandomizedColor, \
     OptionalPositiveNumber, Filesystem, TrackerOps, PreprocessConf, Substrate, AirPuff, PositiveInteger
-from ..model import Food, Source,Border, WindScape, ThermoScape, FoodGrid, OdorScape, DiffusionValueLayer, GaussianValueLayer
+from ..model import Food, Source, Border, WindScape, ThermoScape, FoodGrid, OdorScape, DiffusionValueLayer, \
+    GaussianValueLayer
 
 __all__ = [
     # 'ConfType',
@@ -135,34 +136,40 @@ class SimConfigurationParams(SimConfiguration):
 
 
 def CS_UCS(N=2, x=0.04, colors=['red', 'blue'], **kwargs):
-    CS_kws = {'odor':Odor.oG(id='CS'), 'c':colors[0], **kwargs}
-    UCS_kws = {'odor':Odor.oG(id='UCS'), 'c':colors[1], **kwargs}
-
+    CS_kws = {'odor': Odor.oG(id='CS'), 'c': colors[0], **kwargs}
+    UCS_kws = {'odor': Odor.oG(id='UCS'), 'c': colors[1], **kwargs}
 
     if N == 1:
-        return {**gen.Food(pos=(-x, 0.0),**CS_kws).entry('CS'),
-                **gen.Food(pos=(x, 0.0),**UCS_kws).entry('UCS')}
+        return {**gen.Food(pos=(-x, 0.0), **CS_kws).entry('CS'),
+                **gen.Food(pos=(x, 0.0), **UCS_kws).entry('UCS')}
     elif N == 2:
         return {
-            **gen.Food(pos=(-x, 0.0),**CS_kws).entry('CS_l'),
-            **gen.Food(pos=(x, 0.0),**CS_kws).entry('CS_r'),
-            **gen.Food(pos=(-x, 0.0),**UCS_kws).entry('UCS_l'),
-            **gen.Food(pos=(x, 0.0),**UCS_kws).entry('UCS_r')
+            **gen.Food(pos=(-x, 0.0), **CS_kws).entry('CS_l'),
+            **gen.Food(pos=(x, 0.0), **CS_kws).entry('CS_r'),
+            **gen.Food(pos=(-x, 0.0), **UCS_kws).entry('UCS_l'),
+            **gen.Food(pos=(x, 0.0), **UCS_kws).entry('UCS_r')
         }
 
-def double_patch(type='standard', q=1.0, c='green',x=0.06,r=0.025,a=0.1, **kwargs):
-    kws = {'odor': Odor.oG(), 'c': c,'r': r,'a': a,'sub': [q,type], **kwargs}
-    return {**gen.Food(pos=(-x, 0.0),**kws).entry('Left_patch'),
-            **gen.Food(pos=(x, 0.0),**kws).entry('Right_patch')}
 
-def single_patch(type='standard', q=1.0, c='green',r=0.01,a=0.1, **kwargs):
-    kws = {'c': c,'r': r,'a': a,'sub': [q,type], **kwargs}
-    return gen.Food(**kws).entry('Patch')
+def double_patch(type='standard', q=1.0, c='green', x=0.06, r=0.025, a=0.1, **kwargs):
+    kws = {'odor': Odor.oG(), 'c': c, 'r': r, 'a': a, 'sub': [q, type], **kwargs}
+    return {**gen.Food(pos=(-x, 0.0), **kws).entry('Left_patch'),
+            **gen.Food(pos=(x, 0.0), **kws).entry('Right_patch')}
 
-def source_groups(Ngs, ids=None, cs=None, rs=None, ams=None, os=None, qs=None, **kwargs):
+
+
+
+def source_generator(mode, Ngs=2, ids=None, cs=None, rs=None, ams=None, os=None, qs=None, type='standard', **kwargs):
+    if mode == 'Group':
+        id0 = 'SourceGroup'
+        _class = gen.FoodGroup
+    elif mode == 'Unit':
+        id0 = 'Source'
+        _class = gen.Food
+    else:
+        raise ValueError(f'mode arg must be Group or Unit, instead was : {mode}')
     if ids is None:
-        ids = [f'SourceGroup{i}' for i in range(Ngs)]
-
+        ids = [f'{id0}{i}' for i in range(Ngs)]
     if ams is None:
         ams = np.random.uniform(0.002, 0.01, Ngs)
     if rs is None:
@@ -170,14 +177,14 @@ def source_groups(Ngs, ids=None, cs=None, rs=None, ams=None, os=None, qs=None, *
     if qs is None:
         qs = np.linspace(0.1, 1, Ngs)
     if cs is None:
-        cs = [tuple(aux.col_range(q, low=(255, 0, 0), high=(0, 128, 0))) for q in qs]
-    if os=='G':
+        cs = [matplotlib.colors.rgb2hex(tuple(aux.col_range(q, low=(255, 0, 0), high=(0, 128, 0)))) for q in qs]
+    if os == 'G':
         os = [Odor.oG(id=f'Odor{i}') for i in range(Ngs)]
-    elif os=='D':
+    elif os == 'D':
         os = [Odor.oD(id=f'Odor{i}') for i in range(Ngs)]
     elif os is None:
         os = [Odor() for i in range(Ngs)]
-    l = [gen.FoodGroup(c=matplotlib.colors.rgb2hex(cs[i]), r=rs[i], a=ams[i], odor=os[i], sub=[qs[i], 'standard'], **kwargs).entry(ids[i]) for i in range(Ngs)]
+    l = [_class(c=cs[i], r=rs[i], a=ams[i], odor=os[i], sub=[qs[i], type], **kwargs).entry(ids[i]) for i in range(Ngs)]
     result = {}
     for d in l:
         result.update(d)
@@ -190,7 +197,7 @@ class FoodConf(NestedConf):
     food_grid = ClassAttr(gen.FoodGrid, default=None, doc='The food grid in the arena')
 
     @classmethod
-    def CS_UCS(cls, grid =None, sg={}, **kwargs):
+    def CS_UCS(cls, grid=None, sg={}, **kwargs):
         return cls(source_groups=sg, source_units=CS_UCS(**kwargs), food_grid=grid)
 
     @classmethod
@@ -198,12 +205,17 @@ class FoodConf(NestedConf):
         return cls(source_groups=sg, source_units=double_patch(**kwargs), food_grid=grid)
 
     @classmethod
-    def patch(cls, grid=None, sg={}, **kwargs):
-        return cls(source_groups=sg, source_units=single_patch(**kwargs), food_grid=grid)
+    def patch(cls, grid=None, sg={}, id='Patch', type='standard', q=1.0, c='green', r=0.01, a=0.1, **kwargs):
+        kws = {'c': c, 'r': r, 'a': a, 'sub': [q, type], **kwargs}
+        return cls.su(id=id, grid=grid, sg=sg, **kws)
 
     @classmethod
     def su(cls, id='Source', grid=None, sg={}, **kwargs):
         return cls(source_groups=sg, source_units=gen.Food(**kwargs).entry(id), food_grid=grid)
+
+    @classmethod
+    def sus(cls, grid=None, sg={}, **kwargs):
+        return cls(source_groups=sg, source_units=source_generator(mode='Unit', **kwargs), food_grid=grid)
 
     @classmethod
     def sg(cls, id='SourceGroup', grid=None, su={}, **kwargs):
@@ -211,8 +223,15 @@ class FoodConf(NestedConf):
 
     @classmethod
     def sgs(cls, grid=None, su={}, **kwargs):
-        return cls(source_groups=source_groups(**kwargs), source_units=su, food_grid=grid)
+        return cls(source_groups=source_generator(mode='Group', **kwargs), source_units=su, food_grid=grid)
 
+    @classmethod
+    def foodNodor_4corners(cls, d=0.05, colors=['blue', 'red', 'green', 'magenta'],grid=None, sg={}, **kwargs):
+        ps = [(-d, -d), (-d, d), (d, -d), (d, d)]
+        l = [gen.Food(pos=ps[i], a=0.01, odor=Odor.oD(id=f'Odor_{i}'), c=colors[i], r=0.01, **kwargs).entry(f'Source_{i}') for i
+             in range(4)]
+        sus = {**l[0], **l[1], **l[2], **l[3]}
+        return cls(source_groups=sg, source_units=sus, food_grid=grid)
 
 
 gen.FoodConf = FoodConf
@@ -244,6 +263,51 @@ class EnvConf(NestedConf):
 
         from ..sim.base_run import BaseRun
         BaseRun.visualize_Env(envConf=self.nestedConf, envID=self.name, **kwargs)
+
+    @classmethod
+    def maze(cls, n=15, h=0.1, **kwargs):
+        def get_maze(nx=15, ny=15, ix=0, iy=0, h=0.1, return_points=False):
+            from ..model.envs.maze import Maze
+            m = Maze(nx, ny, ix, iy, height=h)
+            m.make_maze()
+            lines = m.maze_lines()
+            if return_points:
+                ps = []
+                for l in lines:
+                    ps.append(l.coords[0])
+                    ps.append(l.coords[1])
+                ps = [(np.round(x - h / 2, 3), np.round(y - h / 2, 3)) for x, y in ps]
+                return ps
+            else:
+                return lines
+
+        return cls(arena=gen.Arena(geometry='rectangular', dims=(h, h)),
+                   food_params=gen.FoodConf.su(id='Target', odor=Odor.oG(), c='blue'),
+                   border_list=aux.AttrDict({'Maze': gen.Border(vertices=get_maze(nx=n, ny=n, h=h, return_points=True),
+                                                                color='black', width=0.001)}),
+                   odorscape=gen.GaussianValueLayer(), **kwargs
+                   )
+
+    @classmethod
+    def game(cls, dim=0.1, x=0.4, y=0.0, **kwargs):
+        x = np.round(x * dim, 3)
+        y = np.round(y * dim, 3)
+
+        sus = {**gen.Food(c='green', can_be_carried=True, a=0.01, odor=Odor.oG(2, id='Flag_odor')).entry('Flag'),
+               **gen.Food(pos=(-x, y), c='blue', odor=Odor.oG(id='Left_base_odor')).entry('Left_base'),
+               **gen.Food(pos=(+x, y), c='red', odor=Odor.oG(id='Right_base_odor')).entry('Right_base')}
+
+        return cls(arena=gen.Arena(geometry='rectangular', dims=(dim, dim)),
+                   food_params=gen.FoodConf(source_units=sus),
+                   odorscape=gen.GaussianValueLayer(), **kwargs
+                   )
+
+    @classmethod
+    def foodNodor_4corners(cls, dim=0.2, **kwargs):
+        return cls(arena=gen.Arena(geometry='rectangular', dims=(dim, dim)),
+                   food_params=gen.FoodConf.foodNodor_4corners(d=dim/4, **kwargs),
+                   odorscape=gen.DiffusionValueLayer()
+                   )
 
 
 def update_larva_groups(lgs, **kwargs):
@@ -590,8 +654,8 @@ class LabFormat(NestedConf):
             step = step.astype(float)
             d = self.build_dataset(step, end, parent_dir, proc_folder=proc_folder, group_id=group_id,
                                    id=id, sample=sample, color=color, epochs=epochs, age=age, refID=refID)
-            if enrich_conf is None :
-                enrich_conf=aux.AttrDict()
+            if enrich_conf is None:
+                enrich_conf = aux.AttrDict()
             enrich_conf.pre_kws = self.preprocess.nestedConf
             d.enrich(**enrich_conf, is_last=False)
             reg.vprint(f'****- Processed dataset {d.id} to derive secondary metrics -----', 1)
