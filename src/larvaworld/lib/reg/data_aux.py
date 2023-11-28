@@ -425,8 +425,13 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
             sym = k
 
 
-    if dv is None and dtype in [float, typing.List[float], typing.List[typing.Tuple[float]], typing.Tuple[float]]:
-        dv = 0.01
+    if dv is None :
+        if dtype in [float, typing.List[float], typing.List[typing.Tuple[float]], typing.Tuple[float]]:
+            dv = 0.01
+        elif dtype in [int] :
+            dv=1
+        else :
+            pass
 
 
 

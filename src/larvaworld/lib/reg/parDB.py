@@ -1450,8 +1450,8 @@ class ParamClass:
 
 
     def build_initial(self):
-        kws1 = {'vfunc': param.Number,'lim': (0.0, None), 'u': reg.units.s}
-        kws2 = {'vfunc': param.Integer,'lim': (0, None),'v0': 0,'dv': 1, 'u': reg.units.dimensionless}
+        kws1 = {'vfunc': param.Number,'lim': (0.0, None), 'dtype': float, 'u': reg.units.s}
+        kws2 = {'vfunc': param.Integer,'lim': (0, None),'v0': 0,'dtype': int, 'u': reg.units.dimensionless}
         self.add( **{'p': 't', 'sym': '$t$','v0': 0.0,**kws1})
         self.add_operators(k0='t')
         self.add(**{'p': 'num_ts', 'k': 'N_ts', 'sym': nam.tex.sub('N', 'ts'), **kws2})
