@@ -136,15 +136,8 @@ class SimConfigurationParams(SimConfiguration):
 
 
 def CS_UCS(N=2, x=0.04, colors=['red', 'blue'],o = 'G', **kwargs):
-    if o == 'G':
-        odorF = Odor.oG
-    elif o == 'D':
-        odorF = Odor.oD
-    else:
-        raise
-
-    CS_kws = {'odor': odorF(id='CS'), 'c': colors[0], **kwargs}
-    UCS_kws = {'odor': odorF(id='UCS'), 'c': colors[1], **kwargs}
+    CS_kws = {'odor': Odor.oO(o=o,id='CS'), 'c': colors[0], **kwargs}
+    UCS_kws = {'odor': Odor.oO(o=o,id='UCS'), 'c': colors[1], **kwargs}
 
     if N == 1:
         return {**gen.Food(pos=(-x, 0.0), **CS_kws).entry('CS'),
@@ -159,13 +152,7 @@ def CS_UCS(N=2, x=0.04, colors=['red', 'blue'],o = 'G', **kwargs):
 
 
 def double_patch(type='standard', q=1.0, c='green', x=0.06, r=0.025, a=0.1,o = 'G', **kwargs):
-    if o == 'G':
-        odorF = Odor.oG
-    elif o == 'D':
-        odorF = Odor.oD
-    else:
-        raise
-    kws = {'odor': odorF(), 'c': c, 'r': r, 'a': a, 'sub': [q, type], **kwargs}
+    kws = {'odor': Odor.oO(o=o), 'c': c, 'r': r, 'a': a, 'sub': [q, type], **kwargs}
     return {**gen.Food(pos=(-x, 0.0), **kws).entry('Left_patch'),
             **gen.Food(pos=(x, 0.0), **kws).entry('Right_patch')}
 
@@ -180,7 +167,7 @@ def source_generator(genmode, Ngs=2, ids=None, cs=None, rs=None, ams=None, os=No
         id0 = 'Source'
         _class = gen.Food
     else:
-        raise ValueError(f'mode arg must be Group or Unit, instead was : {mode}')
+        raise ValueError(f'mode arg must be Group or Unit, instead was : {genmode}')
     if ids is None:
         ids = [f'{id0}{i}' for i in range(Ngs)]
     if ams is None:
@@ -240,14 +227,8 @@ class FoodConf(NestedConf):
 
     @classmethod
     def foodNodor_4corners(cls, d=0.05, colors=['blue', 'red', 'green', 'magenta'],grid=None, sg={},o='D', **kwargs):
-        if o=='G' :
-            odorF=Odor.oG
-        elif o=='D' :
-            odorF=Odor.oD
-        else :
-            raise
         ps = [(-d, -d), (-d, d), (d, -d), (d, d)]
-        l = [gen.Food(pos=ps[i], a=0.01, odor=odorF(id=f'Odor_{i}'), c=colors[i], r=0.01, **kwargs).entry(f'Source_{i}') for i
+        l = [gen.Food(pos=ps[i], a=0.01, odor=Odor.oO(o=o,id=f'Odor_{i}'), c=colors[i], r=0.01, **kwargs).entry(f'Source_{i}') for i
              in range(4)]
         sus = {**l[0], **l[1], **l[2], **l[3]}
         return cls(source_groups=sg, source_units=sus, food_grid=grid)
@@ -300,32 +281,18 @@ class EnvConf(NestedConf):
             else:
                 return lines
 
-        if o=='G' :
-            odorF=Odor.oG
-        elif o=='D' :
-            odorF=Odor.oD
-        else :
-            raise
-
-        return cls.rect(h,f=gen.FoodConf.su(id='Target', odor=odorF(), c='blue'),
+        return cls.rect(h,f=gen.FoodConf.su(id='Target', odor=Odor.oO(o=o), c='blue'),
                    bl=aux.AttrDict({'Maze': gen.Border(vertices=get_maze(nx=n, ny=n, h=h, return_points=True),
                                                                 color='black', width=0.001)}),o=o, **kwargs)
 
     @classmethod
     def game(cls, dim=0.1, x=0.4, y=0.0,o='G', **kwargs):
-        if o=='G' :
-            odorF=Odor.oG
-        elif o=='D' :
-            odorF=Odor.oD
-        else :
-            raise
-
         x = np.round(x * dim, 3)
         y = np.round(y * dim, 3)
 
-        sus = {**gen.Food(c='green', can_be_carried=True, a=0.01, odor=odorF(2, id='Flag_odor')).entry('Flag'),
-               **gen.Food(pos=(-x, y), c='blue', odor=odorF(id='Left_base_odor')).entry('Left_base'),
-               **gen.Food(pos=(+x, y), c='red', odor=odorF(id='Right_base_odor')).entry('Right_base')}
+        sus = {**gen.Food(c='green', can_be_carried=True, a=0.01, odor=Odor.oO(o=o,c=2, id='Flag_odor')).entry('Flag'),
+               **gen.Food(pos=(-x, y), c='blue', odor=Odor.oO(o=o, id='Left_base_odor')).entry('Left_base'),
+               **gen.Food(pos=(+x, y), c='red', odor=Odor.oO(o=o, id='Right_base_odor')).entry('Right_base')}
 
         return cls.rect(dim,f=gen.FoodConf(source_units=sus),o=o, **kwargs)
 

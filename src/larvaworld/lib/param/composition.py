@@ -173,6 +173,15 @@ class Odor(NestedConf):
     def oD(cls, c=1, id='Odor'):
         return cls(id=id, intensity=300.0 * c, spread=0.1 * np.sqrt(c))
 
+    @classmethod
+    def oO(cls, o, **kwargs):
+        if o=='G' :
+            return cls.oG(**kwargs)
+        elif o=='D' :
+            return cls.oD(**kwargs)
+        else :
+            raise
+
 
 class Epoch(NestedConf):
     age_range = OptionalPositiveRange(default=(0.0, None), softmax=100.0, hardmax=250.0,
