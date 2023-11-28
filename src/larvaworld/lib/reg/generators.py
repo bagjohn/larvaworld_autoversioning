@@ -1,7 +1,7 @@
 import copy
 import os
 import shutil
-
+import matplotlib
 import numpy as np
 import pandas as pd
 import param
@@ -134,30 +134,54 @@ class SimConfigurationParams(SimConfiguration):
         super().__init__(runtype=runtype, experiment=experiment, parameters=parameters, **kwargs)
 
 
-def CS_UCS_units(N=2, x=0.04, colors=['red', 'blue'], **kwargs):
-    CS_kws = {'pos':(-x, 0.0), 'odor':Odor.oG(id='CS'), 'c':colors[0], **kwargs}
-    UCS_kws = {'pos':(x, 0.0), 'odor':Odor.oG(id='UCS'), 'c':colors[1], **kwargs}
+def CS_UCS(N=2, x=0.04, colors=['red', 'blue'], **kwargs):
+    CS_kws = {'odor':Odor.oG(id='CS'), 'c':colors[0], **kwargs}
+    UCS_kws = {'odor':Odor.oG(id='UCS'), 'c':colors[1], **kwargs}
 
 
     if N == 1:
-        return {**gen.Food(**CS_kws).entry('CS'),
-                **gen.Food(**UCS_kws).entry('UCS')}
+        return {**gen.Food(pos=(-x, 0.0),**CS_kws).entry('CS'),
+                **gen.Food(pos=(x, 0.0),**UCS_kws).entry('UCS')}
     elif N == 2:
         return {
-            **gen.Food(**CS_kws).entry('CS_l'),
-            **gen.Food(**CS_kws).entry('CS_r'),
-            **gen.Food(**UCS_kws).entry('UCS_l'),
-            **gen.Food(**UCS_kws).entry('UCS_r')
+            **gen.Food(pos=(-x, 0.0),**CS_kws).entry('CS_l'),
+            **gen.Food(pos=(x, 0.0),**CS_kws).entry('CS_r'),
+            **gen.Food(pos=(-x, 0.0),**UCS_kws).entry('UCS_l'),
+            **gen.Food(pos=(x, 0.0),**UCS_kws).entry('UCS_r')
         }
 
-def double_patch_units(type='standard', q=1.0, c='green',x=0.06,r=0.025,a=0.1, **kwargs):
+def double_patch(type='standard', q=1.0, c='green',x=0.06,r=0.025,a=0.1, **kwargs):
     kws = {'odor': Odor.oG(), 'c': c,'r': r,'a': a,'sub': [q,type], **kwargs}
     return {**gen.Food(pos=(-x, 0.0),**kws).entry('Left_patch'),
             **gen.Food(pos=(x, 0.0),**kws).entry('Right_patch')}
 
-def single_patch_unit(type='standard', q=1.0, c='green',r=0.01,a=0.1, **kwargs):
+def single_patch(type='standard', q=1.0, c='green',r=0.01,a=0.1, **kwargs):
     kws = {'c': c,'r': r,'a': a,'sub': [q,type], **kwargs}
     return gen.Food(**kws).entry('Patch')
+
+def source_groups(Ngs, ids=None, cs=None, rs=None, ams=None, os=None, qs=None, **kwargs):
+    if ids is None:
+        ids = [f'SourceGroup{i}' for i in range(Ngs)]
+
+    if ams is None:
+        ams = np.random.uniform(0.002, 0.01, Ngs)
+    if rs is None:
+        rs = ams
+    if qs is None:
+        qs = np.linspace(0.1, 1, Ngs)
+    if cs is None:
+        cs = [tuple(aux.col_range(q, low=(255, 0, 0), high=(0, 128, 0))) for q in qs]
+    if os=='G':
+        os = [Odor.oG(id=f'Odor{i}') for i in range(Ngs)]
+    elif os=='D':
+        os = [Odor.oD(id=f'Odor{i}') for i in range(Ngs)]
+    elif os is None:
+        os = [Odor() for i in range(Ngs)]
+    l = [gen.FoodGroup(c=matplotlib.colors.rgb2hex(cs[i]), r=rs[i], a=ams[i], odor=os[i], sub=[qs[i], 'standard'], **kwargs).entry(ids[i]) for i in range(Ngs)]
+    result = {}
+    for d in l:
+        result.update(d)
+    return result
 
 
 class FoodConf(NestedConf):
@@ -167,19 +191,28 @@ class FoodConf(NestedConf):
 
     @classmethod
     def CS_UCS(cls, grid =None, sg={}, **kwargs):
-        return cls(source_groups=sg, source_units=CS_UCS_units(**kwargs), food_grid=grid)
+        return cls(source_groups=sg, source_units=CS_UCS(**kwargs), food_grid=grid)
 
     @classmethod
-    def double_patch(cls, grid=None, sg={}, **kwargs):
-        return cls(source_groups=sg, source_units=double_patch_units(**kwargs), food_grid=grid)
+    def patch2(cls, grid=None, sg={}, **kwargs):
+        return cls(source_groups=sg, source_units=double_patch(**kwargs), food_grid=grid)
 
     @classmethod
-    def single_patch(cls, grid=None, sg={}, **kwargs):
-        return cls(source_groups=sg, source_units=single_patch_unit(**kwargs), food_grid=grid)
-# class FoodConf(NestedConf):
-#     source_groups = ClassDict(item_type=Food.generator(mode='Group'), doc='The groups of odor or food sources available in the arena')
-#     source_units = ClassDict(item_type=Food.generator(), doc='The individual sources  of odor or food in the arena')
-#     food_grid = ClassAttr(FoodGrid.generator(), default=None, doc='The food grid in the arena')
+    def patch(cls, grid=None, sg={}, **kwargs):
+        return cls(source_groups=sg, source_units=single_patch(**kwargs), food_grid=grid)
+
+    @classmethod
+    def su(cls, id='Source', grid=None, sg={}, **kwargs):
+        return cls(source_groups=sg, source_units=gen.Food(**kwargs).entry(id), food_grid=grid)
+
+    @classmethod
+    def sg(cls, id='SourceGroup', grid=None, su={}, **kwargs):
+        return cls(source_groups=gen.FoodGroup(**kwargs).entry(id), source_units=su, food_grid=grid)
+
+    @classmethod
+    def sgs(cls, grid=None, su={}, **kwargs):
+        return cls(source_groups=source_groups(**kwargs), source_units=su, food_grid=grid)
+
 
 
 gen.FoodConf = FoodConf
