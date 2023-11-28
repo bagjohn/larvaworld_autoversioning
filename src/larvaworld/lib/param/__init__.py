@@ -7,7 +7,6 @@ from .xy_distro import *
 from .nested_parameter_group import *
 
 
-from .param_aux import *
 from .enrichment import *
 from .spatial import *
 from .drawable import *

@@ -3,13 +3,18 @@ Methods for fitting and sampling between simulated and experimental datasets
 """
 
 import random
-from typing import Tuple, List
 import numpy as np
+from types import FunctionType
+import typing
 import param
+import sys
+if sys.version_info >= (3, 8):
+    from typing import TypedDict  # pylint: disable=no-name-in-module
+else:
+    from typing_extensions import TypedDict
 
 from .. import reg, aux
 from ..aux import nam
-from ..param.param_aux import vpar, get_vfunc, gConf
 
 __all__ = [
     'SAMPLING_PARS',
@@ -20,6 +25,98 @@ __all__ = [
     'build_LarvaworldParam',
 ]
 
+def get_vfunc(dtype, lim, vs):
+    func_dic = {
+        float: param.Number,
+        int: param.Integer,
+        str: param.String,
+        bool: param.Boolean,
+        dict: param.Dict,
+        list: param.List,
+        type: param.ClassSelector,
+        typing.List[int]: param.List,
+        typing.List[str]: param.List,
+        typing.List[float]: param.List,
+        typing.List[typing.Tuple[float]]: param.List,
+        FunctionType: param.Callable,
+        typing.Tuple[float]: param.Range,
+        typing.Tuple[int]: param.NumericTuple,
+        TypedDict: param.Dict
+    }
+    if dtype == float and lim == (0.0, 1.0):
+        return param.Magnitude
+    if type(vs) == list and dtype in [str, int]:
+        return param.Selector
+    elif dtype in func_dic.keys():
+        return func_dic[dtype]
+    else:
+        return param.Parameter
+
+def vpar(vfunc, v0, h, lab, lim, dv, vs):
+    f_kws = {
+        'default': v0,
+        'doc': h,
+        'label': lab,
+        'allow_None': True
+    }
+    if vfunc in [param.List, param.Number, param.Range]:
+        if lim is not None:
+            f_kws['bounds'] = lim
+    if vfunc in [param.Range, param.Number]:
+        if dv is not None:
+            f_kws['step'] = dv
+    if vfunc in [param.Selector]:
+        f_kws['objects'] = vs
+    func = vfunc(**f_kws, instantiate=True)
+    return func
+
+def param_to_arg(k, p):
+    c = p.__class__
+    # dtype=aux.param_dtype(c)
+    v = p.default
+    d = aux.AttrDict({
+        'key': k,
+        'short': k,
+        'help': p.doc,
+    })
+    if v is not None:
+        d.default = v
+    if c == param.Boolean:
+        d.action = 'store_true' if not v else 'store_false'
+    elif c == param.String:
+        d.type = str
+    elif c in param.Integer.__subclasses__():
+        d.type = int
+    elif c in param.Number.__subclasses__():
+        d.type = float
+    elif c in param.Tuple.__subclasses__():
+        d.type = tuple
+
+    if hasattr(p, 'objects'):
+        d.choices = p.objects
+        if c in param.List.__subclasses__():
+            d.nargs = '+'
+        if hasattr(p, 'item_type'):
+            d.type = p.item_type
+    return d
+
+
+def gConf(mdict, **kwargs):
+    if mdict is None:
+        return None
+    elif isinstance(mdict, param.Parameterized):
+        return mdict.v
+    elif isinstance(mdict, dict):
+        conf = aux.AttrDict()
+        for d, p in mdict.items():
+            if isinstance(p, param.Parameterized):
+                conf[d] = p.v
+            else:
+                conf[d] = gConf(mdict=p)
+            conf.update_existingdict(kwargs)
+        return conf
+    else:
+        return aux.AttrDict(mdict)
 
 def init2mdict(d0):
     def check(D0):
@@ -181,7 +278,7 @@ class LarvaworldParam(param.Parameterized):
             return self.param.v.step
         elif self.parclass == param.Magnitude:
             return 0.01
-        elif self.dtype in [float, List[float], List[Tuple[float]], Tuple[float]]:
+        elif self.dtype in [float, typing.List[float], typing.List[typing.Tuple[float]], typing.Tuple[float]]:
             return 0.01
         else:
             return None
@@ -330,7 +427,7 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
         else:
             ulab = fr'${u}$'
             lab = fr'{disp} ({ulab})'
-    if dv is None and dtype in [float, List[float], List[Tuple[float]], Tuple[float]]:
+    if dv is None and dtype in [float, typing.List[float], typing.List[typing.Tuple[float]], typing.Tuple[float]]:
         dv = 0.01
     h = lab if h is None else h
 
