@@ -159,7 +159,7 @@ def double_patch(type='standard', q=1.0, c='green', x=0.06, r=0.025, a=0.1,o = '
 
 
 
-def source_generator(genmode, Ngs=2, ids=None, cs=None, rs=None, ams=None, os=None, qs=None, type='standard', **kwargs):
+def source_generator(genmode, Ngs=2, ids=None, cs=None, rs=None, ams=None, o=None, qs=None, type='standard', **kwargs):
     if genmode == 'Group':
         id0 = 'SourceGroup'
         _class = gen.FoodGroup
@@ -178,13 +178,7 @@ def source_generator(genmode, Ngs=2, ids=None, cs=None, rs=None, ams=None, os=No
         qs = np.linspace(0.1, 1, Ngs)
     if cs is None:
         cs = [matplotlib.colors.rgb2hex(tuple(aux.col_range(q, low=(255, 0, 0), high=(0, 128, 0)))) for q in qs]
-    if os == 'G':
-        os = [Odor.oG(id=f'Odor{i}') for i in range(Ngs)]
-    elif os == 'D':
-        os = [Odor.oD(id=f'Odor{i}') for i in range(Ngs)]
-    elif os is None:
-        os = [Odor() for i in range(Ngs)]
-    l = [_class(c=cs[i], r=rs[i], a=ams[i], odor=os[i], sub=[qs[i], type], **kwargs).entry(ids[i]) for i in range(Ngs)]
+    l = [_class(c=cs[i], r=rs[i], a=ams[i], odor=Odor.oO(o=o,id=f'Odor{i}'), sub=[qs[i], type], **kwargs).entry(ids[i]) for i in range(Ngs)]
     result = {}
     for d in l:
         result.update(d)

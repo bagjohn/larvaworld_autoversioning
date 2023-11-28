@@ -37,7 +37,7 @@ def Env_dict():
         'windy_blob_arena': E.rect((0.5, 0.2),
                                 f= FC.sgs(Ngs=4, qs=np.ones(4), cs=aux.N_colors(4), N=1, scale=(0.04, 0.02),
                                        loc=(0.005, 0.0),
-                                       mode='uniform', shape='rect', can_be_displaced=True, regeneration=True, os='D',
+                                       mode='uniform', shape='rect', can_be_displaced=True, regeneration=True, o='D',
                                        regeneration_pos={'loc': (0.005, 0.0), 'scale': (0.0, 0.0)}),
                                 w={'wind_speed': 100.0}, o='D'),
         'windy_arena_bordered':  E.rect(0.3, w={'wind_speed': 10.0},

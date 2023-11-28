@@ -180,7 +180,7 @@ class Odor(NestedConf):
         elif o=='D' :
             return cls.oD(**kwargs)
         else :
-            raise
+            return cls(**kwargs)
 
 
 class Epoch(NestedConf):
