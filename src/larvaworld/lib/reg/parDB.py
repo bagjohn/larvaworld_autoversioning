@@ -1419,11 +1419,9 @@ def buildDefaultDict(d0):
 
 
 class ParamClass:
-    def __init__(self, in_rad=True, in_m=True):
+    def __init__(self):
         self.func_dict = reg.funcs.param_computing
-        self.build(in_rad=in_rad, in_m=in_m)
-
-        # self.kdict = aux.AttrDict({k: reg.get_LarvaworldParam(**prepar) for k, prepar in self.dict.items()})
+        self.build()
         self.ddict = aux.AttrDict({p.d: p for k, p in self.kdict.items()})
         self.pdict = aux.AttrDict({p.p: p for k, p in self.kdict.items()})
 
@@ -1435,12 +1433,12 @@ class ParamClass:
     def ks(self):
         return aux.SuperList(self.kdict.keys()).sorted
 
-    def build(self, in_rad=True, in_m=True):
+    def build(self):
         self.dict = aux.AttrDict()
         self.kdict = aux.AttrDict()
         self.build_initial()
-        self.build_angular(in_rad)
-        self.build_spatial(in_m)
+        self.build_angular()
+        self.build_spatial()
         self.build_chunks()
         self.build_sim_pars()
         self.build_deb_pars()
@@ -1722,12 +1720,6 @@ class ParamClass:
 
     def add_unwrap(self, k0, **kwargs):
         b = self.dict[k0]
-        if b.u == reg.units.deg:
-            in_deg = True
-        elif b.u == reg.units.rad:
-            in_deg = False
-        else:
-            raise
 
         kws = {
             'p': nam.unwrap(b.p),
@@ -1740,10 +1732,10 @@ class ParamClass:
             'required_ks': [k0],
             'dv': b.dv,
             'v0': b.v0,
-            'func': self.func_dict.unwrap(b.d, in_deg)
+            'vfunc': param.Number,
+            'func': self.func_dict.unwrap(b.d, in_deg=False)
         }
         kws.update(kwargs)
-
         self.add(**kws)
 
     def add_dst(self, point='', **kwargs):
@@ -1805,14 +1797,11 @@ class ParamClass:
             'disp': f'{b.disp} phase',
             'lim': (0, 2*np.pi),
             'vfunc': param.Number
-            # 'disp': f'{b.disp} dominant frequency',
-            # 'required_ks': [k0],
-            # 'func': self.func_dict.freq(b.d)
         }
         kws.update(kwargs)
         self.add(**kws)
 
-    def add_dsp(self, range=(0, 40), u=reg.units.m):
+    def add_dsp(self, range=(0, 40)):
         a = 'dispersion'
         k0 = 'dsp'
         s0 = nam.tex.circledast('d')
@@ -1820,10 +1809,8 @@ class ParamClass:
         dur = int(r1 - r0)
         p = f'{a}_{r0}_{r1}'
         k = f'{k0}_{r0}_{r1}'
-
-        self.add(**{'p': p, 'k': k, 'u': u, 'sym': nam.tex.subsup(s0, f'{r0}', f'{r1}'),'vfunc': param.Number,
-                    'func': self.func_dict.dsp(range), 'required_ks': ['x', 'y'],
-                    'disp': f'dispersal in {dur}"'})
+        self.add(p=p, k=k, u = reg.units.m,sym=nam.tex.subsup(s0, f'{r0}', f'{r1}'), disp=f'dispersal in {dur}"',
+                 vfunc=param.Number, func=self.func_dict.dsp(range), required_ks=['x', 'y'])
         self.add_scaled(k0=k)
         self.add_operators(k0=k)
         self.add_operators(k0=f's{k}')
@@ -1832,23 +1819,15 @@ class ParamClass:
         p0 = 'tortuosity'
         k0 = 'tor'
         k = f'{k0}{dur}'
-        self.add(
-            **{'p': f'{p0}_{dur}', 'k': k, 'sym': nam.tex.sub(k0, str(dur)),
-               'disp': f"{p0} over {dur}''",'vfunc': param.Magnitude,
-               'func': self.func_dict.tor(dur)})
+        self.add(p=f'{p0}_{dur}', k=k,sym=nam.tex.sub(k0, str(dur)), disp=f"{p0} over {dur}''",
+                 vfunc=param.Magnitude,func=self.func_dict.tor(dur))
         self.add_operators(k0=k)
 
-    def build_angular(self, in_rad=True):
-        if in_rad:
-            u = reg.units.rad
-            amax = np.pi
-        else:
-            u = reg.units.deg
-            amax = 180
-        kws = {'dv': np.round(amax / 180, 2), 'u': u, 'v0': 0.0}
+    def build_angular(self):
+        kws = {'dv': np.round(np.pi / 180, 2), 'u': reg.units.rad, 'v0': 0.0,'vfunc': param.Number,'dtype':float}
         self.add(
             **{'p': 'bend', 'codename': 'body_bend', 'k': 'b', 'sym': nam.tex.theta('b', sep='_'),
-               'disp': 'bending angle', 'lim': (-amax, amax), **kws})
+               'disp': 'bending angle', 'lim': (-np.pi, np.pi), **kws})
         self.add_velNacc(k0='b', sym_v=nam.tex.omega('b', sep='_'), disp_v='bending angular velocity',
                          disp_a='bending angular acceleration')
 
@@ -1865,7 +1844,7 @@ class ParamClass:
             ko = f'{suf}o'
             kou = f'{ko}u'
             self.add(**{'p': p0, 'k': ko, 'sym': nam.tex.theta(ksuf, sep='_'), 'disp': f'{lsuf}orientation',
-                        'lim': (0, 2 * amax),'vfunc': param.Number, **kws})
+                        'lim': (0, 2 * np.pi), **kws})
 
             self.add_unwrap(k0=ko)
 
@@ -1876,20 +1855,13 @@ class ParamClass:
             self.add_freq(k0=k0)
             self.add_operators(k0=k0)
 
-    def build_spatial(self, in_m=True):
-        if in_m:
-            u = reg.units.m
-            s = 1
-        else:
-            u = reg.units.mm
-            s = 1000
-
-        kws = {'u': u, 'vfunc': param.Number}
+    def build_spatial(self):
+        kws = {'u':  reg.units.m, 'vfunc': param.Number}
         self.add(**{'p': 'x', 'disp': 'X position', 'sym': 'X', **kws})
         self.add(**{'p': 'y', 'disp': 'Y position', 'sym': 'Y', **kws})
         self.add(
             **{'p': 'length', 'k': 'l', 'd': 'length', 'disp': 'body length','flatname':'body.length',
-               'sym': '$l$', 'v0': 0.004 * s, 'lim': (0.0005 * s, 0.01 * s), 'dv': 0.0005 * s, **kws})
+               'sym': '$l$', 'v0': 0.004, 'lim': (0.0005, 0.01), 'dv': 0.0005, **kws})
 
         self.add(
             **{'p': 'dispersion', 'k': 'dsp', 'sym': nam.tex.circledast('d'), 'disp': 'dispersal', **kws})
@@ -1918,8 +1890,8 @@ class ParamClass:
 
         for i in [(0, 40), (0, 60), (0, 70), (0, 80), (10, 60), (10, 70), (10, 80), (20, 60), (20, 70), (20, 80),
                       (10, 100), (20, 100), (0, 120), (0, 240), (0, 300), (0, 600), (60, 120), (60, 300)]:
-            self.add_dsp(range=i, u=u)
-        self.add(**{'p': 'tortuosity', 'k': 'tor', 'lim': (0.0, 1.0), 'sym': 'tor'})
+            self.add_dsp(range=i)
+        self.add(**{'p': 'tortuosity', 'k': 'tor', 'vfunc':param.Magnitude, 'sym': 'tor'})
         for dur in [1, 2, 5, 10, 20, 60, 120, 240, 300, 600]:
             self.add_tor(dur=dur)
         self.add(**{'p': 'anemotaxis', 'sym': 'anemotaxis'})
