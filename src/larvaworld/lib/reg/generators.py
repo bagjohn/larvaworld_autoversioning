@@ -11,7 +11,7 @@ from ..param import Area, BoundedArea, NestedConf, Larva_Distro, ClassAttr, SimT
     SimMetricOps, ClassDict, EnrichConf, OptionalPositiveRange, OptionalSelector, OptionalPositiveInteger, \
     generate_xyNor_distro, Odor, Life, class_generator, SimOps, RuntimeOps, Epoch, RuntimeDataOps, RandomizedColor, \
     OptionalPositiveNumber, Filesystem, TrackerOps, PreprocessConf, Substrate, AirPuff, PositiveInteger
-from ..model import Food, Border, WindScape, ThermoScape, FoodGrid, OdorScape, DiffusionValueLayer, GaussianValueLayer
+from ..model import Food, Source,Border, WindScape, ThermoScape, FoodGrid, OdorScape, DiffusionValueLayer, GaussianValueLayer
 
 __all__ = [
     # 'ConfType',
@@ -35,6 +35,7 @@ __all__ = [
 gen = aux.AttrDict({
     'FoodGroup': class_generator(Food, mode='Group'),
     'Food': class_generator(Food),
+    'Source': class_generator(Source),
     'Arena': class_generator(Area),
     'Border': class_generator(Border),
     'Odor': class_generator(Odor),

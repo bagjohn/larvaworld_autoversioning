@@ -106,12 +106,12 @@ controls = keymap.ControlRegistry()
 from .distro import *
 from .data_aux import *
 
-from . import parDB, parFunc, stored_confs
+from . import parDB, parFunc
 par = parDB.ParamRegistry()
 
 from .config import conf
 from .generators import gen
-from . import config, generators, models, graph
+from . import config, generators, models, graph, stored_confs
 
 model = models.ModelRegistry()
 graphs = graph.GraphRegistry()

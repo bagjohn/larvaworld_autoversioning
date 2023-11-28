@@ -43,48 +43,50 @@ default_bout_distros = aux.AttrDict({'turn_dur': {'range': [0.25, 3.25], 'name':
 
 
 class Intermitter(Timer):
-    EEB = param.Magnitude(1.0, label='exploitation-exploration balance',
+    EEB = param.Magnitude(0.0, label='exploitation-exploration balance',
                           doc='The baseline exploitation-exploration balance. 0 means only exploitation, 1 only exploration.')
-    EEB_decay = PositiveNumber(1.0, softmax=2.0,
-                               doc='The exponential decay coefficient of the exploitation-exploration balance when no food is detected.')
+    EEB_decay = PositiveNumber(1.0, softmax=2.0,doc='The exponential decay coefficient of the exploitation-exploration balance when no food is detected.')
+    crawl_freq = PositiveNumber(10 / 7, bounds=(0.5, 3.0),doc='The default crawling frequency.')
+    feed_freq = PositiveNumber(2.0, bounds=(1.0, 3.0),doc='The default feeding frequency.')
     run_mode = param.Selector(objects=['stridechain', 'exec'], doc='The generation mode of the crawling epochs.')
     feeder_reoccurence_rate = OptionalPositiveNumber(softmax=1.0, label='feed reoccurence',
                                                      doc='The default reoccurence rate of the feeding motion.')
     feed_bouts = param.Boolean(False, doc='Whether feeding epochs are generated.')
+    pause_dist = param.Parameter(default=None, doc='The temporal distribution of pause epochs.')
+    stridechain_dist = param.Parameter(default=None, doc='The stride-number distribution of run epochs (stridechains).')
+    run_dist = param.Parameter(default=None, doc='The temporal distribution of run epochs.')
 
-    def __init__(self, pause_dist=None, stridechain_dist=None, run_dist=None, crawl_freq=10 / 7, feed_freq=2.0,
-                 **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if self.feeder_reoccurence_rate is None:
             self.feeder_reoccurence_rate = self.EEB
             self.use_EEB = True
         else:
             self.use_EEB = False
-        self.crawl_freq = crawl_freq
-        self.feed_freq = feed_freq
+
         self.reset()
         self.cur_state = None
 
         if self.run_mode == 'stridechain':
-            if stridechain_dist is None or stridechain_dist.range is None:
-                stridechain_dist = default_bout_distros.run_count
-            self.stridechain_min, self.stridechain_max = stridechain_dist.range
-            self.stridechain_dist = reg.BoutGenerator(**stridechain_dist, dt=1)
-            self.run_dist = None
+            if self.stridechain_dist is None or self.stridechain_dist.range is None:
+                self.stridechain_dist = default_bout_distros.run_count
+            self.stridechain_min, self.stridechain_max = self.stridechain_dist.range
+            self.stridechain_generator = reg.BoutGenerator(**self.stridechain_dist, dt=1)
+            self.run_generator = None
 
         elif self.run_mode == 'exec':
-            if run_dist is not None or run_dist.range is None:
-                run_dist = default_bout_distros.run_dur
-            self.stridechain_min, self.stridechain_max = run_dist.range
-            self.run_dist = reg.BoutGenerator(**run_dist, dt=self.dt)
-            self.stridechain_dist = None
+            if self.run_dist is not None or self.run_dist.range is None:
+                self.run_dist = default_bout_distros.run_dur
+            self.stridechain_min, self.stridechain_max = self.run_dist.range
+            self.run_generator = reg.BoutGenerator(**self.run_dist, dt=self.dt)
+            self.stridechain_generator = None
         else:
             raise ValueError('None of stidechain or exec distribution exist')
 
-        if pause_dist is None or pause_dist.range is None:
-            pause_dist = default_bout_distros.pause_dur
-        self.pau_min, self.pau_max = (np.array(pause_dist.range) / self.dt).astype(int)
-        self.pause_dist = reg.BoutGenerator(**pause_dist, dt=self.dt)
+        if self.pause_dist is None or self.pause_dist.range is None:
+            self.pause_dist = default_bout_distros.pause_dur
+        self.pau_min, self.pau_max = (np.array(self.pause_dist.range) / self.dt).astype(int)
+        self.pause_generator = reg.BoutGenerator(**self.pause_dist, dt=self.dt)
 
         self.Nstrides = 0
         self.Nstridechains = 0
@@ -173,9 +175,9 @@ class Intermitter(Timer):
         dur = self.t
         self.ticks = 0
         if bout == 'exec':
-            if self.stridechain_dist is None and self.run_dist is not None:
+            if self.stridechain_generator is None and self.run_generator is not None:
                 bout = 'run'
-            elif self.stridechain_dist is not None and self.run_dist is None:
+            elif self.stridechain_generator is not None and self.run_generator is None:
                 bout = 'stridechain'
 
         if bout in ['feedchain', 'feed']:
@@ -214,15 +216,10 @@ class Intermitter(Timer):
         return self.update_state(**kwargs)
 
     def generate_stridechain(self):
-        return self.stridechain_dist.sample()
+        return self.stridechain_generator.sample()
 
     def generate_run(self):
-        return self.run_dist.sample()
-
-    # def trigger_exploitation(self, force=False):
-    #     if not force and self.cur_state == 'feed':
-    #         return
-    #     self.register()
+        return self.run_generator.sample()
 
     def interrupt_locomotion(self):
         if not self.cur_state == 'exec':
@@ -235,16 +232,16 @@ class Intermitter(Timer):
         if not force and self.cur_state == 'exec':
             return
         self.register()
-        if self.stridechain_dist is not None:
-            self.exp_Nstrides = self.stridechain_dist.sample()
-        elif self.run_dist is not None:
-            self.exp_Trun = self.run_dist.sample()
+        if self.stridechain_generator is not None:
+            self.exp_Nstrides = self.stridechain_generator.sample()
+        elif self.run_generator is not None:
+            self.exp_Trun = self.run_generator.sample()
         self.cur_Nstrides = 0
         self.cur_state = 'exec'
         self.ticks = 0
 
     def generate_pause(self):
-        return self.pause_dist.sample()
+        return self.pause_generator.sample()
 
     def build_dict(self):
         cum_t = nam.cum('t')
