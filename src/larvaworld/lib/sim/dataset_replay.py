@@ -1,7 +1,7 @@
 import copy
 import numpy as np
 
-from .. import reg, aux, util
+from .. import reg, aux
 from ..aux import nam
 
 from ..screen import ScreenManager

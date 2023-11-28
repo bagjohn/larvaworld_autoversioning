@@ -4,7 +4,7 @@ import agentpy
 import numpy as np
 import pandas as pd
 
-from .. import reg, aux, util, plot
+from .. import reg, aux, plot
 from ..model.envs.conditions import get_exp_condition
 from ..sim.base_run import BaseRun
 from ..process.dataset import LarvaDatasetCollection

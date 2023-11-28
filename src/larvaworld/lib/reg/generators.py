@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import param
 
-from .. import reg, aux, util
+from .. import reg, aux
 from ..param import Area, BoundedArea, NestedConf, Larva_Distro, ClassAttr, SimTimeOps, \
     SimMetricOps, ClassDict, EnrichConf, OptionalPositiveRange, OptionalSelector, OptionalPositiveInteger, \
     generate_xyNor_distro, Odor, Life, class_generator, SimOps, RuntimeOps, Epoch, RuntimeDataOps, RandomizedColor, \

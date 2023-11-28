@@ -9,7 +9,7 @@ import progressbar
 import numpy as np
 
 import larvaworld
-from .. import reg, aux, util
+from .. import reg, aux
 from ..param import NestedConf, ClassAttr, class_generator, SimOps, OptionalSelector
 from ..process.evaluation import Evaluation
 from .base_run import BaseRun

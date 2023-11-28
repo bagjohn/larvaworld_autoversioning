@@ -1,7 +1,7 @@
 import os
 import param
 
-from .. import reg, aux, util
+from .. import reg, aux
 from ..param import ClassDict, OptionalSelector, ClassAttr
 
 __all__ = [

@@ -9,7 +9,7 @@ import pandas as pd
 
 from ..aux import nam
 
-from .. import reg, aux, plot,util
+from .. import reg, aux, plot
 
 __all__ = [
     'plot_single_bout',

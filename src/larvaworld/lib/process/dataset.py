@@ -13,7 +13,7 @@ import warnings
 from scipy.signal import find_peaks
 import param
 
-from .. import reg, aux, process, util
+from .. import reg, aux, process
 from ..aux import nam
 from ..param import ClassAttr, StepDataFrame, EndpointDataFrame, ClassDict
 

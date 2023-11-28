@@ -13,7 +13,7 @@ import param
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 from ..aux import nam
-from .. import reg, aux, util
+from .. import reg, aux
 
 __all__ = [
     'output_keys',

@@ -14,7 +14,7 @@ import itertools
 import numpy as np
 import pandas as pd
 
-from .. import reg, aux, plot, util
+from .. import reg, aux, plot
 from ..reg.generators import SimConfiguration, LarvaGroupMutator
 
 __all__ = [

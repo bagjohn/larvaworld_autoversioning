@@ -8,7 +8,7 @@ import numpy as np
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 
-from .. import reg, aux, plot, util
+from .. import reg, aux, plot
 from ..model.agents.larva_offline import sim_model
 
 __all__ = [

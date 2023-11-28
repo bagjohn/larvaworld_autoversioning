@@ -4,7 +4,7 @@ import pandas as pd
 import param
 
 from .oscillator import Timer
-from ... import reg, aux, util
+from ... import reg, aux
 from ...aux import nam
 from ...param import PositiveNumber, OptionalPositiveNumber
 
