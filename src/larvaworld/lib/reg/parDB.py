@@ -1423,7 +1423,7 @@ class ParamClass:
         self.func_dict = reg.funcs.param_computing
         self.build(in_rad=in_rad, in_m=in_m)
 
-        self.kdict = aux.AttrDict({k: reg.get_LarvaworldParam(**prepar) for k, prepar in self.dict.items()})
+        # self.kdict = aux.AttrDict({k: reg.get_LarvaworldParam(**prepar) for k, prepar in self.dict.items()})
         self.ddict = aux.AttrDict({p.d: p for k, p in self.kdict.items()})
         self.pdict = aux.AttrDict({p.p: p for k, p in self.kdict.items()})
 
@@ -1437,6 +1437,7 @@ class ParamClass:
 
     def build(self, in_rad=True, in_m=True):
         self.dict = aux.AttrDict()
+        self.kdict = aux.AttrDict()
         self.build_initial()
         self.build_angular(in_rad)
         self.build_spatial(in_m)
@@ -1447,6 +1448,7 @@ class ParamClass:
     def add(self, **kwargs):
         prepar = reg.prepare_LarvaworldParam(**kwargs)
         self.dict[prepar.k] = prepar
+        self.kdict[prepar.k] = reg.get_LarvaworldParam(**prepar)
 
 
     def build_initial(self):
