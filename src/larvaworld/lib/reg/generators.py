@@ -159,11 +159,11 @@ def double_patch(type='standard', q=1.0, c='green', x=0.06, r=0.025, a=0.1, **kw
 
 
 
-def source_generator(mode, Ngs=2, ids=None, cs=None, rs=None, ams=None, os=None, qs=None, type='standard', **kwargs):
-    if mode == 'Group':
+def source_generator(genmode, Ngs=2, ids=None, cs=None, rs=None, ams=None, os=None, qs=None, type='standard', **kwargs):
+    if genmode == 'Group':
         id0 = 'SourceGroup'
         _class = gen.FoodGroup
-    elif mode == 'Unit':
+    elif genmode == 'Unit':
         id0 = 'Source'
         _class = gen.Food
     else:
@@ -215,7 +215,7 @@ class FoodConf(NestedConf):
 
     @classmethod
     def sus(cls, grid=None, sg={}, **kwargs):
-        return cls(source_groups=sg, source_units=source_generator(mode='Unit', **kwargs), food_grid=grid)
+        return cls(source_groups=sg, source_units=source_generator(genmode='Unit', **kwargs), food_grid=grid)
 
     @classmethod
     def sg(cls, id='SourceGroup', grid=None, su={}, **kwargs):
@@ -223,7 +223,7 @@ class FoodConf(NestedConf):
 
     @classmethod
     def sgs(cls, grid=None, su={}, **kwargs):
-        return cls(source_groups=source_generator(mode='Group', **kwargs), source_units=su, food_grid=grid)
+        return cls(source_groups=source_generator(genmode='Group', **kwargs), source_units=su, food_grid=grid)
 
     @classmethod
     def foodNodor_4corners(cls, d=0.05, colors=['blue', 'red', 'green', 'magenta'],grid=None, sg={}, **kwargs):
