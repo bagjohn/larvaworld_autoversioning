@@ -1,9 +1,8 @@
 import shutil
 
 from ... import reg, aux
-from ...reg.generators import LarvaGroup, ExpConf, EnvConf, FoodConf
-from ...param import class_defaults, Odor, Larva_Distro
-from ...model import Source
+from ...reg.generators import LarvaGroup
+from ...param import Larva_Distro, Odor
 
 __all__ = [
     'Essay_dict',
@@ -34,7 +33,7 @@ class Essay:
         self.results = {}
 
     def conf(self, exp, id, dur, lgs, env, **kwargs):
-        return ExpConf(duration=dur, env_params=env,
+        return reg.gen.Exp(duration=dur, env_params=env,
                               larva_groups=lgs, experiment=exp, enrichment=self.enrichment,
                               collections=self.collections, **kwargs).nestedConf
 
@@ -94,7 +93,7 @@ class RvsS_Essay(Essay):
     def RvsS_env(self, on_food=True):
         grid = reg.gen.FoodGrid() if on_food else None
         return reg.gen.Env(arena=reg.gen.Arena(geometry='rectangular', dims=(0.02, 0.02)),
-                           food_params=FoodConf(food_grid=grid),
+                           food_params=reg.gen.FoodConf(food_grid=grid),
                            ).nestedConf
 
     def GTRvsS(self, **kwargs):
@@ -534,47 +533,28 @@ class Chemotaxis_Essay(Essay):
         return aux.AttrDict(models)
 
     def chemo_exps(self, models):
-        # lg_kws = {
-        #     # 'odor': class_defaults(Odor),
-        #     'sample': 'None.150controls'
-        # }
         kws = {
             'arena': reg.gen.Arena(geometry='rectangular', dims=(0.1, 0.06)),
-            # 'arena': class_defaults(reg.gen.Arena, geometry='rectangular', dims=(0.1, 0.06)),
-            'odorscape': {'odorscape': 'Gaussian'},
-            # 'windscape': None,
-            # 'thermoscape': None,
-            # 'border_list': {},
+            'odorscape': reg.gen.GaussianValueLayer(),
         }
 
         exp1 = 'Orbiting behavior'
+        dst1=Larva_Distro(N=self.N, mode='uniform')
+        su1=reg.gen.Food(pos=(0.0, 0.0), group='Source',odor=Odor(id='Odor', intensity=2.0,spread=0.0002))
         kws1 = {
-            'env': EnvConf(food_params=FoodConf(
-                                      source_units={
-                                      'Source': reg.gen.Source(pos=(0.0, 0.0), group='Source',
-                                                               odor=Odor(id='Odor', intensity=2.0,spread=0.0002))
-                                      }), **kws).nestedConf,
-            'lgs': {
-                mID: LarvaGroup(distribution=Larva_Distro(N=self.N, mode='uniform'),
-                                    color=dic['color'], model=dic['model']).nestedConf for mID, dic in
-                models.items()},
+            'env': reg.gen.Env(food_params=reg.gen.FoodConf(source_units={'Source': su1}),**kws).nestedConf,
+            'lgs': {mID: LarvaGroup(distribution=dst1,color=d['color'], model=d['model']).nestedConf for mID, d in models.items()},
             'id': f'{exp1}_exp',
             'dur': self.dur,
             'exp': exp1
         }
 
         exp2 = 'Up-gradient navigation'
+        dst2 = Larva_Distro(N=self.N, mode='uniform',loc=(-0.04, 0.0), orientation_range=(-30.0, 30.0), scale=(0.005, 0.02))
+        su2 = reg.gen.Food(pos=(0.04, 0.0), group='Source', odor=Odor(id='Odor', intensity=8.0,spread=0.0004))
         kws2 = {
-            'env': EnvConf(food_params=FoodConf(source_units={
-                                      'Source':  reg.gen.Source(pos=(0.04, 0.0),group='Source',
-                                                               odor=Odor(id='Odor', intensity=8.0,spread=0.0004)),
-                                  }), **kws).nestedConf,
-            'lgs': {
-                mID: LarvaGroup(distribution=Larva_Distro(N=self.N, mode='uniform',
-                                                                loc=(-0.04, 0.0),
-                                                                orientation_range=(-30.0, 30.0), scale=(0.005, 0.02)),
-                                    color=dic['color'], model=dic['model']).nestedConf for mID, dic in
-                models.items()},
+            'env': reg.gen.Env(food_params=reg.gen.FoodConf(source_units={'Source':  su2}),**kws).nestedConf,
+            'lgs': {mID: LarvaGroup(distribution=dst2,color=d['color'], model=d['model']).nestedConf for mID, d in models.items()},
             'id': f'{exp2}_exp',
             'dur': self.dur,
             'exp': exp2
