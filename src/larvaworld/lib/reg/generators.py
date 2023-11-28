@@ -134,19 +134,55 @@ class SimConfigurationParams(SimConfiguration):
         super().__init__(runtype=runtype, experiment=experiment, parameters=parameters, **kwargs)
 
 
+def CS_UCS_units(N=2, x=0.04, colors=['red', 'blue'], **kwargs):
+    CS_kws = {'pos':(-x, 0.0), 'odor':Odor.oG(id='CS'), 'c':colors[0], **kwargs}
+    UCS_kws = {'pos':(x, 0.0), 'odor':Odor.oG(id='UCS'), 'c':colors[1], **kwargs}
+
+
+    if N == 1:
+        return {**gen.Food(**CS_kws).entry('CS'),
+                **gen.Food(**UCS_kws).entry('UCS')}
+    elif N == 2:
+        return {
+            **gen.Food(**CS_kws).entry('CS_l'),
+            **gen.Food(**CS_kws).entry('CS_r'),
+            **gen.Food(**UCS_kws).entry('UCS_l'),
+            **gen.Food(**UCS_kws).entry('UCS_r')
+        }
+
+def double_patch_units(type='standard', q=1.0, c='green',x=0.06,r=0.025,a=0.1, **kwargs):
+    kws = {'odor': Odor.oG(), 'c': c,'r': r,'a': a,'sub': [q,type], **kwargs}
+    return {**gen.Food(pos=(-x, 0.0),**kws).entry('Left_patch'),
+            **gen.Food(pos=(x, 0.0),**kws).entry('Right_patch')}
+
+def single_patch_unit(type='standard', q=1.0, c='green',r=0.01,a=0.1, **kwargs):
+    kws = {'c': c,'r': r,'a': a,'sub': [q,type], **kwargs}
+    return gen.Food(**kws).entry('Patch')
+
+
 class FoodConf(NestedConf):
     source_groups = ClassDict(item_type=gen.FoodGroup, doc='The groups of odor or food sources available in the arena')
     source_units = ClassDict(item_type=gen.Food, doc='The individual sources  of odor or food in the arena')
     food_grid = ClassAttr(gen.FoodGrid, default=None, doc='The food grid in the arena')
 
+    @classmethod
+    def CS_UCS(cls, grid =None, sg={}, **kwargs):
+        return cls(source_groups=sg, source_units=CS_UCS_units(**kwargs), food_grid=grid)
 
+    @classmethod
+    def double_patch(cls, grid=None, sg={}, **kwargs):
+        return cls(source_groups=sg, source_units=double_patch_units(**kwargs), food_grid=grid)
+
+    @classmethod
+    def single_patch(cls, grid=None, sg={}, **kwargs):
+        return cls(source_groups=sg, source_units=single_patch_unit(**kwargs), food_grid=grid)
 # class FoodConf(NestedConf):
 #     source_groups = ClassDict(item_type=Food.generator(mode='Group'), doc='The groups of odor or food sources available in the arena')
 #     source_units = ClassDict(item_type=Food.generator(), doc='The individual sources  of odor or food in the arena')
 #     food_grid = ClassAttr(FoodGrid.generator(), default=None, doc='The food grid in the arena')
 
 
-gen.FoodConf = class_generator(FoodConf)
+gen.FoodConf = FoodConf
 gen.EnrichConf = class_generator(EnrichConf)
 
 

@@ -533,16 +533,10 @@ class Chemotaxis_Essay(Essay):
         return aux.AttrDict(models)
 
     def chemo_exps(self, models):
-        kws = {
-            'arena': reg.gen.Arena(geometry='rectangular', dims=(0.1, 0.06)),
-            'odorscape': reg.gen.GaussianValueLayer(),
-        }
-
         exp1 = 'Orbiting behavior'
         dst1=Larva_Distro(N=self.N, mode='uniform')
-        su1=reg.gen.Food(pos=(0.0, 0.0), group='Source',odor=Odor(id='Odor', intensity=2.0,spread=0.0002))
         kws1 = {
-            'env': reg.gen.Env(food_params=reg.gen.FoodConf(source_units={'Source': su1}),**kws).nestedConf,
+            'env': reg.conf.Env.get('mid_odor_gaussian'),
             'lgs': {mID: LarvaGroup(distribution=dst1,color=d['color'], model=d['model']).nestedConf for mID, d in models.items()},
             'id': f'{exp1}_exp',
             'dur': self.dur,
@@ -551,10 +545,9 @@ class Chemotaxis_Essay(Essay):
 
         exp2 = 'Up-gradient navigation'
         dst2 = Larva_Distro(N=self.N, mode='uniform',loc=(-0.04, 0.0), orientation_range=(-30.0, 30.0), scale=(0.005, 0.02))
-        su2 = reg.gen.Food(pos=(0.04, 0.0), group='Source', odor=Odor(id='Odor', intensity=8.0,spread=0.0004))
         kws2 = {
-            'env': reg.gen.Env(food_params=reg.gen.FoodConf(source_units={'Source':  su2}),**kws).nestedConf,
-            'lgs': {mID: LarvaGroup(distribution=dst2,color=d['color'], model=d['model']).nestedConf for mID, d in models.items()},
+            'env': reg.conf.Env.get('odor_gradient'),
+            'lgs': {mID: LarvaGroup(distribution=dst2,color=d['color'], model=d['model']) for mID, d in models.items()},
             'id': f'{exp2}_exp',
             'dur': self.dur,
             'exp': exp2
