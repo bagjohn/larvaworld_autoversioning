@@ -135,29 +135,6 @@ class SimConfigurationParams(SimConfiguration):
         super().__init__(runtype=runtype, experiment=experiment, parameters=parameters, **kwargs)
 
 
-def CS_UCS(N=2, x=0.04, colors=['red', 'blue'],o = 'G', **kwargs):
-    CS_kws = {'odor': Odor.oO(o=o,id='CS'), 'c': colors[0], **kwargs}
-    UCS_kws = {'odor': Odor.oO(o=o,id='UCS'), 'c': colors[1], **kwargs}
-
-    if N == 1:
-        return {**gen.Food(pos=(-x, 0.0), **CS_kws).entry('CS'),
-                **gen.Food(pos=(x, 0.0), **UCS_kws).entry('UCS')}
-    elif N == 2:
-        return {
-            **gen.Food(pos=(-x, 0.0), **CS_kws).entry('CS_l'),
-            **gen.Food(pos=(x, 0.0), **CS_kws).entry('CS_r'),
-            **gen.Food(pos=(-x, 0.0), **UCS_kws).entry('UCS_l'),
-            **gen.Food(pos=(x, 0.0), **UCS_kws).entry('UCS_r')
-        }
-
-
-def double_patch(type='standard', q=1.0, c='green', x=0.06, r=0.025, a=0.1,o = 'G', **kwargs):
-    kws = {'odor': Odor.oO(o=o), 'c': c, 'r': r, 'a': a, 'sub': [q, type], **kwargs}
-    return {**gen.Food(pos=(-x, 0.0), **kws).entry('Left_patch'),
-            **gen.Food(pos=(x, 0.0), **kws).entry('Right_patch')}
-
-
-
 
 def source_generator(genmode, Ngs=2, ids=None, cs=None, rs=None, ams=None, o=None, qs=None, type='standard', **kwargs):
     if genmode == 'Group':
@@ -191,12 +168,31 @@ class FoodConf(NestedConf):
     food_grid = ClassAttr(gen.FoodGrid, default=None, doc='The food grid in the arena')
 
     @classmethod
-    def CS_UCS(cls, grid=None, sg={}, **kwargs):
-        return cls(source_groups=sg, source_units=CS_UCS(**kwargs), food_grid=grid)
+    def CS_UCS(cls, grid=None, sg={},N=1, x=0.04, colors=['red', 'blue'],o = 'G',  **kwargs):
+        CS_kws = {'odor': Odor.oO(o=o, id='CS'), 'c': colors[0], **kwargs}
+        UCS_kws = {'odor': Odor.oO(o=o, id='UCS'), 'c': colors[1], **kwargs}
+
+        if N == 1:
+            su= {**gen.Food(pos=(-x, 0.0), **CS_kws).entry('CS'),
+                    **gen.Food(pos=(x, 0.0), **UCS_kws).entry('UCS')}
+        elif N == 2:
+            su= {
+                **gen.Food(pos=(-x, 0.0), **CS_kws).entry('CS_l'),
+                **gen.Food(pos=(x, 0.0), **CS_kws).entry('CS_r'),
+                **gen.Food(pos=(-x, 0.0), **UCS_kws).entry('UCS_l'),
+                **gen.Food(pos=(x, 0.0), **UCS_kws).entry('UCS_r')
+            }
+        else :
+            raise
+
+        return cls(source_groups=sg, source_units=su, food_grid=grid)
 
     @classmethod
-    def patch2(cls, grid=None, sg={}, **kwargs):
-        return cls(source_groups=sg, source_units=double_patch(**kwargs), food_grid=grid)
+    def double_patch(cls, grid=None, sg={},type='standard', q=1.0, c='green', x=0.06, r=0.025, a=0.1,o = 'G', **kwargs):
+        kws = {'odor': Odor.oO(o=o), 'c': c, 'r': r, 'a': a, 'sub': [q, type], **kwargs}
+        su= {**gen.Food(pos=(-x, 0.0), **kws).entry('Left_patch'),
+                **gen.Food(pos=(x, 0.0), **kws).entry('Right_patch')}
+        return cls(source_groups=sg, source_units=su, food_grid=grid)
 
     @classmethod
     def patch(cls, grid=None, sg={}, id='Patch', type='standard', q=1.0, c='green', r=0.01, a=0.1, **kwargs):
@@ -293,6 +289,18 @@ class EnvConf(NestedConf):
     @classmethod
     def foodNodor_4corners(cls, dim=0.2,o='D', **kwargs):
         return cls.rect(dim,f=gen.FoodConf.foodNodor_4corners(d=dim/4,o=o, **kwargs),o=o)
+
+    @classmethod
+    def CS_UCS(cls, dim=0.1, o='G', **kwargs):
+        return cls.dish(dim, f=gen.FoodConf.CS_UCS(x=0.4*dim,o=o, **kwargs), o=o)
+
+    @classmethod
+    def double_patch(cls, dim=0.24, o='G', **kwargs):
+        return cls.rect(dim, f=gen.FoodConf.double_patch(x=0.25 * dim, o=o, **kwargs), o=o)
+
+    @classmethod
+    def odor_gradient(cls, dim=(0.1, 0.06), o='G', c=1,**kwargs):
+        return cls.rect(dim, f=gen.FoodConf.su(odor=Odor.oO(o=o, c=c), **kwargs), o=o)
 
     @classmethod
     def dish(cls, xy=0.1, **kwargs):
