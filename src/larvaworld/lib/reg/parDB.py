@@ -1436,34 +1436,22 @@ class ParamClass:
         self.build_deb_pars()
         return self.dict_entries
 
-    def build_initial(self):
-        kws = {'u': reg.units.s}
-        self.add(
-            **{'p': 't', 'k': 't', 'd': 't', 'sym': '$t$', 'lim': (0.0, None), 'dv': 0.01, 'v0': 0.0,
-               **kws})
-        self.add_operators(k0='t')
-        self.add(
-            **{'p': 'num_ts', 'k': 'N_ts', 'sym': nam.tex.sub('N', 'ts'), 'dtype': int, 'lim': (0, None), 'dv': 1})
-        self.add(
-            **{'p': 'tick', 'k': 'tick', 'd': 'tick', 'sym': '$tick$', 'lim': (0, None), 'v0': 0, 'dtype': int,
-               **kws})
-        self.add_operators(k0='tick')
-        self.add(
-            **{'p': 'num_ticks', 'k': 'N_ticks', 'sym': nam.tex.sub('N', 'ticks'), 'dtype': int, 'lim': (0, None),
-               'dv': 1})
-
-        self.add(
-            **{'p': 'model.dt', 'k': 'dt', 'd': 'dt', 'sym': '$dt$', 'lim': (0.01, 0.5), 'dv': 0.01, 'v0': 0.1,
-               **kws})
-        self.add(
-            **{'p': 'cum_dur', 'k': nam.cum('t'), 'sym': nam.tex.sub('t', 'cum'), 'lim': (0.0, None), 'dv': 0.1,
-               'v0': 0.0,
-               **kws})
-
     def add(self, **kwargs):
         prepar = reg.prepare_LarvaworldParam(**kwargs)
         self.dict[prepar.k] = prepar
         self.dict_entries.append(prepar)
+
+    def build_initial(self):
+        kws = {'u': reg.units.s}
+        self.add( **{'p': 't', 'sym': '$t$', 'lim': (0.0, None), 'v0': 0.0,'vfunc': param.Number,**kws})
+        self.add_operators(k0='t')
+        self.add(**{'p': 'num_ts', 'k': 'N_ts', 'sym': nam.tex.sub('N', 'ts'), 'dtype': int, 'lim': (0, None), 'dv': 1})
+        self.add(**{'p': 'tick', 'sym': '$tick$', 'lim': (0, None), 'v0': 0, 'dtype': int, **kws})
+        self.add_operators(k0='tick')
+        self.add(**{'p': 'num_ticks', 'k': 'N_ticks', 'sym': nam.tex.sub('N', 'ticks'), 'dtype': int, 'lim': (0, None),
+               'dv': 1})
+        self.add(**{'p': 'model.dt', 'd': 'dt', 'sym': '$dt$', 'lim': (0.01, 0.5),  'v0': 0.1,'vfunc': param.Number, **kws})
+        self.add(**{'p': 'cum_dur', 'k': nam.cum('t'), 'sym': nam.tex.sub('t', 'cum'), 'lim': (0.0, None), 'v0': 0.0,'vfunc': param.Number,**kws})
 
     def add_rate(self, k0=None, k_time='t', p=None, k=None, d=None, sym=None, k_num=None, k_den=None, **kwargs):
         if k0 is not None:
@@ -1490,6 +1478,7 @@ class ParamClass:
             'd': d,
             'sym': sym,
             'u': b_num.u / b_den.u,
+            'vfunc': param.Number,
             'required_ks': [k_num, k_den],
         }
         kws.update(kwargs)
@@ -1711,6 +1700,7 @@ class ParamClass:
             'u': b.u / b_l.u,
             'sym': nam.tex.mathring(b.sym),
             'disp': f'scaled {b.disp}',
+            'vfunc': param.Number,
             'required_ks': [k0],
             'func': func
         }
@@ -1769,6 +1759,7 @@ class ParamClass:
             'required_ks': [xk, yk],
             'dv': dv,
             'v0': 0.0,
+            'vfunc': param.Number,
             'func': self.func_dict.dst(point=point)
         }
         kws.update(kwargs)
@@ -1784,7 +1775,7 @@ class ParamClass:
             'u': reg.units.Hz,
             'sym': nam.tex.sub(b.sym, 'freq'),
             'disp': f'{b.disp} frequency',
-            # 'disp': f'{b.disp} dominant frequency',
+            'vfunc': param.Number,
             'required_ks': [k0],
             'func': self.func_dict.freq(b.d)
         }
@@ -1801,6 +1792,7 @@ class ParamClass:
             'sym': nam.tex.sub('Phi', b.sym),
             'disp': f'{b.disp} phase',
             'lim': (0, 2*np.pi),
+            'vfunc': param.Number
             # 'disp': f'{b.disp} dominant frequency',
             # 'required_ks': [k0],
             # 'func': self.func_dict.freq(b.d)
@@ -1861,7 +1853,7 @@ class ParamClass:
             ko = f'{suf}o'
             kou = f'{ko}u'
             self.add(**{'p': p0, 'k': ko, 'sym': nam.tex.theta(ksuf, sep='_'), 'disp': f'{lsuf}orientation',
-                        'lim': (0, 2 * amax), **kws})
+                        'lim': (0, 2 * amax),'vfunc': param.Number, **kws})
 
             self.add_unwrap(k0=ko)
 
@@ -1883,7 +1875,7 @@ class ParamClass:
             u = reg.units.mm
             s = 1000
 
-        kws = {'u': u}
+        kws = {'u': u, 'vfunc': param.Number}
         self.add(**{'p': 'x', 'disp': 'X position', 'sym': 'X', **kws})
         self.add(**{'p': 'y', 'disp': 'Y position', 'sym': 'Y', **kws})
         self.add(
@@ -1936,7 +1928,7 @@ class ParamClass:
             'str_c': nam.chain('stride'),
             'fee_c': nam.chain('feed'),
             'on_food' : 'on_food',
-            'off_food' : 'off_food'
+            # 'off_food' : 'off_food'
         }
         for kc, pc in d0.items():
             temp = self.func_dict.chunk(kc)
@@ -1947,7 +1939,7 @@ class ParamClass:
             for k in ['fov', 'rov', 'foa', 'roa', 'x', 'y', 'fo', 'fou', 'ro', 'rou', 'b', 'bv', 'ba', 'v', 'sv', 'a',
                       'sa', 'd', 'sd']:
                 self.add_chunk_track(kc=kc, k=k)
-            self.add(**{'p': f'handedness_score_{kc}', 'k': f'tur_H_{kc}'})
+            self.add(p= f'handedness_score_{kc}', k=f'tur_H_{kc}')
             if kc == 'fee':
                 self.add_freq(k0=kc)
 

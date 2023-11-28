@@ -25,50 +25,9 @@ __all__ = [
     'build_LarvaworldParam',
 ]
 
-def get_vfunc(dtype, lim, vs):
-    func_dic = {
-        float: param.Number,
-        int: param.Integer,
-        str: param.String,
-        bool: param.Boolean,
-        dict: param.Dict,
-        list: param.List,
-        type: param.ClassSelector,
-        typing.List[int]: param.List,
-        typing.List[str]: param.List,
-        typing.List[float]: param.List,
-        typing.List[typing.Tuple[float]]: param.List,
-        FunctionType: param.Callable,
-        typing.Tuple[float]: param.Range,
-        typing.Tuple[int]: param.NumericTuple,
-        TypedDict: param.Dict
-    }
-    if dtype == float and lim == (0.0, 1.0):
-        return param.Magnitude
-    if type(vs) == list and dtype in [str, int]:
-        return param.Selector
-    elif dtype in func_dic.keys():
-        return func_dic[dtype]
-    else:
-        return param.Parameter
 
-def vpar(vfunc, v0, h, lab, lim, dv, vs):
-    f_kws = {
-        'default': v0,
-        'doc': h,
-        'label': lab,
-        'allow_None': True
-    }
-    if vfunc in [param.List, param.Number, param.Range]:
-        if lim is not None:
-            f_kws['bounds'] = lim
-    if vfunc in [param.Range, param.Number]:
-        if dv is not None:
-            f_kws['step'] = dv
-    if vfunc in [param.Selector]:
-        f_kws['objects'] = vs
-    func = vfunc(**f_kws, instantiate=True)
-    return func
+
+
 
 def param_to_arg(k, p):
     c = p.__class__
@@ -133,13 +92,10 @@ def init2mdict(d0):
 
             elif any([a in vv for a in ['symbol', 'h', 'label', 'disp', 'k']]):
                 D[kk] = build_LarvaworldParam(p=kk, **vv)
-
             else:
                 D[kk] = check(vv)
         return D
-
-    d = check(d0)
-    return aux.AttrDict(d)
+    return aux.AttrDict(check(d0))
 
 
 
@@ -395,6 +351,53 @@ SAMPLING_PARS = aux.bidict(
 )
 
 
+def get_vfunc(dtype, lim, vs):
+    func_dic = {
+        float: param.Number,
+        int: param.Integer,
+        str: param.String,
+        bool: param.Boolean,
+        dict: param.Dict,
+        list: param.List,
+        type: param.ClassSelector,
+        typing.List[int]: param.List,
+        typing.List[str]: param.List,
+        typing.List[float]: param.List,
+        typing.List[typing.Tuple[float]]: param.List,
+        FunctionType: param.Callable,
+        typing.Tuple[float]: param.Range,
+        typing.Tuple[int]: param.NumericTuple,
+        TypedDict: param.Dict
+    }
+    if dtype == float and lim == (0.0, 1.0):
+        return param.Magnitude
+    if type(vs) == list and dtype in [str, int]:
+        return param.Selector
+    elif dtype in func_dic.keys():
+        return func_dic[dtype]
+    else:
+        return param.Parameter
+
+
+def vpar(vfunc, v0, h, lab, lim, dv, vs):
+    f_kws = {
+        'default': v0,
+        'doc': h,
+        'label': lab,
+        'allow_None': True
+    }
+    if vfunc in [param.List, param.Number, param.Range]:
+        if lim is not None:
+            f_kws['bounds'] = lim
+    if vfunc in [param.Range, param.Number]:
+        if dv is not None:
+            f_kws['step'] = dv
+    if vfunc in [param.Selector]:
+        f_kws['objects'] = vs
+    func = vfunc(**f_kws, instantiate=True)
+    return func
+
+
 def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None, symbol=None, codename=None, lab=None,
                             h=None,
                             u_name=None, mdict=None, flatname=None,
@@ -421,20 +424,23 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
         else:
             sym = k
 
-    if lab is None:
-        if u == reg.units.dimensionless:
-            lab = f'{disp}'
-        else:
-            ulab = fr'${u}$'
-            lab = fr'{disp} ({ulab})'
+
     if dv is None and dtype in [float, typing.List[float], typing.List[typing.Tuple[float]], typing.Tuple[float]]:
         dv = 0.01
-    h = lab if h is None else h
+
+
+
 
     if vparfunc is None:
-
         if vfunc is None:
             vfunc = get_vfunc(dtype=dtype, lim=lim, vs=vs)
+        if lab is None:
+            if u == reg.units.dimensionless:
+                lab = f'{disp}'
+            else:
+                ulab = fr'${u}$'
+                lab = fr'{disp} ({ulab})'
+        h = lab if h is None else h
         vparfunc = vpar(vfunc, v0, h, lab, lim, dv, vs)
     else:
         vparfunc = vparfunc()

@@ -98,7 +98,6 @@ class FunctionDict:
 
         return wrapper
 
-
 funcs = FunctionDict()
 
 from . import keymap
@@ -108,7 +107,6 @@ from .distro import *
 from .data_aux import *
 
 from . import parDB, parFunc, stored_confs
-
 par = parDB.ParamRegistry()
 
 from .config import conf
