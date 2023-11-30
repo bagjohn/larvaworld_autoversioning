@@ -26,6 +26,16 @@ class Sensor(Effector):
     gain_dict = param.Dict(default=aux.AttrDict(), doc='Dictionary of sensor gain per stimulus ID')
 
 
+    @staticmethod
+    def select(mode):
+        d = aux.AttrDict({
+            'olfactor': Olfactor,
+            'brian_olfactor': BrianOlfactor,
+            'toucher': Toucher,
+            'wind': WindSensor,
+            'thermo': Thermosensor
+        })
+        return d[mode]
 
     def __init__(self, brain=None, **kwargs):
         super().__init__(**kwargs)
