@@ -805,7 +805,6 @@ class ModelRegistry:
         from ..param import class_defaults
         D = self.dict
         D_en = D.aux.m['energetics']
-        # D_mem = D.brain.m['memory']
 
         mod_dict = {'realistic': 'RE', 'square': 'SQ', 'gaussian': 'GAU', 'constant': 'CON',
                     'default': 'DEF', 'neural': 'NEU', 'sinusoidal': 'SIN', 'nengo': 'NENGO', 'phasic': 'PHI',
@@ -813,24 +812,17 @@ class ModelRegistry:
         kws = {'modkws': {'interference': {'attenuation': 0.1, 'attenuation_max': 0.6}}}
         kws2 = {'modkws': {'interference': {'attenuation': 0.0}, 'intermitter': {'run_mode': 'exec'}}}
 
-        olf_kws = [{'brain.modules.olfactor': True,
-                    'brain.olfactor_params': class_defaults(Olfactor, excluded=[Effector],
-                                                                         gain_dict=g)} for g in [
-            {'Odor': 0.0}, {'Odor': 150.0}, {'CS': 150.0, 'UCS': 0.0}
-        ]]
+
 
         MB_pars = class_defaults(RemoteBrianModelMemory, excluded=[Timer])
-        # MB_pars = self.generate_configuration(D_mem.mode['MB'].args)
         MB_pars.mode = 'MB'
         MB_kws = {'brain.modules.memory': True, 'brain.memory_params': MB_pars}
 
         RL_pars = class_defaults(RLmemory, excluded=[Timer])
-        # RL_pars = self.generate_configuration(D_mem.mode['RL'].args)
         RL_pars.mode = 'RL'
         RL_kws = {'brain.modules.memory': True, 'brain.memory_params': RL_pars}
 
         feed_pars = class_defaults(Feeder, excluded=[Timer, 'phi'])
-        # feed_pars = self.generate_configuration(D.brain.m['feeder'].mode['default'].args)
         feed_kws = {'brain.modules.feeder': True, 'brain.feeder_params': feed_pars,
                     'brain.intermitter_params.EEB': 0.5, 'brain.intermitter_params.feed_bouts': True}
         maxEEB_kws = {'brain.intermitter_params.EEB': 0.9}
@@ -858,9 +850,28 @@ class ModelRegistry:
                             kkws.update(**kws)
                         E.update(self.larvaConf(**kkws))
         E.update(self.larvaConf(mID='explorer', **kws))
+
+        # Extend the locomotory model configuration explorer by adding an olfactor module
+
+        olf_kws = [{'brain.modules.olfactor': True,
+                    'brain.olfactor_params': class_defaults(MD.Olfactor.default, excluded=[Effector],
+                                                            gain_dict=g)} for g in [
+                       {'Odor': 0.0}, {'Odor': 150.0}, {'CS': 150.0, 'UCS': 0.0}
+                   ]]
+
+        olf2_kws = [{'brain.modules.olfactor': True,
+                    'brain.olfactor_params': class_defaults(MD.Olfactor.osn, excluded=[Effector],
+                                                            gain_dict=g)} for g in [
+                       {'Odor': 0.0}, {'Odor': 150.0}, {'CS': 150.0, 'UCS': 0.0}
+                   ]]
+
+
         E['navigator'] = E['explorer'].update_nestdict_copy(olf_kws[1])
         E['navigator_x2'] = E['explorer'].update_nestdict_copy(olf_kws[2])
         E['RLnavigator'] = E['navigator'].update_nestdict_copy(RL_kws)
+
+        E['OSNnavigator'] = E['explorer'].update_nestdict_copy(olf2_kws[1])
+        E['OSNnavigator_x2'] = E['explorer'].update_nestdict_copy(olf2_kws[2])
 
 
         sm_pars = self.generate_configuration(D.aux.m['sensorimotor'].mode['default'].args)

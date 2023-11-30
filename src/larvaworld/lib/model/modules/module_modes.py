@@ -1,5 +1,5 @@
 from ... import aux
-from . import crawler, turner,crawl_bend_interference,intermitter
+from . import crawler, turner,crawl_bend_interference,intermitter, sensor
 
 __all__ = [
     'ModuleModeDict',
@@ -26,5 +26,9 @@ ModuleModeDict = aux.AttrDict({
         'default': intermitter.Intermitter,
         'nengo': intermitter.NengoIntermitter,
         'branch': intermitter.BranchIntermitter
-    }
+    },
+    'Olfactor': {
+        'default': sensor.Olfactor,
+        'osn': sensor.Olfactor,
+    },
 })
