@@ -11,7 +11,6 @@ __all__ = [
 ]
 
 
-# class DefaultCoupling(NestedConf):
 class Coupling(param.Parameterized):
     attenuation = param.Magnitude(0.0, label='crawl-induced angular attenuation',
                                   doc='The attenuation coefficient for the crawl-interference to the angular motion.')
@@ -21,7 +20,7 @@ class Coupling(param.Parameterized):
                                       label='crawl-induced suppression mode',
                                       doc='The suppression mode for the crawl-interference to the angular motion.')
 
-    def __init__(self, **kwargs):
+    def __init__(self,dt=0.1, **kwargs):
         super().__init__(**kwargs)
         self.cur_attenuation = 1
 
@@ -37,11 +36,6 @@ class Coupling(param.Parameterized):
 
     def check_module(self, obj, module):
         self.cur_attenuation = self.attenuation
-
-    @staticmethod
-    def select(mode):
-        from .module_modes import ModuleModeDict
-        return ModuleModeDict.Interference[mode]
 
 
 class DefaultCoupling(Coupling): pass

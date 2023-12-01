@@ -617,15 +617,15 @@ class ModelRegistry:
             elif mkey in D.aux.keys:
                 return D.model.m[mkey].args
 
-    def generate_configuration(self, mdict, **kwargs):
-        conf = aux.AttrDict()
+    def conf(self, mdict, **kwargs):
+        C = aux.AttrDict()
         for d, p in mdict.items():
             if isinstance(p, param.Parameterized):
-                conf[d] = p.v
+                C[d] = p.v
             else:
-                conf[d] = self.generate_configuration(mdict=p)
-        conf.update_existingdict(kwargs)
-        return aux.AttrDict(conf)
+                C[d] = self.conf(mdict=p)
+        C.update_existingdict(kwargs)
+        return aux.AttrDict(C)
 
     def brainConf(self, modes=None, modkws={}, nengo=False):
 
@@ -651,53 +651,43 @@ class ModelRegistry:
                     mkws = modkws[mkey]
                 else:
                     mkws = {}
-                conf[mlongkey] = self.generate_configuration(mdict, **mkws)
+                conf[mlongkey] = self.conf(mdict, **mkws)
                 conf[mlongkey]['mode'] = mode
 
         conf.modules = modules
         conf.nengo = nengo
         return conf
 
-    def larvaConf(self, modes=None, energetics=None, auxkws={}, modkws={}, nengo=False, mID=None):
+    def larvaConf(self, modes=None, modkws={}, nengo=False):
         bconf = self.brainConf(modes, modkws, nengo=nengo)
 
-        conf = aux.AttrDict()
-        conf.brain = bconf
+        C = aux.AttrDict()
+        C.brain = bconf
 
         for auxkey in self.dict.aux.keys:
-            if auxkey in auxkws.keys():
-                mkws = auxkws[auxkey]
-            else:
-                mkws = {}
             if auxkey == 'energetics':
-                if energetics is None:
-                    conf[auxkey] = None
-                    continue
-                else:
-                    for m, mdic in self.dict.aux.m[auxkey].mode.items():
-                        mdict = mdic.args
-                        conf[auxkey][m] = self.generate_configuration(mdict, **mkws[m])
+                C[auxkey] = None
+                continue
             elif auxkey == 'sensorimotor':
                 continue
             else:
-                mdict = self.dict.aux.m[auxkey].args
-                conf[auxkey] = self.generate_configuration(mdict, **mkws)
+                C[auxkey] = self.conf(self.dict.aux.m[auxkey].args)
 
         #  TODO thsi
-        null_Box2D_params = {
+
+        C.Box2D_params = {
             'joint_types': {
                 'friction': {'N': 0, 'args': {}},
                 'revolute': {'N': 0, 'args': {}},
                 'distance': {'N': 0, 'args': {}}
             }
         }
-        conf.Box2D_params = null_Box2D_params
 
-        return {mID: conf}
+        return C
 
     def autogenerate_confs(self):
         from ..model import ModuleModeDict as MD
-        from ..model.modules import RLmemory, Timer, RemoteBrianModelMemory, Feeder, Olfactor, Effector
+        from ..model.modules import RLmemory, RemoteBrianModelMemory, Feeder, Effector
         from ..param import class_defaults
         D = self.dict
         D_en = D.aux.m['energetics']
@@ -710,15 +700,16 @@ class ModelRegistry:
 
 
 
-        MB_pars = class_defaults(RemoteBrianModelMemory, excluded=[Timer])
+        MB_pars = class_defaults(RemoteBrianModelMemory, excluded=['dt'])
         MB_pars.mode = 'MB'
         MB_kws = {'brain.modules.memory': True, 'brain.memory_params': MB_pars}
 
-        RL_pars = class_defaults(RLmemory, excluded=[Timer])
+        RL_pars = class_defaults(RLmemory, excluded=['dt'])
         RL_pars.mode = 'RL'
         RL_kws = {'brain.modules.memory': True, 'brain.memory_params': RL_pars}
 
-        feed_pars = class_defaults(Feeder, excluded=[Timer, 'phi'])
+        feed_pars = class_defaults(Feeder, excluded=['dt', 'phi'])
+        feed_pars.mode = 'default'
         feed_kws = {'brain.modules.feeder': True, 'brain.feeder_params': feed_pars,
                     'brain.intermitter_params.EEB': 0.5, 'brain.intermitter_params.feed_bouts': True}
         maxEEB_kws = {'brain.intermitter_params.EEB': 0.9}
@@ -732,31 +723,30 @@ class ModelRegistry:
         ]}
 
         E = {}
-        for Cmod in MD.Crawler.keylist:
-            for Tmod in MD.Turner.keylist:
-                for Ifmod in MD.Interference.keylist:
-                    for IMmod in MD.Intermitter.keylist:
+        for Cmod in MD.crawler.keylist:
+            for Tmod in MD.turner.keylist:
+                for Ifmod in MD.interference.keylist:
+                    for IMmod in MD.intermitter.keylist:
                         kkws = {
-                            'mID': f'{mod_dict[Cmod]}_{mod_dict[Tmod]}_{mod_dict[Ifmod]}_{mod_dict[IMmod]}',
                             'modes': {'crawler': Cmod, 'turner': Tmod, 'interference': Ifmod, 'intermitter': IMmod},
                             'nengo': True if IMmod == 'nengo' else False,
 
                         }
                         if Ifmod != 'default':
                             kkws.update(**kws)
-                        E.update(self.larvaConf(**kkws))
-        E.update(self.larvaConf(mID='explorer', **kws))
+                        E[f'{mod_dict[Cmod]}_{mod_dict[Tmod]}_{mod_dict[Ifmod]}_{mod_dict[IMmod]}']=self.larvaConf(**kkws)
+        E['explorer']=self.larvaConf(**kws)
 
         # Extend the locomotory model configuration explorer by adding an olfactor module
 
         olf_kws = [{'brain.modules.olfactor': True,
-                    'brain.olfactor_params': class_defaults(MD.Olfactor.default, excluded=[Effector],
+                    'brain.olfactor_params': class_defaults(MD.olfactor.default, excluded=[Effector],
                                                             gain_dict=g)} for g in [
                        {'Odor': 0.0}, {'Odor': 150.0}, {'CS': 150.0, 'UCS': 0.0}
                    ]]
 
         olf2_kws = [{'brain.modules.olfactor': True,
-                    'brain.olfactor_params': class_defaults(MD.Olfactor.osn, excluded=[Effector],
+                    'brain.olfactor_params': class_defaults(MD.olfactor.osn, excluded=[Effector],
                                                             gain_dict=g)} for g in [
                        {'Odor': 0.0}, {'Odor': 150.0}, {'CS': 150.0, 'UCS': 0.0}
                    ]]
@@ -770,17 +760,14 @@ class ModelRegistry:
         E['OSNnavigator_x2'] = E['explorer'].update_nestdict_copy(olf2_kws[2])
 
 
-        sm_pars = self.generate_configuration(D.aux.m['sensorimotor'].mode['default'].args)
-        E['obstacle_avoider'] = E['navigator'].update_nestdict_copy({'sensorimotor': sm_pars})
+        E['obstacle_avoider'] = E['navigator'].update_nestdict_copy({'sensorimotor': self.conf(D.aux.m['sensorimotor'].mode['default'].args)})
 
-        E.update(
-            self.larvaConf(mID='Levy', modes={'crawler': 'constant', 'turner': 'sinusoidal', 'interference': 'default',
-                                              'intermitter': 'default'}, **kws2))
-        E.update(self.larvaConf(mID='NEU_Levy', modes={'crawler': 'constant', 'turner': 'neural', 'interference': 'default',
-                                                  'intermitter': 'default'}, **kws2))
-        E.update(self.larvaConf(mID='NEU_Levy_continuous',
-                                modes={'crawler': 'constant', 'turner': 'neural', 'interference': 'default'}, **kws2))
-        E.update(self.larvaConf(mID='CON_SIN', modes={'crawler': 'constant', 'turner': 'sinusoidal'}))
+        E['Levy']=self.larvaConf(modes={'crawler': 'constant', 'turner': 'sinusoidal', 'interference': 'default',
+                                              'intermitter': 'default'}, **kws2)
+        E['NEU_Levy']=self.larvaConf(modes={'crawler': 'constant', 'turner': 'neural', 'interference': 'default',
+                                                  'intermitter': 'default'}, **kws2)
+        E['NEU_Levy_continuous']=self.larvaConf(modes={'crawler': 'constant', 'turner': 'neural', 'interference': 'default'}, **kws2)
+        E['CON_SIN']=self.larvaConf(modes={'crawler': 'constant', 'turner': 'sinusoidal'})
         mID0dic = {}
         for Tmod in ['NEU', 'SIN']:
             for Ifmod in ['PHI', 'SQ', 'DEF']:
@@ -839,9 +826,9 @@ class ModelRegistry:
 
         for species, k_abs, EEB in zip(['rover', 'sitter'], [0.8, 0.4], [0.67, 0.37]):
             en_ws = aux.AttrDict({
-                'DEB': self.generate_configuration(D_en.mode['DEB'].args, species=species,
-                                                   hunger_gain=1.0, DEB_dt=10.0),
-                'gut': self.generate_configuration(D_en.mode['gut'].args, k_abs=k_abs)
+                'DEB': self.conf(D_en.mode['DEB'].args, species=species,
+                                 hunger_gain=1.0, DEB_dt=10.0),
+                'gut': self.conf(D_en.mode['gut'].args, k_abs=k_abs)
             })
             E[f'{species}_explorer'] = E['explorer'].update_nestdict_copy({'energetics': en_ws})
             E[f'{species}_navigator'] = E['navigator'].update_nestdict_copy({'energetics': en_ws})

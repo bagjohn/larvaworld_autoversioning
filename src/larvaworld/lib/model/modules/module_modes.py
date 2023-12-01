@@ -1,5 +1,5 @@
 from ... import aux
-from . import crawler, turner,crawl_bend_interference,intermitter, sensor
+from . import crawler, turner, crawl_bend_interference, intermitter, sensor, feeder
 
 __all__ = [
     'ModuleModeDict',
@@ -7,46 +7,50 @@ __all__ = [
 ]
 
 ModuleModeDict = aux.AttrDict({
-    'Crawler': {
+    'crawler': {
         'gaussian': crawler.GaussOscillator,
         'square': crawler.SquareOscillator,
         'realistic': crawler.PhaseOscillator,
         'constant': crawler.Crawler
     },
-    'Interference': {
+    'interference': {
         'default': crawl_bend_interference.DefaultCoupling,
         'square': crawl_bend_interference.SquareCoupling,
         'phasic': crawl_bend_interference.PhasicCoupling
     },
-    'Turner': {
+    'turner': {
         'neural': turner.NeuralOscillator,
         'sinusoidal': turner.SinTurner,
         'constant': turner.ConstantTurner
     },
-    'Intermitter': {
+    'intermitter': {
         'default': intermitter.Intermitter,
         'nengo': intermitter.NengoIntermitter,
         'branch': intermitter.BranchIntermitter
     },
-    'Olfactor': {
+    'feeder': {
+        'default': feeder.Feeder,
+
+    },
+    'olfactor': {
         'default': sensor.Olfactor,
         'osn': sensor.Olfactor,
     },
 })
 
 ModuleColorDict = aux.AttrDict({
-            'body': 'lightskyblue',
-            'physics': 'lightsteelblue',
-            'energetics': 'lightskyblue',
-            'Box2D_params': 'lightcoral',
-            'crawler': 'lightcoral',
-            'turner': 'indianred',
-            'interference': 'lightsalmon',
-            'intermitter': '#a55af4',
-            'olfactor': 'palegreen',
-            'windsensor': 'plum',
-            'toucher': 'pink',
-            'feeder': 'pink',
-            'memory': 'pink',
-            # 'locomotor': locomotor.DefaultLocomotor,
-        })
+    'body': 'lightskyblue',
+    'physics': 'lightsteelblue',
+    'energetics': 'lightskyblue',
+    'Box2D_params': 'lightcoral',
+    'crawler': 'lightcoral',
+    'turner': 'indianred',
+    'interference': 'lightsalmon',
+    'intermitter': '#a55af4',
+    'olfactor': 'palegreen',
+    'windsensor': 'plum',
+    'toucher': 'pink',
+    'feeder': 'pink',
+    'memory': 'pink',
+    # 'locomotor': locomotor.DefaultLocomotor,
+})

@@ -122,14 +122,14 @@ class GAselector(NestedConf):
         self.mConf0 = reg.conf.Model.getID(self.base_model)
         self.space_dict = reg.model.space_dict(mkeys=self.space_mkeys, mConf0=self.mConf0)
         # self.space_columns = [p.name for k, p in self.space_dict.items()]
-        self.gConf0 = reg.model.generate_configuration(self.space_dict)
+        self.gConf0 = reg.model.conf(self.space_dict)
 
     def create_first_generation(self):
         mode = self.init_mode
         N = self.Nagents
         d = self.space_dict
         if mode == 'default':
-            gConfs = [reg.model.generate_configuration(d)] * N
+            gConfs = [reg.model.conf(d)] * N
         elif mode == 'model':
             gConf = {k: self.mConf0.flatten()[k] for k, p in d.items()}
             gConfs = [gConf] * N
@@ -138,7 +138,7 @@ class GAselector(NestedConf):
             for i in range(N):
                 for ii, p in d.items():
                     p.randomize()
-                gConfs.append(reg.model.generate_configuration(d))
+                gConfs.append(reg.model.conf(d))
         else:
             raise ValueError('Not implemented')
         return gConfs
@@ -164,7 +164,7 @@ class GAselector(NestedConf):
             for d, p in space_dict.items():
                 p.mutate(Pmut=self.Pmutation, Cmut=self.Cmutation)
 
-            g = reg.model.generate_configuration(space_dict)
+            g = reg.model.conf(space_dict)
             gs.append(g)
         return gs
 

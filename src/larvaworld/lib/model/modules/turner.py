@@ -16,11 +16,6 @@ class Turner(Effector):
     input_range = param.Range((-1, 1), bounds=(-1, 1), precedence=-2, label='input range',
                               doc='The input range of the oscillator.', readonly=True)
 
-    @staticmethod
-    def select(mode):
-        from .module_modes import ModuleModeDict
-        return ModuleModeDict.Turner[mode]
-
 
 class ConstantTurner(Turner, StepEffector): pass
 

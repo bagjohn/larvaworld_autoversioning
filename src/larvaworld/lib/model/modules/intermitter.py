@@ -282,11 +282,6 @@ class Intermitter(Timer):
     def mean_feed_freq(self):
         return self.Nfeeds / self.total_t
 
-    @staticmethod
-    def select(mode):
-        from .module_modes import ModuleModeDict
-        return ModuleModeDict.Intermitter[mode]
-
 
 class OfflineIntermitter(Intermitter):
     def __init__(self, **kwargs):
