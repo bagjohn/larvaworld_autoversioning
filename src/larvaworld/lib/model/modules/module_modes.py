@@ -29,6 +29,6 @@ ModuleModeDict = aux.AttrDict({
     },
     'Olfactor': {
         'default': sensor.Olfactor,
-        'osn': sensor.Olfactor,
+        'osn': sensor.OSNOlfactor,
     },
 })

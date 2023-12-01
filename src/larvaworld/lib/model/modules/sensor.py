@@ -9,7 +9,7 @@ from .remote_brian_interface import RemoteBrianModelInterface
 __all__ = [
     'Sensor',
     'Olfactor',
-    'BrianOlfactor',
+    'OSNOlfactor',
     'Toucher',
     'WindSensor',
     'Thermosensor',
@@ -226,7 +226,7 @@ class Thermosensor(Sensor):
         return self.dX['cool']
 
 
-class BrianOlfactor(Olfactor):
+class OSNOlfactor(Olfactor):
     def __init__(self, response_key='OSN_rate', server_host='localhost', server_port=5795, remote_dt=100, remote_warmup=0, **kwargs):
         super().__init__(**kwargs)
         self.brianInterface = RemoteBrianModelInterface(server_host, server_port, remote_dt)
