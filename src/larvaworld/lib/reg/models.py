@@ -599,23 +599,6 @@ class ModelRegistry:
         self.dict = build_confdicts()
         self.full_dict = self.build_full_dict()
 
-        self.mcolor = aux.AttrDict({
-            'body': 'lightskyblue',
-            'physics': 'lightsteelblue',
-            'energetics': 'lightskyblue',
-            'Box2D_params': 'lightcoral',
-            'crawler': 'lightcoral',
-            'turner': 'indianred',
-            'interference': 'lightsalmon',
-            'intermitter': '#a55af4',
-            'olfactor': 'palegreen',
-            'windsensor': 'plum',
-            'toucher': 'pink',
-            'feeder': 'pink',
-            'memory': 'pink',
-            # 'locomotor': locomotor.DefaultLocomotor,
-        })
-
     @property
     def autostored_confs(self):
         return self.autogenerate_confs()
@@ -643,93 +626,6 @@ class ModelRegistry:
                 conf[d] = self.generate_configuration(mdict=p)
         conf.update_existingdict(kwargs)
         return aux.AttrDict(conf)
-
-    def conf(self, mdict=None, mkey=None, mode=None, refID=None, **kwargs):
-        if mdict is None:
-            mdict = self.get_mdict(mkey, mode)
-        conf0 = self.generate_configuration(mdict, **kwargs)
-        if refID is not None and mkey == 'intermitter':
-            conf0 = self.adapt_intermitter(refID=refID, mode=mode, conf=conf0)
-        return aux.AttrDict(conf0)
-
-    def mutate(self, mdict, Pmut, Cmut):
-        for d, p in mdict.items():
-            p.mutate(Pmut, Cmut)
-        # return mdict
-
-    def randomize(self, mdict):
-        for d, p in mdict.items():
-            p.randomize()
-
-    def mIDtable_data(self, m, columns):
-        D = self.dict
-
-        def gen_rows2(var_mdict, parent, columns, data):
-            for k, p in var_mdict.items():
-                if isinstance(p, param.Parameterized):
-                    ddd = [getattr(p, pname) for pname in columns]
-                    row = [parent] + ddd
-                    data.append(row)
-
-        mF = m.flatten()
-        data = []
-        for mkey in D.brain.keys:
-            if m.brain.modules[mkey]:
-                d0 = D.model.init[mkey]
-                if f'{d0.pref}mode' in mF.keys():
-                    mod_v = mF[f'{d0.pref}mode']
-                else:
-                    mod_v = 'default'
-
-                if mkey == 'intermitter':
-                    run_mode = m.brain[f'{mkey}_params']['run_mode']
-                    var_ks = d0.mode[mod_v].variable
-                    for var_k in var_ks:
-                        if var_k == 'run_dist' and run_mode == 'stridechain':
-                            continue
-                        if var_k == 'stridechain_dist' and run_mode == 'exec':
-                            continue
-                        v = m.brain[f'{mkey}_params'][var_k]
-                        if v is not None:
-                            if v.name is not None:
-                                vs1, vs2 = reg.get_dist(k=var_k, k0=mkey, v=v, return_tabrows=True)
-                                data.append(vs1)
-                                data.append(vs2)
-                else:
-                    var_mdict = self.variable_mdict(mkey, mode=mod_v)
-                    var_mdict = self.update_mdict(var_mdict, m.brain[f'{mkey}_params'])
-                    gen_rows2(var_mdict, mkey, columns, data)
-        for aux_key in D.aux.keys:
-            if aux_key not in ['energetics', 'sensorimotor']:
-                var_ks = D.aux.init[aux_key].variable
-                var_mdict = aux.AttrDict({k: D.aux.m[aux_key].args[k] for k in var_ks})
-                var_mdict = self.update_mdict(var_mdict, m[aux_key])
-                gen_rows2(var_mdict, aux_key, columns, data)
-        if m['energetics']:
-            for mod, dic in D.aux.init['energetics'].mode.items():
-                var_ks = dic.variable
-                var_mdict = aux.AttrDict({k: D.aux.m['energetics'].mode[mod].args[k] for k in var_ks})
-                var_mdict = self.update_mdict(var_mdict, m['energetics'].mod)
-                gen_rows2(var_mdict, f'energetics.{mod}', columns, data)
-        if 'sensorimotor' in m.keys():
-            for mod, dic in D.aux.init['sensorimotor'].mode.items():
-                var_ks = dic.variable
-                var_mdict = aux.AttrDict({k: D.aux.m['sensorimotor'].mode[mod].args[k] for k in var_ks})
-                var_mdict = self.update_mdict(var_mdict, m['sensorimotor'])
-                gen_rows2(var_mdict, 'sensorimotor', columns, data)
-        df = pd.DataFrame(data, columns=['field'] + columns)
-        df.set_index(['field'], inplace=True)
-        return df
-
-    def mIDtable(self, mID, m=None, columns=['parameter', 'symbol', 'value', 'unit'],
-                 colWidths=[0.35, 0.1, 0.25, 0.15], **kwargs):
-        from larvaworld.lib.plot.table import conf_table
-        if m is None:
-            m = reg.conf.Model.getID(mID)
-        df = self.mIDtable_data(m, columns=columns)
-        row_colors = [None] + [self.mcolor[ii] for ii in df.index.values]
-        df.index = arrange_index_labels(df.index)
-        return conf_table(df, row_colors, mID=mID, colWidths=colWidths, **kwargs)
 
     def brainConf(self, modes=None, modkws={}, nengo=False):
 
@@ -981,6 +877,7 @@ class ModelRegistry:
         return FD
 
     def diff_df(self, mIDs, ms=None, dIDs=None):
+        from ..model import ModuleColorDict
         dic = {}
         if dIDs is None:
             dIDs = mIDs
@@ -1011,7 +908,7 @@ class ModelRegistry:
         df.set_index(['field'], inplace=True)
         df.sort_index(inplace=True)
 
-        row_colors = [None] + [self.mcolor[ii] for ii in df.index.values]
+        row_colors = [None] + [ModuleColorDict[ii] for ii in df.index.values]
         df.index = arrange_index_labels(df.index)
 
         return df, row_colors
@@ -1022,19 +919,9 @@ class ModelRegistry:
         for d, p in mdict.items():
             if isinstance(p, param.Parameterized) and p.codename in e.columns:
                 crawler_conf[d] = np.round(e[p.codename].dropna().median(), 2)
-            # else:
-            #     raise
         return crawler_conf
 
-    def adapt_intermitter(self, refID=None, e=None, c=None, mode='default', conf=None):
-        if e is None or c is None:
-            d = reg.conf.Ref.loadRef(refID)
-            d.load(step=False)
-            e, c = d.endpoint_data, d.config
-
-        if conf is None:
-            mdict = self.dict.model.m['intermitter'].mode[mode].args
-            conf = self.generate_configuration(mdict)
+    def adapt_intermitter(self, e, c, conf, mode='default'):
         conf.stridechain_dist = c.bout_distros.run_count
         try:
             ll1, ll2 = conf.stridechain_dist.range
@@ -1058,11 +945,9 @@ class ModelRegistry:
         conf.mode = mode
         return conf
 
-    def adapt_mID(self, dataset, mID0, mID=None, space_mkeys=['turner', 'interference'], dir=None, **kwargs):
+    def adapt_mID(self, dataset, mID0, mID, space_mkeys=['turner', 'interference'], dir=None, **kwargs):
         s, e, c = dataset.data
         CM = reg.conf.Model
-        if mID is None:
-            mID = f'{mID0}_fitted'
         print(f'Adapting {mID0} on {c.refID} as {mID} fitting {space_mkeys} modules')
         if dir is None:
             dir = f'{c.dir}/model/GAoptimization'

@@ -3,6 +3,7 @@ from . import crawler, turner,crawl_bend_interference,intermitter, sensor
 
 __all__ = [
     'ModuleModeDict',
+    'ModuleColorDict',
 ]
 
 ModuleModeDict = aux.AttrDict({
@@ -32,3 +33,20 @@ ModuleModeDict = aux.AttrDict({
         'osn': sensor.Olfactor,
     },
 })
+
+ModuleColorDict = aux.AttrDict({
+            'body': 'lightskyblue',
+            'physics': 'lightsteelblue',
+            'energetics': 'lightskyblue',
+            'Box2D_params': 'lightcoral',
+            'crawler': 'lightcoral',
+            'turner': 'indianred',
+            'interference': 'lightsalmon',
+            'intermitter': '#a55af4',
+            'olfactor': 'palegreen',
+            'windsensor': 'plum',
+            'toucher': 'pink',
+            'feeder': 'pink',
+            'memory': 'pink',
+            # 'locomotor': locomotor.DefaultLocomotor,
+        })
