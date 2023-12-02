@@ -7,7 +7,6 @@ from .. import reg, aux
 from ..aux import nam
 
 __all__ = [
-    # 'model',
     'ModelRegistry',
 ]
 
@@ -266,8 +265,6 @@ def init_brain_modules():
             **sensor_kws(k0='O', l0='olfaction')}
         d = {'default': {'args': args, 'class_func': modules.Olfactor,
                          'variable': ['perception', 'decay_coef', 'brute_force', 'gain_dict']},
-             # 'nengo': {'args': IMargs, 'class_func': NengoIntermitter},
-             # 'branch': {'args': BRargs, 'class_func': BranchIntermitter},
              }
         return aux.AttrDict(d)
 
@@ -287,8 +284,6 @@ def init_brain_modules():
         }
         d = {'default': {'args': args, 'class_func': modules.Toucher,
                          'variable': ['perception', 'decay_coef', 'brute_force', 'initial_gain']},
-             # 'nengo': {'args': IMargs, 'class_func': NengoIntermitter},
-             # 'branch': {'args': BRargs, 'class_func': BranchIntermitter},
              }
         return aux.AttrDict(d)
 
@@ -311,10 +306,8 @@ def init_brain_modules():
 
             **sensor_kws(k0='W', l0='windsensor'),
         }
-        d = {'default': {'args': args, 'class_func': modules.WindSensor,
+        d = {'default': {'args': args, 'class_func': modules.Windsensor,
                          'variable': ['perception', 'decay_coef', 'brute_force']},
-             # 'nengo': {'args': IMargs, 'class_func': NengoIntermitter},
-             # 'branch': {'args': BRargs, 'class_func': BranchIntermitter},
              }
         return aux.AttrDict(d)
 
@@ -330,8 +323,6 @@ def init_brain_modules():
                 }
         d = {'default': {'args': args, 'class_func': modules.Thermosensor,
                          'variable': ['perception', 'decay_coef', 'brute_force', 'cool_gain', 'warm_gain']},
-             # 'nengo': {'args': IMargs, 'class_func': NengoIntermitter},
-             # 'branch': {'args': BRargs, 'class_func': BranchIntermitter},
              }
         return aux.AttrDict(d)
 
@@ -349,8 +340,6 @@ def init_brain_modules():
         }
 
         d = {'default': {'args': Fargs, 'class_func': modules.Feeder, 'variable': ['freq']},
-             # 'nengo': {'args': IMargs, 'class_func': NengoIntermitter},
-             # 'branch': {'args': BRargs, 'class_func': BranchIntermitter},
              }
         return aux.AttrDict(d)
 
@@ -381,13 +370,11 @@ def init_brain_modules():
             **args0
         }
 
-        # touchRLargs = {}
         MBargs = {**args0}
 
         d = {'RL': {'args': RLargs, 'class_func': modules.RLOlfMemory,
                     'variable': ['Delta', 'update_dt', 'alpha', 'epsilon']},
              'MB': {'args': MBargs, 'class_func': modules.RemoteBrianModelMemory, 'variable': []},
-             # 'touchRL': {'args': touchRLargs, 'class_func': modules.RLTouchMemory, 'variable': []},
              }
         return aux.AttrDict(d)
 
@@ -698,19 +685,11 @@ class ModelRegistry:
         kws = {'modkws': {'interference': {'attenuation': 0.1, 'attenuation_max': 0.6}}}
         kws2 = {'modkws': {'interference': {'attenuation': 0.0}, 'intermitter': {'run_mode': 'exec'}}}
 
+        MB_kws = {'brain.modules.memory': True, 'brain.memory_params': class_defaults(RemoteBrianModelMemory, excluded=['dt'],included={'mode':'MB'})}
+        RL_kws = {'brain.modules.memory': True, 'brain.memory_params': class_defaults(RLmemory, excluded=['dt'],included={'mode':'RL'})}
 
 
-        MB_pars = class_defaults(RemoteBrianModelMemory, excluded=['dt'])
-        MB_pars.mode = 'MB'
-        MB_kws = {'brain.modules.memory': True, 'brain.memory_params': MB_pars}
-
-        RL_pars = class_defaults(RLmemory, excluded=['dt'])
-        RL_pars.mode = 'RL'
-        RL_kws = {'brain.modules.memory': True, 'brain.memory_params': RL_pars}
-
-        feed_pars = class_defaults(Feeder, excluded=['dt', 'phi'])
-        feed_pars.mode = 'default'
-        feed_kws = {'brain.modules.feeder': True, 'brain.feeder_params': feed_pars,
+        feed_kws = {'brain.modules.feeder': True, 'brain.feeder_params': class_defaults(Feeder, excluded=['dt', 'phi'],included={'mode':'default'}),
                     'brain.intermitter_params.EEB': 0.5, 'brain.intermitter_params.feed_bouts': True}
         maxEEB_kws = {'brain.intermitter_params.EEB': 0.9}
 
@@ -740,13 +719,13 @@ class ModelRegistry:
         # Extend the locomotory model configuration explorer by adding an olfactor module
 
         olf_kws = [{'brain.modules.olfactor': True,
-                    'brain.olfactor_params': class_defaults(MD.olfactor.default, excluded=[Effector],
+                    'brain.olfactor_params': class_defaults(MD.olfactor.default, excluded=[Effector],included={'mode':'default'},
                                                             gain_dict=g)} for g in [
                        {'Odor': 0.0}, {'Odor': 150.0}, {'CS': 150.0, 'UCS': 0.0}
                    ]]
 
         olf2_kws = [{'brain.modules.olfactor': True,
-                    'brain.olfactor_params': class_defaults(MD.olfactor.osn, excluded=[Effector],
+                    'brain.olfactor_params': class_defaults(MD.olfactor.osn, excluded=[Effector],included={'mode':'osn'},
                                                             gain_dict=g)} for g in [
                        {'Odor': 0.0}, {'Odor': 150.0}, {'CS': 150.0, 'UCS': 0.0}
                    ]]

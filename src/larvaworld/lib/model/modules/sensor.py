@@ -9,7 +9,7 @@ __all__ = [
     'Sensor',
     'Olfactor',
     'Toucher',
-    'WindSensor',
+    'Windsensor',
     'Thermosensor',
 ]
 
@@ -179,7 +179,7 @@ class Toucher(Sensor):
                 break
 
 
-class WindSensor(Sensor):
+class Windsensor(Sensor):
     gain_dict = param.Dict(default=aux.AttrDict({'windsensor': 1.0}))
     perception = param.Selector(default='null')
 

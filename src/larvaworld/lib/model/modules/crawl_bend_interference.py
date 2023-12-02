@@ -78,8 +78,3 @@ class PhasicCoupling(Coupling):
         self.cur_attenuation = self.get(x)
 
 
-# ModeDict = aux.AttrDict({
-#     'default': DefaultCoupling,
-#     'square': SquareCoupling,
-#     'phasic': PhasicCoupling
-# })

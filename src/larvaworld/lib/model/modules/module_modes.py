@@ -36,6 +36,15 @@ ModuleModeDict = aux.AttrDict({
         'default': sensor.Olfactor,
         'osn': sensor.Olfactor,
     },
+    'toucher': {
+        'default': sensor.Toucher,
+    },
+    'windsensor': {
+        'default': sensor.Windsensor,
+    },
+    'thermosensor': {
+        'default': sensor.Thermosensor,
+    },
 })
 
 ModuleColorDict = aux.AttrDict({

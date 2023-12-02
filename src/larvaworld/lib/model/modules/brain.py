@@ -11,7 +11,7 @@ __all__ = [
 class Brain(NestedConf):
     olfactor = ClassAttr(class_=modules.Olfactor, default=None, doc='The olfactory sensor')
     toucher = ClassAttr(class_=modules.Toucher, default=None, doc='The tactile sensor')
-    windsensor = ClassAttr(class_=modules.WindSensor, default=None, doc='The wind sensor')
+    windsensor = ClassAttr(class_=modules.Windsensor, default=None, doc='The wind sensor')
     thermosensor = ClassAttr(class_=modules.Thermosensor, default=None, doc='The temperature sensor')
 
     def __init__(self, agent=None, dt=None, **kwargs):
@@ -88,26 +88,26 @@ class Brain(NestedConf):
 
 class DefaultBrain(Brain):
     def __init__(self, conf, agent=None, **kwargs):
+        from module_modes import ModuleModeDict
+        for k in self.param_keys:
+            if conf.modules[k]:
+                m = conf[f'{k}_params']
+                if 'mode' not in m :
+                    m.mode='default'
+                kwargs[k] = ModuleModeDict[k][m.mode](dt=self.dt,brain=self, **{k: m[k] for k in m if k != 'mode'})
         super().__init__(agent=agent, **kwargs)
+
         self.locomotor = modules.DefaultLocomotor(conf=conf, dt=self.dt)
 
         kws = {"brain": self, "dt": self.dt}
         self.touch_memory = None
         self.memory = None
 
-        mods = conf.modules
-
-        if mods.olfactor:
-            self.olfactor = modules.Olfactor(**kws, **conf['olfactor_params'])
-        if mods.toucher:
-            self.toucher = modules.Toucher(**kws, **conf['toucher_params'])
-
-
         memory_modes = {
             'RL': {'olfaction': modules.RLOlfMemory, 'touch': modules.RLTouchMemory},
             'MB': {'olfaction': modules.RemoteBrianModelMemory, 'touch': modules.RemoteBrianModelMemory}
         }
-        if mods['memory']:
+        if conf.modules['memory']:
 
             mm = conf['memory_params'].get_copy()
             # FIXME
@@ -126,10 +126,7 @@ class DefaultBrain(Brain):
             elif modality == 'touch' and self.toucher:
                 mm.gain = self.toucher.gain
                 self.touch_memory = class_func(**mm, **kws)
-        if mods.windsensor:
-            self.windsensor = modules.WindSensor(**kws, **conf['windsensor_params'])
-        if mods.thermosensor:
-            self.thermosensor = modules.Thermosensor(**kws, **conf['thermosensor_params'])
+
 
     def sense(self, pos=None, reward=False):
 
