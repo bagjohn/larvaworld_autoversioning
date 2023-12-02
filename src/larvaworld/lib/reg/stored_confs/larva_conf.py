@@ -15,11 +15,6 @@ OD1 = {'Odor': 150.0}
 OD2 = {'CS': 150.0, 'UCS': 0.0}
 
 
-def Im(EEB, **kwargs):
-    conf = reg.par.get_null('intermitter', feed_bouts=EEB > 0, EEB=EEB, **kwargs)
-
-    return conf
-
 
 # -------------------------------------------WHOLE NEURAL MODES---------------------------------------------------------
 
@@ -98,97 +93,57 @@ def OD(ids: list, gains: list) -> dict:
     return aux.AttrDict({id:g for id, g in zip(ids, gains)})
 
 
-def create_mod_dict(b):
-
+def create_mod_dict():
     RL_touch_memory = reg.par.get_null('memory', Delta=0.5, state_spacePerSide=1, modality='touch', train_dur=30,
                                     update_dt=0.5,
                                     gain_space=np.round(np.arange(-10.0, 11.0, 5), 1).tolist(), state_specific_best=True)
 
-    gRL_touch_memory = reg.par.get_null('memory', Delta=0.5, state_spacePerSide=1, modality='touch', train_dur=30,
-                                     update_dt=0.5,
-                                     gain_space=np.round(np.arange(-10.0, 11.0, 5), 1).tolist(), state_specific_best=False)
 
-    M0 = mod()
-
-    def add_brain(brain, M0=M0, bod={}, phys={}, Box2D={}):
-        M1 = aux.AttrDict(copy.deepcopy(M0))
-        M1.brain = brain
+    def add_brain(brain, bod={}, Box2D={}):
+        M1 = mod(brain = brain)
         M1.body.update(**bod)
-        M1.physics.update(**phys)
         M1.Box2D_params.update(**Box2D)
         return M1
 
-    LOF = brain(['LOF'])
     L = brain(['L'])
-    # LTo = brain(['L', 'To'], toucher=reg.par.get_null('toucher', touch_sensors=[]))
     LToM = brain(['L', 'To', 'M'], toucher=reg.par.get_null('toucher', touch_sensors=[]),
                  memory=RL_touch_memory)
-    LToMg = brain(['L', 'To', 'M'], toucher=reg.par.get_null('toucher', touch_sensors=[]),
-                  memory=gRL_touch_memory)
     LTo2M = brain(['L', 'To', 'M'], toucher=reg.par.get_null('toucher', touch_sensors=[0, 2]),
                   memory=RL_touch_memory)
-    LTo2Mg = brain(['L', 'To', 'M'], toucher=reg.par.get_null('toucher', touch_sensors=[0, 2]),
-                   memory=gRL_touch_memory)
-    # LTo_brute = brain(['L', 'To'], toucher=reg.par.get_null('toucher', touch_sensors=[], brute_force=True))
-    # LTh = brain(['L', 'Th'])
 
-    def add_OD(OD, B0=LOF):
-        B1 = aux.AttrDict(copy.deepcopy(B0))
+    def add_OD(OD):
+        B1 = brain(['LOF'])
         B1.olfactor_params.gain_dict = OD
         return B1
 
-
-
-    touchers = {
-        # 'toucher': add_brain(LTo),
-        # 'toucher_brute': add_brain(LTo_brute),
-        'RL_toucher_0': add_brain(LToM),
-        'gRL_toucher_0': add_brain(LToMg),
-        'RL_toucher_2': add_brain(LTo2M),
-        'gRL_toucher_2': add_brain(LTo2Mg),
-    }
-
-    other = {
-        # 'thermo_navigator': add_brain(LTh),
-        'imitator': add_brain(L, bod={'Nsegs': 11}),
-        'immobile': add_brain(brain(['T', 'O'], OD=OD1)),
-    }
 
     odors3 = [f'{i}_odor' for i in ['Flag', 'Left_base', 'Right_base']]
     odors5 = [f'{i}_odor' for i in ['Flag', 'Left_base', 'Right_base', 'Left', 'Right']]
     odors2 = [f'{i}_odor' for i in ['Left', 'Right']]
 
-    gamers = {
+
+    return {
+        'RL_toucher_0': add_brain(LToM),
+        'RL_toucher_2': add_brain(LTo2M),
         'gamer': add_brain(add_OD(OD(odors3, [150.0, 0.0, 0.0]))),
         'gamer-5x': add_brain(add_OD(OD(odors5, [150.0, 0.0, 0.0, 0.0, 0.0]))),
         'follower-R': add_brain(add_OD(OD(odors2, [150.0, 0.0]))),
         'follower-L': add_brain(add_OD(OD(odors2, [0.0, 150.0]))),
-    }
-    zebrafish = {
         'zebrafish': add_brain(L,
                                bod={'shape': 'zebrafish_larva'},
                                Box2D={
-                                   'joint_types': {'revolute': {'N': 1, 'args': {'maxMotorTorque':10 ** 5, 'motorSpeed':1}}}})
+                                   'joint_types': {'revolute': {'N': 1, 'args': {'maxMotorTorque':10 ** 5, 'motorSpeed':1}}}}),
+        'imitator': add_brain(L, bod={'Nsegs': 11}),
+        'immobile': add_brain(brain(['T', 'O'], OD=OD1)),
     }
 
-    grouped_mod_dict = {
-        'touchers': touchers,
-        # 'foraging phenotypes': build_RvsS(b),
-        'games': gamers,
-        'zebrafish': zebrafish,
-        'other': other,
-    }
-
-    return grouped_mod_dict
 
 
 @reg.funcs.stored_conf("Model")
 def Model_dict():
     dnew = reg.model.autostored_confs
-    b = dnew['navigator'].brain
-    d = create_mod_dict(b)
-    dd = aux.merge_dicts(list(d.values()))
-    dnew.update(dd)
+    d = create_mod_dict()
+    dnew.update(d)
     return dnew
 
 
