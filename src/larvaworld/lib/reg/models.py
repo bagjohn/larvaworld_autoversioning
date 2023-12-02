@@ -674,7 +674,7 @@ class ModelRegistry:
 
     def autogenerate_confs(self):
         from ..model import ModuleModeDict as MD
-        from ..model.modules import RLmemory, RemoteBrianModelMemory, Feeder, Effector
+        from ..model.modules import RLmemory, RemoteBrianModelMemory, Effector
         from ..param import class_defaults
         D = self.dict
         D_en = D.aux.m['energetics']
@@ -689,7 +689,7 @@ class ModelRegistry:
         RL_kws = {'brain.modules.memory': True, 'brain.memory_params': class_defaults(RLmemory, excluded=['dt'],included={'mode':'RL'})}
 
 
-        feed_kws = {'brain.modules.feeder': True, 'brain.feeder_params': class_defaults(Feeder, excluded=['dt', 'phi'],included={'mode':'default'}),
+        feed_kws = {'brain.modules.feeder': True, 'brain.feeder_params': class_defaults(MD.feeder.default, excluded=['dt', 'phi'],included={'mode':'default'}),
                     'brain.intermitter_params.EEB': 0.5, 'brain.intermitter_params.feed_bouts': True}
         maxEEB_kws = {'brain.intermitter_params.EEB': 0.9}
 
@@ -730,6 +730,13 @@ class ModelRegistry:
                        {'Odor': 0.0}, {'Odor': 150.0}, {'CS': 150.0, 'UCS': 0.0}
                    ]]
 
+        thermo_kws={'brain.modules.thermosensor': True, 'brain.thermosensor_params': class_defaults(MD.thermosensor.default, excluded=[Effector],included={'mode':'default'})}
+        touch_kws={'brain.modules.toucher': True, 'brain.toucher_params': class_defaults(MD.toucher.default, excluded=[Effector],included={'mode':'default'})}
+
+
+        E['thermo_navigator'] = E['explorer'].update_nestdict_copy(thermo_kws)
+        E['toucher'] = E['explorer'].update_nestdict_copy(touch_kws)
+        E['toucher_brute'] = E['toucher'].update_nestdict_copy({'brain.toucher_params.brute_force': True})
 
         E['navigator'] = E['explorer'].update_nestdict_copy(olf_kws[1])
         E['navigator_x2'] = E['explorer'].update_nestdict_copy(olf_kws[2])

@@ -120,7 +120,7 @@ def create_mod_dict(b):
 
     LOF = brain(['LOF'])
     L = brain(['L'])
-    LTo = brain(['L', 'To'], toucher=reg.par.get_null('toucher', touch_sensors=[]))
+    # LTo = brain(['L', 'To'], toucher=reg.par.get_null('toucher', touch_sensors=[]))
     LToM = brain(['L', 'To', 'M'], toucher=reg.par.get_null('toucher', touch_sensors=[]),
                  memory=RL_touch_memory)
     LToMg = brain(['L', 'To', 'M'], toucher=reg.par.get_null('toucher', touch_sensors=[]),
@@ -129,8 +129,8 @@ def create_mod_dict(b):
                   memory=RL_touch_memory)
     LTo2Mg = brain(['L', 'To', 'M'], toucher=reg.par.get_null('toucher', touch_sensors=[0, 2]),
                    memory=gRL_touch_memory)
-    LTo_brute = brain(['L', 'To'], toucher=reg.par.get_null('toucher', touch_sensors=[], brute_force=True))
-    LTh = brain(['L', 'Th'])
+    # LTo_brute = brain(['L', 'To'], toucher=reg.par.get_null('toucher', touch_sensors=[], brute_force=True))
+    # LTh = brain(['L', 'Th'])
 
     def add_OD(OD, B0=LOF):
         B1 = aux.AttrDict(copy.deepcopy(B0))
@@ -140,8 +140,8 @@ def create_mod_dict(b):
 
 
     touchers = {
-        'toucher': add_brain(LTo),
-        'toucher_brute': add_brain(LTo_brute),
+        # 'toucher': add_brain(LTo),
+        # 'toucher_brute': add_brain(LTo_brute),
         'RL_toucher_0': add_brain(LToM),
         'gRL_toucher_0': add_brain(LToMg),
         'RL_toucher_2': add_brain(LTo2M),
@@ -149,7 +149,7 @@ def create_mod_dict(b):
     }
 
     other = {
-        'thermo_navigator': add_brain(LTh),
+        # 'thermo_navigator': add_brain(LTh),
         'imitator': add_brain(L, bod={'Nsegs': 11}),
         'immobile': add_brain(brain(['T', 'O'], OD=OD1)),
     }
