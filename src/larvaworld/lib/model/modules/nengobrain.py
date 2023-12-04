@@ -319,14 +319,14 @@ class NengoLocomotor(Locomotor):
     def __init__(self,conf,dt=0.1,  **kwargs):
         self.dt = dt
         kwargs=aux.AttrDict(kwargs)
-        m, c = conf.modules, conf
-        if m['feeder']:
+        c = conf
+        if c['feeder_params'] is not None:
             kwargs.feeder = NengoEffector(**c['feeder_params'])
-        if m['turner'] and m['crawler']:
+        if c['turner_params'] is not None and c['crawler_params'] is not None:
             kwargs.turner = NengoEffector(**c['turner_params'])
             kwargs.crawler = NengoEffector(**c['crawler_params'])
             kwargs.interference = SquareCoupling(**c['interference_params'])
-        if m['intermitter']:
+        if c['intermitter_params'] is not None:
             kwargs.intermitter = NengoIntermitter(dt=self.dt, **c['intermitter_params'])
         # else:
         #     self.intermitter = None

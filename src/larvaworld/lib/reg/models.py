@@ -623,16 +623,13 @@ class ModelRegistry:
                      'intermitter': 'default'}
 
         conf = aux.AttrDict()
-        modules = aux.AttrDict()
 
         for mkey in self.dict.brain.keys:
             mlongkey = f'{mkey}_params'
             if mkey not in modes.keys():
-                modules[mkey] = False
                 conf[mlongkey] = None
             else:
                 mode = modes[mkey]
-                modules[mkey] = True
                 mdict = self.dict.brain.m[mkey].mode[mode].args
                 if mkey in modkws.keys():
                     mkws = modkws[mkey]
@@ -641,7 +638,6 @@ class ModelRegistry:
                 conf[mlongkey] = self.conf(mdict, **mkws)
                 conf[mlongkey]['mode'] = mode
 
-        conf.modules = modules
         conf.nengo = nengo
         return conf
 
@@ -685,12 +681,12 @@ class ModelRegistry:
         kws = {'modkws': {'interference': {'attenuation': 0.1, 'attenuation_max': 0.6}}}
         kws2 = {'modkws': {'interference': {'attenuation': 0.0}, 'intermitter': {'run_mode': 'exec'}}}
 
-        MB_kws = {'brain.modules.memory': True, 'brain.memory_params': class_defaults(RemoteBrianModelMemory, excluded=['dt'],included={'mode':'MB', 'modality':'olfaction'})}
-        RL_kws = {'brain.modules.memory': True, 'brain.memory_params': class_defaults(RLmemory, excluded=['dt'],included={'mode':'RL', 'modality':'olfaction'})}
-        RLtouch_kws = {'brain.modules.memory': True, 'brain.memory_params': class_defaults(RLmemory, excluded=['dt'],included={'mode':'RL', 'modality':'touch'})}
+        MB_kws = {'brain.memory_params': class_defaults(RemoteBrianModelMemory, excluded=['dt'],included={'mode':'MB', 'modality':'olfaction'})}
+        RL_kws = {'brain.memory_params': class_defaults(RLmemory, excluded=['dt'],included={'mode':'RL', 'modality':'olfaction'})}
+        RLtouch_kws = {'brain.memory_params': class_defaults(RLmemory, excluded=['dt'],included={'mode':'RL', 'modality':'touch'})}
 
 
-        feed_kws = {'brain.modules.feeder': True, 'brain.feeder_params': class_defaults(MD.feeder.default, excluded=['dt', 'phi'],included={'mode':'default'}),
+        feed_kws = {'brain.feeder_params': class_defaults(MD.feeder.default, excluded=['dt', 'phi'],included={'mode':'default'}),
                     'brain.intermitter_params.EEB': 0.5, 'brain.intermitter_params.feed_bouts': True}
         maxEEB_kws = {'brain.intermitter_params.EEB': 0.9}
 
@@ -719,20 +715,18 @@ class ModelRegistry:
 
         # Extend the locomotory model configuration explorer by adding an olfactor module
 
-        olf_kws = [{'brain.modules.olfactor': True,
-                    'brain.olfactor_params': class_defaults(MD.olfactor.default, excluded=[Effector],included={'mode':'default'},
+        olf_kws = [{'brain.olfactor_params': class_defaults(MD.olfactor.default, excluded=[Effector],included={'mode':'default'},
                                                             gain_dict=g)} for g in [
                        {'Odor': 0.0}, {'Odor': 150.0}, {'CS': 150.0, 'UCS': 0.0}
                    ]]
 
-        olf2_kws = [{'brain.modules.olfactor': True,
-                    'brain.olfactor_params': class_defaults(MD.olfactor.osn, excluded=[Effector],included={'mode':'osn'},
+        olf2_kws = [{'brain.olfactor_params': class_defaults(MD.olfactor.osn, excluded=[Effector],included={'mode':'osn'},
                                                             gain_dict=g)} for g in [
                        {'Odor': 0.0}, {'Odor': 150.0}, {'CS': 150.0, 'UCS': 0.0}
                    ]]
 
-        thermo_kws={'brain.modules.thermosensor': True, 'brain.thermosensor_params': class_defaults(MD.thermosensor.default, excluded=[Effector],included={'mode':'default'})}
-        touch_kws={'brain.modules.toucher': True, 'brain.toucher_params': class_defaults(MD.toucher.default, excluded=[Effector],included={'mode':'default'})}
+        thermo_kws={'brain.thermosensor_params': class_defaults(MD.thermosensor.default, excluded=[Effector],included={'mode':'default'})}
+        touch_kws={'brain.toucher_params': class_defaults(MD.toucher.default, excluded=[Effector],included={'mode':'default'})}
 
 
 
@@ -759,10 +753,8 @@ class ModelRegistry:
 
 
         E['immobile'] = E['navigator'].update_nestdict_copy({
-            'brain.modules.crawler': False,'brain.crawler_params': None,
-            'brain.modules.turner': False,'brain.turner_params': None,
-            'brain.modules.intermitter': False,'brain.intermitter_params': None,
-            'brain.modules.interference': False,'brain.interference_params': None,
+            'brain.crawler_params': None,'brain.turner_params': None,
+            'brain.intermitter_params': None,'brain.interference_params': None,
             **touch_kws
         })
 
