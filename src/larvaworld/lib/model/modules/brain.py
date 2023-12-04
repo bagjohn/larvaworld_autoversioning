@@ -98,19 +98,16 @@ class Brain(NestedConf):
 
 class DefaultBrain(Brain):
     def __init__(self, conf, agent=None, **kwargs):
-        ms=conf.modules
         kws={'dt':self.dt, 'brain':self}
         from module_modes import ModuleModeDict as MD
         for k in self.param_keys:
-            if ms[k]:
-                m = conf[f'{k}_params']
-                if 'mode' not in m:
-                    m.mode = 'default'
+            m = conf[f'{k}_params']
+            if m is not None:
                 kwargs[k] = MD[k][m.mode](**kws, **{k: m[k] for k in m if k != 'mode'})
         super().__init__(agent=agent, **kwargs)
         self.locomotor = modules.DefaultLocomotor(conf=conf, dt=self.dt)
-        if ms['memory']:
-            m = conf['memory_params']
+        m = conf['memory_params']
+        if m is not None:
             M=self.modalities[m.modality]
             if M.sensor:
                 m.gain = M.sensor.gain
