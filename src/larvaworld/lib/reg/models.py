@@ -687,6 +687,7 @@ class ModelRegistry:
 
         MB_kws = {'brain.modules.memory': True, 'brain.memory_params': class_defaults(RemoteBrianModelMemory, excluded=['dt'],included={'mode':'MB'})}
         RL_kws = {'brain.modules.memory': True, 'brain.memory_params': class_defaults(RLmemory, excluded=['dt'],included={'mode':'RL'})}
+        RLtouch_kws = {'brain.modules.memory': True, 'brain.memory_params': class_defaults(RLmemory, excluded=['dt'],included={'mode':'RL', 'modality':'touch'})}
 
 
         feed_kws = {'brain.modules.feeder': True, 'brain.feeder_params': class_defaults(MD.feeder.default, excluded=['dt', 'phi'],included={'mode':'default'}),
@@ -734,9 +735,20 @@ class ModelRegistry:
         touch_kws={'brain.modules.toucher': True, 'brain.toucher_params': class_defaults(MD.toucher.default, excluded=[Effector],included={'mode':'default'})}
 
 
+
+
+        E['imitator'] = E['explorer'].update_nestdict_copy({'body.Nsegs': 11})
+        E['zebrafish'] = E['explorer'].update_nestdict_copy({'body.body_plan': 'zebrafish_larva',  'Box2D_params': {'joint_types': {
+                                       'revolute': {'N': 1, 'args': {'maxMotorTorque': 10 ** 5, 'motorSpeed': 1}}}}})
+
+
+
         E['thermo_navigator'] = E['explorer'].update_nestdict_copy(thermo_kws)
         E['toucher'] = E['explorer'].update_nestdict_copy(touch_kws)
+        E['toucher_2'] = E['toucher'].update_nestdict_copy({'brain.toucher_params.touch_sensors': [0,2]})
         E['toucher_brute'] = E['toucher'].update_nestdict_copy({'brain.toucher_params.brute_force': True})
+        E['RLtoucher'] = E['toucher'].update_nestdict_copy(RLtouch_kws)
+        E['RLtoucher_2'] = E['toucher_2'].update_nestdict_copy(RLtouch_kws)
 
         E['navigator'] = E['explorer'].update_nestdict_copy(olf_kws[1])
         E['navigator_x2'] = E['explorer'].update_nestdict_copy(olf_kws[2])
@@ -744,6 +756,17 @@ class ModelRegistry:
 
         E['OSNnavigator'] = E['explorer'].update_nestdict_copy(olf2_kws[1])
         E['OSNnavigator_x2'] = E['explorer'].update_nestdict_copy(olf2_kws[2])
+
+
+        E['immobile'] = E['navigator'].update_nestdict_copy({
+            'brain.modules.crawler': False,'brain.crawler_params': None,
+            'brain.modules.turner': False,'brain.turner_params': None,
+            'brain.modules.intermitter': False,'brain.intermitter_params': None,
+            'brain.modules.interference': False,'brain.interference_params': None,
+            **touch_kws
+        })
+
+
 
 
         E['obstacle_avoider'] = E['navigator'].update_nestdict_copy({'sensorimotor': self.conf(D.aux.m['sensorimotor'].mode['default'].args)})
@@ -803,6 +826,14 @@ class ModelRegistry:
         E['max_feeder'] = E['RE_NEU_PHI_DEF_max_feeder']
         E['RLforager'] = E['forager'].update_nestdict_copy(RL_kws)
 
+        E['follower-R'] = E['forager'].update_nestdict_copy({'brain.olfactor_params.gain_dict': {'Left_odor': 150.0, 'Right_odor': 0.0}})
+        E['follower-L'] = E['forager'].update_nestdict_copy({'brain.olfactor_params.gain_dict': {'Left_odor': 0.0, 'Right_odor': 150.0}})
+        E['gamer'] = E['forager'].update_nestdict_copy({'brain.olfactor_params.gain_dict': {'Flag_odor': 150.0,'Left_base_odor': 0.0, 'Right_base_odor': 0.0}})
+        E['gamer-5x'] = E['forager'].update_nestdict_copy({'brain.olfactor_params.gain_dict': {'Flag_odor': 150.0,'Left_base_odor': 0.0, 'Right_base_odor': 0.0, 'Left_odor': 0.0, 'Right_odor': 0.0}})
+
+
+
+
         for mID0 in ['Levy', 'NEU_Levy', 'NEU_Levy_continuous', 'CON_SIN']:
             E[f'{mID0}_nav'] = E[mID0].update_nestdict_copy(olf_kws[1])
             E[f'{mID0}_nav_x2'] = E[mID0].update_nestdict_copy(olf_kws[2])
@@ -820,6 +851,10 @@ class ModelRegistry:
             E[f'{species}_navigator'] = E['navigator'].update_nestdict_copy({'energetics': en_ws})
             E[f'{species}_feeder'] = E['feeder'].update_nestdict_copy({'energetics': en_ws, 'brain.intermitter_params.EEB': EEB})
             E[f'{species}_forager'] = E['forager'].update_nestdict_copy({'energetics': en_ws, 'brain.intermitter_params.EEB': EEB})
+
+
+
+
         return E
 
     def build_full_dict(self):
