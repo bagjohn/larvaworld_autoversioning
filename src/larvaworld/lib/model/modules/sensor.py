@@ -16,22 +16,17 @@ __all__ = [
 
 class Sensor(Effector):
     output_range = RangeRobust((-1.0, 1.0), readonly=True)
-    perception = param.Selector(objects=['log','linear', 'null'], label='sensory transduction mode',
+    perception = param.Selector(objects=['log', 'linear', 'null'], label='sensory transduction mode',
                                 doc='The method used to calculate the perceived sensory activation from the current and previous sensory input.')
     decay_coef = PositiveNumber(0.1, softmax=2.0, step=0.01, label='sensory decay coef',
                                 doc='The linear decay coefficient of the olfactory sensory activation.')
     brute_force = param.Boolean(False, doc='Whether to apply direct rule-based modulation on locomotion or not.')
     gain_dict = param.Dict(default=aux.AttrDict(), doc='Dictionary of sensor gain per stimulus ID')
 
-
-
     def __init__(self, brain=None, **kwargs):
         super().__init__(**kwargs)
-
         self.brain = brain
-
         self.exp_decay_coef = np.exp(- self.dt * self.decay_coef)
-
         self.X = aux.AttrDict({id: 0.0 for id in self.gain_ids})
         self.dX = aux.AttrDict({id: 0.0 for id in self.gain_ids})
         self.gain = self.gain_dict
@@ -43,10 +38,7 @@ class Sensor(Effector):
         if mem is not None:
             self.gain = mem.step(dx=self.get_dX(), **kwargs)
 
-
-
     def update(self):
-        # self.update_gain()
         if len(self.input) == 0:
             self.output = 0
         elif self.brute_force:
@@ -60,8 +52,6 @@ class Sensor(Effector):
 
     def affect_locomotion(self, L):
         pass
-
-
 
     def get_dX(self):
         return self.dX
@@ -91,7 +81,7 @@ class Sensor(Effector):
 
     def compute_dX(self, input):
         for id, cur in input.items():
-            if id not in self.X :
+            if id not in self.X:
                 self.add_novel_gain(id, con=cur)
             else:
                 prev = self.X[id]
@@ -112,7 +102,6 @@ class Sensor(Effector):
 class Olfactor(Sensor):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
 
     def affect_locomotion(self, L):
         if self.output < 0 and L.stride_completed:
@@ -173,7 +162,6 @@ class Windsensor(Sensor):
 
 # @todo add class Thermosensor(Sensor) here with a double gain dict
 class Thermosensor(Sensor):
-    #gain_dict = param.Dict(default=aux.AttrDict({'warm': 0.0, 'cool': 0.0}))
     cool_gain = PositiveNumber(0.0, label='cool sensitivity coef', doc='The gain of the cool sensor.')
     warm_gain = PositiveNumber(0.0, label='warm sensitivity coef', doc='The gain of the warm sensor.')
 
