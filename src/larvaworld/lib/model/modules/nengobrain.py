@@ -275,17 +275,19 @@ class NengoBrain(Network, Brain):
     def step(self, pos,length, on_food=False):
         L=self.locomotor
         N=self.Nsteps
-        o=self.olfactor
+        MS=self.modalities
+        kws = {'pos': pos}
 
-
-        if o:
-            o.X = self.sense_odors(pos)
-        if self.windsensor:
-            self.A_wind = self.windsensor.step(self.sense_wind())
+        O = MS['olfaction']
+        if O.sensor:
+            O.sensor.X = O.func(**kws)
+        W=MS['windsensation']
+        if W.sensor:
+           W.A = W.sensor.step(W.func(**kws))
 
         self.sim.run_steps(N, progress_bar=False)
         d = self.sim.data
-        self.A_olf = 100 * np.mean(d[self.p_change][-N:], axis=0)[0] if o else 0
+        MS['olfaction'].A = 100 * np.mean(d[self.p_change][-N:], axis=0)[0] if O.sensor else 0
 
 
         ang = np.mean(d[self.p_angV][-N:], axis=0)[0] * (1 + np.random.normal(scale=L.turner.output_noise))

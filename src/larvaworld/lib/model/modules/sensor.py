@@ -39,11 +39,11 @@ class Sensor(Effector):
     def compute_dif(self, input):
         pass
 
-    # def update_gain(self):
-    #     pass
+    def update_gain_via_memory(self, mem=None, **kwargs):
+        if mem is not None:
+            self.gain = mem.step(dx=self.get_dX(), **kwargs)
 
-    # def update_output(self,output):
-    #     return self.apply_noise(output, self.output_noise, range=(self.A0,self.A1))
+
 
     def update(self):
         # self.update_gain()

@@ -17,17 +17,11 @@ class Brain(NestedConf):
     def __init__(self, agent=None, dt=None, **kwargs):
         super().__init__(**kwargs)
         self.agent = agent
-        self.A_olf = 0
-        self.A_touch = 0
-        self.A_thermo = 0
-        self.A_wind = 0
-        # self.olfactor, self.toucher, self.windsensor, self.thermosensor = [None]*4
-        # A dictionary of the possibly existing sensors along with the sensing functions and the possibly existing memory modules
-        self.sensor_dict = aux.AttrDict({
-            'olfactor': {'func': self.sense_odors, 'A': 0.0, 'mem': 'memory'},
-            'toucher': {'func': self.sense_food_multi, 'A': 0.0, 'mem': 'touch_memory'},
-            'thermosensor': {'func': self.sense_thermo, 'A': 0.0, 'mem': None},
-            'windsensor': {'func': self.sense_wind, 'A': 0.0, 'mem': None}
+        self.modalities = aux.AttrDict({
+            'olfaction': {'sensor': self.olfactor,'func': self.sense_odors, 'A': 0.0, 'mem': None},
+            'touch': {'sensor': self.toucher,'func': self.sense_food_multi, 'A': 0.0, 'mem': None},
+            'thermosensation': {'sensor': self.thermosensor,'func': self.sense_thermo, 'A': 0.0, 'mem': None},
+            'windsensation': {'sensor': self.windsensor,'func': self.sense_wind, 'A': 0.0, 'mem': None}
         })
 
         if dt is None:
@@ -85,53 +79,51 @@ class Brain(NestedConf):
     def A_in(self):
         return self.A_olf + self.A_touch + self.A_thermo + self.A_wind
 
+    @property
+    def A_olf(self):
+        return self.modalities['olfaction'].A
+
+    @property
+    def A_touch(self):
+        return self.modalities['touch'].A
+
+    @property
+    def A_thermo(self):
+        return self.modalities['thermosensation'].A
+
+    @property
+    def A_wind(self):
+        return self.modalities['windsensation'].A
+
 
 class DefaultBrain(Brain):
     def __init__(self, conf, agent=None, **kwargs):
-        from module_modes import ModuleModeDict
+        ms=conf.modules
+        kws={'dt':self.dt, 'brain':self}
+        from module_modes import ModuleModeDict as MD
         for k in self.param_keys:
-            if conf.modules[k]:
+            if ms[k]:
                 m = conf[f'{k}_params']
-                if 'mode' not in m :
-                    m.mode='default'
-                kwargs[k] = ModuleModeDict[k][m.mode](dt=self.dt,brain=self, **{k: m[k] for k in m if k != 'mode'})
+                if 'mode' not in m:
+                    m.mode = 'default'
+                kwargs[k] = MD[k][m.mode](**kws, **{k: m[k] for k in m if k != 'mode'})
         super().__init__(agent=agent, **kwargs)
-
         self.locomotor = modules.DefaultLocomotor(conf=conf, dt=self.dt)
-
-        self.touch_memory = None
-        self.olfaction_memory = None
-
-
-        if conf.modules['memory']:
+        if ms['memory']:
             m = conf['memory_params']
-            class_func = ModuleModeDict['memory'][m.mode][m.modality]
-
-            if m.modality == 'olfaction' and self.olfactor:
-                m.gain = self.olfactor.gain
-                self.olfaction_memory = class_func(dt=self.dt,brain=self, **m)
-
-            elif m.modality == 'touch' and self.toucher:
-                m.gain = self.toucher.gain
-                self.touch_memory = class_func(dt=self.dt,brain=self, **m)
-
+            M=self.modalities[m.modality]
+            if M.sensor:
+                m.gain = M.sensor.gain
+                M.mem = MD['memory'][m.mode][m.modality](**kws, **m)
 
     def sense(self, pos=None, reward=False):
+        kws={'pos':pos}
+        for m, M in self.modalities.items():
+            if M.sensor:
+                M.sensor.update_gain_via_memory(mem=M.mem, reward=reward)
+                M.A = M.sensor.step(M.func(**kws))
 
-        if self.olfactor:
-            if self.olfaction_memory:
-                dx = self.olfactor.get_dX()
-                self.olfactor.gain = self.olfaction_memory.step(dx, reward)
-            self.A_olf = self.olfactor.step(self.sense_odors(pos))
-        if self.toucher:
-            if self.touch_memory:
-                dx = self.toucher.get_dX()
-                self.toucher.gain = self.touch_memory.step(dx, reward)
-            self.A_touch = self.toucher.step(self.sense_food_multi())
-        if self.thermosensor:
-            self.A_thermo = self.thermosensor.step(self.sense_thermo(pos))
-        if self.windsensor:
-            self.A_wind = self.windsensor.step(self.sense_wind())
+
 
     def step(self, pos, on_food=False, **kwargs):
         self.sense(pos=pos, reward=on_food)
