@@ -243,34 +243,24 @@ class NengoBrain(Network, Brain):
                 Connection(Bend, ang_target, synapse=0.0, transform=ws.weights['bend_ang'])
 
             if True :
-                self.probe_dict={}
+                D=aux.AttrDict(**{k: Probe(v) for k, v in zip(['Vs', 'linV', 'angV', 'interference'],[Vs, linV, angV, interference])},
+                               **{k: Probe(v) for k, v in zip(['angFr', 'linFr', 'linFrIn', 'angFrIn'],[angFr, linFr, linFrIn, angFrIn])}
+                               )
                 if fee is not None :
-                    self.probe_dict.update(
-                        {k: Probe(v) for k, v in zip(['feeFrIn', 'feeFr', 'feeV'], [feeFrIn, feeFr, feeV])})
+                    D.update({k: Probe(v) for k, v in zip(['feeFrIn', 'feeFr', 'feeV'], [feeFrIn, feeFr, feeV])})
                     if self.food_feedback :
-                        self.probe_dict.update({k: Probe(v) for k, v in zip(['f_cur', 'f_suc'], [f_cur, f_suc])})
+                        D.update({k: Probe(v) for k, v in zip(['f_cur', 'f_suc'], [f_cur, f_suc])})
                 if ws is not None :
-                    self.probe_dict.update({k: Probe(v) for k, v in zip(['Ch', 'LNa', 'LNb', 'Ha', 'Hb', 'B1', 'B2', 'Bend', 'Hunch'],
+                    D.update({k: Probe(v) for k, v in zip(['Ch', 'LNa', 'LNb', 'Ha', 'Hb', 'B1', 'B2', 'Bend', 'Hunch'],
                                                                      [Ch, LNa, LNb, Ha, Hb, B1, B2, Bend, Hunch])})
-                self.probe_dict.update({k: Probe(v) for k, v in
-                                    zip(['Vs', 'linV', 'angV', 'interference'],
-                                        [Vs, linV, angV, interference])})
-                self.probe_dict.update({k: Probe(v) for k, v in
-                                    zip(['angFr', 'linFr', 'linFrIn', 'angFrIn'],
-                                        [angFr, linFr, linFrIn, angFrIn])})
-                self.dict = {k: [] for k in self.probe_dict}
+                self.probes = D
+                self.dict = {k: [] for k in D}
             else :
                 self.dict=None
 
     def update_dict(self, data):
-        for k, p in self.probe_dict.items() :
+        for k, p in self.probes.items() :
             self.dict[k].append(np.mean(data[p][-self.Nsteps:], axis=0))
-            # if k=='Vs' :
-            #     kk=data[p][-self.Nsteps:]
-            #     print(np.mean(kk, axis=1))
-            #     raise
-
-
 
     def step(self, pos,length, on_food=False):
         L=self.locomotor
@@ -328,6 +318,4 @@ class NengoLocomotor(Locomotor):
             kwargs.interference = SquareCoupling(**c['interference_params'])
         if c['intermitter_params'] is not None:
             kwargs.intermitter = NengoIntermitter(dt=self.dt, **c['intermitter_params'])
-        # else:
-        #     self.intermitter = None
         super().__init__(**kwargs)

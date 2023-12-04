@@ -1,3 +1,5 @@
+import numpy as np
+
 from ... import reg, aux
 from .. import modules
 from ...param import NestedConf, ClassAttr
@@ -29,55 +31,48 @@ class Brain(NestedConf):
         self.dt = dt
 
     def sense_odors(self, pos=None):
-        if self.agent is None:
+        try:
+            a = self.agent
+            if pos is None:
+                pos = a.olfactor_pos
+            return {id:l.get_value(pos) for id, l in a.model.odor_layers.items()}
+        except:
             return {}
-        if pos is None:
-            pos = self.agent.olfactor_pos
-
-        cons = {}
-        for id, layer in self.agent.model.odor_layers.items():
-            cons[id] = layer.get_value(pos)
-
-        return cons
 
     def sense_food_multi(self, **kwargs):
-        a = self.agent
-        if a is None:
+        try:
+            a = self.agent
+            kws = {
+                'sources': a.model.sources, 'grid': a.model.food_grid, 'radius': a.radius
+            }
+            return {s: int(aux.sense_food(pos=a.get_sensor_position(s), **kws) is not None) for s in a.touch_sensorIDs}
+        except:
             return {}
-        kws = {
-            'sources': a.model.sources, 'grid': a.model.food_grid, 'radius': a.radius
-        }
-        input = {s: int(aux.sense_food(pos=a.get_sensor_position(s), **kws) is not None) for s in a.touch_sensorIDs}
-        return input
+
+
 
     def sense_wind(self, **kwargs):
-        if self.agent is None:
-            v = 0.0
-        else:
-            w = self.agent.model.windscape
-            if w is None:
-                v = 0.0
-            else:
-                v = w.get_value(self.agent)
-        return {'windsensor': v}
+        try:
+            a = self.agent
+            return {'windsensor': a.model.windscape.get_value(a)}
+        except:
+            return {'windsensor': 0.0}
+
 
     def sense_thermo(self, pos=None):
-        a = self.agent
-        if a is None:
-            return {'cool': 0, 'warm': 0}
-        if pos is None:
-            pos = a.pos
-        ad = a.model.space.dims
-        pos_adj = [(pos[0] + (ad[0] * 0.5)) / ad[0], (pos[1] + (ad[1] * 0.5)) / ad[1]]
         try:
-            cons = a.model.thermoscape.get_value(pos_adj)
+            a = self.agent
+            if pos is None:
+                pos = a.pos
+            ad = a.model.space.dims
+            return a.model.thermoscape.get_value([(pos[0] + (ad[0] * 0.5)) / ad[0], (pos[1] + (ad[1] * 0.5)) / ad[1]])
         except AttributeError:
             return {'cool': 0, 'warm': 0}
-        return cons
 
     @property
     def A_in(self):
-        return self.A_olf + self.A_touch + self.A_thermo + self.A_wind
+        return np.sum([M.A for m, M in self.modalities.items()])
+        # return self.A_olf + self.A_touch + self.A_thermo + self.A_wind
 
     @property
     def A_olf(self):
