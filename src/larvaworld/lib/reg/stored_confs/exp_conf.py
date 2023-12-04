@@ -212,7 +212,7 @@ def grouped_exp_dic():
         'tactile' : {
             'tactile_detection': touch_exp('tactile_detection', env='single_patch',
                                           l=lg(mID='toucher', N=15, mode='periphery', s=(0.03, 0.03))),
-            'tactile_detection_x4': touch_exp('tactile_detection_x3', env='single_patch',
+            'tactile_detection_x4': touch_exp('tactile_detection_x4', env='single_patch',
                                              l=lgs(mIDs=['RLtoucher_2', 'RLtoucher', 'toucher', 'toucher_brute'],
                                                    ids=['RL_3sensors', 'RL_1sensor', 'control', 'brute'],
                                                    N=10)),

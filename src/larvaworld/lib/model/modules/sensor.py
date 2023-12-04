@@ -114,23 +114,6 @@ class Olfactor(Sensor):
         super().__init__(**kwargs)
 
 
-    # @property
-    # def novel_odors(self):
-    #     ids = []
-    #     if self.brain is not None:
-    #         if self.brain.agent is not None:
-    #             ids = self.brain.agent.model.odor_ids
-    #             ids = aux.nonexisting_cols(ids, self.gain_ids)
-    #     return ids
-
-    # def update_gain(self):
-    #     for id in self.novel_odors:
-    #         if isinstance(self.input, dict) and id in self.input.keys():
-    #             con = self.input[id]
-    #         else:
-    #             con = 0
-    #         self.add_novel_gain(id, con=con)
-
     def affect_locomotion(self, L):
         if self.output < 0 and L.stride_completed:
             if np.random.uniform(0, 1, 1) <= np.abs(self.output):

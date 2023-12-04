@@ -685,8 +685,8 @@ class ModelRegistry:
         kws = {'modkws': {'interference': {'attenuation': 0.1, 'attenuation_max': 0.6}}}
         kws2 = {'modkws': {'interference': {'attenuation': 0.0}, 'intermitter': {'run_mode': 'exec'}}}
 
-        MB_kws = {'brain.modules.memory': True, 'brain.memory_params': class_defaults(RemoteBrianModelMemory, excluded=['dt'],included={'mode':'MB'})}
-        RL_kws = {'brain.modules.memory': True, 'brain.memory_params': class_defaults(RLmemory, excluded=['dt'],included={'mode':'RL'})}
+        MB_kws = {'brain.modules.memory': True, 'brain.memory_params': class_defaults(RemoteBrianModelMemory, excluded=['dt'],included={'mode':'MB', 'modality':'olfaction'})}
+        RL_kws = {'brain.modules.memory': True, 'brain.memory_params': class_defaults(RLmemory, excluded=['dt'],included={'mode':'RL', 'modality':'olfaction'})}
         RLtouch_kws = {'brain.modules.memory': True, 'brain.memory_params': class_defaults(RLmemory, excluded=['dt'],included={'mode':'RL', 'modality':'touch'})}
 
 
@@ -851,7 +851,7 @@ class ModelRegistry:
             E[f'{species}_navigator'] = E['navigator'].update_nestdict_copy({'energetics': en_ws})
             E[f'{species}_feeder'] = E['feeder'].update_nestdict_copy({'energetics': en_ws, 'brain.intermitter_params.EEB': EEB})
             E[f'{species}_forager'] = E['forager'].update_nestdict_copy({'energetics': en_ws, 'brain.intermitter_params.EEB': EEB})
-
+            E[species] = E[f'{species}_feeder']
 
 
 

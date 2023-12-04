@@ -1,5 +1,5 @@
 from ... import aux
-from . import crawler, turner, crawl_bend_interference, intermitter, sensor, feeder
+from . import crawler, turner, crawl_bend_interference, intermitter, sensor, feeder, memory
 
 __all__ = [
     'ModuleModeDict',
@@ -44,6 +44,10 @@ ModuleModeDict = aux.AttrDict({
     },
     'thermosensor': {
         'default': sensor.Thermosensor,
+    },
+    'memory': {
+        'RL': {'olfaction': memory.RLOlfMemory, 'touch': memory.RLTouchMemory},
+        'MB': {'olfaction': memory.RemoteBrianModelMemory, 'touch': memory.RemoteBrianModelMemory}
     },
 })
 

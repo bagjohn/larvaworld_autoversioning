@@ -171,7 +171,7 @@ class NengoBrain(Network, Brain):
 
             if o is not None:
 
-                N = o.Ngains
+                N = len(o.gain)
                 odors = Node(o.get_X_values, size_in=N, label='Olf Stim')
 
                 olfMem = EnsembleArray(100, N, 2, label='Olf Mem')

@@ -99,41 +99,29 @@ class DefaultBrain(Brain):
 
         self.locomotor = modules.DefaultLocomotor(conf=conf, dt=self.dt)
 
-        kws = {"brain": self, "dt": self.dt}
         self.touch_memory = None
-        self.memory = None
+        self.olfaction_memory = None
 
-        memory_modes = {
-            'RL': {'olfaction': modules.RLOlfMemory, 'touch': modules.RLTouchMemory},
-            'MB': {'olfaction': modules.RemoteBrianModelMemory, 'touch': modules.RemoteBrianModelMemory}
-        }
+
         if conf.modules['memory']:
+            m = conf['memory_params']
+            class_func = ModuleModeDict['memory'][m.mode][m.modality]
 
-            mm = conf['memory_params'].get_copy()
-            # FIXME
-            if 'mode' not in mm:
-                mm['mode'] = 'RL'
-            modality_classes = memory_modes[mm['mode']]
-            modality = mm['modality']
-            class_func = modality_classes[modality]
-            mm.pop('mode')
-            mm.pop('modality')
+            if m.modality == 'olfaction' and self.olfactor:
+                m.gain = self.olfactor.gain
+                self.olfaction_memory = class_func(dt=self.dt,brain=self, **m)
 
-            if modality == 'olfaction' and self.olfactor:
-                mm.gain = self.olfactor.gain
-                self.memory = class_func(**mm, **kws)
-
-            elif modality == 'touch' and self.toucher:
-                mm.gain = self.toucher.gain
-                self.touch_memory = class_func(**mm, **kws)
+            elif m.modality == 'touch' and self.toucher:
+                m.gain = self.toucher.gain
+                self.touch_memory = class_func(dt=self.dt,brain=self, **m)
 
 
     def sense(self, pos=None, reward=False):
 
         if self.olfactor:
-            if self.memory:
+            if self.olfaction_memory:
                 dx = self.olfactor.get_dX()
-                self.olfactor.gain = self.memory.step(dx, reward)
+                self.olfactor.gain = self.olfaction_memory.step(dx, reward)
             self.A_olf = self.olfactor.step(self.sense_odors(pos))
         if self.toucher:
             if self.touch_memory:
