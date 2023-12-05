@@ -380,16 +380,16 @@ def init_brain_modules():
 
     kws = {'kwargs': {'dt': 0.1}}
     d0 = {}
-    d0['turner'] = {'mode': Tur0(), 'pref': 'brain.turner_params.', **kws}
-    d0['crawler'] = {'mode': Cr0(), 'pref': 'brain.crawler_params.', **kws}
-    d0['intermitter'] = {'mode': Im0(), 'pref': 'brain.intermitter_params.', **kws}
-    d0['interference'] = {'mode': If0(), 'pref': 'brain.interference_params.', 'kwargs': {}}
-    d0['feeder'] = {'mode': Fee0(), 'pref': 'brain.feeder_params.', **kws}
-    d0['olfactor'] = {'mode': Olf0(), 'pref': 'brain.olfactor_params.', **kws}
-    d0['toucher'] = {'mode': Tou0(), 'pref': 'brain.toucher_params.', **kws}
-    d0['thermosensor'] = {'mode': Th0(), 'pref': 'brain.thermosensor_params.', **kws}
-    d0['windsensor'] = {'mode': W0(), 'pref': 'brain.windsensor_params.', **kws}
-    d0['memory'] = {'mode': Mem0(), 'pref': 'brain.memory_params.', **kws}
+    d0['turner'] = {'mode': Tur0(), 'pref': 'brain.turner.', **kws}
+    d0['crawler'] = {'mode': Cr0(), 'pref': 'brain.crawler.', **kws}
+    d0['intermitter'] = {'mode': Im0(), 'pref': 'brain.intermitter.', **kws}
+    d0['interference'] = {'mode': If0(), 'pref': 'brain.interference.', 'kwargs': {}}
+    d0['feeder'] = {'mode': Fee0(), 'pref': 'brain.feeder.', **kws}
+    d0['olfactor'] = {'mode': Olf0(), 'pref': 'brain.olfactor.', **kws}
+    d0['toucher'] = {'mode': Tou0(), 'pref': 'brain.toucher.', **kws}
+    d0['thermosensor'] = {'mode': Th0(), 'pref': 'brain.thermosensor.', **kws}
+    d0['windsensor'] = {'mode': W0(), 'pref': 'brain.windsensor.', **kws}
+    d0['memory'] = {'mode': Mem0(), 'pref': 'brain.memory.', **kws}
 
     return aux.AttrDict(d0)
 
@@ -586,81 +586,6 @@ class ModelRegistry:
         self.dict = build_confdicts()
         self.full_dict = self.build_full_dict()
 
-
-    @property
-    def mkeys(self):
-        return self.dict.model.keys
-
-    def get_mdict(self, mkey, mode='default'):
-        if mkey is None or mkey not in self.mkeys:
-            raise ValueError('Module key must be one of larva-model configuration keys')
-        else:
-            D = self.dict
-            if mkey in D.brain.keys + ['energetics']:
-                return D.model.m[mkey].mode[mode].args
-            elif mkey in D.aux.keys:
-                return D.model.m[mkey].args
-
-    def conf(self, mdict, **kwargs):
-        C = aux.AttrDict()
-        for d, p in mdict.items():
-            if isinstance(p, param.Parameterized):
-                C[d] = p.v
-            else:
-                C[d] = self.conf(mdict=p)
-        C.update_existingdict(kwargs)
-        return aux.AttrDict(C)
-
-    def brainConf(self, ms=None, mkws={}):
-        D=self.dict.brain
-        if ms is None:
-            ms = {'crawler': 'realistic',
-                     'turner': 'neural',
-                     'interference': 'phasic',
-                     'intermitter': 'default'}
-
-        C = aux.AttrDict()
-
-        for k in D.keys:
-            kk = f'{k}_params'
-            if k not in ms or ms[k] is None:
-                C[kk] = None
-            else:
-                kws = mkws[k] if k in mkws else {}
-                C[kk] = self.conf(D.m[k].mode[ms[k]].args, **kws)
-                C[kk]['mode'] = ms[k]
-
-        C.nengo = True if ('intermitter' in ms and ms['intermitter'] == 'nengo') else False
-        return C
-
-    def larvaConf(self, ms=None, mkws={}):
-        bconf = self.brainConf(ms, mkws)
-
-        C = aux.AttrDict()
-        C.brain = bconf
-
-        for auxkey in self.dict.aux.keys:
-            if auxkey == 'energetics':
-                C[auxkey] = None
-                continue
-            elif auxkey == 'sensorimotor':
-                continue
-            else:
-                C[auxkey] = self.conf(self.dict.aux.m[auxkey].args)
-
-        #  TODO thsi
-
-        C.Box2D_params = {
-            'joint_types': {
-                'friction': {'N': 0, 'args': {}},
-                'revolute': {'N': 0, 'args': {}},
-                'distance': {'N': 0, 'args': {}}
-            }
-        }
-
-        return C
-
-
     def build_full_dict(self):
         D = self.dict
         FD = aux.AttrDict()
@@ -684,7 +609,7 @@ class ModelRegistry:
         for bkey in D.brain.keys:
             bdic = D.brain.m[bkey]
             for mod in bdic.mode.keys():
-                register(bdic.mode[mod].args, f'brain.{bkey}_params')
+                register(bdic.mode[mod].args, f'brain.{bkey}')
 
         return FD
 
@@ -725,37 +650,7 @@ class ModelRegistry:
 
         return df, row_colors
 
-    def adapt_crawler(self, e, mode='realistic'):
-        mdict = self.dict.model.m['crawler'].mode[mode].args
-        crawler_conf = aux.AttrDict({'mode': mode})
-        for d, p in mdict.items():
-            if isinstance(p, param.Parameterized) and p.codename in e.columns:
-                crawler_conf[d] = np.round(e[p.codename].dropna().median(), 2)
-        return crawler_conf
 
-    def adapt_intermitter(self, e, c, conf, mode='default'):
-        conf.stridechain_dist = c.bout_distros.run_count
-        try:
-            ll1, ll2 = conf.stridechain_dist.range
-            conf.stridechain_dist.range = (int(ll1), int(ll2))
-        except:
-            pass
-
-        conf.run_dist = c.bout_distros.run_dur
-        try:
-            ll1, ll2 = conf.run_dist.range
-            conf.run_dist.range = (np.round(ll1, 2), np.round(ll2, 2))
-        except:
-            pass
-        conf.pause_dist = c.bout_distros.pause_dur
-        try:
-            ll1, ll2 = conf.pause_dist.range
-            conf.pause_dist.range = (np.round(ll1, 2), np.round(ll2, 2))
-        except:
-            pass
-        conf.crawl_freq = np.round(e[reg.getPar('fsv')].dropna().median(), 2)
-        conf.mode = mode
-        return conf
 
     def adapt_mID(self, dataset, mID0, mID, space_mkeys=['turner', 'interference'], dir=None, **kwargs):
         s, e, c = dataset.data
@@ -765,10 +660,41 @@ class ModelRegistry:
             dir = f'{c.dir}/model/GAoptimization'
         m0 = CM.getID(mID0)
         if 'crawler' not in space_mkeys:
-            m0.brain.crawler_params = self.adapt_crawler(e=e, mode=m0.brain.crawler_params.mode)
+            mode = m0.brain.crawler.mode
+            mdict = self.dict.model.m['crawler'].mode[mode].args
+            crawler_conf = aux.AttrDict({'mode': mode})
+            for d, p in mdict.items():
+                if isinstance(p, param.Parameterized) and p.codename in e.columns:
+                    crawler_conf[d] = np.round(e[p.codename].dropna().median(), 2)
+
+
+            m0.brain.crawler = crawler_conf
         if 'intermitter' not in space_mkeys:
-            m0.brain.intermitter_params = self.adapt_intermitter(e=e, c=c, mode=m0.brain.intermitter_params.mode,
-                                                                 conf=m0.brain.intermitter_params)
+            conf = m0.brain.intermitter
+            conf.stridechain_dist = c.bout_distros.run_count
+            try:
+                ll1, ll2 = conf.stridechain_dist.range
+                conf.stridechain_dist.range = (int(ll1), int(ll2))
+            except:
+                pass
+
+            conf.run_dist = c.bout_distros.run_dur
+            try:
+                ll1, ll2 = conf.run_dist.range
+                conf.run_dist.range = (np.round(ll1, 2), np.round(ll2, 2))
+            except:
+                pass
+            conf.pause_dist = c.bout_distros.pause_dur
+            try:
+                ll1, ll2 = conf.pause_dist.range
+                conf.pause_dist.range = (np.round(ll1, 2), np.round(ll2, 2))
+            except:
+                pass
+            conf.crawl_freq = np.round(e[reg.getPar('fsv')].dropna().median(), 2)
+            conf.mode = m0.brain.intermitter.mode
+
+
+            m0.brain.intermitter = conf
         m0.body.length = np.round(e[reg.getPar('l')].dropna().median(), 5)
         CM.setID(mID, m0)
 
@@ -777,21 +703,6 @@ class ModelRegistry:
         reg.generators.LarvaGroupMutator.param.objects()['modelIDs'].objects = CM.confIDs
         return optimize_mID(mID0=mID, space_mkeys=space_mkeys, dt=c.dt, refID=c.refID,
                             dataset=dataset, id=mID, dir=dir, **kwargs)
-
-    def update_mdict(self, mdict, mmdic):
-        if mmdic is None:
-            return None
-        else:
-            for d, p in mdict.items():
-                new_v = mmdic[d] if d in mmdic.keys() else None
-                if isinstance(p, param.Parameterized):
-                    if type(new_v) == list:
-                        if p.parclass in [param.Range, param.NumericTuple, param.Tuple]:
-                            new_v = tuple(new_v)
-                    p.v = new_v
-                else:
-                    mdict[d] = self.update_mdict(mdict=p, mmdic=new_v)
-            return mdict
 
     def variable_mdict(self, mkey, mode='default'):
         D = self.dict.model

@@ -96,12 +96,12 @@ class DefaultBrain(Brain):
         kws={'dt':self.dt, 'brain':self}
         from module_modes import ModuleModeDict as MD
         for k in self.param_keys:
-            m = conf[f'{k}_params']
+            m = conf[k]
             if m is not None:
                 kwargs[k] = MD[k][m.mode](**kws, **{k: m[k] for k in m if k != 'mode'})
         super().__init__(agent=agent, **kwargs)
         self.locomotor = modules.DefaultLocomotor(conf=conf, dt=self.dt)
-        m = conf['memory_params']
+        m = conf['memory']
         if m is not None:
             M=self.modalities[m.modality]
             if M.sensor:

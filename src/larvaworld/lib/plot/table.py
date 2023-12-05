@@ -99,14 +99,14 @@ def modelConfTable(mID, m=None, columns=['parameter', 'symbol', 'value', 'unit']
                     mod_v = 'default'
 
                 if mkey == 'intermitter':
-                    run_mode = m.brain[f'{mkey}_params']['run_mode']
+                    run_mode = m.brain[f'{mkey}']['run_mode']
                     var_ks = d0.mode[mod_v].variable
                     for var_k in var_ks:
                         if var_k == 'run_dist' and run_mode == 'stridechain':
                             continue
                         if var_k == 'stridechain_dist' and run_mode == 'exec':
                             continue
-                        v = m.brain[f'{mkey}_params'][var_k]
+                        v = m.brain[f'{mkey}'][var_k]
                         if v is not None:
                             if v.name is not None:
                                 vs1, vs2 = reg.get_dist(k=var_k, k0=mkey, v=v, return_tabrows=True)
@@ -114,25 +114,25 @@ def modelConfTable(mID, m=None, columns=['parameter', 'symbol', 'value', 'unit']
                                 data.append(vs2)
                 else:
                     var_mdict = M.variable_mdict(mkey, mode=mod_v)
-                    var_mdict = M.update_mdict(var_mdict, m.brain[f'{mkey}_params'])
+                    var_mdict = aux.update_mdict(var_mdict, m.brain[f'{mkey}'])
                     gen_rows2(var_mdict, mkey, columns, data)
         for aux_key in D.aux.keys:
             if aux_key not in ['energetics', 'sensorimotor']:
                 var_ks = D.aux.init[aux_key].variable
                 var_mdict = aux.AttrDict({k: D.aux.m[aux_key].args[k] for k in var_ks})
-                var_mdict = M.update_mdict(var_mdict, m[aux_key])
+                var_mdict = aux.update_mdict(var_mdict, m[aux_key])
                 gen_rows2(var_mdict, aux_key, columns, data)
         if m['energetics']:
             for mod, dic in D.aux.init['energetics'].mode.items():
                 var_ks = dic.variable
                 var_mdict = aux.AttrDict({k: D.aux.m['energetics'].mode[mod].args[k] for k in var_ks})
-                var_mdict = M.update_mdict(var_mdict, m['energetics'].mod)
+                var_mdict = aux.update_mdict(var_mdict, m['energetics'].mod)
                 gen_rows2(var_mdict, f'energetics.{mod}', columns, data)
         if 'sensorimotor' in m.keys():
             for mod, dic in D.aux.init['sensorimotor'].mode.items():
                 var_ks = dic.variable
                 var_mdict = aux.AttrDict({k: D.aux.m['sensorimotor'].mode[mod].args[k] for k in var_ks})
-                var_mdict = M.update_mdict(var_mdict, m['sensorimotor'])
+                var_mdict = aux.update_mdict(var_mdict, m['sensorimotor'])
                 gen_rows2(var_mdict, 'sensorimotor', columns, data)
         df = pd.DataFrame(data, columns=['field'] + columns)
         df.set_index(['field'], inplace=True)

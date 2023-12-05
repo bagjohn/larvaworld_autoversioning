@@ -67,7 +67,7 @@ class DefaultLocomotor(Locomotor):
         from module_modes import ModuleModeDict
         self.dt = dt
         for k in self.param_keys:
-            m = conf[f'{k}_params']
+            m = conf[k]
             if m is not None:
                 kwargs[k] = ModuleModeDict[k][m.mode](dt=dt, **{k: m[k] for k in m if k != 'mode'})
         super().__init__(**kwargs)

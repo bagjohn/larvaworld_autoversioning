@@ -244,11 +244,11 @@ def modelConf_analysis(d):
     }
 
     sample_kws = {k: 'sample' for k in [
-        'brain.crawler_params.stride_dst_mean',
-        'brain.crawler_params.stride_dst_std',
-        'brain.crawler_params.max_scaled_vel',
-        'brain.crawler_params.max_vel_phase',
-        'brain.crawler_params.freq',
+        'brain.crawler.stride_dst_mean',
+        'brain.crawler.stride_dst_std',
+        'brain.crawler.max_scaled_vel',
+        'brain.crawler.max_vel_phase',
+        'brain.crawler.freq',
     ]}
 
     c = d.config

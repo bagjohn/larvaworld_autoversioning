@@ -10,6 +10,7 @@ import pickle
 import agentpy.sequences
 import numpy as np
 import typing
+import param
 import pandas as pd
 
 __all__ = [
@@ -31,6 +32,8 @@ __all__ = [
     'unique_list',
     'checkEqual',
     'np2Dtotuples',
+    'update_mdict',
+    'conf_mdict',
 ]
 
 
@@ -391,3 +394,28 @@ def np2Dtotuples(a):
         return a
     else:
         return list(zip(a[:, 0], a[:, 1]))
+
+def update_mdict(mdict, mmdic):
+    if mmdic is None:
+        return None
+    else:
+        for d, p in mdict.items():
+            new_v = mmdic[d] if d in mmdic.keys() else None
+            if isinstance(p, param.Parameterized):
+                if type(new_v) == list:
+                    if p.parclass in [param.Range, param.NumericTuple, param.Tuple]:
+                        new_v = tuple(new_v)
+                p.v = new_v
+            else:
+                mdict[d] = update_mdict(mdict=p, mmdic=new_v)
+        return mdict
+
+def conf_mdict(mdict, **kwargs):
+    C = AttrDict()
+    for d, p in mdict.items():
+        if isinstance(p, param.Parameterized):
+            C[d] = p.v
+        else:
+            C[d] = conf_mdict(mdict=p)
+    C.update_existingdict(kwargs)
+    return AttrDict(C)
