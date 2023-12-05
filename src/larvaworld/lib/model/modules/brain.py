@@ -3,6 +3,7 @@ import numpy as np
 from ... import reg, aux
 from .. import modules
 from ...param import NestedConf, ClassAttr
+from .module_modes import ModuleModeDict, mod_gen,mod_parent_class
 
 __all__ = [
     'Brain',
@@ -11,10 +12,10 @@ __all__ = [
 
 
 class Brain(NestedConf):
-    olfactor = ClassAttr(class_=modules.Olfactor, default=None, doc='The olfactory sensor')
-    toucher = ClassAttr(class_=modules.Toucher, default=None, doc='The tactile sensor')
-    windsensor = ClassAttr(class_=modules.Windsensor, default=None, doc='The wind sensor')
-    thermosensor = ClassAttr(class_=modules.Thermosensor, default=None, doc='The temperature sensor')
+    olfactor = ClassAttr(class_=mod_parent_class('olfactor'), default=None, doc='The olfactory sensor')
+    toucher = ClassAttr(class_=mod_parent_class('toucher'), default=None, doc='The tactile sensor')
+    windsensor = ClassAttr(class_=mod_parent_class('windsensor'), default=None, doc='The wind sensor')
+    thermosensor = ClassAttr(class_=mod_parent_class('thermosensor'), default=None, doc='The temperature sensor')
 
     def __init__(self, agent=None, dt=None, **kwargs):
         super().__init__(**kwargs)
@@ -94,11 +95,9 @@ class Brain(NestedConf):
 class DefaultBrain(Brain):
     def __init__(self, conf, agent=None, **kwargs):
         kws={'dt':self.dt, 'brain':self}
-        from module_modes import ModuleModeDict as MD
+
         for k in self.param_keys:
-            m = conf[k]
-            if m is not None:
-                kwargs[k] = MD[k][m.mode](**kws, **{k: m[k] for k in m if k != 'mode'})
+            kwargs[k] = mod_gen(k, conf[k], **kws)
         super().__init__(agent=agent, **kwargs)
         self.locomotor = modules.DefaultLocomotor(conf=conf, dt=self.dt)
         m = conf['memory']
@@ -106,7 +105,7 @@ class DefaultBrain(Brain):
             M=self.modalities[m.modality]
             if M.sensor:
                 m.gain = M.sensor.gain
-                M.mem = MD['memory'][m.mode][m.modality](**kws, **m)
+                M.mem = ModuleModeDict['memory'][m.mode][m.modality](**kws, **m)
 
     def sense(self, pos=None, reward=False):
         kws={'pos':pos}

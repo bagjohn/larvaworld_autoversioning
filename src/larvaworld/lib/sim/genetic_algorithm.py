@@ -437,11 +437,9 @@ def adapt_mID(dataset, mID0, mID, space_mkeys=['turner', 'interference'], **kwar
     print(f'Adapting {mID0} on {c.refID} as {mID} fitting {space_mkeys} modules')
     m0 = CM.getID(mID0)
     if 'crawler' not in space_mkeys:
-        from ..model import ModuleModeDict, Effector
-        from ..param import class_defaults
+        from ..model import mod_kws
 
-        for p in class_defaults(ModuleModeDict['crawler'][m0.brain.crawler.mode],
-                                excluded=[Effector, 'phi']).keylist:
+        for p in mod_kws('crawler', mode=m0.brain.crawler.mode, as_entry=False).keylist:
             try:
                 ppp = reg.SAMPLING_PARS.inverse[f'brain.crawler.{p}'][0]
                 m0.brain.crawler[p] = np.round(e[ppp].dropna().median(), 2)

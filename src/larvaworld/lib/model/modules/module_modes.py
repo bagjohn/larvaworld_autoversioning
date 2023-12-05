@@ -18,7 +18,8 @@ __all__ = [
     'brainConf',
     'larvaConf',
     'mod_kws',
-    # 'sensor_kws',
+    'mod_gen',
+    'mod_parent_class',
     'olf_kws',
     'mem_kws',
     'feed_kws',
@@ -71,9 +72,8 @@ ModuleModeDict = AttrDict({
 })
 
 ModuleModeKDict = AttrDict({'realistic': 'RE', 'square': 'SQ', 'gaussian': 'GAU', 'constant': 'CON',
-                                       'default': 'DEF', 'neural': 'NEU', 'sinusoidal': 'SIN', 'nengo': 'NENGO',
-                                       'phasic': 'PHI',
-                                       'branch': 'BR'})
+                            'default': 'DEF', 'neural': 'NEU', 'sinusoidal': 'SIN', 'nengo': 'NENGO',
+                            'phasic': 'PHI', 'branch': 'BR'})
 
 LocoModules = ['crawler', 'turner', 'interference', 'intermitter']
 SensorModules = ['olfactor', 'toucher', 'windsensor', 'thermosensor']
@@ -97,6 +97,12 @@ ModuleColorDict = AttrDict({
 })
 
 
+def mod_parent_class(k):
+    assert k in ModuleModeDict
+    M = ModuleModeDict[k]
+    return aux.common_ancestor_class(list(M.values()))
+
+
 def brainConf(ms={}, mkws={}):
     C = AttrDict()
     for k in BrainModules:
@@ -104,7 +110,7 @@ def brainConf(ms={}, mkws={}):
             ms[k] = None
         if k not in mkws:
             mkws[k] = {}
-        C[k]=mod_kws(k, mode=ms[k], as_entry=False, **mkws[k])
+        C[k] = mod_kws(k, mode=ms[k], as_entry=False, **mkws[k])
     C.nengo = ms['intermitter'] == 'nengo'
     return C
 
@@ -138,6 +144,20 @@ def larvaConf(ms={}, mkws={}):
     return C
 
 
+def mod_gen(k, m, **kwargs):
+    assert k in BrainModules
+    M = ModuleModeDict[k]
+    if m is None:
+        C = None
+    else:
+        mode = m.mode
+        if mode is None or mode not in M:
+            C = None
+        else:
+            C = M[mode](**{k: m[k] for k in m if k != 'mode'}, **kwargs)
+    return C
+
+
 def mod_kws(k, mode=None, as_entry=True, **kwargs):
     assert k in BrainModules
     M = ModuleModeDict[k]
@@ -146,14 +166,14 @@ def mod_kws(k, mode=None, as_entry=True, **kwargs):
     else:
         C = cd(M[mode], excluded=[basic.Effector, 'phi'], included={'mode': mode}, **kwargs)
     if as_entry:
-        return {f'brain.{k}': C}
+        return AttrDict({f'brain.{k}': C})
     else:
         return C
 
 
 def mem_kws(mode='RL', modality='olfaction', **kwargs):
-    return {'brain.memory': cd(ModuleModeDict.memory[mode][modality], excluded=['dt'],
-                               included={'mode': mode, 'modality': modality}, **kwargs)}
+    return AttrDict({'brain.memory': cd(ModuleModeDict.memory[mode][modality], excluded=['dt'],
+                                        included={'mode': mode, 'modality': modality}, **kwargs)})
 
 
 def olf_kws(g={'Odor': 150.0}, mode='default', **kwargs):
@@ -161,8 +181,8 @@ def olf_kws(g={'Odor': 150.0}, mode='default', **kwargs):
 
 
 def feed_kws(v=0.5, **kwargs):
-    return {**mod_kws('feeder', mode='default', **kwargs), 'brain.intermitter.feed_bouts': True,
-            'brain.intermitter.EEB': v}
+    return AttrDict({**mod_kws('feeder', mode='default', **kwargs), 'brain.intermitter.feed_bouts': True,
+                     'brain.intermitter.EEB': v})
 
 
 @reg.funcs.stored_conf("Model")
@@ -175,21 +195,6 @@ def Model_dict():
             E[id] = E[id0].new_dict(kws)
         except:
             pass
-
-    def newexp(id, kws={}):
-        new(id=id, id0='explorer', kws=kws)
-
-    def newnav(id, kws={}):
-        new(id=id, id0='navigator', kws=kws)
-
-    def newfor(id, kws={}):
-        new(id=id, id0='forager', kws=kws)
-
-    def OD(gain_dict):
-        return {'brain.olfactor.gain_dict': gain_dict}
-
-    def EEB(v=0.9):
-        return {'brain.intermitter.EEB': v}
 
     def extend(id0):
         def new0(id, kws={}):
@@ -205,7 +210,7 @@ def Model_dict():
 
         for ss, eeb in zip(['', '_max'], [0.5, 0.9]):
             f = feed_kws(eeb)
-            new0(f'{id0}{ss}_feeder',  f)
+            new0(f'{id0}{ss}_feeder', f)
             for sg, g in zip(['', '0', '_x2'], [{'Odor': 150.0}, {'Odor': 0.0}, {'CS': 150.0, 'UCS': 0.0}]):
                 idd = f'{id0}{ss}_forager{sg}'
                 o = olf_kws(g=g)
@@ -223,13 +228,12 @@ def Model_dict():
                           mkws={'interference': {'attenuation': 0.0}, 'intermitter': {'run_mode': 'exec'}})
         extend(id0=id)
 
-
-
     for ii in itertools.product(*[MD[mk].keylist for mk in LocoModules]):
         mms = [ModuleModeKDict[i] for i in ii]
         id = "_".join(mms)
         E[id] = larvaConf(ms=AttrDict(zip(LocoModules, ii)),
-                          mkws={'interference': {'attenuation': 0.1, 'attenuation_max': 0.6}} if mms[2] != 'DEF' else {})
+                          mkws={'interference': {'attenuation': 0.1, 'attenuation_max': 0.6}} if mms[
+                                                                                                     2] != 'DEF' else {})
         if mms[0] == 'RE' and mms[3] == 'DEF':
             extend(id0=id)
             if mms[1] == 'NEU' and mms[2] == 'PHI':
@@ -243,29 +247,31 @@ def Model_dict():
                 E['navigator_x2'] = E[f'{id}_nav_x2']
                 E['RLnavigator'] = E[f'{id}_nav_RL']
 
-    newexp('imitator', {'body.Nsegs': 11})
-    newexp('zebrafish', {'body.body_plan': 'zebrafish_larva', 'Box2D': {'joint_types': {
-        'revolute': {'N': 1, 'args': {'maxMotorTorque': 10 ** 5, 'motorSpeed': 1}}}}})
-    newexp('thermo_navigator', mod_kws('thermosensor', mode='default'))
-    newexp('OSNnavigator', olf_kws(mode='osn'))
-    newexp('OSNnavigator_x2', olf_kws({'CS': 150.0, 'UCS': 0.0}, mode='osn'))
+    for id, dd in zip(['imitator', 'zebrafish', 'thermo_navigator', 'OSNnavigator', 'OSNnavigator_x2'],
+                      [{'body.Nsegs': 11},
+                       {'body.body_plan': 'zebrafish_larva', 'Box2D': {'joint_types': {
+                           'revolute': {'N': 1, 'args': {'maxMotorTorque': 10 ** 5, 'motorSpeed': 1}}}}},
+                       mod_kws('thermosensor', mode='default'),
+                       olf_kws(mode='osn'),
+                       olf_kws({'CS': 150.0, 'UCS': 0.0}, mode='osn')]):
+        new(id, 'explorer', dd)
     for ss, kkws in zip(['', '_2', '_brute'], [{}, {'touch_sensors': [0, 2]}, {'brute_force': True}]):
-        newexp(f'toucher{ss}', mod_kws('toucher', mode='default', **kkws))
+        new(f'toucher{ss}', 'explorer', mod_kws('toucher', mode='default', **kkws))
         new(f'RLtoucher{ss}', f'toucher{ss}', mem_kws(modality='touch'))
-    for id, odkws in zip(['follower-R', 'follower-L', 'gamer', 'gamer-5x'], [{'Left_odor': 150.0, 'Right_odor': 0.0},
-                                                                             {'Left_odor': 0.0, 'Right_odor': 150.0},
-                                                                             {'Flag_odor': 150.0, 'Left_base_odor': 0.0,
-                                                                              'Right_base_odor': 0.0},
-                                                                             {'Flag_odor': 150.0, 'Left_base_odor': 0.0,
-                                                                              'Right_base_odor': 0.0, 'Left_odor': 0.0,
-                                                                              'Right_odor': 0.0}
-                                                                             ]):
-        newfor(id, OD(odkws))
+    for id, gd in zip(['follower-R', 'follower-L', 'gamer', 'gamer-5x'], [{'Left_odor': 150.0, 'Right_odor': 0.0},
+                                                                          {'Left_odor': 0.0, 'Right_odor': 150.0},
+                                                                          {'Flag_odor': 150.0, 'Left_base_odor': 0.0,
+                                                                           'Right_base_odor': 0.0},
+                                                                          {'Flag_odor': 150.0, 'Left_base_odor': 0.0,
+                                                                           'Right_base_odor': 0.0, 'Left_odor': 0.0,
+                                                                           'Right_odor': 0.0}
+                                                                          ]):
+        new(id, 'forager', {'brain.olfactor.gain_dict': gd})
 
-    newnav('immobile', {'brain.crawler': None, 'brain.turner': None,
-                        'brain.intermitter': None, 'brain.interference': None,
-                        **mod_kws('toucher', mode='default')})
-    newnav('obstacle_avoider', {'sensorimotor': cd(agents.ObstacleLarvaRobot, excluded=[agents.LarvaRobot])})
+    new('immobile', 'navigator', {'brain.crawler': None, 'brain.turner': None,
+                                  'brain.intermitter': None, 'brain.interference': None,
+                                  **mod_kws('toucher', mode='default')})
+    new('obstacle_avoider', 'navigator', {'sensorimotor': cd(agents.ObstacleLarvaRobot, excluded=[agents.LarvaRobot])})
 
     for id in ['explorer', 'navigator', 'feeder', 'forager']:
         new(f'{id}_sample', id, {f'brain.crawler.{k}': 'sample' for k in
@@ -276,10 +282,11 @@ def Model_dict():
             'DEB': cd(deb.DEB, excluded=[deb.DEB_model, 'substrate', 'id'], species=sp),
             'gut': cd(deb.Gut, k_abs=k_abs)
         })}
-        newexp(f'{sp}_explorer', en_ws)
-        newnav(f'{sp}_navigator', en_ws)
-        new(f'{sp}_feeder', 'feeder', {**en_ws, **EEB(eeb)})
-        newfor(f'{sp}_forager', {**en_ws, **EEB(eeb)})
+        en_ws2 = {**en_ws, 'brain.intermitter.EEB': eeb}
+        new(f'{sp}_explorer', 'explorer', en_ws)
+        new(f'{sp}_navigator', 'navigator', en_ws)
+        new(f'{sp}_feeder', 'feeder', en_ws2)
+        new(f'{sp}_forager', 'forager', en_ws2)
         new(sp, f'{sp}_feeder')
 
     return E
