@@ -118,6 +118,9 @@ class AttrDict(dict):
     def update_nestdict_copy(self, dic):
         return self.get_copy().update_nestdict(dic)
 
+    def new_dict(self, dic):
+        return self.get_copy().update_nestdict(dic)
+
     def update_existingnestdict(self, dic):
         dic0_f = self.flatten()
         dic0_f.update_existingdict(dic)

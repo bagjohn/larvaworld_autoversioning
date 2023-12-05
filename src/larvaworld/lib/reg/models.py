@@ -670,188 +670,171 @@ class ModelRegistry:
 
     def autogenerate_confs(self):
         from ..model import ModuleModeDict as MD
-        from ..model.modules import RLmemory, RemoteBrianModelMemory, Effector
+        from ..model.modules import Effector
         from ..model.deb import DEB, DEB_model, Gut
         from ..model.agents import LarvaRobot, ObstacleLarvaRobot
-        from ..param import class_defaults
-        # D = self.dict
+        from ..param import class_defaults as cd
+        E = {}
+        def new(id, id0, kws={}):
+            try:
+                E[id] = E[id0].new_dict(kws)
+            except:
+                pass
+        def newexp(id, kws={}):
+            new(id=id,id0='explorer', kws=kws)
+        def newnav(id, kws={}):
+            new(id=id,id0='navigator', kws=kws)
+        def newfor(id, kws={}):
+            new(id=id,id0='forager', kws=kws)
 
-        mod_dict = {'realistic': 'RE', 'square': 'SQ', 'gaussian': 'GAU', 'constant': 'CON',
-                    'default': 'DEF', 'neural': 'NEU', 'sinusoidal': 'SIN', 'nengo': 'NENGO', 'phasic': 'PHI',
-                    'branch': 'BR'}
+
+        def sensor_kws(sensor, mode='default', **kwargs):
+            return {f'brain.{sensor}_params': cd(MD[sensor][mode], excluded=[Effector],included={'mode': mode},**kwargs)}
+
+        def mem_kws(mode='RL', modality='olfaction', **kwargs):
+            return {'brain.memory_params': cd(MD['memory'][mode][modality], excluded=['dt'],included={'mode': mode, 'modality':modality},**kwargs)}
+        mem=aux.AttrDict({mode:mem_kws(mode) for mode in ['RL', 'MB']})
+
+
+        olf = aux.AttrDict({mode: sensor_kws(sensor='olfactor',mode=mode) for mode in ['default', 'osn']})
+        def olf_kws(g={'Odor': 150.0},mode='default', **kwargs):
+            D=olf[mode].get_copy()
+            D['brain.olfactor_params'].update({'gain_dict':g, **kwargs})
+            return D
+            # return sensor_kws(sensor='olfactor', mode=mode, gain_dict=g, **kwargs)
+
+
+        def OD(gain_dict):
+            return {'brain.olfactor_params.gain_dict': gain_dict}
+
+        def EEB(v=0.9):
+            return {'brain.intermitter_params.EEB': v}
+
+        fee=aux.AttrDict({'brain.feeder_params': cd(MD.feeder.default, excluded=['dt', 'phi'], included={'mode': 'default'}),
+                    'brain.intermitter_params.feed_bouts': True, **EEB(v=0.5)})
+        def feed_kws(v=0.5):
+            D = fee.get_copy()
+            D['brain.intermitter_params.EEB']=v
+            return D
+
+
+
+        def extend(id0):
+            for sg, g in zip(['', '0', '_x2'], [{'Odor': 150.0}, {'Odor': 0.0}, {'CS': 150.0, 'UCS': 0.0}]):
+                for sb, br in zip(['', '_brute'], [False,True]):
+                    idd=f'{id0}_nav{sg}{sb}'
+                    o=olf_kws(g=g, brute_force=br)
+                    new(id=idd, id0=id0,kws= o)
+                    for k in ['RL', 'MB']:
+                        new(id=f'{idd}_{k}', id0=id0, kws={**o, **mem[k]})
+
+            for ss, eeb in zip(['', '_max'], [0.5, 0.9]):
+                f = feed_kws(eeb)
+                new(id=f'{id0}{ss}_feeder', id0=id0, kws=f)
+                for sg, g in zip(['', '0', '_x2'], [{'Odor': 150.0}, {'Odor': 0.0}, {'CS': 150.0, 'UCS': 0.0}]):
+                    # for sb, br in zip(['', '_brute'], [False, True]):
+                    idd = f'{id0}{ss}_forager{sg}'
+                    o = olf_kws(g=g)
+                    new(id=idd, id0=id0, kws={**o, **f})
+                    for k in ['RL', 'MB']:
+                        new(id=f'{idd}_{k}', id0=id0, kws={**o, **f, **mem[k]})
+
+            for mm in [f'{id0}_avg', f'{id0}_var', f'{id0}_var2']:
+                if mm in reg.conf.Model.confIDs:
+                    E[mm] = reg.conf.Model.getID(mm)
         kws = {'modkws': {'interference': {'attenuation': 0.1, 'attenuation_max': 0.6}}}
         kws2 = {'modkws': {'interference': {'attenuation': 0.0}, 'intermitter': {'run_mode': 'exec'}}}
 
-        MB_kws = {'brain.memory_params': class_defaults(RemoteBrianModelMemory, excluded=['dt'],
-                                                        included={'mode': 'MB', 'modality': 'olfaction'})}
-        RL_kws = {'brain.memory_params': class_defaults(RLmemory, excluded=['dt'],
-                                                        included={'mode': 'RL', 'modality': 'olfaction'})}
-        RLtouch_kws = {'brain.memory_params': class_defaults(RLmemory, excluded=['dt'],
-                                                             included={'mode': 'RL', 'modality': 'touch'})}
-
-        feed_kws = {'brain.feeder_params': class_defaults(MD.feeder.default, excluded=['dt', 'phi'],
-                                                          included={'mode': 'default'}),
-                    'brain.intermitter_params.EEB': 0.5, 'brain.intermitter_params.feed_bouts': True}
-        maxEEB_kws = {'brain.intermitter_params.EEB': 0.9}
-
-        sample_kws = {k: 'sample' for k in [
-            'brain.crawler_params.stride_dst_mean',
-            'brain.crawler_params.stride_dst_std',
-            'brain.crawler_params.max_scaled_vel',
-            'brain.crawler_params.max_vel_phase',
-            'brain.crawler_params.freq',
-        ]}
-
-        E = {}
-        for Cmod in MD.crawler.keylist:
-            for Tmod in MD.turner.keylist:
-                for Ifmod in MD.interference.keylist:
-                    for IMmod in MD.intermitter.keylist:
-                        kkws = {
-                            'modes': {'crawler': Cmod, 'turner': Tmod, 'interference': Ifmod, 'intermitter': IMmod},
-                            'nengo': True if IMmod == 'nengo' else False,
-
-                        }
-                        if Ifmod != 'default':
-                            kkws.update(**kws)
-                        E[f'{mod_dict[Cmod]}_{mod_dict[Tmod]}_{mod_dict[Ifmod]}_{mod_dict[IMmod]}'] = self.larvaConf(
-                            **kkws)
         E['explorer'] = self.larvaConf(**kws)
 
-        # Extend the locomotory model configuration explorer by adding an olfactor module
+        for id0, mkws in zip(['Levy', 'NEU_Levy', 'NEU_Levy_continuous'], [{'turner': 'sinusoidal', 'interference': 'default', 'intermitter': 'default'},
+                                                                                     {'turner': 'neural', 'interference': 'default', 'intermitter': 'default'},
+                                                                                     {'turner': 'neural', 'interference': 'default'}]):
 
-        olf_kws = [{'brain.olfactor_params': class_defaults(MD.olfactor.default, excluded=[Effector],
-                                                            included={'mode': 'default'},
-                                                            gain_dict=g)} for g in [
-                       {'Odor': 0.0}, {'Odor': 150.0}, {'CS': 150.0, 'UCS': 0.0}
-                   ]]
+            mkws2=kws2 if 'interference' in mkws else {}
+            E[id0] = self.larvaConf(modes={'crawler': 'constant', **mkws}, **mkws2)
+            extend(id0=id0)
 
-        olf2_kws = [
-            {'brain.olfactor_params': class_defaults(MD.olfactor.osn, excluded=[Effector], included={'mode': 'osn'},
-                                                     gain_dict=g)} for g in [
-                {'Odor': 0.0}, {'Odor': 150.0}, {'CS': 150.0, 'UCS': 0.0}
-            ]]
+        newexp('imitator', {'body.Nsegs': 11})
+        newexp('zebrafish', {'body.body_plan': 'zebrafish_larva','Box2D_params': {'joint_types': {
+                                          'revolute': {'N': 1, 'args': {'maxMotorTorque': 10 ** 5, 'motorSpeed': 1}}}}})
+        newexp('thermo_navigator', sensor_kws('thermosensor'))
 
-        thermo_kws = {'brain.thermosensor_params': class_defaults(MD.thermosensor.default, excluded=[Effector],
-                                                                  included={'mode': 'default'})}
-        touch_kws = {'brain.toucher_params': class_defaults(MD.toucher.default, excluded=[Effector],
-                                                            included={'mode': 'default'})}
 
-        E['imitator'] = E['explorer'].update_nestdict_copy({'body.Nsegs': 11})
-        E['zebrafish'] = E['explorer'].update_nestdict_copy(
-            {'body.body_plan': 'zebrafish_larva', 'Box2D_params': {'joint_types': {
-                'revolute': {'N': 1, 'args': {'maxMotorTorque': 10 ** 5, 'motorSpeed': 1}}}}})
+        mD = {'realistic': 'RE', 'square': 'SQ', 'gaussian': 'GAU', 'constant': 'CON',
+              'default': 'DEF', 'neural': 'NEU', 'sinusoidal': 'SIN', 'nengo': 'NENGO', 'phasic': 'PHI',
+              'branch': 'BR'}
 
-        E['thermo_navigator'] = E['explorer'].update_nestdict_copy(thermo_kws)
-        E['toucher'] = E['explorer'].update_nestdict_copy(touch_kws)
-        E['toucher_2'] = E['toucher'].update_nestdict_copy({'brain.toucher_params.touch_sensors': [0, 2]})
-        E['toucher_brute'] = E['toucher'].update_nestdict_copy({'brain.toucher_params.brute_force': True})
-        E['RLtoucher'] = E['toucher'].update_nestdict_copy(RLtouch_kws)
-        E['RLtoucher_2'] = E['toucher_2'].update_nestdict_copy(RLtouch_kws)
 
-        E['navigator'] = E['explorer'].update_nestdict_copy(olf_kws[1])
-        E['navigator_x2'] = E['explorer'].update_nestdict_copy(olf_kws[2])
-        E['RLnavigator'] = E['navigator'].update_nestdict_copy(RL_kws)
+        for Cm in MD.crawler.keylist:
+            for Tm in MD.turner.keylist:
+                for Ifm in MD.interference.keylist:
+                    for IMm in MD.intermitter.keylist:
+                        kkws = {
+                            'modes': {'crawler': Cm, 'turner': Tm, 'interference': Ifm, 'intermitter': IMm},
+                            'nengo': True if IMm == 'nengo' else False
+                        }
+                        if Ifm != 'default':
+                            kkws.update(**kws)
+                        id0=f'{mD[Cm]}_{mD[Tm]}_{mD[Ifm]}_{mD[IMm]}'
+                        E[id0] = self.larvaConf(**kkws)
+                        if Cm=='realistic' and IMm=='default' :
+                            extend(id0=id0)
 
-        E['OSNnavigator'] = E['explorer'].update_nestdict_copy(olf2_kws[1])
-        E['OSNnavigator_x2'] = E['explorer'].update_nestdict_copy(olf2_kws[2])
+                        if id0=='RE_NEU_PHI_DEF':
+                            E['navigator'] = E[f'{id0}_nav']
+                            E['navigator_x2'] = E[f'{id0}_nav_x2']
 
-        E['immobile'] = E['navigator'].update_nestdict_copy({
-            'brain.crawler_params': None, 'brain.turner_params': None,
-            'brain.intermitter_params': None, 'brain.interference_params': None,
-            **touch_kws
-        })
+                            E['noMB_untrained'] = E[f'{id0}_max_forager0']
+                            E['noMB_trained'] = E[f'{id0}_max_forager']
+                            E['MB_untrained'] = E[f'{id0}_max_forager0_MB']
+                            E['MB_trained'] = E[f'{id0}_max_forager_MB']
+                            E['forager'] = E[f'{id0}_forager']
+                            E['forager_x2'] = E[f'{id0}_forager_x2']
+                            E['max_forager'] = E[f'{id0}_max_forager']
+                            E['feeder'] = E[f'{id0}_feeder']
+                            E['max_feeder'] = E[f'{id0}_max_feeder']
 
-        E['obstacle_avoider'] = E['navigator'].update_nestdict_copy(
-            {'sensorimotor': class_defaults(ObstacleLarvaRobot, excluded=[LarvaRobot])})
+                            E['RLnavigator'] = E[f'{id0}_nav_RL']
+                            E['RLforager'] = E[f'{id0}_forager_RL']
 
-        E['Levy'] = self.larvaConf(modes={'crawler': 'constant', 'turner': 'sinusoidal', 'interference': 'default',
-                                          'intermitter': 'default'}, **kws2)
-        E['NEU_Levy'] = self.larvaConf(modes={'crawler': 'constant', 'turner': 'neural', 'interference': 'default',
-                                              'intermitter': 'default'}, **kws2)
-        E['NEU_Levy_continuous'] = self.larvaConf(
-            modes={'crawler': 'constant', 'turner': 'neural', 'interference': 'default'}, **kws2)
-        E['CON_SIN'] = self.larvaConf(modes={'crawler': 'constant', 'turner': 'sinusoidal'})
-        mID0dic = {}
-        for Tmod in ['NEU', 'SIN']:
-            for Ifmod in ['PHI', 'SQ', 'DEF']:
-                for IMmod in ['NENGO', 'BR', 'DEF']:
-                    mID0 = f'RE_{Tmod}_{Ifmod}_{IMmod}'
-                    mID0dic[mID0] = E[mID0]
-                    for mm in [f'{mID0}_avg', f'{mID0}_var', f'{mID0}_var2']:
-                        if mm in reg.conf.Model.confIDs:
-                            mID0dic[mm] = reg.conf.Model.getID(mm)
 
-        for mID0, m0 in mID0dic.items():
-            E[f'{mID0}_nav0'] = m0.update_nestdict_copy(olf_kws[0])
-            E[f'{mID0}_forager0'] = E[f'{mID0}_nav0'].update_nestdict_copy(feed_kws)
-            E[f'{mID0}_max_forager0'] = E[f'{mID0}_forager0'].update_nestdict_copy(maxEEB_kws)
-            E[f'{mID0}_forager0_MB'] = E[f'{mID0}_forager0'].update_nestdict_copy(MB_kws)
-            E[f'{mID0}_forager0_RL'] = E[f'{mID0}_forager0'].update_nestdict_copy(RL_kws)
+        newexp('OSNnavigator', olf_kws(mode='osn'))
+        newexp('OSNnavigator_x2', olf_kws({'CS': 150.0, 'UCS': 0.0}, mode='osn'))
+        newexp('toucher', sensor_kws('toucher'))
+        newexp('toucher_2', sensor_kws('toucher', touch_sensors=[0, 2]))
+        newexp('toucher_brute', sensor_kws('toucher', brute_force=True))
+        new('RLtoucher', 'toucher', mem_kws(modality='touch'))
+        new('RLtoucher_2', 'toucher_2', mem_kws(modality='touch'))
+        newfor('follower-R', OD({'Left_odor': 150.0, 'Right_odor': 0.0}))
+        newfor('follower-L', OD({'Left_odor': 0.0, 'Right_odor': 150.0}))
+        newfor('gamer', OD({'Flag_odor': 150.0, 'Left_base_odor': 0.0, 'Right_base_odor': 0.0}))
+        newfor('gamer-5x', OD({'Flag_odor': 150.0, 'Left_base_odor': 0.0, 'Right_base_odor': 0.0, 'Left_odor': 0.0, 'Right_odor': 0.0}))
 
-            E[f'{mID0}_nav'] = m0.update_nestdict_copy(olf_kws[1])
-            E[f'{mID0}_nav_brute'] = E[f'{mID0}_nav'].update_nestdict_copy({'brain.olfactor_params.brute_force': True})
-            E[f'{mID0}_nav_x2'] = m0.update_nestdict_copy(olf_kws[2])
-            E[f'{mID0}_nav_x2_brute'] = E[f'{mID0}_nav_x2'].update_nestdict_copy(
-                {'brain.olfactor_params.brute_force': True})
+        newnav('immobile', {'brain.crawler_params': None, 'brain.turner_params': None,
+                            'brain.intermitter_params': None, 'brain.interference_params': None,
+                            **sensor_kws('toucher')})
+        newnav('obstacle_avoider', {'sensorimotor': cd(ObstacleLarvaRobot, excluded=[LarvaRobot])})
 
-            E[f'{mID0}_nav_RL'] = E[f'{mID0}_nav'].update_nestdict_copy(RL_kws)
+        for id in ['explorer', 'navigator', 'feeder', 'forager']:
+            new(f'{id}_sample', id, {k: 'sample' for k in [
+                'brain.crawler_params.stride_dst_mean',
+                'brain.crawler_params.stride_dst_std',
+                'brain.crawler_params.max_scaled_vel',
+                'brain.crawler_params.max_vel_phase',
+                'brain.crawler_params.freq',
+            ]})
 
-            E[f'{mID0}_feeder'] = m0.update_nestdict_copy(feed_kws)
-            E[f'{mID0}_max_feeder'] = E[f'{mID0}_feeder'].update_nestdict_copy(maxEEB_kws)
-
-            E[f'{mID0}_forager'] = E[f'{mID0}_nav'].update_nestdict_copy(feed_kws)
-            E[f'{mID0}_forager_x2'] = E[f'{mID0}_nav_x2'].update_nestdict_copy(feed_kws)
-            E[f'{mID0}_max_forager'] = E[f'{mID0}_forager'].update_nestdict_copy(maxEEB_kws)
-            E[f'{mID0}_max_forager0_MB'] = E[f'{mID0}_forager0_MB'].update_nestdict_copy(maxEEB_kws)
-            E[f'{mID0}_forager_MB'] = E[f'{mID0}_forager'].update_nestdict_copy(MB_kws)
-            E[f'{mID0}_max_forager_MB'] = E[f'{mID0}_forager_MB'].update_nestdict_copy(maxEEB_kws)
-            E[f'{mID0}_max_forager0_RL'] = E[f'{mID0}_forager0_RL'].update_nestdict_copy(maxEEB_kws)
-            E[f'{mID0}_forager_RL'] = E[f'{mID0}_forager'].update_nestdict_copy(RL_kws)
-            E[f'{mID0}_max_forager_RL'] = E[f'{mID0}_forager_RL'].update_nestdict_copy(maxEEB_kws)
-
-        E['noMB_untrained'] = E['RE_NEU_PHI_DEF_max_forager0']
-        E['noMB_trained'] = E['RE_NEU_PHI_DEF_max_forager']
-        E['MB_untrained'] = E['RE_NEU_PHI_DEF_max_forager0_MB']
-        E['MB_trained'] = E['RE_NEU_PHI_DEF_max_forager_MB']
-        E['forager'] = E['RE_NEU_PHI_DEF_forager']
-        E['forager_x2'] = E['RE_NEU_PHI_DEF_forager_x2']
-        E['max_forager'] = E['RE_NEU_PHI_DEF_max_forager']
-        E['feeder'] = E['RE_NEU_PHI_DEF_feeder']
-        E['max_feeder'] = E['RE_NEU_PHI_DEF_max_feeder']
-        E['RLforager'] = E['forager'].update_nestdict_copy(RL_kws)
-
-        E['follower-R'] = E['forager'].update_nestdict_copy(
-            {'brain.olfactor_params.gain_dict': {'Left_odor': 150.0, 'Right_odor': 0.0}})
-        E['follower-L'] = E['forager'].update_nestdict_copy(
-            {'brain.olfactor_params.gain_dict': {'Left_odor': 0.0, 'Right_odor': 150.0}})
-        E['gamer'] = E['forager'].update_nestdict_copy(
-            {'brain.olfactor_params.gain_dict': {'Flag_odor': 150.0, 'Left_base_odor': 0.0, 'Right_base_odor': 0.0}})
-        E['gamer-5x'] = E['forager'].update_nestdict_copy({'brain.olfactor_params.gain_dict': {'Flag_odor': 150.0,
-                                                                                               'Left_base_odor': 0.0,
-                                                                                               'Right_base_odor': 0.0,
-                                                                                               'Left_odor': 0.0,
-                                                                                               'Right_odor': 0.0}})
-
-        for mID0 in ['Levy', 'NEU_Levy', 'NEU_Levy_continuous', 'CON_SIN']:
-            E[f'{mID0}_nav'] = E[mID0].update_nestdict_copy(olf_kws[1])
-            E[f'{mID0}_nav_x2'] = E[mID0].update_nestdict_copy(olf_kws[2])
-
-        for mID0 in ['explorer', 'navigator', 'feeder', 'forager']:
-            E[f'{mID0}_sample'] = E[mID0].update_nestdict_copy(sample_kws)
-
-        for species, k_abs, EEB in zip(['rover', 'sitter'], [0.8, 0.4], [0.67, 0.37]):
-            en_ws = aux.AttrDict({
-                'DEB': class_defaults(DEB, excluded=[DEB_model, 'substrate', 'id'], species=species),
-                'gut': class_defaults(Gut, k_abs=k_abs)
-            })
-            E[f'{species}_explorer'] = E['explorer'].update_nestdict_copy({'energetics': en_ws})
-            E[f'{species}_navigator'] = E['navigator'].update_nestdict_copy({'energetics': en_ws})
-            E[f'{species}_feeder'] = E['feeder'].update_nestdict_copy(
-                {'energetics': en_ws, 'brain.intermitter_params.EEB': EEB})
-            E[f'{species}_forager'] = E['forager'].update_nestdict_copy(
-                {'energetics': en_ws, 'brain.intermitter_params.EEB': EEB})
-            E[species] = E[f'{species}_feeder']
+        for sp, k_abs, eeb in zip(['rover', 'sitter'], [0.8, 0.4], [0.67, 0.37]):
+            en_ws = {'energetics': aux.AttrDict({
+                'DEB': cd(DEB, excluded=[DEB_model, 'substrate', 'id'], species=sp),
+                'gut': cd(Gut, k_abs=k_abs)
+            })}
+            newexp(f'{sp}_explorer', en_ws)
+            newnav(f'{sp}_navigator', en_ws)
+            new(f'{sp}_feeder', 'feeder', {**en_ws, **EEB(eeb)})
+            newfor(f'{sp}_forager', {**en_ws, **EEB(eeb)})
+            new(sp, f'{sp}_feeder')
 
         return E
 
