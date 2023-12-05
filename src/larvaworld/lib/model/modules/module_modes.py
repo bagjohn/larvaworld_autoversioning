@@ -104,7 +104,7 @@ def brainConf(ms={}, mkws={}):
             ms[k] = None
         if k not in mkws:
             mkws[k] = {}
-        C.update(**mod_kws(k, mode=ms[k], **mkws[k]))
+        C[k]=mod_kws(k, mode=ms[k], as_entry=False, **mkws[k])
     C.nengo = ms['intermitter'] == 'nengo'
     return C
 
