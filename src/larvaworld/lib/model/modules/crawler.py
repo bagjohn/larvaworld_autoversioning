@@ -14,12 +14,7 @@ __all__ = [
 ]
 
 
-class Crawler(StepEffector):
-
-    @staticmethod
-    def select(mode):
-        from .module_modes import ModuleModeDict
-        return ModuleModeDict.Crawler[mode]
+class Crawler(StepEffector):pass
 
 
 class StrideOscillator(Crawler, StepOscillator):

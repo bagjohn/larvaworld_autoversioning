@@ -79,7 +79,7 @@ def Batch_dict():
                 o='cum_food_detected', o_kws={'threshold': 100000.0, 'max_Nsims': 600, 'minimize': False, 'Nbest': 8,
                                               'operations': {'mean': True, 'abs': False, 'std': False}}),
         **batch('anemotaxis',
-                ss={f'windsensor_params.weights.{m1}_{m2}': [[-20.0, 20.0], 3] for m1, m2 in
+                ss={f'windsensor.weights.{m1}_{m2}': [[-20.0, 20.0], 3] for m1, m2 in
                     zip(['bend', 'hunch'], ['ang', 'lin'])},
                 o='anemotaxis', o_kws={'threshold': 1000.0, 'max_Nsims': 100, 'minimize': False, 'Nbest': 8,
                                        'operations': {'mean': True, 'abs': False}}, proc=['wind'])

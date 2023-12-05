@@ -2,7 +2,7 @@ from ... import aux
 from . import LarvaSim
 from ...model.modules.motor_controller import MotorController, Actuator
 from ...model.modules.sensor2 import ProximitySensor
-
+from ...param import PositiveNumber, PositiveInteger
 
 
 __all__ = [
@@ -21,32 +21,38 @@ class LarvaRobot(LarvaSim):
 
 
 class ObstacleLarvaRobot(LarvaRobot):
+    sensor_delta_direction = PositiveNumber(0.4, doc='Sensor delta_direction')
+    sensor_saturation_value = PositiveNumber(40.0, doc='Sensor saturation value')
+    obstacle_sensor_error = PositiveNumber(0.35, doc='Proximity sensor error')
+    sensor_max_distance = PositiveNumber(0.9, doc='Sensor max_distance')
+    motor_ctrl_coefficient = PositiveNumber(8770.0, doc='Motor ctrl_coefficient')
+    motor_ctrl_min_actuator_value = PositiveNumber(35.0, doc='Motor ctrl_min_actuator_value')
+
+
     def __init__(self, larva_pars, **kwargs):
-        self.sensorimotor_kws = larva_pars.sensorimotor
+        kws = larva_pars.sensorimotor
         larva_pars.pop('sensorimotor', None)
-        super().__init__(larva_pars=larva_pars, **kwargs)
+        super().__init__(larva_pars=larva_pars, **kws,**kwargs)
         self.left_motor_controller = None
         self.right_motor_controller = None
-        self.build_sensorimotor(**self.sensorimotor_kws)
+        self.build_sensorimotor()
 
-    def build_sensorimotor(self, sensor_delta_direction, sensor_saturation_value, obstacle_sensor_error,
-                           sensor_max_distance,
-                           motor_ctrl_coefficient, motor_ctrl_min_actuator_value):
+    def build_sensorimotor(self):
 
         S_kws = {
-            'saturation_value': sensor_saturation_value,
-            'error': obstacle_sensor_error,
-            'max_distance': int(self.model.screen_manager.viewer._scale[0, 0] * sensor_max_distance * self.length),
+            'saturation_value': self.sensor_saturation_value,
+            'error': self.obstacle_sensor_error,
+            'max_distance': int(self.model.screen_manager.viewer._scale[0, 0] * self.sensor_max_distance * self.length),
             'collision_distance': int(self.model.screen_manager.viewer._scale[0, 0] * self.length / 5),
         }
 
         M_kws = {
-            'coefficient': motor_ctrl_coefficient,
-            'min_actuator_value': motor_ctrl_min_actuator_value,
+            'coefficient': self.motor_ctrl_coefficient,
+            'min_actuator_value': self.motor_ctrl_min_actuator_value,
         }
 
-        Lsens = ProximitySensor(self, delta_direction=sensor_delta_direction, **S_kws)
-        Rsens = ProximitySensor(self, delta_direction=-sensor_delta_direction, **S_kws)
+        Lsens = ProximitySensor(self, delta_direction=self.sensor_delta_direction, **S_kws)
+        Rsens = ProximitySensor(self, delta_direction=-self.sensor_delta_direction, **S_kws)
         Lact = Actuator()
         Ract = Actuator()
         Lmot = MotorController(sensor=Lsens, actuator=Lact, **M_kws)

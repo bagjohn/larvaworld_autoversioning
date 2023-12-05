@@ -16,7 +16,7 @@ from .crawl_bend_interference import *
 from .intermitter import Intermitter, BranchIntermitter, NengoIntermitter
 from .locomotor import *
 from .brain import *
-from .module_modes import ModuleModeDict
+from .module_modes import *
 
 __displayname__ = 'Modular behavioral architecture'
 

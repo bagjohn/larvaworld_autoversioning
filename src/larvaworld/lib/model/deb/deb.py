@@ -693,7 +693,7 @@ class DEB(DEB_basic):
     hunger_as_EEB = param.Boolean(True,
                                   doc='Whether the DEB-generated hunger drive informs the exploration-exploitation balance.')
 
-    hunger_gain = param.Magnitude(0.0, label='hunger sensitivity to reserve reduction',
+    hunger_gain = param.Magnitude(1.0, label='hunger sensitivity to reserve reduction',
                                   doc='The sensitivy of the hunger drive in deviations of the DEB reserve density.')
 
     def __init__(self, save_dict=True, save_to=None, base_hunger=0.5, intermitter=None,

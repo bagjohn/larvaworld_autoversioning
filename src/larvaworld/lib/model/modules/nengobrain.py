@@ -171,7 +171,7 @@ class NengoBrain(Network, Brain):
 
             if o is not None:
 
-                N = o.Ngains
+                N = len(o.gain)
                 odors = Node(o.get_X_values, size_in=N, label='Olf Stim')
 
                 olfMem = EnsembleArray(100, N, 2, label='Olf Mem')
@@ -243,49 +243,41 @@ class NengoBrain(Network, Brain):
                 Connection(Bend, ang_target, synapse=0.0, transform=ws.weights['bend_ang'])
 
             if True :
-                self.probe_dict={}
+                D=aux.AttrDict(**{k: Probe(v) for k, v in zip(['Vs', 'linV', 'angV', 'interference'],[Vs, linV, angV, interference])},
+                               **{k: Probe(v) for k, v in zip(['angFr', 'linFr', 'linFrIn', 'angFrIn'],[angFr, linFr, linFrIn, angFrIn])}
+                               )
                 if fee is not None :
-                    self.probe_dict.update(
-                        {k: Probe(v) for k, v in zip(['feeFrIn', 'feeFr', 'feeV'], [feeFrIn, feeFr, feeV])})
+                    D.update({k: Probe(v) for k, v in zip(['feeFrIn', 'feeFr', 'feeV'], [feeFrIn, feeFr, feeV])})
                     if self.food_feedback :
-                        self.probe_dict.update({k: Probe(v) for k, v in zip(['f_cur', 'f_suc'], [f_cur, f_suc])})
+                        D.update({k: Probe(v) for k, v in zip(['f_cur', 'f_suc'], [f_cur, f_suc])})
                 if ws is not None :
-                    self.probe_dict.update({k: Probe(v) for k, v in zip(['Ch', 'LNa', 'LNb', 'Ha', 'Hb', 'B1', 'B2', 'Bend', 'Hunch'],
+                    D.update({k: Probe(v) for k, v in zip(['Ch', 'LNa', 'LNb', 'Ha', 'Hb', 'B1', 'B2', 'Bend', 'Hunch'],
                                                                      [Ch, LNa, LNb, Ha, Hb, B1, B2, Bend, Hunch])})
-                self.probe_dict.update({k: Probe(v) for k, v in
-                                    zip(['Vs', 'linV', 'angV', 'interference'],
-                                        [Vs, linV, angV, interference])})
-                self.probe_dict.update({k: Probe(v) for k, v in
-                                    zip(['angFr', 'linFr', 'linFrIn', 'angFrIn'],
-                                        [angFr, linFr, linFrIn, angFrIn])})
-                self.dict = {k: [] for k in self.probe_dict}
+                self.probes = D
+                self.dict = {k: [] for k in D}
             else :
                 self.dict=None
 
     def update_dict(self, data):
-        for k, p in self.probe_dict.items() :
+        for k, p in self.probes.items() :
             self.dict[k].append(np.mean(data[p][-self.Nsteps:], axis=0))
-            # if k=='Vs' :
-            #     kk=data[p][-self.Nsteps:]
-            #     print(np.mean(kk, axis=1))
-            #     raise
-
-
 
     def step(self, pos,length, on_food=False):
         L=self.locomotor
         N=self.Nsteps
-        o=self.olfactor
+        MS=self.modalities
+        kws = {'pos': pos}
 
-
-        if o:
-            o.X = self.sense_odors(pos)
-        if self.windsensor:
-            self.A_wind = self.windsensor.step(self.sense_wind())
+        O = MS['olfaction']
+        if O.sensor:
+            O.sensor.X = O.func(**kws)
+        W=MS['windsensation']
+        if W.sensor:
+           W.A = W.sensor.step(W.func(**kws))
 
         self.sim.run_steps(N, progress_bar=False)
         d = self.sim.data
-        self.A_olf = 100 * np.mean(d[self.p_change][-N:], axis=0)[0] if o else 0
+        MS['olfaction'].A = 100 * np.mean(d[self.p_change][-N:], axis=0)[0] if O.sensor else 0
 
 
         ang = np.mean(d[self.p_angV][-N:], axis=0)[0] * (1 + np.random.normal(scale=L.turner.output_noise))
@@ -316,16 +308,14 @@ class NengoEffector(StepOscillator):
 class NengoLocomotor(Locomotor):
     def __init__(self,conf,dt=0.1,  **kwargs):
         self.dt = dt
-        kwargs=aux.AttrDict(kwargs)
-        m, c = conf.modules, conf
-        if m['feeder']:
-            kwargs.feeder = NengoEffector(**c['feeder_params'])
-        if m['turner'] and m['crawler']:
-            kwargs.turner = NengoEffector(**c['turner_params'])
-            kwargs.crawler = NengoEffector(**c['crawler_params'])
-            kwargs.interference = SquareCoupling(**c['interference_params'])
-        if m['intermitter']:
-            kwargs.intermitter = NengoIntermitter(dt=self.dt, **c['intermitter_params'])
-        # else:
-        #     self.intermitter = None
+        for k in self.param_keys:
+            m = conf[k]
+            if m is not None:
+                if k=='interference':
+                    _class=SquareCoupling
+                elif k=='intermitter':
+                    _class=NengoIntermitter
+                else :
+                    _class=NengoEffector
+                kwargs[k] = _class(dt=dt, **{k: m[k] for k in m if k != 'mode'})
         super().__init__(**kwargs)
