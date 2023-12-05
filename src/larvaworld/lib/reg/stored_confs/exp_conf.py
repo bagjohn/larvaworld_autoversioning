@@ -176,20 +176,20 @@ def grouped_exp_dic():
                                    l=lg(N=25, s=(0.005, 0.02), mID='navigator_x2')),
             'PItest_on': pref_exp('PItest_on', env='CS_UCS_on_food', l=lg(N=25, s=(0.005, 0.02), mID='forager_x2')),
             'PItrain_mini': pref_exp('PItrain_mini', env='CS_UCS_on_food_x2', dur=1.0, c=['olfactor', 'memory'],
-                                     trials=reg.conf.Trial.getID('odor_preference_short'), l=lg(N=25, s=(0.005, 0.02), mID='RLforager')),
+                                     trials=reg.conf.Trial.getID('odor_preference_short'), l=lg(N=25, s=(0.005, 0.02), mID='forager_RL')),
             'PItrain': pref_exp('PItrain', env='CS_UCS_on_food_x2', dur=41.0, c=['olfactor', 'memory'],
-                                trials=reg.conf.Trial.getID('odor_preference'), l=lg(N=25, s=(0.005, 0.02), mID='RLforager')),
+                                trials=reg.conf.Trial.getID('odor_preference'), l=lg(N=25, s=(0.005, 0.02), mID='forager_RL')),
             'PItest_off_RL': pref_exp('PItest_off_RL', env='CS_UCS_off_food', dur=105.0, c=['olfactor', 'memory'],
                                       l=lg(N=25, s=(0.005, 0.02), mID='RLnavigator'))},
         'foraging': {
             'patchy_food': food_exp('patchy_food', env='patchy_food', l=lg(mID='forager', N=25)),
             'patch_grid': food_exp('patch_grid', env='patch_grid', l=lgs_x4()),
             'MB_patch_grid': food_exp('MB_patch_grid', env='patch_grid', c=['feeder', 'olfactor'],
-                                      l=lgs(mIDs=['MB_untrained', 'MB_trained'], N=3)),
+                                      l=lgs(mIDs=['max_forager0_MB', 'max_forager_MB'], N=3)),
             'noMB_patch_grid': food_exp('noMB_patch_grid', env='patch_grid', c=['feeder', 'olfactor'],
-                                        l=lgs(mIDs=['noMB_untrained', 'noMB_trained'], N=4)),
+                                        l=lgs(mIDs=['max_forager0', 'max_forager'], N=4)),
             'random_food': food_exp('random_food', env='random_food', c=['feeder', 'toucher'],
-                                    l=lgs(mIDs=['feeder', 'RLforager'],
+                                    l=lgs(mIDs=['feeder', 'forager_RL'],
                                           ids=['Orco', 'RL'], N=5,mode='uniform',
                                           shape='rect', s=(0.04,0.04))),
             'uniform_food': food_exp('uniform_food', env='uniform_food',
@@ -206,7 +206,7 @@ def grouped_exp_dic():
                                                     'patch_residency'],
                                          proc_keys=['spatial', 'angular', 'source'])),
 
-            '4corners': exp('4corners', env='4corners', c=['memory'], l=lg(mID='RLforager', N=10, s=(0.04,0.04)))
+            '4corners': exp('4corners', env='4corners', c=['memory'], l=lg(mID='forager_RL', N=10, s=(0.04,0.04)))
         },
 
         'tactile' : {

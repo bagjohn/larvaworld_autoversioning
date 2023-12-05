@@ -1,3 +1,5 @@
+import itertools
+
 from ... import aux, reg
 from . import crawler, turner, crawl_bend_interference, intermitter, sensor, feeder, memory, basic
 from ...param import class_defaults as cd
@@ -5,12 +7,13 @@ from .. import deb, agents
 
 __all__ = [
     'ModuleModeDict',
+    'ModuleModeKDict',
     'ModuleColorDict',
-    # 'sensor_kws',
-    # 'olf_kws',
+    'LocoModules',
+    'SensorModules',
     # 'mem_kws',
     # 'feed_kws',
-    'autogenerate_confs',
+    # 'autogenerate_confs',
 ]
 
 ModuleModeDict = aux.AttrDict({
@@ -58,6 +61,13 @@ ModuleModeDict = aux.AttrDict({
     },
 })
 
+ModuleModeKDict = aux.bidict(aux.AttrDict({'realistic': 'RE', 'square': 'SQ', 'gaussian': 'GAU', 'constant': 'CON',
+                   'default': 'DEF', 'neural': 'NEU', 'sinusoidal': 'SIN', 'nengo': 'NENGO', 'phasic': 'PHI',
+                   'branch': 'BR'}))
+
+LocoModules = ['crawler', 'turner', 'interference', 'intermitter']
+SensorModules = ['olfactor', 'toucher', 'windsensor', 'thermosensor']
+
 ModuleColorDict = aux.AttrDict({
     'body': 'lightskyblue',
     'physics': 'lightsteelblue',
@@ -78,7 +88,8 @@ ModuleColorDict = aux.AttrDict({
 
 def sensor_kws(sensor, mode='default', **kwargs):
     return {
-        f'brain.{sensor}_params': cd(ModuleModeDict[sensor][mode], excluded=[basic.Effector], included={'mode': mode}, **kwargs)}
+        f'brain.{sensor}_params': cd(ModuleModeDict[sensor][mode], excluded=[basic.Effector], included={'mode': mode},
+                                     **kwargs)}
 
 
 def mem_kws(mode='RL', modality='olfaction', **kwargs):
@@ -95,7 +106,9 @@ def feed_kws(v=0.5):
         {'brain.feeder_params': cd(ModuleModeDict.feeder.default, excluded=['dt', 'phi'], included={'mode': 'default'}),
          'brain.intermitter_params.feed_bouts': True, 'brain.intermitter_params.EEB': v})
 
-def autogenerate_confs():
+
+@reg.funcs.stored_conf("Model")
+def Model_dict():
     lc = reg.model.larvaConf
     MD = ModuleModeDict
 
@@ -145,58 +158,38 @@ def autogenerate_confs():
             if mm in reg.conf.Model.confIDs:
                 E[mm] = reg.conf.Model.getID(mm)
 
-    kws = {'mkws': {'interference': {'attenuation': 0.1, 'attenuation_max': 0.6}}}
-    kws2 = {'mkws': {'interference': {'attenuation': 0.0}, 'intermitter': {'run_mode': 'exec'}}}
+    mkws0 = aux.AttrDict({'interference': {'attenuation': 0.1, 'attenuation_max': 0.6}})
 
-    E['explorer'] = lc(**kws)
+    E['explorer'] = lc(mkws=mkws0)
 
-    for id0, mkws in zip(['Levy', 'NEU_Levy', 'NEU_Levy_continuous'],
-                         [{'turner': 'sinusoidal', 'interference': 'default', 'intermitter': 'default'},
-                          {'turner': 'neural', 'interference': 'default', 'intermitter': 'default'},
-                          {'turner': 'neural', 'interference': 'default'}]):
-        E[id0] = lc(ms={'crawler': 'constant', **mkws}, **kws2)
-        extend(id0=id0)
+    for id, (Tm,ImM) in zip(['Levy', 'NEU_Levy', 'NEU_Levy_continuous'],
+                            [('sinusoidal', 'default'),('neural', 'default'),('neural', None)]):
+        E[id] = lc(ms=aux.AttrDict(zip(LocoModules, ['constant', Tm, 'default', ImM])),
+                   mkws=aux.AttrDict({'interference': {'attenuation': 0.0}, 'intermitter': {'run_mode': 'exec'}}))
+        extend(id0=id)
 
     newexp('imitator', {'body.Nsegs': 11})
     newexp('zebrafish', {'body.body_plan': 'zebrafish_larva', 'Box2D_params': {'joint_types': {
         'revolute': {'N': 1, 'args': {'maxMotorTorque': 10 ** 5, 'motorSpeed': 1}}}}})
     newexp('thermo_navigator', sensor_kws('thermosensor'))
 
-    mD = {'realistic': 'RE', 'square': 'SQ', 'gaussian': 'GAU', 'constant': 'CON',
-          'default': 'DEF', 'neural': 'NEU', 'sinusoidal': 'SIN', 'nengo': 'NENGO', 'phasic': 'PHI',
-          'branch': 'BR'}
+    for ii in itertools.product(*[MD[mk].keylist for mk in LocoModules]):
+        mms=[ModuleModeKDict[i] for i in ii]
+        id = "_".join(mms)
+        E[id] = lc(ms=aux.AttrDict(zip(LocoModules, ii)), mkws=mkws0 if mms[2] != 'DEF' else {})
+        if mms[0] == 'RE' and mms[3] == 'DEF':
+            extend(id0=id)
+            if mms[1] == 'NEU' and mms[2] == 'PHI':
+                for idd in ['forager', 'forager0','forager_x2', 'max_forager', 'max_forager0',
+                            'forager_RL', 'forager0_RL', 'max_forager_RL', 'max_forager0_RL',
+                            'forager_MB', 'forager0_MB', 'max_forager_MB', 'max_forager0_MB',
+                            'feeder', 'max_feeder']:
+                    E[idd] = E[f'{id}_{idd}']
+                E['navigator'] = E[f'{id}_nav']
+                E['navigator_x2'] = E[f'{id}_nav_x2']
+                E['RLnavigator'] = E[f'{id}_nav_RL']
 
-    for Cm in MD.crawler.keylist:
-        for Tm in MD.turner.keylist:
-            for Ifm in MD.interference.keylist:
-                for IMm in MD.intermitter.keylist:
-                    kkws = {
-                        'ms': {'crawler': Cm, 'turner': Tm, 'interference': Ifm, 'intermitter': IMm},
 
-                    }
-                    if Ifm != 'default':
-                        kkws.update(**kws)
-                    id0 = f'{mD[Cm]}_{mD[Tm]}_{mD[Ifm]}_{mD[IMm]}'
-                    E[id0] = lc(**kkws)
-                    if Cm == 'realistic' and IMm == 'default':
-                        extend(id0=id0)
-
-                    if id0 == 'RE_NEU_PHI_DEF':
-                        E['navigator'] = E[f'{id0}_nav']
-                        E['navigator_x2'] = E[f'{id0}_nav_x2']
-
-                        E['noMB_untrained'] = E[f'{id0}_max_forager0']
-                        E['noMB_trained'] = E[f'{id0}_max_forager']
-                        E['MB_untrained'] = E[f'{id0}_max_forager0_MB']
-                        E['MB_trained'] = E[f'{id0}_max_forager_MB']
-                        E['forager'] = E[f'{id0}_forager']
-                        E['forager_x2'] = E[f'{id0}_forager_x2']
-                        E['max_forager'] = E[f'{id0}_max_forager']
-                        E['feeder'] = E[f'{id0}_feeder']
-                        E['max_feeder'] = E[f'{id0}_max_feeder']
-
-                        E['RLnavigator'] = E[f'{id0}_nav_RL']
-                        E['RLforager'] = E[f'{id0}_forager_RL']
 
     newexp('OSNnavigator', olf_kws(mode='osn'))
     newexp('OSNnavigator_x2', olf_kws({'CS': 150.0, 'UCS': 0.0}, mode='osn'))

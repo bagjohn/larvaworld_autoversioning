@@ -86,7 +86,5 @@ def Ref_dict(DATA=None):
     return aux.AttrDict(entries)
 
 
-@reg.funcs.stored_conf("Model")
-def Model_dict():
-    return reg.model.autostored_confs
+
 
