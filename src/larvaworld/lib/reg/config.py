@@ -61,6 +61,8 @@ class ConfType(param.Parameterized):
         self.load()
 
     def getID(self, id):
+        if isinstance(id,list):
+            return [self.getID(i) for i in id]
         if id in self.dict:
             return self.dict[id]
         else:
@@ -68,6 +70,8 @@ class ConfType(param.Parameterized):
             raise ValueError()
 
     def get(self, id):
+        if isinstance(id,list):
+            return [self.get(i) for i in id]
         entry = self.getID(id)
         return self.conf_class(**entry, name=id)
 
@@ -154,10 +158,6 @@ class ConfType(param.Parameterized):
             return OptionalSelector(**kws)
         else:
             return param.ListSelector(**kws)
-
-    # def confIDorNew(self):
-    #     return ClassAttr(class_=(self.confID_selector(), self.conf_class()), default=None,
-    #                      doc='Accepts either an existing ID or a new configuration')
 
     @property
     def confIDs(self):

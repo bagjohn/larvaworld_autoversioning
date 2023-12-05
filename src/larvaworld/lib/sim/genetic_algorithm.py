@@ -20,6 +20,7 @@ __all__ = [
     'GAselector',
     'GAlauncher',
     'optimize_mID',
+    'adapt_mID',
 ]
 
 
@@ -429,6 +430,57 @@ def optimize_mID(mID0, mID1=None, refID=None, space_mkeys=['turner', 'interferen
     GA = GAlauncher(parameters=gaconf, dir=dir, id=id, duration=dur, dt=dt, dataset=dataset, multicore=multicore)
     best_genome = GA.simulate()
     return {mID1: best_genome.mConf}
+
+def adapt_mID(dataset, mID0, mID, space_mkeys=['turner', 'interference'], **kwargs):
+    s, e, c = dataset.data
+    CM = reg.conf.Model
+    print(f'Adapting {mID0} on {c.refID} as {mID} fitting {space_mkeys} modules')
+    m0 = CM.getID(mID0)
+    if 'crawler' not in space_mkeys:
+        from ..model import ModuleModeDict, Effector
+        from ..param import class_defaults
+
+        for p in class_defaults(ModuleModeDict['crawler'][m0.brain.crawler.mode],
+                                excluded=[Effector, 'phi']).keylist:
+            try:
+                ppp = reg.SAMPLING_PARS.inverse[f'brain.crawler.{p}'][0]
+                m0.brain.crawler[p] = np.round(e[ppp].dropna().median(), 2)
+            except:
+                pass
+
+    if 'intermitter' not in space_mkeys:
+        conf = m0.brain.intermitter
+        conf.stridechain_dist = c.bout_distros.run_count
+        try:
+            ll1, ll2 = conf.stridechain_dist.range
+            conf.stridechain_dist.range = (int(ll1), int(ll2))
+        except:
+            pass
+
+        conf.run_dist = c.bout_distros.run_dur
+        try:
+            ll1, ll2 = conf.run_dist.range
+            conf.run_dist.range = (np.round(ll1, 2), np.round(ll2, 2))
+        except:
+            pass
+        conf.pause_dist = c.bout_distros.pause_dur
+        try:
+            ll1, ll2 = conf.pause_dist.range
+            conf.pause_dist.range = (np.round(ll1, 2), np.round(ll2, 2))
+        except:
+            pass
+        conf.crawl_freq = np.round(e[reg.getPar('fsv')].dropna().median(), 2)
+        conf.mode = m0.brain.intermitter.mode
+
+        m0.brain.intermitter = conf
+    m0.body.length = np.round(e[reg.getPar('l')].dropna().median(), 5)
+    CM.setID(mID, m0)
+
+    GAselector.param.objects()['base_model'].objects = CM.confIDs
+    reg.generators.LarvaGroupMutator.param.objects()['modelIDs'].objects = CM.confIDs
+    return optimize_mID(mID0=mID, space_mkeys=space_mkeys, dt=c.dt, refID=c.refID,
+                        dataset=dataset, id=mID, dir=f'{c.dir}/model/GAoptimization', **kwargs)
+
 
 
 reg.gen.GAselector = class_generator(GAselector)

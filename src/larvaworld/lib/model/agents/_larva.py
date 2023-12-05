@@ -319,16 +319,16 @@ class LarvaMotile(LarvaSegmented):
 
     # @profile
     def step(self):
-        self.cum_dur += self.model.dt
+        m = self.model
+        self.cum_dur += m.dt
         self.sense()
         pos = self.olfactor_pos
 
-        if self.model.space.accessible_sources:
-            self.food_detected = self.model.space.accessible_sources[self]
+        if m.space.accessible_sources:
+            self.food_detected = m.space.accessible_sources[self]
 
         elif self.brain.locomotor.feeder or self.brain.toucher:
-            self.food_detected = aux.sense_food(pos, sources=self.model.sources, grid=self.model.food_grid,
-                                                radius=self.radius)
+            self.food_detected = aux.sense_food(pos, sources=m.sources, grid=m.food_grid, radius=self.radius)
         self.resolve_carrying(self.food_detected)
 
         lin, ang, self.feeder_motion = self.brain.step(pos, length=self.length, on_food=self.on_food)

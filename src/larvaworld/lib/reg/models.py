@@ -4,7 +4,7 @@ import pandas as pd
 import param
 
 from .. import reg, aux
-from ..aux import nam
+from ..aux import nam,AttrDict
 
 __all__ = [
     'ModelRegistry',
@@ -68,12 +68,11 @@ def init_brain_modules():
                             'h': 'The initial frequency of the repetitive lateral bending behavior if this is hardcoded (e.g. sinusoidal mode).'},
                    }
 
-        d = {'neural': {'args': NEUargs, 'class_func': modules.NeuralOscillator,
+        return AttrDict({'neural': {'args': NEUargs, 'class_func': modules.NeuralOscillator,
                         'variable': ['base_activation', 'tau', 'n']},
              'sinusoidal': {'args': SINargs, 'class_func': modules.SinOscillator, 'variable': ['amp', 'freq']},
              'constant': {'args': Tamp, 'class_func': modules.StepEffector, 'variable': ['amp']}
-             }
-        return aux.AttrDict(d)
+             })
 
     def Cr0():
         str_kws = {'stride_dst_mean': {'v0': 0.23, 'lim': (0.0, 1.1), 'dv': 0.01,
@@ -129,7 +128,7 @@ def init_brain_modules():
                  **Cfr
                  }
 
-        d = {
+        return AttrDict({
 
             'gaussian': {'args': {**GAUargs, **str_kws}, 'class_func': modules.GaussOscillator,
                          'variable': ['stride_dst_mean', 'stride_dst_std', 'std', 'amp', 'freq']},
@@ -139,8 +138,7 @@ def init_brain_modules():
                           'variable': ['stride_dst_mean', 'stride_dst_std', 'max_scaled_vel', 'max_vel_phase',
                                        'freq']},
             'constant': {'args': Camp, 'class_func': modules.StepEffector, 'variable': ['amp']}
-        }
-        return aux.AttrDict(d)
+        })
 
     def If0():
         IFargs = {
@@ -179,13 +177,12 @@ def init_brain_modules():
 
         }
 
-        d = {'default': {'args': IFargs, 'class_func': modules.DefaultCoupling, 'variable': ['attenuation']},
+        return AttrDict({'default': {'args': IFargs, 'class_func': modules.DefaultCoupling, 'variable': ['attenuation']},
              'square': {'args': SQargs, 'class_func': modules.SquareCoupling,
                         'variable': ['attenuation', 'attenuation_max', 'crawler_phi_range']},
              'phasic': {'args': PHIargs, 'class_func': modules.PhasicCoupling,
                         'variable': ['attenuation', 'attenuation_max', 'max_attenuation_phase']}
-             }
-        return aux.AttrDict(d)
+             })
 
     def Im0():
         dist_args = {k: reg.get_dist(k=k) for k in ['stridechain_dist', 'run_dist', 'pause_dist']}
@@ -232,17 +229,16 @@ def init_brain_modules():
 
         }
 
-        d = {'default': {'args': IMargs, 'class_func': modules.Intermitter,
+        return AttrDict({'default': {'args': IMargs, 'class_func': modules.Intermitter,
                          'variable': ['stridechain_dist', 'run_dist', 'pause_dist']},
              'nengo': {'args': IMargs, 'class_func': modules.NengoIntermitter,
                        'variable': ['stridechain_dist', 'run_dist', 'pause_dist']},
              'branch': {'args': BRargs, 'class_func': modules.BranchIntermitter,
                         'variable': ['c', 'sigma', 'beta', 'stridechain_dist', 'run_dist', 'pause_dist']},
-             }
-        return aux.AttrDict(d)
+             })
 
     def sensor_kws(k0, l0):
-        d = {
+        return {
             'perception': {'dtype': str, 'v0': 'log', 'vs': ['log', 'linear', 'null'],
                            'disp': f'{l0} sensory transduction mode',
                            'k': f'mod_{k0}',
@@ -255,7 +251,6 @@ def init_brain_modules():
                             'k': f'bf_{k0}',
                             'h': 'Whether to apply direct rule-based modulation on locomotion or not.'},
         }
-        return d
 
     def Olf0():
         args = {
@@ -263,10 +258,9 @@ def init_brain_modules():
                           'sym': nam.tex.sub('G', 'O'), 'disp': 'gain per odor ID',
                           'h': 'The dictionary of the olfactory gains.'},
             **sensor_kws(k0='O', l0='olfaction')}
-        d = {'default': {'args': args, 'class_func': modules.Olfactor,
+        return AttrDict({'default': {'args': args, 'class_func': modules.Olfactor,
                          'variable': ['perception', 'decay_coef', 'brute_force', 'gain_dict']},
-             }
-        return aux.AttrDict(d)
+             })
 
     def Tou0():
         args = {
@@ -282,10 +276,9 @@ def init_brain_modules():
                               'sym': nam.tex.sub('N', 'T'), 'disp': 'tactile sensor contour locations',
                               'h': 'The number of touch sensors existing on the larva body.'},
         }
-        d = {'default': {'args': args, 'class_func': modules.Toucher,
+        return AttrDict({'default': {'args': args, 'class_func': modules.Toucher,
                          'variable': ['perception', 'decay_coef', 'brute_force', 'initial_gain']},
-             }
-        return aux.AttrDict(d)
+             })
 
     def W0():
         args = {
@@ -306,10 +299,9 @@ def init_brain_modules():
 
             **sensor_kws(k0='W', l0='windsensor'),
         }
-        d = {'default': {'args': args, 'class_func': modules.Windsensor,
+        return AttrDict({'default': {'args': args, 'class_func': modules.Windsensor,
                          'variable': ['perception', 'decay_coef', 'brute_force']},
-             }
-        return aux.AttrDict(d)
+             })
 
     def Th0():
         args = {'cool_gain': {'v0': 0.0, 'lim': (-1000.0, 1000.0),
@@ -321,10 +313,9 @@ def init_brain_modules():
 
                 **sensor_kws(k0='Th', l0='thermosensor'),
                 }
-        d = {'default': {'args': args, 'class_func': modules.Thermosensor,
+        return AttrDict({'default': {'args': args, 'class_func': modules.Thermosensor,
                          'variable': ['perception', 'decay_coef', 'brute_force', 'cool_gain', 'warm_gain']},
-             }
-        return aux.AttrDict(d)
+             })
 
     def Fee0():
         Fargs = {
@@ -339,9 +330,8 @@ def init_brain_modules():
                        'h': 'The volume of food consumed on a single feeding motion as a fraction of the body volume.'}
         }
 
-        d = {'default': {'args': Fargs, 'class_func': modules.Feeder, 'variable': ['freq']},
-             }
-        return aux.AttrDict(d)
+        return AttrDict({'default': {'args': Fargs, 'class_func': modules.Feeder, 'variable': ['freq']},
+             })
 
     def Mem0():
         args0 = {
@@ -372,11 +362,10 @@ def init_brain_modules():
 
         MBargs = {**args0}
 
-        d = {'RL': {'args': RLargs, 'class_func': modules.RLOlfMemory,
+        return AttrDict({'RL': {'args': RLargs, 'class_func': modules.RLOlfMemory,
                     'variable': ['Delta', 'update_dt', 'alpha', 'epsilon']},
              'MB': {'args': MBargs, 'class_func': modules.RemoteBrianModelMemory, 'variable': []},
-             }
-        return aux.AttrDict(d)
+             })
 
     kws = {'kwargs': {'dt': 0.1}}
     d0 = {}
@@ -391,11 +380,11 @@ def init_brain_modules():
     d0['windsensor'] = {'mode': W0(), 'pref': 'brain.windsensor.', **kws}
     d0['memory'] = {'mode': Mem0(), 'pref': 'brain.memory.', **kws}
 
-    return aux.AttrDict(d0)
+    return AttrDict(d0)
 
 
 def init_aux_modules():
-    return aux.AttrDict({
+    return AttrDict({
         'physics': {
             'args': {
                 'torque_coef': {'v0': 0.5, 'lim': (0.1, 1.0), 'dv': 0.01, 'disp': 'torque coefficient',
@@ -569,16 +558,16 @@ def build_brain_module_dict(d0):
 def build_confdicts():
     b0 = init_brain_modules()
     bm = build_brain_module_dict(b0)
-    bd = aux.AttrDict({'init': b0, 'm': bm, 'keys': list(b0.keys())})
+    bd = AttrDict({'init': b0, 'm': bm, 'keys': list(b0.keys())})
 
     a0 = init_aux_modules()
     am = build_aux_module_dict(a0)
-    ad = aux.AttrDict({'init': a0, 'm': am, 'keys': list(a0.keys())})
+    ad = AttrDict({'init': a0, 'm': am, 'keys': list(a0.keys())})
 
-    d0 = aux.AttrDict({**b0, **a0})
+    d0 = AttrDict({**b0, **a0})
 
-    d = aux.AttrDict({'init': d0, 'm': aux.AttrDict({**bm, **am}), 'keys': list(d0.keys())})
-    return aux.AttrDict({'brain': bd, 'aux': ad, 'model': d})
+    d = AttrDict({'init': d0, 'm': AttrDict({**bm, **am}), 'keys': list(d0.keys())})
+    return AttrDict({'brain': bd, 'aux': ad, 'model': d})
 
 
 class ModelRegistry:
@@ -588,7 +577,7 @@ class ModelRegistry:
 
     def build_full_dict(self):
         D = self.dict
-        FD = aux.AttrDict()
+        FD = AttrDict()
 
         def register(dic, k0):
             for k, p in dic.items():
@@ -619,7 +608,7 @@ class ModelRegistry:
         if dIDs is None:
             dIDs = mIDs
         if ms is None:
-            ms = [reg.conf.Model.getID(mID) for mID in mIDs]
+            ms = reg.conf.Model.getID(mIDs)
         ms = [m.flatten() for m in ms]
         ks = aux.unique_list(aux.flatten_list([m.keylist for m in ms]))
 
@@ -652,63 +641,12 @@ class ModelRegistry:
 
 
 
-    def adapt_mID(self, dataset, mID0, mID, space_mkeys=['turner', 'interference'], dir=None, **kwargs):
-        s, e, c = dataset.data
-        CM = reg.conf.Model
-        print(f'Adapting {mID0} on {c.refID} as {mID} fitting {space_mkeys} modules')
-        if dir is None:
-            dir = f'{c.dir}/model/GAoptimization'
-        m0 = CM.getID(mID0)
-        if 'crawler' not in space_mkeys:
-            mode = m0.brain.crawler.mode
-            mdict = self.dict.model.m['crawler'].mode[mode].args
-            crawler_conf = aux.AttrDict({'mode': mode})
-            for d, p in mdict.items():
-                if isinstance(p, param.Parameterized) and p.codename in e.columns:
-                    crawler_conf[d] = np.round(e[p.codename].dropna().median(), 2)
-
-
-            m0.brain.crawler = crawler_conf
-        if 'intermitter' not in space_mkeys:
-            conf = m0.brain.intermitter
-            conf.stridechain_dist = c.bout_distros.run_count
-            try:
-                ll1, ll2 = conf.stridechain_dist.range
-                conf.stridechain_dist.range = (int(ll1), int(ll2))
-            except:
-                pass
-
-            conf.run_dist = c.bout_distros.run_dur
-            try:
-                ll1, ll2 = conf.run_dist.range
-                conf.run_dist.range = (np.round(ll1, 2), np.round(ll2, 2))
-            except:
-                pass
-            conf.pause_dist = c.bout_distros.pause_dur
-            try:
-                ll1, ll2 = conf.pause_dist.range
-                conf.pause_dist.range = (np.round(ll1, 2), np.round(ll2, 2))
-            except:
-                pass
-            conf.crawl_freq = np.round(e[reg.getPar('fsv')].dropna().median(), 2)
-            conf.mode = m0.brain.intermitter.mode
-
-
-            m0.brain.intermitter = conf
-        m0.body.length = np.round(e[reg.getPar('l')].dropna().median(), 5)
-        CM.setID(mID, m0)
-
-        from ..sim.genetic_algorithm import optimize_mID, GAselector
-        GAselector.param.objects()['base_model'].objects = CM.confIDs
-        reg.generators.LarvaGroupMutator.param.objects()['modelIDs'].objects = CM.confIDs
-        return optimize_mID(mID0=mID, space_mkeys=space_mkeys, dt=c.dt, refID=c.refID,
-                            dataset=dataset, id=mID, dir=dir, **kwargs)
 
     def variable_mdict(self, mkey, mode='default'):
         D = self.dict.model
         var_ks = D.init[mkey].mode[mode].variable
         d00 = D.m[mkey].mode[mode].args
-        return aux.AttrDict({k: d00[k] for k in var_ks})
+        return AttrDict({k: d00[k] for k in var_ks})
 
     def space_dict(self, mkeys, mConf0):
         mF = mConf0.flatten()
@@ -730,4 +668,4 @@ class ModelRegistry:
                         if dic[k0].parclass == param.Range:
                             mF[k0] = tuple(mF[k0])
                     dic[k0].v = mF[k0]
-        return aux.AttrDict(dic)
+        return AttrDict(dic)

@@ -351,7 +351,7 @@ class DoublePatch_Essay(Essay):
                 self.mode = 'locomotors'
         self.mIDs = [f'{mID0}{suf}' for mID0 in self.mID0s]
 
-        self.ms = [reg.conf.Model.getID(mID) for mID in self.mIDs]
+        self.ms = reg.conf.Model.getID(self.mIDs)
         self.exp_dict = self.time_ratio_exp()
 
         self.mdiff_df, row_colors = reg.model.diff_df(mIDs=self.mID0s, ms=self.ms)
