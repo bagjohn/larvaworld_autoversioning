@@ -54,7 +54,7 @@ ModuleModeDict = AttrDict({
     },
     'olfactor': {
         'default': sensor.Olfactor,
-        'osn': sensor.Olfactor,
+        'osn': sensor.OSNOlfactor,
     },
     'toucher': {
         'default': sensor.Toucher,
