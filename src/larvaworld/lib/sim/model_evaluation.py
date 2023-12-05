@@ -254,12 +254,12 @@ def modelConf_analysis(d):
     c = d.config
     kws = {'refID': c.refID}
     kws1 = {'N': 10, **kws}
-    kws2 = {'dataset': d, **fit_kws}
+    kws2 = {'d': d, **fit_kws}
     D = aux.AttrDict({'average': {}, 'variable': {}, 'individual': {}, '3modules': {}})
     ee = []
     for tt in mods.T[:2]:
         for ii in mods.If:
-            ee.append(adapt_mID(mID0=f'RE_{tt}_{ii}_DEF', mID=f'{ii}on{tt}', space_mkeys=['turner', 'interference'], **kws2))
+            ee.append(adapt_mID(mID0=f'RE_{tt}_{ii}_DEF', mID=f'{ii}on{tt}', mkeys=['turner', 'interference'], **kws2))
     D.average=dict(ChainMap(*ee))
 
     mIDs_avg = list(D.average)
@@ -277,7 +277,7 @@ def modelConf_analysis(d):
         for ii in mods.If:
             mIDs0x3=[f'{cc}_{tt}_{ii}_DEF' for tt in mods.T]
             mIDsx3 =[f'{mID0}_fit' for mID0 in mIDs0x3]
-            ee+=[adapt_mID(mID0=mID0, mID=mID, space_mkeys=['crawler', 'turner', 'interference'],
+            ee+=[adapt_mID(mID0=mID0, mID=mID, mkeys=['crawler', 'turner', 'interference'],
                                 **kws2) for mID0,mID in zip(mIDs0x3,mIDsx3)]
             eval_model_graphs(mIDs=mIDsx3, groupIDs=mods.T, id=f'Tmod_variable_Cmod_{cc}_Ifmod_{ii}', **kws1)
     D['3modules']=dict(ChainMap(*ee))

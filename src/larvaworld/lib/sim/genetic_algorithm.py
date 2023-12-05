@@ -412,8 +412,8 @@ class GA_thread(threading.Thread):
             robot.step()
 
 
-def optimize_mID(mID0, mID1=None, refID=None, space_mkeys=['turner', 'interference'],
-                 experiment='exploration', dataset=None, multicore=False,
+def optimize_mID(mID0, mID1=None, refID=None, mkeys=['turner', 'interference'],
+                 experiment='exploration', d=None, multicore=False,
                  id=None, dt=1 / 16, dur=0.4, dir=None, Nagents=10, Nelits=2, Ngenerations=3,
                  **kwargs):
     warnings.filterwarnings('ignore')
@@ -421,25 +421,24 @@ def optimize_mID(mID0, mID1=None, refID=None, space_mkeys=['turner', 'interferen
         mID1 = mID0
 
     gaconf = AttrDict({'ga_select_kws': {'Nagents': Nagents, 'Nelits': Nelits, 'Ngenerations': Ngenerations,
-                                             'init_mode': 'model', 'space_mkeys': space_mkeys,
+                                             'init_mode': 'model', 'space_mkeys': mkeys,
                                              'base_model': mID0, 'bestConfID': mID1},
                            'ga_eval_kws': {'refID': refID, **kwargs},
                            'env_params': reg.conf.Env.getID('arena_200mm'),
                            'experiment': experiment})
-    GA = GAlauncher(parameters=gaconf, dir=dir, id=id, duration=dur, dt=dt, dataset=dataset, multicore=multicore)
+    GA = GAlauncher(parameters=gaconf, dir=dir, id=id, duration=dur, dt=dt, dataset=d, multicore=multicore)
     best_genome = GA.simulate()
     return {mID1: best_genome.mConf}
 
-def adapt_mID(dataset, mID0, mID, space_mkeys=['turner', 'interference'], **kwargs):
-    d=dataset
+def adapt_mID(d, mID0, mID, mkeys=['turner', 'interference'], **kwargs):
     s, e, c = d.data
     CM = reg.conf.Model
-    print(f'Adapting {mID0} on {c.refID} as {mID} fitting {space_mkeys} modules')
+    print(f'Adapting {mID0} on {c.refID} as {mID}, fitting {mkeys} modules')
     ps=['body.length']
 
     m0 = CM.getID(mID0)
     for k in LocoModules:
-        if k not in space_mkeys:
+        if k not in mkeys:
             try:
                 ps += AttrDict(mod_kws(k, mode=m0.brain[k].mode, as_entry=True)).flatten().keylist
                 if k=='intermitter':
@@ -448,8 +447,8 @@ def adapt_mID(dataset, mID0, mID, space_mkeys=['turner', 'interference'], **kwar
                 pass
     m0.update_nestdict(AttrDict({p: np.median(vs) for p, vs in d.sample_larvagroup(N=100, ps=ps, inverse=True).items()}))
     CM.setID(mID, m0)
-    return optimize_mID(mID0=mID, space_mkeys=space_mkeys, dt=c.dt, refID=c.refID,
-                        dataset=d, id=mID, dir=f'{c.dir}/model/GAoptimization', **kwargs)
+    return optimize_mID(mID0=mID, mkeys=mkeys, dt=c.dt, refID=c.refID,
+                        d=d, id=mID, dir=f'{c.dir}/model/GAoptimization', **kwargs)
 
 
 
