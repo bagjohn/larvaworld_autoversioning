@@ -96,7 +96,7 @@ class LarvaSim(LarvaMotile, BaseController):
     ----------
     physics : dict
         Dictionary containing physical parameters for the larva simulation.
-    Box2D_params : dict
+    Box2D : dict
         Dictionary containing Box2D parameters for the larva simulation.
     **kwargs
         Additional keyword arguments.
@@ -119,7 +119,7 @@ class LarvaSim(LarvaMotile, BaseController):
 
     __displayname__ = 'Simulated larva'
 
-    def __init__(self, physics={}, Box2D_params={}, **kwargs):
+    def __init__(self, physics={}, Box2D={}, **kwargs):
         BaseController.__init__(self, **physics)
         LarvaMotile.__init__(self,**kwargs)
 

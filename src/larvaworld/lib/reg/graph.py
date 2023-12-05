@@ -184,9 +184,7 @@ class GraphRegistry:
                 *[self.entry('nengo', name=p, group=p, same_plot=True if p == 'anemotaxis' else False) for p in
                   ['anemotaxis', 'frequency', 'interference', 'velocity', 'crawler', 'turner', 'wind_effect_on_V',
                    'wind_effect_on_Fr']],
-                # *[self.entry('timeplot', ks=[p]) for p in ['A_wind', 'anemotaxis']],
                 self.entry('timeplots', 'anemotaxis', ks=['A_wind', 'anemotaxis']),
-                # *[scat(p) for p in [['o_wind', 'A_wind'], ['anemotaxis', 'o_wind']]],
                 self.entry('endpoint hist', name='final anemotaxis', ks=['anemotaxis'])
 
             ],

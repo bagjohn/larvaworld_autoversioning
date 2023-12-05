@@ -11,6 +11,7 @@ import numpy as np
 import larvaworld
 from .. import reg, aux
 from ..param import NestedConf, ClassAttr, class_generator, SimOps, OptionalSelector
+from ..model import AllModules
 from ..process.evaluation import Evaluation
 from .base_run import BaseRun
 
@@ -19,6 +20,7 @@ __all__ = [
     'GAselector',
     'GAlauncher',
     'optimize_mID',
+    'adapt_mID',
 ]
 
 
@@ -106,7 +108,7 @@ class GAselector(NestedConf):
                                label='mode of initial generation', doc='Mode of initial generation')
     base_model = reg.conf.Model.confID_selector('explorer')
 
-    space_mkeys = param.ListSelector(default=[], objects=reg.model.mkeys,
+    space_mkeys = param.ListSelector(default=[], objects=AllModules,
                                      label='keys of modules to include in space search',
                                      doc='Keys of the modules where the optimization parameters are')
 
@@ -122,24 +124,23 @@ class GAselector(NestedConf):
         self.mConf0 = reg.conf.Model.getID(self.base_model)
         self.space_dict = reg.model.space_dict(mkeys=self.space_mkeys, mConf0=self.mConf0)
         # self.space_columns = [p.name for k, p in self.space_dict.items()]
-        self.gConf0 = reg.model.conf(self.space_dict)
+        self.gConf0 = aux.conf_mdict(self.space_dict)
 
     def create_first_generation(self):
         mode = self.init_mode
         N = self.Nagents
         d = self.space_dict
         if mode == 'default':
-            gConf = reg.model.conf(d)
-            gConfs = [gConf] * N
+            gConfs = [aux.conf_mdict(d)] * N
         elif mode == 'model':
             gConf = {k: self.mConf0.flatten()[k] for k, p in d.items()}
             gConfs = [gConf] * N
         elif mode == 'random':
             gConfs = []
             for i in range(N):
-                reg.model.randomize(d)
-                gConf = reg.model.conf(d)
-                gConfs.append(gConf)
+                for ii, p in d.items():
+                    p.randomize()
+                gConfs.append(aux.conf_mdict(d))
         else:
             raise ValueError('Not implemented')
         return gConfs
@@ -161,11 +162,11 @@ class GAselector(NestedConf):
         for i in range(self.Nagents - self.Nelits):
             g1, g2 = random.sample(gs0, 2)
             g0 = self.crossover(g1, g2)
-            space_dict = reg.model.update_mdict(self.space_dict, g0)
+            space_dict = aux.update_mdict(self.space_dict, g0)
             for d, p in space_dict.items():
                 p.mutate(Pmut=self.Pmutation, Cmut=self.Cmutation)
 
-            g = reg.model.generate_configuration(space_dict)
+            g = aux.conf_mdict(space_dict)
             gs.append(g)
         return gs
 
@@ -419,13 +420,6 @@ def optimize_mID(mID0, mID1=None, refID=None, space_mkeys=['turner', 'interferen
     warnings.filterwarnings('ignore')
     if mID1 is None:
         mID1 = mID0
-    # print(mID0,mID0 in reg.conf.Model.confIDs)
-    # gaconf = reg.gen.Ga(ga_select_kws=reg.gen.GAselector(Nagents=Nagents, Nelits=Nelits, Ngenerations=Ngenerations,
-    #                                                      init_mode=init, space_mkeys=space_mkeys,
-    #                                                      base_model=mID0, bestConfID=mID1),
-    #                     ga_eval_kws=reg.gen.GAevaluation(refID=refID, **kwargs),
-    #                     env_params='arena_200mm',
-    #                     experiment=experiment).nestedConf
 
     gaconf = aux.AttrDict({'ga_select_kws': {'Nagents': Nagents, 'Nelits': Nelits, 'Ngenerations': Ngenerations,
                                              'init_mode': 'model', 'space_mkeys': space_mkeys,
@@ -433,10 +427,58 @@ def optimize_mID(mID0, mID1=None, refID=None, space_mkeys=['turner', 'interferen
                            'ga_eval_kws': {'refID': refID, **kwargs},
                            'env_params': reg.conf.Env.getID('arena_200mm'),
                            'experiment': experiment})
-    # gaconf.env_params = reg.conf.Env.getID(gaconf.env_params)
     GA = GAlauncher(parameters=gaconf, dir=dir, id=id, duration=dur, dt=dt, dataset=dataset, multicore=multicore)
     best_genome = GA.simulate()
     return {mID1: best_genome.mConf}
+
+def adapt_mID(dataset, mID0, mID, space_mkeys=['turner', 'interference'], **kwargs):
+    s, e, c = dataset.data
+    CM = reg.conf.Model
+    print(f'Adapting {mID0} on {c.refID} as {mID} fitting {space_mkeys} modules')
+    m0 = CM.getID(mID0)
+    if 'crawler' not in space_mkeys:
+        from ..model import mod_kws
+
+        for p in mod_kws('crawler', mode=m0.brain.crawler.mode, as_entry=False).keylist:
+            try:
+                ppp = reg.SAMPLING_PARS.inverse[f'brain.crawler.{p}'][0]
+                m0.brain.crawler[p] = np.round(e[ppp].dropna().median(), 2)
+            except:
+                pass
+
+    if 'intermitter' not in space_mkeys:
+        conf = m0.brain.intermitter
+        conf.stridechain_dist = c.bout_distros.run_count
+        try:
+            ll1, ll2 = conf.stridechain_dist.range
+            conf.stridechain_dist.range = (int(ll1), int(ll2))
+        except:
+            pass
+
+        conf.run_dist = c.bout_distros.run_dur
+        try:
+            ll1, ll2 = conf.run_dist.range
+            conf.run_dist.range = (np.round(ll1, 2), np.round(ll2, 2))
+        except:
+            pass
+        conf.pause_dist = c.bout_distros.pause_dur
+        try:
+            ll1, ll2 = conf.pause_dist.range
+            conf.pause_dist.range = (np.round(ll1, 2), np.round(ll2, 2))
+        except:
+            pass
+        conf.crawl_freq = np.round(e[reg.getPar('fsv')].dropna().median(), 2)
+        conf.mode = m0.brain.intermitter.mode
+
+        m0.brain.intermitter = conf
+    m0.body.length = np.round(e[reg.getPar('l')].dropna().median(), 5)
+    CM.setID(mID, m0)
+
+    GAselector.param.objects()['base_model'].objects = CM.confIDs
+    reg.generators.LarvaGroupMutator.param.objects()['modelIDs'].objects = CM.confIDs
+    return optimize_mID(mID0=mID, space_mkeys=space_mkeys, dt=c.dt, refID=c.refID,
+                        dataset=dataset, id=mID, dir=f'{c.dir}/model/GAoptimization', **kwargs)
+
 
 
 reg.gen.GAselector = class_generator(GAselector)

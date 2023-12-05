@@ -351,7 +351,7 @@ class DoublePatch_Essay(Essay):
                 self.mode = 'locomotors'
         self.mIDs = [f'{mID0}{suf}' for mID0 in self.mID0s]
 
-        self.ms = [reg.conf.Model.getID(mID) for mID in self.mIDs]
+        self.ms = reg.conf.Model.getID(self.mIDs)
         self.exp_dict = self.time_ratio_exp()
 
         self.mdiff_df, row_colors = reg.model.diff_df(mIDs=self.mID0s, ms=self.ms)
@@ -460,7 +460,7 @@ class Chemotaxis_Essay(Essay):
 
     def get_models1(self, gain):
         m = reg.conf.Model.getID('navigator')
-        o = 'brain.olfactor_params'
+        o = 'brain.olfactor'
 
         mW = m.update_nestdict_copy({f'{o}.gain_dict.Odor': gain, f'{o}.perception': 'log'})
         mWlin = m.update_nestdict_copy({f'{o}.gain_dict.Odor': gain, f'{o}.perception': 'linear'})
@@ -490,10 +490,10 @@ class Chemotaxis_Essay(Essay):
             for Ifmod in ['PHI', 'SQ', 'DEF']:
                 m = reg.conf.Model.getID(f'RE_{Tmod}_{Ifmod}_DEF_nav')
                 models[f'{Tmod}_{Ifmod}'] = {'model': m.update_nestdict_copy({
-                    f'brain.olfactor_params.brute_force': True,
-                    f'brain.olfactor_params.gain_dict.Odor': gain,
-                    f'brain.interference_params.attenuation': 0.1,
-                    f'brain.interference_params.attenuation_max': 0.0,
+                    f'brain.olfactor.brute_force': True,
+                    f'brain.olfactor.gain_dict.Odor': gain,
+                    f'brain.interference.attenuation': 0.1,
+                    f'brain.interference.attenuation_max': 0.0,
                 }), 'color': cols[i]}
                 i += 1
         return aux.AttrDict(models)
@@ -506,11 +506,11 @@ class Chemotaxis_Essay(Essay):
             for Ifmod in ['PHI', 'SQ', 'DEF']:
                 m = reg.conf.Model.getID(f'RE_{Tmod}_{Ifmod}_DEF_nav')
                 models[f'{Tmod}_{Ifmod}'] = {'model': m.update_nestdict_copy({
-                    f'brain.olfactor_params.perception': 'log',
-                    f'brain.olfactor_params.decay_coef': 0.1,
-                    f'brain.olfactor_params.gain_dict.Odor': gain,
-                    f'brain.interference_params.attenuation': 0.1,
-                    f'brain.interference_params.attenuation_max': 0.9,
+                    f'brain.olfactor.perception': 'log',
+                    f'brain.olfactor.decay_coef': 0.1,
+                    f'brain.olfactor.gain_dict.Odor': gain,
+                    f'brain.interference.attenuation': 0.1,
+                    f'brain.interference.attenuation_max': 0.9,
                 }), 'color': cols[i]}
                 i += 1
 
@@ -524,9 +524,9 @@ class Chemotaxis_Essay(Essay):
             for Ifmod in ['PHI', 'SQ']:
                 m = reg.conf.Model.getID(f'RE_{Tmod}_{Ifmod}_DEF_var2_nav')
                 models[f'{Tmod}_{Ifmod}'] = {'model': m.update_nestdict_copy({
-                    f'brain.olfactor_params.perception': 'log',
-                    f'brain.olfactor_params.decay_coef': 0.1,
-                    f'brain.olfactor_params.gain_dict.Odor': gain,
+                    f'brain.olfactor.perception': 'log',
+                    f'brain.olfactor.decay_coef': 0.1,
+                    f'brain.olfactor.gain_dict.Odor': gain,
                 }), 'color': cols[i]}
                 i += 1
 

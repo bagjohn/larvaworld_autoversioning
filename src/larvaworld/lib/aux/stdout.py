@@ -9,6 +9,10 @@ import time
 import pandas as pd
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 
+# from functools import reduce
+from operator import and_
+from collections import Counter
+
 __all__ = [
     'TimeUtil',
     'suppress_stdout_stderr',
@@ -19,6 +23,7 @@ __all__ = [
     'rgetattr',
     'try_except',
     'storeH5',
+    'common_ancestor_class',
 ]
 
 
@@ -124,3 +129,7 @@ def storeH5(df, path=None, key=None, mode=None, **kwargs):
             store.close()
         else:
             raise ValueError('H5key not provided.')
+
+
+def common_ancestor_class(classes):
+    return next(iter(functools.reduce(and_, (Counter(cls.mro()) for cls in classes))))

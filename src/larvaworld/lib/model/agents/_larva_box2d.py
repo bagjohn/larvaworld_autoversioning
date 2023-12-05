@@ -291,8 +291,8 @@ class LarvaBox2D(LarvaSim):
 
     segs = param.List(item_type=Box2DSegment, doc='The body segments.')
 
-    def __init__(self, Box2D_params, **kwargs):
-        self.Box2D_params = Box2D_params
+    def __init__(self, Box2D, **kwargs):
+        self.Box2D_params = Box2D
         super().__init__(**kwargs)
 
     def generate_segs(self):
@@ -427,7 +427,7 @@ class LarvaBox2D(LarvaSim):
         Notes
         -----
         The `joint_types` parameter is optional and, if not provided, it will use the joint types and parameters
-        defined in the `Box2D_params` attribute of the larva simulation.
+        defined in the `Box2D` attribute of the larva simulation.
 
         This method creates various types of joints (distance, revolute, and friction) to connect the segments of the
         larva together in a physically realistic way.
@@ -435,7 +435,7 @@ class LarvaBox2D(LarvaSim):
         """
 
         if joint_types is None:
-            joint_types = reg.par.get_null('Box2D_params').joint_types
+            joint_types = reg.par.get_null('Box2D').joint_types
         space = self.model.space
         l0 = self.sim_length / self.Nsegs
 

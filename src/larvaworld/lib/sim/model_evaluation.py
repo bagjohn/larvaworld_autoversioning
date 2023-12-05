@@ -223,8 +223,8 @@ def eval_model_graphs(refID, mIDs, groupIDs=None, id=None, dir=None, N=10,**kwar
 
 def modelConf_analysis(d):
     from collections import ChainMap
+    from .genetic_algorithm import adapt_mID
     warnings.filterwarnings('ignore')
-    M=reg.model
     CM=reg.conf.Model
 
     mods = aux.AttrDict({
@@ -244,11 +244,11 @@ def modelConf_analysis(d):
     }
 
     sample_kws = {k: 'sample' for k in [
-        'brain.crawler_params.stride_dst_mean',
-        'brain.crawler_params.stride_dst_std',
-        'brain.crawler_params.max_scaled_vel',
-        'brain.crawler_params.max_vel_phase',
-        'brain.crawler_params.freq',
+        'brain.crawler.stride_dst_mean',
+        'brain.crawler.stride_dst_std',
+        'brain.crawler.max_scaled_vel',
+        'brain.crawler.max_vel_phase',
+        'brain.crawler.freq',
     ]}
 
     c = d.config
@@ -259,7 +259,7 @@ def modelConf_analysis(d):
     ee = []
     for tt in mods.T[:2]:
         for ii in mods.If:
-            ee.append(M.adapt_mID(mID0=f'RE_{tt}_{ii}_DEF', mID=f'{ii}on{tt}', space_mkeys=['turner', 'interference'], **kws2))
+            ee.append(adapt_mID(mID0=f'RE_{tt}_{ii}_DEF', mID=f'{ii}on{tt}', space_mkeys=['turner', 'interference'], **kws2))
     D.average=dict(ChainMap(*ee))
 
     mIDs_avg = list(D.average)
@@ -277,7 +277,7 @@ def modelConf_analysis(d):
         for ii in mods.If:
             mIDs0x3=[f'{cc}_{tt}_{ii}_DEF' for tt in mods.T]
             mIDsx3 =[f'{mID0}_fit' for mID0 in mIDs0x3]
-            ee+=[M.adapt_mID(mID0=mID0, mID=mID, space_mkeys=['crawler', 'turner', 'interference'],
+            ee+=[adapt_mID(mID0=mID0, mID=mID, space_mkeys=['crawler', 'turner', 'interference'],
                                 **kws2) for mID0,mID in zip(mIDs0x3,mIDsx3)]
             eval_model_graphs(mIDs=mIDsx3, groupIDs=mods.T, id=f'Tmod_variable_Cmod_{cc}_Ifmod_{ii}', **kws1)
     D['3modules']=dict(ChainMap(*ee))

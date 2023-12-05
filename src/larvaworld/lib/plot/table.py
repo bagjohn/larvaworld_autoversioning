@@ -4,6 +4,7 @@ Tables
 
 import numpy as np
 import pandas as pd
+import param
 
 from .. import reg, aux, plot
 
@@ -18,9 +19,7 @@ __all__ = [
     'store_model_graphs',
 ]
 
-@reg.funcs.graph('model table')
-def modelConfTable(mID, **kwargs):
-    return reg.model.mIDtable(mID, **kwargs)
+
 
 
 
@@ -60,6 +59,92 @@ def conf_table(df, row_colors, mID, show=False, save_to=None, save_as=None,
         save_as = mID
     P = plot.AutoBasePlot(name='conf_table', save_as=save_as, save_to=save_to, show=show, fig=fig, axs=ax)
     return P.get()
+
+@reg.funcs.graph('model table')
+def modelConfTable(mID, m=None, columns=['parameter', 'symbol', 'value', 'unit'],
+                 colWidths=[0.35, 0.1, 0.25, 0.15], **kwargs):
+    from ..model import ModuleColorDict
+
+    def arrange_index_labels(index):
+        ks = index.unique().tolist()
+        Nks = index.value_counts(sort=False)
+
+        def merge(k, Nk):
+            Nk1 = int((Nk - 1) / 2)
+            Nk2 = Nk - 1 - Nk1
+            return [''] * Nk1 + [k.upper()] + [''] * Nk2
+
+        new = aux.flatten_list([merge(k, Nks[k]) for k in ks])
+        return new
+
+    def mIDtable_data(m, columns):
+        M = reg.model
+        D = M.dict
+
+        def gen_rows2(var_mdict, parent, columns, data):
+            for k, p in var_mdict.items():
+                if isinstance(p, param.Parameterized):
+                    ddd = [getattr(p, pname) for pname in columns]
+                    row = [parent] + ddd
+                    data.append(row)
+
+        mF = m.flatten()
+        data = []
+        for mkey in D.brain.keys:
+            if m.brain.modules[mkey]:
+                d0 = D.model.init[mkey]
+                if f'{d0.pref}mode' in mF.keys():
+                    mod_v = mF[f'{d0.pref}mode']
+                else:
+                    mod_v = 'default'
+
+                if mkey == 'intermitter':
+                    run_mode = m.brain[f'{mkey}']['run_mode']
+                    var_ks = d0.mode[mod_v].variable
+                    for var_k in var_ks:
+                        if var_k == 'run_dist' and run_mode == 'stridechain':
+                            continue
+                        if var_k == 'stridechain_dist' and run_mode == 'exec':
+                            continue
+                        v = m.brain[f'{mkey}'][var_k]
+                        if v is not None:
+                            if v.name is not None:
+                                vs1, vs2 = reg.get_dist(k=var_k, k0=mkey, v=v, return_tabrows=True)
+                                data.append(vs1)
+                                data.append(vs2)
+                else:
+                    var_mdict = M.variable_mdict(mkey, mode=mod_v)
+                    var_mdict = aux.update_mdict(var_mdict, m.brain[f'{mkey}'])
+                    gen_rows2(var_mdict, mkey, columns, data)
+        for aux_key in D.aux.keys:
+            if aux_key not in ['energetics', 'sensorimotor']:
+                var_ks = D.aux.init[aux_key].variable
+                var_mdict = aux.AttrDict({k: D.aux.m[aux_key].args[k] for k in var_ks})
+                var_mdict = aux.update_mdict(var_mdict, m[aux_key])
+                gen_rows2(var_mdict, aux_key, columns, data)
+        if m['energetics']:
+            for mod, dic in D.aux.init['energetics'].mode.items():
+                var_ks = dic.variable
+                var_mdict = aux.AttrDict({k: D.aux.m['energetics'].mode[mod].args[k] for k in var_ks})
+                var_mdict = aux.update_mdict(var_mdict, m['energetics'].mod)
+                gen_rows2(var_mdict, f'energetics.{mod}', columns, data)
+        if 'sensorimotor' in m.keys():
+            for mod, dic in D.aux.init['sensorimotor'].mode.items():
+                var_ks = dic.variable
+                var_mdict = aux.AttrDict({k: D.aux.m['sensorimotor'].mode[mod].args[k] for k in var_ks})
+                var_mdict = aux.update_mdict(var_mdict, m['sensorimotor'])
+                gen_rows2(var_mdict, 'sensorimotor', columns, data)
+        df = pd.DataFrame(data, columns=['field'] + columns)
+        df.set_index(['field'], inplace=True)
+        return df
+
+
+    if m is None:
+        m = reg.conf.Model.getID(mID)
+    df = mIDtable_data(m, columns=columns)
+    row_colors = [None] + [ModuleColorDict[ii] for ii in df.index.values]
+    df.index = arrange_index_labels(df.index)
+    return conf_table(df, row_colors, mID=mID, colWidths=colWidths, **kwargs)
 
 
 

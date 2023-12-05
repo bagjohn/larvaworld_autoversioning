@@ -336,16 +336,16 @@ SAMPLING_PARS = aux.bidict(
     aux.AttrDict(
         {
             'length': 'body.length',
-            nam.freq(nam.scal(nam.vel(''))): 'brain.crawler_params.freq',
-            nam.mean(nam.scal(nam.chunk_track('stride', nam.dst('')))): 'brain.crawler_params.stride_dst_mean',
-            nam.std(nam.scal(nam.chunk_track('stride', nam.dst('')))): 'brain.crawler_params.stride_dst_std',
-            nam.freq('feed'): 'brain.feeder_params.freq',
-            nam.max(nam.chunk_track('stride', nam.scal(nam.vel('')))): 'brain.crawler_params.max_scaled_vel',
-            nam.phi(nam.max(nam.scal(nam.vel('')))): 'brain.crawler_params.max_vel_phase',
-            'attenuation': 'brain.interference_params.attenuation',
-            nam.max('attenuation'): 'brain.interference_params.attenuation_max',
-            nam.freq(nam.vel(nam.orient(('front')))): 'brain.turner_params.freq',
-            nam.phi(nam.max('attenuation')): 'brain.interference_params.max_attenuation_phase',
+            nam.freq(nam.scal(nam.vel(''))): 'brain.crawler.freq',
+            nam.mean(nam.scal(nam.chunk_track('stride', nam.dst('')))): 'brain.crawler.stride_dst_mean',
+            nam.std(nam.scal(nam.chunk_track('stride', nam.dst('')))): 'brain.crawler.stride_dst_std',
+            nam.freq('feed'): 'brain.feeder.freq',
+            nam.max(nam.chunk_track('stride', nam.scal(nam.vel('')))): 'brain.crawler.max_scaled_vel',
+            nam.phi(nam.max(nam.scal(nam.vel('')))): 'brain.crawler.max_vel_phase',
+            'attenuation': 'brain.interference.attenuation',
+            nam.max('attenuation'): 'brain.interference.attenuation_max',
+            nam.freq(nam.vel(nam.orient(('front')))): 'brain.turner.freq',
+            nam.phi(nam.max('attenuation')): 'brain.interference.max_attenuation_phase',
         }
     )
 )
