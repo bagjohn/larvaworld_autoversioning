@@ -463,9 +463,9 @@ class LarvaGroup(NestedConf):
 
             if d is not None:
                 sample_ks = [k for k in m.flatten() if m.flatten()[k] == 'sample']
-                Sinv = reg.SAMPLING_PARS.inverse
-                sample_ps = aux.SuperList([Sinv[k] for k in aux.existing_cols(Sinv, sample_ks)]).flatten
-                sample_dict = d.sample_larvagroup(N=Nids, ps=sample_ps)
+                # Sinv = reg.SAMPLING_PARS.inverse
+                # sample_ps = aux.SuperList([Sinv[k] for k in aux.existing_cols(Sinv, sample_ks)]).flatten
+                sample_dict = d.sample_larvagroup(N=Nids, ps=sample_ks, inverse=True)
             else:
                 sample_dict = {}
 
@@ -908,8 +908,8 @@ class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
 
     def get_sample_bout_distros(self, m):
 
-        if m.brain.intermitter_params:
-            Im = m.brain.intermitter_params
+        if m.brain.intermitter:
+            Im = m.brain.intermitter
             dic = {
                 'pause_dist': ['pause', 'pause_dur'],
                 'stridechain_dist': ['stride', 'run_count'],
@@ -919,5 +919,5 @@ class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
                 if (d in Im) and (Im[d] is not None) and ('fit' in Im[d]) and (Im[d]['fit']):
                     for sample_d in dic[d]:
                         if sample_d in self.bout_distros and self.bout_distros[sample_d] is not None:
-                            m.brain.intermitter_params[d] = self.bout_distros[sample_d]
+                            m.brain.intermitter[d] = self.bout_distros[sample_d]
         return m

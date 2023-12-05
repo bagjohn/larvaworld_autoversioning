@@ -19,6 +19,7 @@ __all__ = [
     'larvaConf',
     'mod_kws',
     'mod_gen',
+    'mod_gen_multi',
     'mod_parent_class',
     'olf_kws',
     'mem_kws',
@@ -156,6 +157,10 @@ def mod_gen(k, m, **kwargs):
         else:
             C = M[mode](**{k: m[k] for k in m if k != 'mode'}, **kwargs)
     return C
+
+
+def mod_gen_multi(ks, conf, **kwargs):
+    return AttrDict({k: mod_gen(k, conf[k] if k in conf else None, **kwargs) for k in ks})
 
 
 def mod_kws(k, mode=None, as_entry=True, **kwargs):

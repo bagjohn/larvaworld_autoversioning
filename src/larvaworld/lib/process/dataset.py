@@ -1530,7 +1530,10 @@ class ParamLarvaDataset(param.Parameterized):
                 k = reg.getPar(p=par, to_return='k')
             return reg.par.get(k=k, d=self, compute=True)
 
-    def sample_larvagroup(self, N=1, ps=[]):
+    def sample_larvagroup(self, N=1, ps=[], inverse=False):
+        if inverse:
+            Sinv = reg.SAMPLING_PARS.inverse
+            ps = aux.SuperList([Sinv[k] for k in aux.existing_cols(Sinv, ps)]).flatten
         ps = self.end_ps.existing(ps)
         E = self.e[ps]
         if len(ps) == 0:

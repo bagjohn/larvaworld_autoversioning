@@ -1,6 +1,5 @@
 from ...param import NestedConf, ClassAttr
-# from . import Coupling, Intermitter, Feeder, Crawler, Turner
-from .module_modes import mod_gen, mod_parent_class
+from .module_modes import mod_parent_class, mod_gen_multi
 
 __all__ = [
     'Locomotor',
@@ -65,10 +64,8 @@ class Locomotor(NestedConf):
 
 class DefaultLocomotor(Locomotor):
     def __init__(self, conf, dt=0.1, **kwargs):
-
         self.dt = dt
-        for k in self.param_keys:
-            kwargs[k] = mod_gen(k, conf[k], dt=dt)
+        kwargs.update(mod_gen_multi(self.param_keys, conf, dt=dt))
         super().__init__(**kwargs)
 
     def step(self, A_in=0, length=1, on_food=False):

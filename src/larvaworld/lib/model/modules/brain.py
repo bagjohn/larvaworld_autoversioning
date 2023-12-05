@@ -3,7 +3,7 @@ import numpy as np
 from ... import reg, aux
 from .. import modules
 from ...param import NestedConf, ClassAttr
-from .module_modes import ModuleModeDict, mod_gen,mod_parent_class
+from .module_modes import ModuleModeDict, mod_gen_multi,mod_parent_class
 
 __all__ = [
     'Brain',
@@ -95,9 +95,7 @@ class Brain(NestedConf):
 class DefaultBrain(Brain):
     def __init__(self, conf, agent=None, **kwargs):
         kws={'dt':self.dt, 'brain':self}
-
-        for k in self.param_keys:
-            kwargs[k] = mod_gen(k, conf[k], **kws)
+        kwargs.update(mod_gen_multi(self.param_keys, conf, **kws))
         super().__init__(agent=agent, **kwargs)
         self.locomotor = modules.DefaultLocomotor(conf=conf, dt=self.dt)
         m = conf['memory']

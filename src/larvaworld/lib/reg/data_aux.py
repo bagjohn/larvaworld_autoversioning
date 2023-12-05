@@ -337,8 +337,9 @@ SAMPLING_PARS = aux.bidict(
         {
             'length': 'body.length',
             nam.freq(nam.scal(nam.vel(''))): 'brain.crawler.freq',
-            nam.mean(nam.scal(nam.chunk_track('stride', nam.dst('')))): 'brain.crawler.stride_dst_mean',
-            nam.std(nam.scal(nam.chunk_track('stride', nam.dst('')))): 'brain.crawler.stride_dst_std',
+            nam.freq(nam.scal(nam.vel(''))): 'brain.intermitter.crawl_freq',
+            nam.mean(nam.chunk_track('stride', nam.scal(nam.dst('')))): 'brain.crawler.stride_dst_mean',
+            nam.std(nam.chunk_track('stride', nam.scal(nam.dst('')))): 'brain.crawler.stride_dst_std',
             nam.freq('feed'): 'brain.feeder.freq',
             nam.max(nam.chunk_track('stride', nam.scal(nam.vel('')))): 'brain.crawler.max_scaled_vel',
             nam.phi(nam.max(nam.scal(nam.vel('')))): 'brain.crawler.max_vel_phase',

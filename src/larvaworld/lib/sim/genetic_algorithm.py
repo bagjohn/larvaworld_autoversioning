@@ -10,8 +10,9 @@ import numpy as np
 
 import larvaworld
 from .. import reg, aux
+from ..aux import AttrDict
 from ..param import NestedConf, ClassAttr, class_generator, SimOps, OptionalSelector
-from ..model import AllModules
+from ..model import AllModules, mod_kws, LocoModules
 from ..process.evaluation import Evaluation
 from .base_run import BaseRun
 
@@ -46,12 +47,12 @@ def bend_error_exclusion(robot):
         return False
 
 
-fitness_funcs = aux.AttrDict({
+fitness_funcs = AttrDict({
     'dst2source': dst2source_evaluation,
     'cum_dst': cum_dst,
 })
 
-exclusion_funcs = aux.AttrDict({
+exclusion_funcs = AttrDict({
     'bend_errors': bend_error_exclusion
 })
 
@@ -123,7 +124,6 @@ class GAselector(NestedConf):
 
         self.mConf0 = reg.conf.Model.getID(self.base_model)
         self.space_dict = reg.model.space_dict(mkeys=self.space_mkeys, mConf0=self.mConf0)
-        # self.space_columns = [p.name for k, p in self.space_dict.items()]
         self.gConf0 = aux.conf_mdict(self.space_dict)
 
     def create_first_generation(self):
@@ -148,7 +148,7 @@ class GAselector(NestedConf):
     def new_genome(self, gConf, mConf0):
         mConf = mConf0.update_nestdict(gConf)
         mConf.life_history = {'age': 0.0, 'epochs': {}}
-        return aux.AttrDict({'fitness': None, 'fitness_dict': {}, 'gConf': gConf, 'mConf': mConf})
+        return AttrDict({'fitness': None, 'fitness_dict': {}, 'gConf': gConf, 'mConf': mConf})
 
     def create_new_generation(self, sorted_gs):
         if len(sorted_gs) < self.Nagents_min:
@@ -267,10 +267,9 @@ class GAlauncher(BaseRun):
                      dsp_starts=[], dsp_stops=[], tor_durs=[], is_last=False)
             valid_gs = {}
             for i, g in genome_dict.items():
-                # for id in d.config.agent_ids:
                 ss = d.step_data.xs(str(i), level='AgentID')
                 g.fitness_dict = self.evaluator.fit_func(ss)
-                mus = aux.AttrDict({k: -np.mean(list(dic.values())) for k, dic in g.fitness_dict.items()})
+                mus = AttrDict({k: -np.mean(list(dic.values())) for k, dic in g.fitness_dict.items()})
                 if len(mus) == 1:
                     g.fitness = list(mus.values())[0]
                 else:
@@ -421,7 +420,7 @@ def optimize_mID(mID0, mID1=None, refID=None, space_mkeys=['turner', 'interferen
     if mID1 is None:
         mID1 = mID0
 
-    gaconf = aux.AttrDict({'ga_select_kws': {'Nagents': Nagents, 'Nelits': Nelits, 'Ngenerations': Ngenerations,
+    gaconf = AttrDict({'ga_select_kws': {'Nagents': Nagents, 'Nelits': Nelits, 'Ngenerations': Ngenerations,
                                              'init_mode': 'model', 'space_mkeys': space_mkeys,
                                              'base_model': mID0, 'bestConfID': mID1},
                            'ga_eval_kws': {'refID': refID, **kwargs},
@@ -432,52 +431,25 @@ def optimize_mID(mID0, mID1=None, refID=None, space_mkeys=['turner', 'interferen
     return {mID1: best_genome.mConf}
 
 def adapt_mID(dataset, mID0, mID, space_mkeys=['turner', 'interference'], **kwargs):
-    s, e, c = dataset.data
+    d=dataset
+    s, e, c = d.data
     CM = reg.conf.Model
     print(f'Adapting {mID0} on {c.refID} as {mID} fitting {space_mkeys} modules')
-    m0 = CM.getID(mID0)
-    if 'crawler' not in space_mkeys:
-        from ..model import mod_kws
+    ps=['body.length']
 
-        for p in mod_kws('crawler', mode=m0.brain.crawler.mode, as_entry=False).keylist:
+    m0 = CM.getID(mID0)
+    for k in LocoModules:
+        if k not in space_mkeys:
             try:
-                ppp = reg.SAMPLING_PARS.inverse[f'brain.crawler.{p}'][0]
-                m0.brain.crawler[p] = np.round(e[ppp].dropna().median(), 2)
+                ps += AttrDict(mod_kws(k, mode=m0.brain[k].mode, as_entry=True)).flatten().keylist
+                if k=='intermitter':
+                    m0 = c.get_sample_bout_distros(m0.get_copy())
             except:
                 pass
-
-    if 'intermitter' not in space_mkeys:
-        conf = m0.brain.intermitter
-        conf.stridechain_dist = c.bout_distros.run_count
-        try:
-            ll1, ll2 = conf.stridechain_dist.range
-            conf.stridechain_dist.range = (int(ll1), int(ll2))
-        except:
-            pass
-
-        conf.run_dist = c.bout_distros.run_dur
-        try:
-            ll1, ll2 = conf.run_dist.range
-            conf.run_dist.range = (np.round(ll1, 2), np.round(ll2, 2))
-        except:
-            pass
-        conf.pause_dist = c.bout_distros.pause_dur
-        try:
-            ll1, ll2 = conf.pause_dist.range
-            conf.pause_dist.range = (np.round(ll1, 2), np.round(ll2, 2))
-        except:
-            pass
-        conf.crawl_freq = np.round(e[reg.getPar('fsv')].dropna().median(), 2)
-        conf.mode = m0.brain.intermitter.mode
-
-        m0.brain.intermitter = conf
-    m0.body.length = np.round(e[reg.getPar('l')].dropna().median(), 5)
+    m0.update_nestdict(AttrDict({p: np.median(vs) for p, vs in d.sample_larvagroup(N=100, ps=ps, inverse=True).items()}))
     CM.setID(mID, m0)
-
-    GAselector.param.objects()['base_model'].objects = CM.confIDs
-    reg.generators.LarvaGroupMutator.param.objects()['modelIDs'].objects = CM.confIDs
     return optimize_mID(mID0=mID, space_mkeys=space_mkeys, dt=c.dt, refID=c.refID,
-                        dataset=dataset, id=mID, dir=f'{c.dir}/model/GAoptimization', **kwargs)
+                        dataset=d, id=mID, dir=f'{c.dir}/model/GAoptimization', **kwargs)
 
 
 
