@@ -11,8 +11,13 @@ __all__ = [
     'ModuleColorDict',
     'LocoModules',
     'SensorModules',
-    # 'mem_kws',
-    # 'feed_kws',
+    'brainConf',
+    'larvaConf',
+    'loco_kws',
+    'sensor_kws',
+    'olf_kws',
+    'mem_kws',
+    'feed_kws',
     # 'autogenerate_confs',
 ]
 
@@ -67,7 +72,8 @@ ModuleModeKDict = aux.bidict(aux.AttrDict({'realistic': 'RE', 'square': 'SQ', 'g
 
 LocoModules = ['crawler', 'turner', 'interference', 'intermitter']
 SensorModules = ['olfactor', 'toucher', 'windsensor', 'thermosensor']
-
+BrainModules = LocoModules+SensorModules+['feeder', 'memory']
+AuxModules = ['physics', 'body', 'energetics', 'sensorimotor']
 ModuleColorDict = aux.AttrDict({
     'body': 'lightskyblue',
     'physics': 'lightsteelblue',
@@ -86,7 +92,64 @@ ModuleColorDict = aux.AttrDict({
 })
 
 
+def brainConf(ms=None, mkws={}):
+    if ms is None:
+        ms = {'crawler': 'realistic',
+              'turner': 'neural',
+              'interference': 'phasic',
+              'intermitter': 'default'}
+
+    C = aux.AttrDict()
+
+    for k in BrainModules:
+        kk = f'{k}_params'
+        if k not in ms or ms[k] is None:
+            C[kk] = None
+        else:
+            kws = mkws[k] if k in mkws else {}
+            C[kk] = cd(ModuleModeDict[k][ms[k]], excluded=[basic.Effector, 'phi'], included={'mode': ms[k]}, **kws)
+
+    C.nengo = True if ('intermitter' in ms and ms['intermitter'] == 'nengo') else False
+    return C
+
+def larvaConf(ms=None, mkws={}):
+    C = aux.AttrDict()
+    C.brain = brainConf(ms, mkws)
+
+    for k in AuxModules:
+        kws = mkws[k] if k in mkws else {}
+        if k == 'energetics':
+            C[k] = None
+            # continue
+        elif k == 'sensorimotor':
+            continue
+        elif k == 'physics':
+            C[k] = cd(agents.BaseController, **kws)
+        elif k == 'body':
+            C[k] = cd(agents.LarvaSegmented, excluded=[agents.OrientedAgent, 'vertices', 'base_vertices', 'width','guide_points', 'segs'], **kws)
+        else:
+            raise
+
+    #  TODO thsi
+
+    C.Box2D_params = {
+        'joint_types': {
+            'friction': {'N': 0, 'args': {}},
+            'revolute': {'N': 0, 'args': {}},
+            'distance': {'N': 0, 'args': {}}
+        }
+    }
+
+    return C
+
+def loco_kws(module, mode, **kwargs):
+    assert module in LocoModules+['feeder']
+    return {
+        f'brain.{module}_params': cd(ModuleModeDict[module][mode], excluded=[basic.Effector, 'phi'], included={'mode': mode},
+                                     **kwargs)}
+
 def sensor_kws(sensor, mode='default', **kwargs):
+    assert sensor in SensorModules
     return {
         f'brain.{sensor}_params': cd(ModuleModeDict[sensor][mode], excluded=[basic.Effector], included={'mode': mode},
                                      **kwargs)}
@@ -109,7 +172,7 @@ def feed_kws(v=0.5):
 
 @reg.funcs.stored_conf("Model")
 def Model_dict():
-    lc = reg.model.larvaConf
+    # lc = reg.model.larvaConf
     MD = ModuleModeDict
 
     E = {}
@@ -160,11 +223,11 @@ def Model_dict():
 
     mkws0 = aux.AttrDict({'interference': {'attenuation': 0.1, 'attenuation_max': 0.6}})
 
-    E['explorer'] = lc(mkws=mkws0)
+    E['explorer'] = larvaConf(mkws=mkws0)
 
     for id, (Tm,ImM) in zip(['Levy', 'NEU_Levy', 'NEU_Levy_continuous'],
                             [('sinusoidal', 'default'),('neural', 'default'),('neural', None)]):
-        E[id] = lc(ms=aux.AttrDict(zip(LocoModules, ['constant', Tm, 'default', ImM])),
+        E[id] = larvaConf(ms=aux.AttrDict(zip(LocoModules, ['constant', Tm, 'default', ImM])),
                    mkws=aux.AttrDict({'interference': {'attenuation': 0.0}, 'intermitter': {'run_mode': 'exec'}}))
         extend(id0=id)
 
@@ -176,7 +239,7 @@ def Model_dict():
     for ii in itertools.product(*[MD[mk].keylist for mk in LocoModules]):
         mms=[ModuleModeKDict[i] for i in ii]
         id = "_".join(mms)
-        E[id] = lc(ms=aux.AttrDict(zip(LocoModules, ii)), mkws=mkws0 if mms[2] != 'DEF' else {})
+        E[id] = larvaConf(ms=aux.AttrDict(zip(LocoModules, ii)), mkws=mkws0 if mms[2] != 'DEF' else {})
         if mms[0] == 'RE' and mms[3] == 'DEF':
             extend(id0=id)
             if mms[1] == 'NEU' and mms[2] == 'PHI':

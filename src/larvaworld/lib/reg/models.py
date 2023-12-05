@@ -586,10 +586,6 @@ class ModelRegistry:
         self.dict = build_confdicts()
         self.full_dict = self.build_full_dict()
 
-    @property
-    def autostored_confs(self):
-        from ..model.modules.module_modes import autogenerate_confs
-        return autogenerate_confs()
 
     @property
     def mkeys(self):
