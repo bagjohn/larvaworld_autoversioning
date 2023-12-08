@@ -2,6 +2,7 @@ from ...ipc import BrianInterfaceMessage, Client
 from uuid import uuid4
 import datetime
 
+
 class RemoteBrianModelInterface(object):
 
     # generates random agent id prefixed with current date + time
@@ -31,15 +32,17 @@ class RemoteBrianModelInterface(object):
         self.t_sim = int(remote_dt)
         self.step_cache = {}
 
-
-    def executeRemoteModelStep(self, model_instance_id, t_sim=self.t_sim, t_warmup=0, **kwargs):
+    def executeRemoteModelStep(self, model_instance_id, t_sim=None, t_warmup=0, **kwargs):
         # t_sim: duration of remote model simulation in ms
         # warmup: duration of remote model warmup in ms
+        if t_sim is None:
+            t_sim = self.t_sim
+
         if model_instance_id not in self.step_cache:
             self.step_cache[model_instance_id] = 0
 
         msg = BrianInterfaceMessage(self.sim_id, model_instance_id, self.step_cache[model_instance_id],
-                           T=t_sim, warmup=t_warmup, **kwargs)
+                                    T=t_sim, warmup=t_warmup, **kwargs)
         # send model parameters to remote model server & wait for result response
         with Client((self.server_host, self.server_port)) as client:
             print("RemoteBrianModelInterface: BrianInterfaceMessage sent: {}".format(msg))

@@ -233,6 +233,14 @@ class BrainModuleDB(NestedConf):
         return self.dict[k].parent_class if k in self.ids else None
 
 
+class LarvaModuleDB(BrainModuleDB):
+    def __init__(self, **kwargs):
+        self.LarvaMods = SuperList(['brain', 'energetics', 'life_history', 'body', 'physics', 'sensorimotor'])
+        super().__init__(**kwargs)
+
+
+
+
 moduleDB=BrainModuleDB()
 AuxModules = SuperList(['physics', 'body', 'energetics', 'sensorimotor'])
 AllModules = moduleDB.ids + AuxModules
