@@ -58,7 +58,7 @@ class ModelTab(GuiTab):
         else :
             m['energetics'] = {k : c[k].get_dict(v, w) for k in self.energetics_keys}
 
-        b = aux.AttrDict({k:c[k].get_dict(v, w) for k in model.AllModules})
+        b = aux.AttrDict({k:c[k].get_dict(v, w) for k in model.moduleDB.AllModules})
         # b.modules = aux.AttrDict({k:w[f'TOGGLE_{k}'].get_state() for k in model.AllModules})
         # for k in b.modules:
         #     b[k] = c[k].get_dict(v, w)
