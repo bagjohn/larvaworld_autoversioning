@@ -4,10 +4,12 @@ import param
 from ... import aux
 from .basic import Effector
 from ...param import PositiveNumber, RangeRobust
+from .remote_brian_interface import RemoteBrianModelInterface
 
 __all__ = [
     'Sensor',
     'Olfactor',
+    'OSNOlfactor',
     'Toucher',
     'Windsensor',
     'Thermosensor',
@@ -22,6 +24,18 @@ class Sensor(Effector):
                                 doc='The linear decay coefficient of the olfactory sensory activation.')
     brute_force = param.Boolean(False, doc='Whether to apply direct rule-based modulation on locomotion or not.')
     gain_dict = param.Dict(default=aux.AttrDict(), doc='Dictionary of sensor gain per stimulus ID')
+
+
+    @staticmethod
+    def select(mode):
+        d = aux.AttrDict({
+            'olfactor': Olfactor,
+            'brian_olfactor': BrianOlfactor,
+            'toucher': Toucher,
+            'wind': WindSensor,
+            'thermo': Thermosensor
+        })
+        return d[mode]
 
     def __init__(self, brain=None, **kwargs):
         super().__init__(**kwargs)
@@ -183,3 +197,31 @@ class Thermosensor(Sensor):
     @property
     def cool_sensor_perception(self):
         return self.dX['cool']
+
+
+class OSNOlfactor(Olfactor):
+    def __init__(self, response_key='OSN_rate', server_host='localhost', server_port=5795, remote_dt=100, remote_warmup=0, **kwargs):
+        super().__init__(**kwargs)
+        self.brianInterface = RemoteBrianModelInterface(server_host, server_port, remote_dt)
+        self.brian_warmup = remote_warmup
+        self.response_key = response_key
+        self.remote_dt = remote_dt
+        self.agent_id = RemoteBrianModelInterface.getRandomModelId()
+
+
+    def update(self):
+        agent_id = self.brain.agent.unique_id if self.brain is not None else self.agent_id
+
+        msg_kws = {
+            # Default :
+            # TODO: can we get this info from somewhere ?
+            # yes: self.X.values() provides an array of all odor types, the index could be used as odor_id
+            'odor_id': 0,
+            # The concentration change :
+            'concentration_mmol': self.first_odor_concentration, # 1st ODOR concentration
+            'concentration_change_mmol': self.first_odor_concentration_change, # 1st ODOR concentration change
+        }
+
+        response = self.brianInterface.executeRemoteModelStep(agent_id, t_sim=self.remote_dt, t_warmup=self.brian_warmup, **msg_kws)
+        self.output = response.param(self.response_key)
+        super().update()
