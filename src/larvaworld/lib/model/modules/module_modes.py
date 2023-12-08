@@ -167,17 +167,17 @@ class BrainModuleDB(NestedConf):
             else:
                 return self.brainDB[k].modes
 
-    def mod_gen(self, k, m, **kwargs):
+    def mod_gen(self, k=None, m=None, **kwargs):
         return self.brainDB[k].mod_gen(m, **kwargs) if k in self.BrainMods else None
 
     def mod_gen_multi(self, ks, conf, **kwargs):
         return AttrDict({k: self.mod_gen(k, conf[k] if k in conf else None, **kwargs) for k in ks})
 
-    def mod_kws(self, k, mode=None, as_entry=True, **kwargs):
+    def mod_kws(self, k=None, mode=None, as_entry=True, **kwargs):
         C = self.brainDB[k].mod_kws(mode=mode, **kwargs) if k in self.BrainMods else None
         return AttrDict({f'brain.{k}': C}) if as_entry else C
 
-    def mod_objs(self, k, mode=None, as_entry=True, **kwargs):
+    def mod_objs(self, k=None, mode=None, as_entry=True, **kwargs):
         C = self.brainDB[k].mod_objs(mode=mode, **kwargs) if k in self.BrainMods else AttrDict()
         return AttrDict({f'brain.{k}': C}) if as_entry else C
 
@@ -186,7 +186,7 @@ class BrainModuleDB(NestedConf):
         return AttrDict({f'brain.{k}': C[k] for k in C}).flatten() if as_entry else C
 
     def mod_vars(self, **kwargs):
-        return self.mod_objs(**kwargs).keylist
+        return self.mod_objs(**kwargs).flatten().keylist
 
     def mod_vars_multi(self, **kwargs):
         return self.mod_objs_multi(**kwargs).keylist
@@ -530,8 +530,9 @@ def Model_dict():
     new('obstacle_avoider', 'navigator', {'sensorimotor': MD.sensorimotor_kws()})
 
     for id in ['explorer', 'navigator', 'feeder', 'forager']:
-        new(f'{id}_sample', id, {f'brain.crawler.{k}': 'sample' for k in
-                                 ['stride_dst_mean', 'stride_dst_std', 'max_scaled_vel', 'max_vel_phase', 'freq']})
+        new(f'{id}_sample', id, {k : 'sample' for k in MD.mod_vars(k='crawler', mode='RE')})
+        # new(f'{id}_sample', id, {f'brain.crawler.{k}': 'sample' for k in
+        #                          ['stride_dst_mean', 'stride_dst_std', 'max_scaled_vel', 'max_vel_phase', 'freq']})
 
     for sp, k_abs, eeb in zip(['rover', 'sitter'], [0.8, 0.4], [0.67, 0.37]):
         en_ws = MD.energetics_kws(gut_kws={'k_abs' : k_abs}, DEB_kws= {'species' : sp})
