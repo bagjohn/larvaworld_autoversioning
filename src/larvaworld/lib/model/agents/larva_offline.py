@@ -113,7 +113,7 @@ def sim_single_agent(m, Nticks=1000, dt=0.1, df_columns=None, p0=None, fo0=None)
         p0 = (0.0, 0.0)
     x0, y0 = p0
     if df_columns is None:
-        df_columns = reg.getPar(['b', 'fo', 'ro', 'fov', 'I_T', 'x', 'y', 'd', 'v', 'A_T'])
+        df_columns = reg.getPar(['b', 'fo', 'ro', 'fov', 'I_T', 'x', 'y', 'd', 'v', 'A_T', 'A_CT'])
     AA = np.ones([Nticks, len(df_columns)]) * np.nan
 
     controller = BaseController(**m.physics)
@@ -140,14 +140,14 @@ def sim_single_agent(m, Nticks=1000, dt=0.1, df_columns=None, p0=None, fo0=None)
         x += dst * np.cos(fo)
         y += dst * np.sin(fo)
 
-        AA[i, :] = [b, fo, ro, fov, DL.turner.input, x, y, dst, v, DL.turner.output]
+        AA[i, :] = [b, fo, ro, fov, DL.turner.input, x, y, dst, v, DL.turner.output, DL.interference.cur_attenuation]
 
     AA[:, :4] = np.rad2deg(AA[:, :4])
     return AA
 
 
 def sim_multi_agents(Nticks, Nids, ms, group_id, dt=0.1, ids=None, p0s=None, fo0s=None):
-    df_columns = reg.getPar(['b', 'fo', 'ro', 'fov', 'I_T', 'x', 'y', 'd', 'v', 'A_T'])
+    df_columns = reg.getPar(['b', 'fo', 'ro', 'fov', 'I_T', 'x', 'y', 'd', 'v', 'A_T', 'A_CT'])
     if ids is None:
         ids = [f'{group_id}{j}' for j in range(Nids)]
     if p0s is None:
@@ -166,6 +166,7 @@ def sim_multi_agents(Nticks, Nids, ms, group_id, dt=0.1, ids=None, p0s=None, fo0
     s = s.astype(float)
 
     e = pd.DataFrame(index=ids)
+    e.index = e.index.set_names(['AgentID'])
     e['cum_dur'] = Nticks * dt
     e['num_ticks'] = Nticks
     e['length'] = [m.body.length for m in ms]

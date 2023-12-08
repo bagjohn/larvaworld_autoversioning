@@ -10,6 +10,7 @@ import seaborn as sns
 
 from ..aux import nam
 from .. import reg, aux, plot
+from ..model import moduleDB as MD
 
 __all__ = [
     'module_endpoint_hists',
@@ -27,23 +28,23 @@ __all__ = [
 ]
 
 
+
+
 @reg.funcs.graph('module hists')
 def module_endpoint_hists(e, mkey='crawler', mode='realistic', Nbins=None, show_median=True, **kwargs):
-    # if e is None and refID is not None:
-    #     d = reg.conf.Ref.loadRef(refID)
-    #     d.load(step=False)
-    #     e = d.endpoint_data
+
     if Nbins is None:
         Nbins = int(e.index.values.shape[0] / 10)
 
-    var_mdict = reg.model.variable_mdict(mkey, mode=mode)
-    N = len(var_mdict)
+    pars=MD.mod_vars(k=mkey, mode=mode)
+    pars = reg.sample_ps(pars, e)
+    N = len(pars)
 
     P = plot.AutoBasePlot(name=f'{mkey}_endpoint_hists', build_kws={'Ncols': N, 'w': 7, 'h': 6, 'sharey': True},
                           **kwargs)
-
-    for i, p in enumerate(var_mdict.values()):
-        vs = e[p.codename].dropna().values
+    for i, par in enumerate(pars):
+        vs = e[par].dropna().values
+        p=reg.par.ddict[par]
         P.axs[i].hist(vs, bins=Nbins)
         P.conf_ax(i, xlab=p.label, ylab='# larvae' if i == 0 else None, xMaxN=3, xlabelfontsize=18,
                   xticklabelsize=18, yvis=False if i != 0 else True)
@@ -165,14 +166,7 @@ def plot_distros(name=None, ks=['v', 'a', 'sv', 'sa', 'b', 'bv', 'ba', 'fov', 'f
     return P.get()
 
 
-# @reg.funcs.graph('crawl pars', required={'ks': ['str_N', 'run_tr', 'cum_sd']})
-# def plot_crawl_pars(ks=['str_N', 'run_tr', 'cum_sd'], subfolder='endpoint', name='crawl_pars',
-#                     hist_type='sns.hist', kde=True, **kwargs):
-#     P = plot.AutoPlot(ks=ks, key='end', name=name, subfolder=subfolder,
-#                       build_kws={'Ncols': 'Nks', 'wh': 7, 'sharey': True}, **kwargs)
-#     P.plot_hist(hist_type=hist_type, kde=kde)
-#     P.adjust((0.1, 0.95), (0.15, 0.95), 0.1)
-#     return P.get()
+
 
 @reg.funcs.graph('crawl pars', required={'ks': ['str_N', 'run_tr', 'cum_sd']})
 def plot_crawl_pars(kde=True, **kwargs):
@@ -354,15 +348,18 @@ def plot_params(key, type, name=None, mode=None, ks=None, Ncols=None, plot_kws={
         sharex, sharey = True, False
         W, H = 0.5, 0.15
 
+    if 'subfolder' not in kwargs :
+        if key == 'end':
+            kwargs['subfolder'] = 'endpoint'
+            ks = plot.define_end_ks(ks, mode)
+        elif key == 'step':
+            kwargs['subfolder'] = 'distro'
+        else:
+            raise
     if key == 'end':
-        subfolder = 'endpoint'
         ks = plot.define_end_ks(ks, mode)
-    elif key == 'step':
-        subfolder = 'distro'
-    else:
-        raise
 
-    P = plot.AutoPlot(ks=ks, key=key, name=name, subfolder=subfolder,
+    P = plot.AutoPlot(ks=ks, key=key, name=name,
                       build_kws={'N': 'Nks', 'Ncols': Ncols, 'wh': 7, 'sharex': sharex, 'sharey': sharey}, **kwargs)
     if type == 'hist':
         P.plot_hist(**plot_kws)

@@ -9,7 +9,7 @@ from .dataset_replay import ReplayRun
 
 from .single_run import ExpRun
 from .subprocess_run import Exec
-from .model_evaluation import EvalRun
+from .model_evaluation import *
 
 
 from .batch_run import BatchRun

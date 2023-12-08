@@ -2,20 +2,19 @@ import PySimpleGUI as sg
 import copy
 import os
 
-
-from ...lib import reg
-from ...gui import gui_aux,tabs
+from ...lib import aux, reg, model
+from ...gui.gui_aux import gui_col, GraphList, col_kws, SelectionList, named_bool_button, GuiTab,tab_kws,CollapsibleTable,PadDict, t_kws
+from ...gui.tabs.body_draw import DrawBodyTab
 
 __all__ = [
     'ModelTab',
 ]
 
-class ModelTab(gui_aux.GuiTab):
+class ModelTab(GuiTab):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.fields = ['physics', 'body']
-        self.module_keys = list(reg.par.get_null('modules').keys())
-        self.energetics_keys = list(reg.par.get_null('energetics').keys())
+        self.energetics_keys = ['DEB', 'gut']
         self.canvas_size = (1200, 1000)
 
 
@@ -51,7 +50,6 @@ class ModelTab(gui_aux.GuiTab):
             w[f'TOGGLE_{kk}'].set_state(conf['brain'][kk])
 
     def get(self, w, v, c, as_entry=True):
-        module_dict = dict(zip(self.module_keys, [w[f'TOGGLE_{k}'].get_state() for k in self.module_keys]))
         m = {}
         for n in self.fields:
             m[n] = None if c[n].disabled else c[n].get_dict(v, w)
@@ -60,35 +58,19 @@ class ModelTab(gui_aux.GuiTab):
         else :
             m['energetics'] = {k : c[k].get_dict(v, w) for k in self.energetics_keys}
 
-        b = {}
-        b['modules'] = module_dict
-        for k in module_dict.keys():
-            b[k] = c[k].get_dict(v, w)
-        if b['olfactor'] is not None:
-            b['olfactor']['gain_dict'] = c['odor_gains'].dict
+        b = aux.AttrDict({k:c[k].get_dict(v, w) for k in model.AllModules})
+        # b.modules = aux.AttrDict({k:w[f'TOGGLE_{k}'].get_state() for k in model.AllModules})
+        # for k in b.modules:
+        #     b[k] = c[k].get_dict(v, w)
+        if b.olfactor is not None:
+            b.olfactor['gain_dict'] = c['odor_gains'].dict
         for kk in ['nengo']:
             b[kk] = w[f'TOGGLE_{kk}'].get_state()
         m['brain'] = b
         return copy.deepcopy(m)
 
     def build_module_tab(self):
-        Cmod, Cbody, Ceffector, Csens, Cmem, Cener = 'purple', 'orange', 'red', 'green', 'blue', 'yellow'
-        col_dict = {
-            'crawler': Ceffector,
-            'turner': Ceffector,
-            'interference': Cmod,
-            'intermitter': Cmod,
-            'olfactor': Csens,
-            'toucher': Csens,
-            'windsensor': Csens,
-            'memory': Cmem,
-            'body': Cbody,
-            'physics': Cbody,
-            'feeder': Ceffector,
-            'DEB': Cener,
-            'gut': Cener,
-            # 'energetics': Cener,
-        }
+
         dic = {
 
             'modulation/memory': ['intermitter', 'interference', 'memory'],
@@ -102,7 +84,7 @@ class ModelTab(gui_aux.GuiTab):
 
         ss = (500, 650)
         c = {}
-        s1 = gui_aux.CollapsibleTable('odor_gains', index='ID', heading_dict={'mean': 'mean', 'std': 'std'}, state=True,
+        s1 = CollapsibleTable('odor_gains', index='ID', heading_dict={'mean': 'mean', 'std': 'std'}, state=True,
                                       col_widths=[13, 7, 6])
         c.update(s1.get_subdicts())
         tt = []
@@ -111,7 +93,7 @@ class ModelTab(gui_aux.GuiTab):
             ppp = []
             for v in vs:
                 tS=18 if v in ['gut'] else 16
-                cc = gui_aux.PadDict(v, toggle=True if v not in ['body', 'physics'] else None, background_color=col_dict[v], text_kws=gui_aux.t_kws(tS))
+                cc = PadDict(v, toggle=True if v not in ['body', 'physics'] else None, background_color=model.ModuleColorDict[v], text_kws=t_kws(tS))
                 c.update(cc.get_subdicts())
                 if v=='olfactor' :
                     ll = cc.get_layout(size=(ss[0], int(ss[1]/2)))
@@ -122,28 +104,28 @@ class ModelTab(gui_aux.GuiTab):
             pp[k] = [[sg.Pane(ppp, orientation='horizontal', show_handle=False)]]
             tt.append(sg.Tab(k, pp[k], key=f'{k} MODULES'))
 
-        modules_tab = sg.TabGroup([tt], key='ACTIVE_MODULES', tab_location='topcenter', **gui_aux.tab_kws)
+        modules_tab = sg.TabGroup([tt], key='ACTIVE_MODULES', tab_location='topcenter', **tab_kws)
         l=sg.Col([[modules_tab]])
         return l, c
 
     def build_architecture_tab(self):
         fdir = f'{reg.ROOT_DIR}/gui/media/model_figures'
         fig_dict = {f: f'{fdir}/{f}' for f in sorted(os.listdir(fdir))}
-        g2 = gui_aux.GraphList(self.name, tab=self, list_header='Model', fig_dict=fig_dict, subsample=3,
+        g2 = GraphList(self.name, tab=self, list_header='Model', fig_dict=fig_dict, subsample=3,
                                canvas_size=self.canvas_size)
-        col1 = gui_aux.gui_col([g2], x_frac=0.2, y_frac=0.6, as_pane=True, pad=(20, 20))
-        col2 = sg.Col([g2.canvas.get_layout(as_pane=True, pad=(0, 10))[0]], **gui_aux.col_kws)
+        col1 = gui_col([g2], x_frac=0.2, y_frac=0.6, as_pane=True, pad=(20, 20))
+        col2 = sg.Col([g2.canvas.get_layout(as_pane=True, pad=(0, 10))[0]], **col_kws)
         l2 = [[col1, col2]]
         return l2, {g2.name: g2}
 
     def build(self):
-        sl0 = gui_aux.SelectionList(tab=self, buttons=['load', 'save', 'delete', 'tree', 'conf_tree'], root_key='Model')
-        b_nengo = gui_aux.named_bool_button('nengo', False)
-        l00 = gui_aux.gui_col([sl0], x_frac=0.2, y_frac=0.6, as_pane=True, pad=(20, 20), add_to_bottom=[b_nengo])
+        sl0 = SelectionList(tab=self, buttons=['load', 'save', 'delete', 'tree', 'conf_tree'], root_key='Model')
+        b_nengo = named_bool_button('nengo', False)
+        l00 = gui_col([sl0], x_frac=0.2, y_frac=0.6, as_pane=True, pad=(20, 20), add_to_bottom=[b_nengo])
         l01, c1 = self.build_module_tab()
         l1=[[l00, l01]]
         l2, g2 = self.build_architecture_tab()
-        self.draw_tab = tabs.body_draw.DrawBodyTab(name='body', gui=self.gui, conftype='Body')
+        self.draw_tab = DrawBodyTab(name='body', gui=self.gui, conftype='Body')
         l3, c3, g3, d3 = self.draw_tab.build()
         self.selectionlists[self.draw_tab.conftype] = self.draw_tab.selectionlists[self.draw_tab.conftype]
 
@@ -152,7 +134,7 @@ class ModelTab(gui_aux.GuiTab):
         tabs['architecture'] = l2
         tabs['draw'] = l3
         l_tabs=[sg.Tab(k, v, key=f'{k}_TAB') for k,v in tabs.items()]
-        l = [[sg.TabGroup([l_tabs], key='ACTIVE_MODEL_TAB', tab_location='topleft', **gui_aux.tab_kws)]]
+        l = [[sg.TabGroup([l_tabs], key='ACTIVE_MODEL_TAB', tab_location='topleft', **tab_kws)]]
         return l, {**c1, **c3}, {**g2, **g3}, {**{}, **d3}
 
     def eval(self, e, v, w, c, d, g):

@@ -120,6 +120,7 @@ class ConfType(param.Parameterized):
             from ..sim.genetic_algorithm import GAselector
             GAselector.param.objects()['base_model'].objects = self.confIDs
             reg.generators.LarvaGroupMutator.param.objects()['modelIDs'].objects = self.confIDs
+            reg.generators.LarvaGroup.param.objects()['model'].objects = self.confIDs
         reg.vprint(f'{self.conftype} Configuration saved under the id : {id}', 1)
 
     def delete(self, id=None):

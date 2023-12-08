@@ -14,6 +14,9 @@ __all__ = [
     'VERBOSE',
     'vprint',
     'default_refID',
+    'default_ref',
+    'default_modelID',
+    'default_model',
     'ROOT_DIR',
     'DATA_DIR',
     'SIM_DIR',
@@ -98,15 +101,18 @@ class FunctionDict:
 
         return wrapper
 
+
 funcs = FunctionDict()
 
 from . import keymap
+
 controls = keymap.ControlRegistry()
 
 from .distro import *
 from .data_aux import *
 
 from . import parDB, parFunc
+
 par = parDB.ParamRegistry()
 
 from .config import conf
@@ -143,8 +149,9 @@ def define_default_refID_by_running_test():
 
 
 def define_default_refID():
-    conf.Ref.cleanRefIDs()
-    if len(conf.Ref.confIDs) == 0:
+    R=conf.Ref
+    R.cleanRefIDs()
+    if len(R.confIDs) == 0:
         vprint('No reference datasets available.Automatically importing one from the experimental data folder.', 2)
         if 'Schleyer' not in conf.LabFormat.confIDs:
             config.resetConfs(conftypes=['LabFormat'])
@@ -162,10 +169,21 @@ def define_default_refID():
         d = g.import_dataset(**kws)
         d.process(is_last=False)
         d.annotate(is_last=True)
-        assert len(conf.Ref.confIDs) == 1
-    return conf.Ref.confIDs[0]
+        assert len(R.confIDs) == 1
+    return R.confIDs[0]
 
 
 default_refID = define_default_refID()
 
 vprint(f"Registry configured!", 2)
+
+
+def default_ref():
+    return loadRef(default_refID, load=True)
+
+
+default_modelID = 'explorer'
+
+
+def default_model():
+    return conf.Model.getID(default_modelID)

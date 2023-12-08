@@ -8,6 +8,7 @@ __all__ = [
     'class_generator',
     'expand_kws_shortcuts',
     'class_defaults',
+    'class_objs',
 ]
 
 
@@ -29,8 +30,9 @@ class NestedConf(param.Parameterized):
                 if k in kwargs:
                     if type(p) == ClassAttr and not isinstance(kwargs[k], p.class_):
                         kwargs[k] = p.class_(**kwargs[k])
-                    elif type(p) == ClassDict and not all(isinstance(vv, p.item_type) for kk, vv in kwargs[k].items()):
-                        kwargs[k] = p.class_({kk: p.item_type(**vv) for kk, vv in kwargs[k].items()})
+                    elif type(p) == ClassDict :
+                        if not all(isinstance(m, p.item_type) for m in kwargs[k].values()):
+                            kwargs[k] = p.class_({n: p.item_type(**m) for n, m in kwargs[k].items()})
             except:
                 pass
         super().__init__(**kwargs)
@@ -221,3 +223,16 @@ def class_defaults(A, excluded=[],included={}, **kwargs):
     d.update_existingdict(kwargs)
     d.update(**included)
     return d
+
+def class_objs(A, excluded=[]):
+    objs=A.param.objects(instance=False)
+    ks = aux.SuperList(objs.keys())
+    if len(excluded) > 0:
+        exc_ks = aux.SuperList()
+        for exc_A in excluded:
+            if type(exc_A)==param.parameterized.ParameterizedMetaclass:
+                exc_ks += list(exc_A.param.objects(instance=False).keys())
+            elif type(exc_A)==str:
+                exc_ks.append(exc_A)
+        ks=ks.nonexisting(exc_ks)
+    return aux.AttrDict({k:objs[k] for k in ks})

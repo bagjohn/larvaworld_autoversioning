@@ -284,7 +284,7 @@ class BasicABModel:
         """ Stops :meth:`Model.run` during an active simulation. """
         self.running = False
 
-    def run(self, steps=None, seed=None, display=True):
+    def run(self, steps=None, seed=None):
         """ Executes the simulation of the model.
         Can also be used to continue a partly-run simulation
         for a given number of additional steps.
@@ -317,8 +317,7 @@ class BasicABModel:
         self.sim_setup(steps, seed)
         while self.running:
             self.sim_step()
-            if display:
-                print(f"\rCompleted: {self.t} steps", end='')
+            reg.vprint(f"\rCompleted: {self.t} steps", 1)
         self.end()
         self.create_output()
 
@@ -327,8 +326,7 @@ class BasicABModel:
         self.output.info['completed_steps'] = self.t
         self.output.info['run_time'] = ct = str(datetime.now() - dt0)
 
-        if display:
-            print(f"\nRun time: {ct}\nSimulation finished")
+        reg.vprint(f"\nRun time: {ct}\nSimulation finished",1)
 
         return self.output
 

@@ -7,6 +7,7 @@ import pandas as pd
 import param
 
 from .. import reg, aux
+from ..aux import nam, AttrDict
 from ..param import Area, BoundedArea, NestedConf, Larva_Distro, ClassAttr, SimTimeOps, \
     SimMetricOps, ClassDict, EnrichConf, OptionalPositiveRange, OptionalSelector, OptionalPositiveInteger, \
     generate_xyNor_distro, Odor, Life, class_generator, SimOps, RuntimeOps, Epoch, RuntimeDataOps, RandomizedColor, \
@@ -33,7 +34,7 @@ __all__ = [
     'update_larva_groups',
 ]
 
-gen = aux.AttrDict({
+gen = AttrDict({
     'FoodGroup': class_generator(Food, mode='Group'),
     'Food': class_generator(Food),
     'Source': class_generator(Source),
@@ -238,7 +239,7 @@ class EnvConf(NestedConf):
     thermoscape = ClassAttr(gen.ThermoScape, default=None, doc='The thermal landscape in the arena')
 
     def __init__(self, odorscape=None, **kwargs):
-        if odorscape is not None and isinstance(odorscape, aux.AttrDict):
+        if odorscape is not None and isinstance(odorscape, AttrDict):
             mode = odorscape.odorscape
             odorscape_classes = list(EnvConf.param.odorscape.class_)
             odorscape_modes = dict(zip(['Gaussian', 'Diffusion'], odorscape_classes))
@@ -272,7 +273,7 @@ class EnvConf(NestedConf):
                 return lines
 
         return cls.rect(h,f=gen.FoodConf.su(id='Target', odor=Odor.oO(o=o), c='blue'),
-                   bl=aux.AttrDict({'Maze': gen.Border(vertices=get_maze(nx=n, ny=n, h=h, return_points=True),
+                   bl=AttrDict({'Maze': gen.Border(vertices=get_maze(nx=n, ny=n, h=h, return_points=True),
                                                                 color='black', width=0.001)}),o=o, **kwargs)
 
     @classmethod
@@ -356,7 +357,7 @@ def update_larva_groups(lgs, **kwargs):
     Nold = len(lgs)
     gIDs = list(lgs)
     confs = prepare_larvagroup_args(default_Nlgs=Nold, **kwargs)
-    new_lgs = aux.AttrDict()
+    new_lgs = AttrDict()
     for i, conf in enumerate(confs):
         gID = gIDs[i % Nold]
         gConf = lgs[gID]
@@ -430,21 +431,22 @@ class LarvaGroup(NestedConf):
         super().__init__(model=model, group_id=group_id, **kwargs)
 
     def entry(self, expand=False, as_entry=True):
-        conf = self.nestedConf
-        if expand and conf.model is not None and isinstance(conf.model, str):
-            conf.model = reg.conf.Model.getID(conf.model)
+        C = self.nestedConf
+        if expand :
+            C.model = self.expanded_model
         if as_entry:
-            return aux.AttrDict({self.group_id: conf})
+            return AttrDict({self.group_id: C})
         else:
-            return conf
+            return C
 
     @property
     def expanded_model(self):
-        assert self.model is not None
-        if isinstance(self.model, dict):
-            return self.model
-        elif isinstance(self.model, str):
-            return reg.conf.Model.getID(self.model)
+        m=self.model
+        assert m is not None
+        if isinstance(m, dict):
+            return m
+        elif isinstance(m, str):
+            return reg.conf.Model.getID(m)
         else:
             raise
 
@@ -462,7 +464,7 @@ class LarvaGroup(NestedConf):
             ids = [f'{self.group_id}_{i}' for i in range(Nids)]
 
             if d is not None:
-                sample_dict = d.sample_larvagroup(N=Nids, ps=[k for k in m.flatten() if m.flatten()[k] == 'sample'], inverse=True)
+                sample_dict = d.sample_larvagroup(N=Nids, ps=[k for k in m.flatten() if m.flatten()[k] == 'sample'])
             else:
                 sample_dict = {}
 
@@ -473,9 +475,9 @@ class LarvaGroup(NestedConf):
 
         all_pars = [m.get_copy() for i in range(Nids)]
         if len(sample_dict) > 0:
-            for i, mm in enumerate(all_pars):
-                dic = aux.AttrDict({p: vs[i] for p, vs in sample_dict.items()})
-                mm.update_nestdict(dic)
+            for i in range(Nids):
+                dic = AttrDict({p: vs[i] for p, vs in sample_dict.items()})
+                all_pars[i]=all_pars[i].update_nestdict(dic)
         return ids, ps, ors, all_pars
 
     def __call__(self, parameter_dict={}):
@@ -519,7 +521,7 @@ class LarvaGroup(NestedConf):
         if not as_dict:
             return lg_list
         else:
-            return aux.AttrDict({lg.group_id: lg.entry(as_entry=False, expand=False) for lg in lg_list})
+            return AttrDict({lg.group_id: lg.entry(as_entry=False, expand=False) for lg in lg_list})
 
 
 gen.LarvaGroup = class_generator(LarvaGroup)
@@ -558,13 +560,13 @@ class LabFormat(NestedConf):
         if mode == 'full':
             return self.filesystem.read_sequence[1:]
         elif mode == 'minimal':
-            return aux.nam.xy(self.tracker.point)
+            return nam.xy(self.tracker.point)
         elif mode == 'semifull':
-            return aux.nam.midline_xy(self.tracker.Npoints, flat=True) + aux.nam.contour_xy(self.tracker.Ncontour,
+            return nam.midline_xy(self.tracker.Npoints, flat=True) + nam.contour_xy(self.tracker.Ncontour,
                                                                                             flat=True) + [
                 'collision_flag']
         elif mode == 'points':
-            return aux.nam.xy(self.tracker.points, flat=True) + ['collision_flag']
+            return nam.xy(self.tracker.points, flat=True) + ['collision_flag']
         else:
             raise
 
@@ -681,7 +683,7 @@ class LabFormat(NestedConf):
             d = self.build_dataset(step, end, parent_dir, proc_folder=proc_folder, group_id=group_id,
                                    id=id, sample=sample, color=color, epochs=epochs, age=age, refID=refID)
             if enrich_conf is None:
-                enrich_conf = aux.AttrDict()
+                enrich_conf = AttrDict()
             enrich_conf.pre_kws = self.preprocess.nestedConf
             d.enrich(**enrich_conf, is_last=False)
             reg.vprint(f'****- Processed dataset {d.id} to derive secondary metrics -----', 1)
@@ -773,7 +775,7 @@ class LabFormat(NestedConf):
 class ExpConf(SimOps):
     env_params = ClassAttr(gen.Env, doc='The environment configuration')
     experiment = reg.conf.Exp.confID_selector()
-    trials = param.Dict(default=aux.AttrDict({'epochs': aux.ItemList()}), doc='Temporal epochs of the experiment')
+    trials = param.Dict(default=AttrDict({'epochs': aux.ItemList()}), doc='Temporal epochs of the experiment')
     collections = param.ListSelector(default=['pose'], objects=reg.parDB.output_keys,
                                      doc='The data to collect as output')
     larva_groups = ClassDict(item_type=gen.LarvaGroup, doc='The larva groups')
@@ -795,7 +797,7 @@ class ExpConf(SimOps):
 
         }
         return cls(dt=c.dt, duration=c.duration, env_params=gen.Env(**c.env_params),
-                   larva_groups=aux.AttrDict({f'Imitation {refID}': gen.LarvaGroup(**kws)}),
+                   larva_groups=AttrDict({f'Imitation {refID}': gen.LarvaGroup(**kws)}),
                    experiment='dish', **kwargs)
 
     @property
@@ -842,32 +844,12 @@ gen.LabFormat = LabFormat
 gen.Replay = class_generator(ReplayConf)
 
 
-def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, sample=None, substrate_type='standard', pref='', navigator=False,
-           expand=False):
+def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, substrate_type='standard', expand=False):
     kws0 = {
         'distribution': {'N': N, 'scale': (0.005, 0.005)},
         'life_history': Life.prestarved(age=age, h_starved=h_starved, rearing_quality=q, substrate_type=substrate_type),
-        'sample': sample,
     }
-
-    mcols = ['blue', 'red']
-    mID0s = ['rover', 'sitter']
-    lgs = {}
-    for mID0, mcol in zip(mID0s, mcols):
-        id = f'{pref}{mID0.capitalize()}'
-
-        if navigator:
-            mID0 = f'{mID0}_nav'
-
-        kws = {
-            'group_id': id,
-            'color': mcol,
-            'model': mID0,
-            **kws0
-        }
-
-        lgs.update(LarvaGroup(**kws).entry(expand=expand))
-    return aux.AttrDict(lgs)
+    return AttrDict({id:LarvaGroup(color=c, model=id, **kws0).entry(expand=expand, as_entry=False) for id, c in zip(['rover', 'sitter'], ['blue', 'red'])})
 
 
 class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
@@ -886,6 +868,8 @@ class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
                                      doc='The average across-larvae curves of diverse parameters during the stridecycle')
     bout_distros = param.Dict(default=None, doc='The temporal distributions of the diverse types of behavioral bouts')
     intermitter = param.Dict(default=None, doc='The fitted parameters for the intermittency module')
+    modelConfs = param.Dict(default=AttrDict({'average':  {}, 'variable': {}, 'individual': {}, '3modules':  {}}),
+                             doc='The fitted model configurations')
     EEB_poly1d = param.Parameter(default=None, doc='The polynomial describing the exploration-exploitation balance.')
 
     @property
@@ -904,17 +888,15 @@ class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
         return np.array(vs)
 
     def get_sample_bout_distros(self, m):
-
-        if m.brain.intermitter:
-            Im = m.brain.intermitter
-            dic = {
-                'pause_dist': ['pause', 'pause_dur'],
-                'stridechain_dist': ['stride', 'run_count'],
-                'run_dist': ['exec', 'run_dur'],
-            }
-            for d in ['pause_dist', 'stridechain_dist', 'run_dist']:
-                if (d in Im) and (Im[d] is not None) and ('fit' in Im[d]) and (Im[d]['fit']):
-                    for sample_d in dic[d]:
-                        if sample_d in self.bout_distros and self.bout_distros[sample_d] is not None:
-                            m.brain.intermitter[d] = self.bout_distros[sample_d]
+        B=self.bout_distros
+        dic = {
+            'pause_dist': 'pause_dur',
+            'stridechain_dist': 'run_count',
+            'run_dist': 'run_dur',
+        }
+        I=m.brain.intermitter
+        if I:
+            for k,v in dic.items():
+                if k in I and v in B and B[v] is not None:
+                    I[k] = B[v]
         return m

@@ -11,8 +11,8 @@ import numpy as np
 import larvaworld
 from .. import reg, aux
 from ..aux import AttrDict
-from ..param import NestedConf, ClassAttr, class_generator, SimOps, OptionalSelector
-from ..model import AllModules, mod_kws, LocoModules
+from ..param import ClassAttr, class_generator, SimOps, OptionalSelector
+from ..model import SpaceDict
 from ..process.evaluation import Evaluation
 from .base_run import BaseRun
 
@@ -21,7 +21,6 @@ __all__ = [
     'GAselector',
     'GAlauncher',
     'optimize_mID',
-    'adapt_mID',
 ]
 
 
@@ -89,7 +88,7 @@ class GAevaluation(Evaluation):
             raise
 
 
-class GAselector(NestedConf):
+class GAselector(SpaceDict):
     Ngenerations = param.Integer(default=None, allow_None=True, label='# generations',
                                  doc='Number of generations to run for the genetic algorithm engine')
     Nagents = param.Integer(default=30, label='# agents per generation', doc='Number of agents per generation')
@@ -98,20 +97,10 @@ class GAselector(NestedConf):
 
     selection_ratio = param.Magnitude(default=0.3, label='selection ratio',
                                       doc='Fraction of agent population to include in the next generation')
-    Pmutation = param.Magnitude(default=0.3, label='mutation probability',
-                                doc='Probability of mutation for each agent in the next generation')
-    Cmutation = param.Number(default=0.1, label='mutation coeficient',
-                             doc='Fraction of allowed parameter range to mutate within')
     bestConfID = param.String(default='best_model', label='model ID for optimized model',
                               doc='ID for the optimized model')
 
-    init_mode = param.Selector(default='random', objects=['random', 'model', 'default'],
-                               label='mode of initial generation', doc='Mode of initial generation')
-    base_model = reg.conf.Model.confID_selector('explorer')
 
-    space_mkeys = param.ListSelector(default=[], objects=AllModules,
-                                     label='keys of modules to include in space search',
-                                     doc='Keys of the modules where the optimization parameters are')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -122,28 +111,7 @@ class GAselector(NestedConf):
                              'Please increase population (' + str(self.Nagents) + ') or selection ratio (' +
                              str(self.selection_ratio) + ')')
 
-        self.mConf0 = reg.conf.Model.getID(self.base_model)
-        self.space_dict = reg.model.space_dict(mkeys=self.space_mkeys, mConf0=self.mConf0)
-        self.gConf0 = aux.conf_mdict(self.space_dict)
 
-    def create_first_generation(self):
-        mode = self.init_mode
-        N = self.Nagents
-        d = self.space_dict
-        if mode == 'default':
-            gConfs = [aux.conf_mdict(d)] * N
-        elif mode == 'model':
-            gConf = {k: self.mConf0.flatten()[k] for k, p in d.items()}
-            gConfs = [gConf] * N
-        elif mode == 'random':
-            gConfs = []
-            for i in range(N):
-                for ii, p in d.items():
-                    p.randomize()
-                gConfs.append(aux.conf_mdict(d))
-        else:
-            raise ValueError('Not implemented')
-        return gConfs
 
     def new_genome(self, gConf, mConf0):
         mConf = mConf0.update_nestdict(gConf)
@@ -161,35 +129,22 @@ class GAselector(NestedConf):
 
         for i in range(self.Nagents - self.Nelits):
             g1, g2 = random.sample(gs0, 2)
-            g0 = self.crossover(g1, g2)
-            space_dict = aux.update_mdict(self.space_dict, g0)
-            for d, p in space_dict.items():
-                p.mutate(Pmut=self.Pmutation, Cmut=self.Cmutation)
-
-            g = aux.conf_mdict(space_dict)
-            gs.append(g)
+            g0 = AttrDict({k: g1[k] if np.random.uniform(0, 1, 1) >= 0.5 else g2[k] for k in self.space_ks})
+            g0=self.mutate(g0)
+            gs.append(g0)
         return gs
 
     def create_generation(self, sorted_gs=None):
         if sorted_gs is None:
-            self.gConfs = self.create_first_generation()
+            self.gConfs = self.create_first_generation(self.Nagents)
         else:
             self.gConfs = self.create_new_generation(sorted_gs)
         return {i: self.new_genome(gConf, self.mConf0) for i, gConf in enumerate(self.gConfs)}
 
-    def crossover(self, g1, g2):
-        g = {}
-        for k in g1:
-            if np.random.uniform(0, 1, 1) >= 0.5:
-                g[k] = g1[k]
-            else:
-                g[k] = g2[k]
-        return g
-
 
 class GAlauncher(BaseRun):
 
-    def __init__(self, dataset=None, **kwargs):
+    def __init__(self, dataset=None,evaluator =None, **kwargs):
         '''
         Simulation mode 'Ga' launches a genetic algorith optimization simulation of a specified agent model.
 
@@ -199,7 +154,9 @@ class GAlauncher(BaseRun):
         '''
 
         super().__init__(runtype='Ga', **kwargs)
-        self.evaluator = GAevaluation(dataset=dataset, **self.p.ga_eval_kws)
+        if evaluator is None:
+            evaluator = GAevaluation(dataset=dataset, **self.p.ga_eval_kws)
+        self.evaluator = evaluator
         self.selector = GAselector(**self.p.ga_select_kws)
 
     def setup(self):
@@ -208,13 +165,11 @@ class GAlauncher(BaseRun):
         self.best_fitness = None
         self.sorted_genomes = None
         self.all_genomes_dic = []
-
         self.generation_num = 0
-        # self.start_total_time = aux.TimeUtil.current_time_millis()
 
         Ngens = self.selector.Ngenerations
 
-        reg.vprint(f'--- Genetic Algorithm  "{self.id}" initialized!--- ', 2)
+        reg.vprint(f'--- Genetic Algorithm  "{self.id}" initialized!--- ', 1)
         if Ngens is not None:
             self.progress_bar = progressbar.ProgressBar(Ngens)
             self.progress_bar.start()
@@ -222,10 +177,8 @@ class GAlauncher(BaseRun):
         else:
             self.progress_bar = None
             temp = 'unlimited'
-        # self.gen_progressbar=progressbar.ProgressBar(self.Nsteps)
-        # self.gen_progressbar.start()
         reg.vprint(
-            f'Launching {temp} generations of {self.duration} minutes, with {self.selector.Nagents} agents each!', 2)
+            f'Launching {temp} generations of {self.duration} minutes, with {self.selector.Nagents} agents each!', 1)
         self.p.collections = ['pose']
         self.build_env(self.p.env_params)
 
@@ -284,14 +237,16 @@ class GAlauncher(BaseRun):
             return sorted_gs
 
     def store(self, sorted_gs, Ngen):
-        if self.best_genome is None or sorted_gs[0].fitness > self.best_genome.fitness:
-            self.best_genome = sorted_gs[0]
-            self.best_fitness = self.best_genome.fitness
-            reg.conf.Model.setID(self.selector.bestConfID, self.best_genome.mConf)
+        if len(sorted_gs) > 0:
+            g0 = sorted_gs[0]
+            if self.best_genome is None or g0.fitness > self.best_genome.fitness:
+                self.best_genome = g0
+                self.best_fitness = self.best_genome.fitness
+                reg.conf.Model.setID(self.selector.bestConfID, self.best_genome.mConf)
         reg.vprint(f'Generation {Ngen} best_fitness : {self.best_fitness}', 1)
         if self.store_data:
             self.all_genomes_dic += [
-                {'generation': Ngen, **{p.name: g.gConf[k] for k, p in self.selector.space_dict.items()},
+                {'generation': Ngen, **{p.name: g.gConf[k] for k, p in self.selector.space_objs.items()},
                  'fitness': g.fitness, **g.fitness_dict.flatten()}
                 for g in sorted_gs if g.fitness_dict is not None]
 
@@ -342,7 +297,7 @@ class GAlauncher(BaseRun):
         # self.gen_progressbar.finish()
         self.end_generation_eval_time = aux.TimeUtil.current_time_sec()
         gen_eval_dur = self.end_generation_eval_time - self.prestart_generation_time
-        reg.vprint(f'Generation {self.generation_num} evaluated in {gen_eval_dur} sec', 2)
+        reg.vprint(f'Generation {self.generation_num} evaluated in {gen_eval_dur} sec', 1)
 
     def update(self):
         self.agents.nest_record(self.collectors['step'])
@@ -365,7 +320,7 @@ class GAlauncher(BaseRun):
                                name=self.selector.bestConfID)
         df.to_csv(f'{save_to}/{self.selector.bestConfID}.csv')
 
-        cols = [p.name for k, p in self.selector.space_dict.items()]
+        cols = [p.name for k, p in self.selector.space_objs.items()]
 
         self.corr_df = df[['fitness'] + cols].corr()
         try:
@@ -412,45 +367,18 @@ class GA_thread(threading.Thread):
             robot.step()
 
 
-def optimize_mID(mID0, mID1=None, refID=None, mkeys=['turner', 'interference'],
-                 experiment='exploration', d=None, multicore=False,
-                 id=None, dt=1 / 16, dur=0.4, dir=None, Nagents=10, Nelits=2, Ngenerations=3,
-                 **kwargs):
-    warnings.filterwarnings('ignore')
+def optimize_mID(mID0, ks, evaluator, mID1=None, experiment='exploration', Nagents=10, Nelits=2, Ngenerations=3, duration=0.5,**kwargs):
     if mID1 is None:
         mID1 = mID0
 
-    gaconf = AttrDict({'ga_select_kws': {'Nagents': Nagents, 'Nelits': Nelits, 'Ngenerations': Ngenerations,
-                                             'init_mode': 'model', 'space_mkeys': mkeys,
-                                             'base_model': mID0, 'bestConfID': mID1},
-                           'ga_eval_kws': {'refID': refID, **kwargs},
-                           'env_params': reg.conf.Env.getID('arena_200mm'),
-                           'experiment': experiment})
-    GA = GAlauncher(parameters=gaconf, dir=dir, id=id, duration=dur, dt=dt, dataset=d, multicore=multicore)
+    p = AttrDict({'ga_select_kws': {'Nagents': Nagents, 'Nelits': Nelits, 'Ngenerations': Ngenerations,
+                                    'init_mode': 'model', 'space_mkeys': ks,
+                                    'base_model': mID0, 'bestConfID': mID1},
+                  'env_params': reg.conf.Env.getID('arena_200mm'),
+                  'experiment': experiment})
+    GA = GAlauncher(parameters=p, evaluator=evaluator,duration=duration, **kwargs)
     best_genome = GA.simulate()
     return {mID1: best_genome.mConf}
-
-def adapt_mID(d, mID0, mID, mkeys=['turner', 'interference'], **kwargs):
-    s, e, c = d.data
-    CM = reg.conf.Model
-    print(f'Adapting {mID0} on {c.refID} as {mID}, fitting {mkeys} modules')
-    ps=['body.length']
-
-    m0 = CM.getID(mID0)
-    for k in LocoModules:
-        if k not in mkeys:
-            try:
-                ps += AttrDict(mod_kws(k, mode=m0.brain[k].mode, as_entry=True)).flatten().keylist
-                if k=='intermitter':
-                    m0 = c.get_sample_bout_distros(m0.get_copy())
-            except:
-                pass
-    m0.update_nestdict(AttrDict({p: np.median(vs) for p, vs in d.sample_larvagroup(N=100, ps=ps, inverse=True).items()}))
-    CM.setID(mID, m0)
-    return optimize_mID(mID0=mID, mkeys=mkeys, dt=c.dt, refID=c.refID,
-                        d=d, id=mID, dir=f'{c.dir}/model/GAoptimization', **kwargs)
-
-
 
 reg.gen.GAselector = class_generator(GAselector)
 reg.gen.GAevaluation = class_generator(GAevaluation)

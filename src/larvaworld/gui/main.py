@@ -8,8 +8,8 @@ def main() :
     p.add_argument('-t', '--tabs', type=str, nargs='+', help='The tabs to include in the GUI')
 
     args = p.parse_args()
-    from ..gui.tabs.larvaworld_gui import LarvaworldGui
-    my_gui = LarvaworldGui(tabs=args.tabs)
+    import larvaworld.gui.tabs.larvaworld_gui
+    my_gui = larvaworld.gui.tabs.larvaworld_gui.LarvaworldGui(tabs=args.tabs)
     my_gui.run()
 
 if __name__ == '__main__':

@@ -14,9 +14,9 @@ __all__ = [
 
 
 class Effector(Timer):
-    input_noise = param.Magnitude(0.0, precedence=-3, label='input noise',
+    input_noise = param.Magnitude(0.0,step=0.01, precedence=-3, label='input noise',
                                   doc='The noise applied at the input of the module.')
-    output_noise = param.Magnitude(0.0, precedence=-3, label='output noise',
+    output_noise = param.Magnitude(0.0,step=0.01,  precedence=-3, label='output noise',
                                    doc='The noise applied at the output of the module.')
     input_range = param.Range(precedence=-3, label='input range', doc='The input range of the module.')
     output_range = param.Range(precedence=-3, label='output range', doc='The output range of the module.')

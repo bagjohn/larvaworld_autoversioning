@@ -8,6 +8,7 @@ from types import FunctionType
 import typing
 import param
 import sys
+
 if sys.version_info >= (3, 8):
     from typing import TypedDict  # pylint: disable=no-name-in-module
 else:
@@ -18,6 +19,7 @@ from ..aux import nam
 
 __all__ = [
     'SAMPLING_PARS',
+    'sample_ps',
     'init2mdict',
     # 'LarvaworldParam',
     'get_LarvaworldParam',
@@ -26,12 +28,8 @@ __all__ = [
 ]
 
 
-
-
-
 def param_to_arg(k, p):
     c = p.__class__
-    # dtype=aux.param_dtype(c)
     v = p.default
     d = aux.AttrDict({
         'key': k,
@@ -77,6 +75,7 @@ def gConf(mdict, **kwargs):
     else:
         return aux.AttrDict(mdict)
 
+
 def init2mdict(d0):
     def check(D0):
         D = {}
@@ -95,10 +94,8 @@ def init2mdict(d0):
             else:
                 D[kk] = check(vv)
         return D
+
     return aux.AttrDict(check(d0))
-
-
-
 
 
 class LarvaworldParam(param.Parameterized):
@@ -140,14 +137,7 @@ class LarvaworldParam(param.Parameterized):
         else:
             return fr'${self.u}$'
 
-    @property
-    def upint(self):
-        try:
-            from pint_pandas import PintType
-            ustring = f'pint[{self.u}]'
-            return PintType(ustring)
-        except:
-            return self.u
+
 
     @property
     def short(self):
@@ -269,50 +259,49 @@ class LarvaworldParam(param.Parameterized):
 
     def randomize(self):
         p = self.parclass
-        if p == param.Number:
+        if p in [param.Number] + param.Number.__subclasses__():
             vmin, vmax = self.param.v.bounds
             self.v = self.param.v.crop_to_bounds(np.round(random.uniform(vmin, vmax), self.Ndec))
-        elif p == param.Integer:
+        elif p in [param.Integer] + param.Integer.__subclasses__():
             vmin, vmax = self.param.v.bounds
             self.v = random.randint(vmin, vmax)
-        elif p == param.Magnitude:
+        elif p in [param.Magnitude] + param.Magnitude.__subclasses__():
             self.v = np.round(random.uniform(0.0, 1.0), self.Ndec)
-        elif p == param.Selector:
+        elif p in [param.Selector] + param.Selector.__subclasses__():
             self.v = random.choice(self.param.v.objects)
         elif p == param.Boolean:
             self.v = random.choice([True, False])
-        elif p == param.Range:
+        elif p in [param.Range] + param.Range.__subclasses__():
             vmin, vmax = self.param.v.bounds
             vv0 = np.round(random.uniform(vmin, vmax), self.Ndec)
             vv1 = np.round(random.uniform(vv0, vmax), self.Ndec)
-
             self.v = (vv0, vv1)
 
     def mutate(self, Pmut, Cmut):
         if random.random() < Pmut:
-            if self.parclass in [param.Magnitude] +param.Magnitude.__subclasses__():
+            if self.parclass in [param.Magnitude] + param.Magnitude.__subclasses__():
                 v0 = self.v if self.v is not None else 0.5
                 vv = random.gauss(v0, Cmut)
                 self.v = self.param.v.crop_to_bounds(np.round(vv, self.Ndec))
                 # self.v = np.round(self.v, self.Ndec)
-            elif self.parclass in [param.Integer] +param.Integer.__subclasses__():
+            elif self.parclass in [param.Integer] + param.Integer.__subclasses__():
                 vmin, vmax = self.param.v.bounds
                 vr = np.abs(vmax - vmin)
                 v0 = self.v if self.v is not None else int(vmin + vr / 2)
                 vv = random.gauss(v0, Cmut * vr)
                 self.v = self.param.v.crop_to_bounds(int(vv))
-            elif self.parclass in [param.Number] +param.Number.__subclasses__():
+            elif self.parclass in [param.Number] + param.Number.__subclasses__():
 
                 vmin, vmax = self.param.v.bounds
                 vr = np.abs(vmax - vmin)
                 v0 = self.v if self.v is not None else vmin + vr / 2
                 vv = random.gauss(v0, Cmut * vr)
                 self.v = self.param.v.crop_to_bounds(np.round(vv, self.Ndec))
-            elif self.parclass in [param.Selector] +param.Selector.__subclasses__():
+            elif self.parclass in [param.Selector] + param.Selector.__subclasses__():
                 self.v = random.choice(self.param.v.objects)
             elif self.parclass == param.Boolean:
                 self.v = random.choice([True, False])
-            elif self.parclass in [param.Range] +param.Range.__subclasses__():
+            elif self.parclass in [param.Range] + param.Range.__subclasses__():
                 vmin, vmax = self.param.v.bounds
                 vr = np.abs(vmax - vmin)
                 v0, v1 = self.v if self.v is not None else (vmin, vmax)
@@ -337,7 +326,7 @@ SAMPLING_PARS = aux.bidict(
         {
             'length': 'body.length',
             nam.freq(nam.scal(nam.vel(''))): 'brain.crawler.freq',
-            nam.freq(nam.scal(nam.vel(''))): 'brain.intermitter.crawl_freq',
+            # nam.freq(nam.scal(nam.vel(''))): 'brain.intermitter.crawl_freq',
             nam.mean(nam.chunk_track('stride', nam.scal(nam.dst('')))): 'brain.crawler.stride_dst_mean',
             nam.std(nam.chunk_track('stride', nam.scal(nam.dst('')))): 'brain.crawler.stride_dst_std',
             nam.freq('feed'): 'brain.feeder.freq',
@@ -350,6 +339,14 @@ SAMPLING_PARS = aux.bidict(
         }
     )
 )
+
+
+def sample_ps(ps, e=None):
+    Sinv = reg.SAMPLING_PARS.inverse
+    ps = aux.SuperList([Sinv[k] for k in aux.existing_cols(Sinv, ps)]).flatten
+    if e:
+        ps = ps.existing(e)
+    return ps
 
 
 def get_vfunc(dtype, lim, vs):
@@ -413,7 +410,7 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
     k = k if k is not None else d
     v0 = v if v is not None else v0
 
-    if flatname is None :
+    if flatname is None:
         if p in SAMPLING_PARS:
             flatname = SAMPLING_PARS[p]
         else:
@@ -425,17 +422,13 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
         else:
             sym = k
 
-
-    if dv is None :
+    if dv is None:
         if dtype in [float, typing.List[float], typing.List[typing.Tuple[float]], typing.Tuple[float]]:
             dv = 0.01
-        elif dtype in [int] :
-            dv=1
-        else :
+        elif dtype in [int]:
+            dv = 1
+        else:
             pass
-
-
-
 
     if vparfunc is None:
         if vfunc is None:

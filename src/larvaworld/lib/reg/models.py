@@ -81,7 +81,7 @@ def init_brain_modules():
                                        'sym': nam.tex.sub(nam.tex.bar(nam.tex.mathring('d')), 'S'),
                                        'u_name': '$body-lengths$', 'codename': 'stride_scaled_dst_mean',
                                        'h': 'The mean displacement achieved in a single peristaltic stride as a fraction of the body length.'},
-                   'stride_dst_std': {'v0': 0.04, 'lim': (0.0, 0.5),
+                   'stride_dst_std': {'v0': 0.04, 'lim': (0.0, 0.3),'dv': 0.001,
                                       'k': 'str_sd_std',
                                       'disp': 'stride distance std',
                                       'sym': nam.tex.sub(nam.tex.tilde(nam.tex.mathring('d')), 'S'),
@@ -648,24 +648,3 @@ class ModelRegistry:
         d00 = D.m[mkey].mode[mode].args
         return AttrDict({k: d00[k] for k in var_ks})
 
-    def space_dict(self, mkeys, mConf0):
-        mF = mConf0.flatten()
-        dic = {}
-        for mkey in mkeys:
-            d0 = self.dict.model.init[mkey]
-            if f'{d0.pref}mode' in mF.keys():
-                mod_v = mF[f'{d0.pref}mode']
-            else:
-                mod_v = 'default'
-            var_mdict = self.variable_mdict(mkey, mode=mod_v)
-            for k, p in var_mdict.items():
-
-                k0 = f'{d0.pref}{k}'
-
-                if k0 in mF.keys():
-                    dic[k0] = p
-                    if type(mF[k0]) == list:
-                        if dic[k0].parclass == param.Range:
-                            mF[k0] = tuple(mF[k0])
-                    dic[k0].v = mF[k0]
-        return AttrDict(dic)

@@ -9,8 +9,8 @@ __all__ = [
 
 class Feeder(Oscillator):
     freq = PositiveNumber(2.0,bounds =(1.0, 3.0))
-    feed_radius = param.Magnitude(0.05,label='feeding radius', doc='The accessible radius for a feeding motion as fraction of body length.')
-    V_bite = param.Magnitude(0.001,label='mouthook capacity', doc='The volume of a feeding motion as fraction of body volume.')
+    feed_radius = param.Magnitude(0.05,step=0.001,label='feeding radius', doc='The accessible radius for a feeding motion as fraction of body length.')
+    V_bite = param.Magnitude(0.001,step=0.0001,label='mouthook capacity', doc='The volume of a feeding motion as fraction of body volume.')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

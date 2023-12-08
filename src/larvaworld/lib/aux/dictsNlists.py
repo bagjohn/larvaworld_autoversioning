@@ -162,6 +162,19 @@ class AttrDict(dict):
     def keylist(self):
         return SuperList(self.keys())
 
+    # def keys_on_condition(self, conditions={}):
+    #     D=[]
+    #     ids=self.keylist
+    #     d=AttrDict({id:self[id].flatten() for id in ids})
+    #     for id in ids :
+    #         for k,v in conditions.items():
+    #             try:
+    #                 if not self[id][k]==v:
+    #                     break
+    #             except
+    #                 pass
+
+
 def load_dict(file):
     try:
         with open(file, 'rb') as tfp:
@@ -400,7 +413,7 @@ def update_mdict(mdict, mmdic):
         return None
     else:
         for d, p in mdict.items():
-            new_v = mmdic[d] if d in mmdic.keys() else None
+            new_v = mmdic[d] if d in mmdic else None
             if isinstance(p, param.Parameterized):
                 if type(new_v) == list:
                     if p.parclass in [param.Range, param.NumericTuple, param.Tuple]:

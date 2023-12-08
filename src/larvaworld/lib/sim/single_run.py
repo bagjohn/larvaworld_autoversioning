@@ -148,7 +148,10 @@ class ExpRun(BaseRun):
         self.figs = reg.graphs.eval_graphgroups(graphgroups, datasets=ds, save_to=self.plot_dir, **kwargs)
 
     def store(self):
-        self.output.save(**self.p.agentpy_output_kws)
+        try:
+            self.output.save(**self.p.agentpy_output_kws)
+        except:
+            pass
         os.makedirs(self.data_dir, exist_ok=True)
         for d in self.datasets:
             d.save()

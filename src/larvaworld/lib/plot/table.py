@@ -11,7 +11,6 @@ from .. import reg, aux, plot
 
 __all__ = [
     'modelConfTable',
-    'mtable',
     'mpl_table',
     'conf_table',
     'mdiff_table',
@@ -22,27 +21,6 @@ __all__ = [
 
 
 
-
-@reg.funcs.graph('mtable')
-def mtable(k, columns=['symbol', 'value', 'description'], figsize=(14, 11),
-           show=False, save_to=None, save_as=None, **kwargs):
-    mdict = reg.init2mdict(reg.par.PI[k])
-    data = [[getattr(p, col) for col in columns] for p in mdict.values()]
-
-    df = pd.DataFrame(data, columns=columns)
-    df.set_index(columns[0], inplace=True)
-
-
-
-    ax, fig, mpl = mpl_table(df, header0=columns[0],
-                             cellLoc='center', rowLoc='center',
-                             figsize=figsize, adjust_kws={'left': 0.2, 'right': 0.95},
-                             return_table=True,
-                             **kwargs)
-    if save_as is None:
-        save_as = k
-    P = plot.AutoBasePlot('mtable', save_as=save_as, save_to=save_to, show=show, fig=fig, axs=ax)
-    return P.get()
 
 def conf_table(df, row_colors, mID, show=False, save_to=None, save_as=None,
                build_kws={'Nrows': 1, 'Ncols': 1, 'w': 15, 'h': 20}, **kwargs):
@@ -91,7 +69,7 @@ def modelConfTable(mID, m=None, columns=['parameter', 'symbol', 'value', 'unit']
         mF = m.flatten()
         data = []
         for mkey in D.brain.keys:
-            if m.brain.modules[mkey]:
+            if m.brain[mkey] is not None:
                 d0 = D.model.init[mkey]
                 if f'{d0.pref}mode' in mF.keys():
                     mod_v = mF[f'{d0.pref}mode']

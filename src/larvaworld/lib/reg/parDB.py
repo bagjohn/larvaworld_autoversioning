@@ -12,11 +12,12 @@ import param
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-from ..aux import nam
+from ..aux import nam, AttrDict, SuperList
 from .. import reg, aux
 
 __all__ = [
     'output_keys',
+    'output_dict',
     'ParamClass',
     'ParamRegistry',
 ]
@@ -24,13 +25,13 @@ __all__ = [
 proc_type_keys = ['angular', 'spatial', 'source', 'dispersion', 'tortuosity', 'PI', 'wind']
 anot_type_keys = ['bout_detection', 'bout_distribution', 'interference', 'source_attraction', 'patch_residency']
 
-output_dict = {
+output_dict = AttrDict({
     'olfactor': {
         'step': ['c_odor1', 'dc_odor1', 'c_odor2', 'dc_odor2', 'A_olf'],
         'endpoint': []},
 
     'loco': {
-        'step': ['A_CT', 'A_T', 'I_T', 'phi_T', 'A_C', 'I_C', 'phi_C'],
+        'step': ['A_CT','A0_CT','Amax_CT',  'A_T', 'I_T', 'phi_T', 'A_C', 'I_C', 'phi_C', 'phi_Amax_CT'],
         'endpoint': []},
 
     'thermo': {
@@ -46,7 +47,7 @@ output_dict = {
         'endpoint': []},
 
     'feeder': {
-        'step': ['l', 'f_am', 'EEB', 'on_food', 'fee_reocc', 'beh', 'phi_F'],
+        'step': ['l', 'f_am', 'EEB', 'on_food', 'fee_reocc', 'beh', 'phi_F','A_F', 'I_F'],
         'endpoint': ['l', 'f_am', 'on_food_tr', 'pau_N', 'str_N', 'run_N', 'fee_N', 'str_c_N', 'fee_c_N',
                      'fee_N_success', 'fee_N_fail']
     },
@@ -59,36 +60,15 @@ output_dict = {
     'pose': {'step': ['x', 'y', 'b', 'fo', 'ro'],
              'endpoint': ['l', 'cum_t', 'x']},
     'memory': {'step': [],
-               'endpoint': [],
-               'tables': {'best_gains': ['unique_id', 'first_odor_best_gain', 'second_odor_best_gain', 'cum_reward',
-                                         'best_olfactor_decay']}},
-    'midline': None,
-    'contour': None,
-}
+               'endpoint': []},
+    'midline': nam.midline_xy(3, flat=True),
+    'contour': nam.contour_xy(0, flat=True),
+})
 
 output_keys = list(output_dict.keys())
 
 
-def set_output(collections=None, Npoints=3, Ncontour=0):
-    if collections is None:
-        collections = ['pose']
-    step = []
-    end = []
-    tables = {}
-    for c in collections:
-        if c == 'midline':
-            step += nam.midline_xy(Npoints, flat=True)
-        elif c == 'contour':
-            step += nam.contour_xy(Ncontour, flat=True)
-        else:
-            step += output_dict[c]['step']
-            end += output_dict[c]['endpoint']
-            if 'tables' in output_dict[c]:
-                tables.update(output_dict[c]['tables'])
-    return aux.AttrDict({'step': aux.unique_list(step),
-                         'end': aux.unique_list(end),
-                         'tables': tables,
-                         })
+
 
 
 def update_default(name, dic, **kwargs):
@@ -103,13 +83,13 @@ def update_default(name, dic, **kwargs):
                 for k0, v0 in v.items():
                     if k0 in kwargs:
                         dic[k][k0] = kwargs[k0]
-        return aux.AttrDict(dic)
+        return AttrDict(dic)
 
 
 def get_default(d, key='v'):
     if d is None:
         return None
-    null = aux.AttrDict()
+    null = AttrDict()
     for k, v in d.items():
         if not isinstance(v, dict):
             null[k] = v
@@ -166,7 +146,7 @@ def ConfID_entry(conftype, default=None, k=None, symbol=None, single_choice=True
          'vs': ids, 'v': default,
          'symbol': symbol, 'k': k, 'h': f'The {conftype} configuration {IDstr}',
          'disp': f'{conftype} {IDstr}'}
-    return aux.AttrDict(d)
+    return AttrDict(d)
 
 
 def buildInitDict():
@@ -265,7 +245,7 @@ def buildInitDict():
 
         }
 
-        d = aux.AttrDict()
+        d = AttrDict()
         d['substrate_composition'] = {
             n: {'v': 0.0, 'lim': (0.0, 10.0), 'h': f'{n} density in g/cm**3.'} for
             n in
@@ -383,7 +363,7 @@ def buildInitDict():
         return d
 
     def xy_distros():
-        d = aux.AttrDict({
+        d = AttrDict({
             'xy': {'dtype': Tuple[float], 'v': (0.0, 0.0), 'k': 'xy', 'lim': (-1.0, 1.0),
                    'vfunc': param.XYCoordinates,
                    'h': 'The xy spatial position coordinates.'},
@@ -421,7 +401,7 @@ def buildInitDict():
 
     def scapeConfs():
 
-        d = aux.AttrDict({
+        d = AttrDict({
             'odorscape': {
                 'odorscape': {'dtype': str, 'v': 'Gaussian', 'vs': ['Gaussian', 'Diffusion'],
                               'k': 'odorscape_mod',
@@ -502,7 +482,7 @@ def buildInitDict():
 
     def runConfs():
 
-        d = aux.AttrDict({
+        d = AttrDict({
             'Essay': {
                 'N': {'dtype': int, 'lim': (1, 100), 'disp': '# larvae',
                       'h': 'The number of larvae per larva-group.'}
@@ -542,7 +522,7 @@ def buildInitDict():
         return d
 
     def enrConfs():
-        d = aux.AttrDict()
+        d = AttrDict()
 
         d['ang_definition'] = {
             'bend': {'dtype': str, 'v': 'from_vectors', 'vs': ['from_vectors', 'from_angles'],
@@ -620,7 +600,7 @@ def buildInitDict():
         return d
 
     def init_vis():
-        d = aux.AttrDict()
+        d = AttrDict()
         d['render'] = {
             'mode': {'dtype': str, 'v': None, 'vs': [None, 'video', 'image'], 'h': 'The visualization mode',
                      'k': 'm'},
@@ -667,7 +647,7 @@ def buildInitDict():
         return d
 
     def init_mods():
-        d = aux.AttrDict({
+        d = AttrDict({
             'bout_distro': {
                 'fit': {**bT, 'combo': 'distro',
                         'h': 'Whether the distribution is sampled from a reference dataset. Once this is set to "ON" no other parameter is taken into account.'},
@@ -994,7 +974,7 @@ def buildInitDict():
             'dampingRatio': {'v': 1.0, 'lim': (0.0, 10 ** 5)},
         }}
 
-        d['Box2D_params'] = {
+        d['Box2D'] = {
             'joint_types': {
                 'friction': d['friction_joint'],
                 'revolute': d['revolute_joint'],
@@ -1049,17 +1029,12 @@ def buildInitDict():
         }
 
         d['locomotor'] = {
-            'modules': {'turner': bT,
-                        'crawler': bT,
-                        'interference': bT,
-                        'intermitter': bT,
-                        'feeder': bF},
-            **{f'{m}_params': d[m] for m in ['crawler', 'turner', 'interference', 'intermitter', 'feeder']}
+
+            **{m: d[m] for m in ['crawler', 'turner', 'interference', 'intermitter', 'feeder']}
         }
 
         d['brain'] = {
-            'modules': d['modules'],
-            **{f'{m}_params': d[m] for m in d['modules'].keys()},
+            **{m: d[m] for m in d['modules']},
             'nengo': {**bF, 'k': 'nengo'}
         }
 
@@ -1154,7 +1129,7 @@ def buildInitDict():
             'body': d['body'],
             'energetics': d['energetics'],
             'physics': d['physics'],
-            'Box2D_params': d['Box2D_params'],
+            'Box2D': d['Box2D'],
         }
 
         return d
@@ -1212,7 +1187,7 @@ def buildInitDict():
         return d
 
     def batch(d):
-        d0 = aux.AttrDict({
+        d0 = AttrDict({
             'optimization': {
                 'fit_par': {'dtype': str, 'disp': 'Utility metric', 'h': 'The utility parameter optimized.'},
                 'minimize': {**bT, 'h': 'Whether to minimize or maximize the utility parameter.'},
@@ -1375,7 +1350,7 @@ def buildInitDict():
             **d['reference_dataset']
         }
 
-        return aux.AttrDict(d)
+        return AttrDict(d)
 
     def larvaGroup(d):
         d['LarvaGroup'] = {
@@ -1408,34 +1383,34 @@ def buildInitDict():
     for f in [food, life, larvaGroup, batch, conftypes, Ga0, Ga1]:
         dic0 = f(d)
         d.update(dic0)
-    return aux.AttrDict(d)
+    return AttrDict(d)
 
 
 def buildDefaultDict(d0):
     dic = {}
     for name, d in d0.items():
         dic[name] = get_default(d, key='v')
-    return aux.AttrDict(dic)
+    return AttrDict(dic)
 
 
 class ParamClass:
     def __init__(self):
         self.func_dict = reg.funcs.param_computing
         self.build()
-        self.ddict = aux.AttrDict({p.d: p for k, p in self.kdict.items()})
-        self.pdict = aux.AttrDict({p.p: p for k, p in self.kdict.items()})
+        self.ddict = AttrDict({p.d: p for k, p in self.kdict.items()})
+        self.pdict = AttrDict({p.p: p for k, p in self.kdict.items()})
 
     @property
     def pkeys(self):
-        return aux.SuperList([p.d for k, p in self.kdict.items()]).sorted
+        return SuperList([p.d for k, p in self.kdict.items()]).sorted
 
     @property
     def ks(self):
-        return aux.SuperList(self.kdict.keys()).sorted
+        return SuperList(self.kdict.keys()).sorted
 
     def build(self):
-        self.dict = aux.AttrDict()
-        self.kdict = aux.AttrDict()
+        self.dict = AttrDict()
+        self.kdict = AttrDict()
         self.build_initial()
         self.build_angular()
         self.build_spatial()
@@ -1451,15 +1426,20 @@ class ParamClass:
 
     def build_initial(self):
         kws1 = {'vfunc': param.Number,'lim': (0.0, None), 'dtype': float, 'u': reg.units.s}
+        self.add(**{'p': 't', 'sym': '$t$', 'v0': 0.0, **kws1})
+        self.add(**{'p': 'model.dt', 'd': 'dt', 'sym': '$dt$', 'v0': 0.1, **kws1})
+        self.add(**{'p': 'cum_dur', 'k': nam.cum('t'), 'sym': nam.tex.sub('t', 'cum'), 'v0': 0.0, **kws1})
+
         kws2 = {'vfunc': param.Integer,'lim': (0, None),'v0': 0,'dtype': int, 'u': reg.units.dimensionless}
-        self.add( **{'p': 't', 'sym': '$t$','v0': 0.0,**kws1})
-        self.add_operators(k0='t')
         self.add(**{'p': 'num_ts', 'k': 'N_ts', 'sym': nam.tex.sub('N', 'ts'), **kws2})
         self.add(**{'p': 'tick', 'sym': '$tick$', **kws2})
-        self.add_operators(k0='tick')
         self.add(**{'p': 'num_ticks', 'k': 'N_ticks', 'sym': nam.tex.sub('N', 'ticks'), **kws2})
-        self.add(**{'p': 'model.dt', 'd': 'dt', 'sym': '$dt$', 'v0': 0.1, **kws1})
-        self.add(**{'p': 'cum_dur', 'k': nam.cum('t'), 'sym': nam.tex.sub('t', 'cum'), 'v0': 0.0,**kws1})
+
+
+        self.add_operators(k0='t')
+        self.add_operators(k0='tick')
+
+
 
     def add_rate(self, k0=None, k_time='t', p=None, k=None, d=None, sym=None, k_num=None, k_den=None, **kwargs):
         if k0 is not None:
@@ -1496,43 +1476,37 @@ class ParamClass:
         b = self.dict[k0]
         kws0 = {'u': b.u, 'required_ks': [k0]}
 
-        funcs = self.func_dict
+        self.k_ops = AttrDict({
+            'mean': ['bar', '_mu'],
+            'std': ['tilde', 'std'],
+            'var': ['tilde', 'var'],
+            'min': ['sub', 'min'],
+            'max': ['sub', 'max'],
+            'final': ['sub', '_fin'],
+            'initial': ['sub', '0'],
+            'cum': ['sub', 'cum'],
 
-        mu_kws = {'d': nam.mean(b.d), 'p': nam.mean(b.p), 'sym': nam.tex.bar(b.sym), 'disp': f'mean {b.disp}',
-                  'func': funcs.mean(b.d), 'k': f'{b.k}_mu'}
+        })
 
-        std_kws = {'d': nam.std(b.d), 'p': nam.std(b.p), 'sym': nam.tex.tilde(b.sym), 'disp': f'std {b.disp}',
-                   'func': funcs.std(b.d),
-                   'k': f'{b.k}_std'}
+        def cum_disp(k0):
+            if k0 == 'd':
+                disp = 'pathlength'
+            elif k0 == 'sd':
+                disp = 'scaled pathlength'
+            else:
+                disp = f'total {b.disp}'
+            return disp
 
-        var_kws = {'d': nam.var(b.d), 'p': nam.var(b.p), 'sym': nam.tex.tilde(b.sym), 'disp': f'var {b.disp}',
-                   'func': funcs.var(b.d),
-                   'k': f'{b.k}_var'}
+        for k,(tex, k2) in self.k_ops.items():
+            f=nam[k]
 
-        min_kws = {'d': nam.min(b.d), 'p': nam.min(b.p), 'sym': nam.tex.sub(b.sym, 'min'), 'disp': f'minimum {b.disp}',
-                   'func': funcs.min(b.d), 'k': f'{b.k}_min'}
-
-        max_kws = {'d': nam.max(b.d), 'p': nam.max(b.p), 'sym': nam.tex.sub(b.sym, 'max'), 'disp': f'maximum {b.disp}',
-                   'func': funcs.max(b.d), 'k': f'{b.k}_max'}
-
-        fin_kws = {'d': nam.final(b.d), 'p': nam.final(b.p), 'sym': nam.tex.sub(b.sym, 'fin'),
-                   'disp': f'final {b.disp}',
-                   'func': funcs.final(b.d), 'k': f'{b.k}_fin'}
-
-        init_kws = {'d': nam.initial(b.d), 'p': nam.initial(b.p), 'sym': nam.tex.sub(b.sym, '0'),
-                    'disp': f'initial {b.disp}',
-                    'func': funcs.initial(b.d), 'k': f'{b.k}0'}
-
-        if k0 == 'd':
-            disp = 'pathlength'
-        elif k0 == 'sd':
-            disp = 'scaled pathlength'
-        else:
-            disp = f'total {b.disp}'
-        cum_kws = {'d': nam.cum(b.d), 'p': nam.cum(b.p), 'sym': nam.tex.sub(b.sym, 'cum'), 'disp': disp,
-                   'func': funcs.cum(b.d), 'k': nam.cum(b.k)}
-
-        for kws in [mu_kws, std_kws, var_kws, min_kws, max_kws, fin_kws, init_kws, cum_kws]:
+            kws = {
+                'd': f(b.d),
+                'p': f(b.p),
+                'sym': nam.tex[tex](b.sym) if tex!='sub' else nam.tex.sub(b.sym, k2),
+                'disp': f'{k} {b.disp}' if k!='cum' else cum_disp(k0),
+                'func': self.func_dict[k](b.d),
+                'k': f'{b.k}{k2}' if k in ['mean', 'final', 'initial'] else f(b.k)}
             self.add(**kws, **kws0)
 
     def add_chunk(self, pc, kc, func=None, required_ks=[]):
@@ -1682,7 +1656,6 @@ class ParamClass:
             def func_v(d):
                 s, e, c = d.data
                 s[d_v] = aux.apply_per_level(s[b.d], aux.rate, dt=c.dt).flatten()
-                # s[d_v]=aux.comp_rate(s[b.d], c.dt)
 
         self.add(
             **{'p': p_v, 'k': k_v, 'd': d_v, 'u': b.u / b_dt.u, 'sym': sym_v, 'disp': disp_v, 'required_ks': [k0],
@@ -1755,7 +1728,7 @@ class ParamClass:
         kws = {
             'p': nam.dst(point),
             'd': nam.dst(point),
-            'k': f'{point}d',
+            'k': nam.d(point),
             'u': u,
             'sym': nam.tex.sub('d', point),
             'disp': f'{point} distance',
@@ -1857,36 +1830,47 @@ class ParamClass:
 
     def build_spatial(self):
         kws = {'u':  reg.units.m, 'vfunc': param.Number}
-        self.add(**{'p': 'x', 'disp': 'X position', 'sym': 'X', **kws})
-        self.add(**{'p': 'y', 'disp': 'Y position', 'sym': 'Y', **kws})
         self.add(
-            **{'p': 'length', 'k': 'l', 'd': 'length', 'disp': 'body length','flatname':'body.length',
+            **{'p': 'length', 'k': 'l', 'disp': 'body length', 'flatname': 'body.length',
                'sym': '$l$', 'v0': 0.004, 'lim': (0.0005, 0.01), 'dv': 0.0005, **kws})
+        self.add_freq(k0='l')
+        self.add_operators(k0='l')
+
+        for point in ['', 'centroid']:
+            px,py=nam.xy(point)
+            self.add(**{'p': px, 'disp': f'{point} X position', 'sym': f'{point} X', **kws})
+            self.add(**{'p': py, 'disp': f'{point} Y position', 'sym': f'{point} Y', **kws})
+            self.add_dst(point=point)
+            d_d, d_v, d_a = nam.dst(point), nam.vel(point), nam.acc(point)
+            k_d, k_v, k_a = nam.d(point), nam.v(point), nam.a(point)
+            d_sd, d_sv, d_sa = nam.scal([d_d, d_v, d_a])
+            k_sd, k_sv, k_sa = f's{k_d}', f's{k_v}', f's{k_a}'
+            self.add_velNacc(k0=k_d, k_v=k_v, k_a=k_a, p_v=d_v, d_v=d_v, p_a=d_a, d_a=d_a,
+                             sym_v=k_v, disp_v=f'{point} crawling speed', disp_a=f'{point} crawling acceleration',
+                             func_v=self.func_dict.vel(d_d, d_v))
+            for k0 in [px,py, k_d]:
+                self.add_scaled(k0=k0)
+            self.add_velNacc(k0=k_sd, k_v=k_sv, k_a=k_sa, p_v=d_sv, d_v=d_sv, p_a=d_sa, d_a=d_sa,
+                             sym_v=nam.tex.mathring(k_v),
+                             disp_v=f'scaled {point} crawling speed',
+                             disp_a=f'scaled {point} crawling acceleration',
+                             func_v=self.func_dict.vel(d_sd, d_sv))
+            for k0 in [k_d, k_v, k_a, k_sd, k_sv, k_sa,px,py, k_d]:
+                self.add_freq(k0=k0)
+                self.add_operators(k0=k0)
+                if k0 in [k_v, k_a, k_sv, k_sa]:
+                    for k0_ext in [f'{k0}_min', f'{k0}_max']:
+                        self.add_phi(k0=k0_ext)
+            for k0 in [nam.cum(k_d)]:
+                self.add_scaled(k0=k0)
+
 
         self.add(
             **{'p': 'dispersion', 'k': 'dsp', 'sym': nam.tex.circledast('d'), 'disp': 'dispersal', **kws})
 
-        d_d, d_v, d_a = nam.dst(''), nam.vel(''), nam.acc('')
-        d_sd, d_sv, d_sa = nam.scal([d_d, d_v, d_a])
-        self.add_dst(point='')
-        self.add_velNacc(k0='d', k_v='v', k_a='a', p_v=d_v, d_v=d_v, p_a=d_a, d_a=d_a,
-                         sym_v='v', disp_v='crawling speed', disp_a='crawling acceleration',
-                         func_v=self.func_dict.vel(d_d, d_v))
-        for k0 in ['x', 'y', 'd']:
-            self.add_scaled(k0=k0)
-        self.add_velNacc(k0='sd', k_v='sv', k_a='sa', p_v=d_sv, d_v=d_sv, p_a=d_sa, d_a=d_sa,
-                         sym_v=nam.tex.mathring('v'),
-                         disp_v='scaled crawling speed',
-                         disp_a='scaled crawling acceleration',
-                         func_v=self.func_dict.vel(d_sd, d_sv))
-        for k0 in ['l', 'd', 'sd', 'v', 'sv', 'a', 'sa', 'x', 'y']:
-            self.add_freq(k0=k0)
-            self.add_operators(k0=k0)
-        for k0 in ['v', 'sv', 'a', 'sa']:
-            for k0_ext in [f'{k0}_min', f'{k0}_max']:
-                self.add_phi(k0=k0_ext)
-        for k0 in [nam.cum('d')]:
-            self.add_scaled(k0=k0)
+
+
+
 
         for i in [(0, 40), (0, 60), (0, 70), (0, 80), (10, 60), (10, 70), (10, 80), (20, 60), (20, 70), (20, 80),
                       (10, 100), (20, 100), (0, 120), (0, 240), (0, 300), (0, 600), (60, 120), (60, 300)]:
@@ -1934,14 +1918,15 @@ class ParamClass:
                         'sym': nam.tex.sub('A', ii)})
             self.add(**{'p': f'{L}.{jj}.input', 'k': f'I_{ii}', 'd': f'{jj} input', 'sym': nam.tex.sub('I', ii)})
             self.add(**{'p': f'{L}.{jj}.phi', 'k': f'phi_{ii}', 'd': f'{jj} phase',
-                        'sym': nam.tex.sub('Phi', ii)})
+                        'sym': nam.tex.sub('Phi', ii), 'u':reg.units.rad})
         self.add(**{'p': f'cur_attenuation','codename': f'{IF}.cur_attenuation', 'k': f'A_CT', 'l': f'C->T suppression',
                     'sym': nam.tex.sub('A', 'CT'),'disp': 'CRAWLER:TURNER interference suppression.'})
         self.add(**{'p': f'attenuation','codename': f'{IF}.attenuation', 'k': f'A0_CT', 'l': f'C->T baseline suppression',
                     'sym': nam.tex.sub('A0', 'CT'), 'disp': 'CRAWLER:TURNER baseline interference suppression.'})
         self.add(**{'p': nam.max('attenuation'),'codename': f'{IF}.attenuation_max', 'k': f'Amax_CT', 'l': f'C->T max suppression',
                     'sym': nam.tex.sub('Amax', 'CT'), 'disp': 'CRAWLER:TURNER maximum interference suppression.'})
-        self.add(**{'p': aux.nam.phi(nam.max('attenuation')),'codename': f'{IF}.max_attenuation_phase', 'k': f'phi_Amax_CT', 'l': f'C->T max suppression phase',
+        self.add(**{'p': nam.phi(nam.max('attenuation')),'codename': f'{IF}.max_attenuation_phase', 'k': 'phi_Amax_CT',
+                    'u':reg.units.rad,'l': f'C->T max suppression phase',
                     'sym': nam.tex.sub('Phi_Amax', 'CT'), 'disp': 'CRAWLER:TURNER maximum interference suppression phase.'})
         # self.add(**{'p': 'brain.locomotor.cur_ang_suppression', 'k': 'c_CT', 'd': 'ang_suppression',
         #             'disp': 'angular suppression output', 'sym': sub('c', 'CT'), 'lim': (0.0, 1.0)})
@@ -2020,7 +2005,6 @@ class ParamRegistry(ParamClass):
         self.PI = buildInitDict()
         self.DEF = buildDefaultDict(self.PI)
 
-
     def null(self, name, key='v', **kwargs):
         if key != 'v':
             raise
@@ -2030,7 +2014,6 @@ class ParamRegistry(ParamClass):
     def get_null(self, name, key='v', **kwargs):
         if key != 'v':
             raise
-        # return update_default(name, aux.copyDict(self.DEF[name]), **kwargs)
         return update_default(name, self.DEF[name].get_copy(), **kwargs)
 
     def get(self, k, d, compute=True):
@@ -2105,7 +2088,7 @@ class ParamRegistry(ParamClass):
             for d in datasets:
                 vs = self.get(k=k, d=d, compute=True)
                 dic[k][d.id] = vs
-        return aux.AttrDict(dic)
+        return AttrDict(dic)
 
 
 
@@ -2117,9 +2100,9 @@ class ParamRegistry(ParamClass):
         '''
         from pint_pandas.pint_array import PintType
         valid_pars = [col for col in self.pkeys.existing(df.columns) if not isinstance(df.dtypes[col], PintType)]
-        pint_dtypes = {par: self.getPar(d=par, to_return='upint') for par in valid_pars}
-        df_pint = df.astype(dtype=pint_dtypes)
-        return df_pint
+        pint_dtypes = {par: PintType(f'pint[{self.getPar(d=par, to_return="u")}]') for par in valid_pars}
+        df[valid_pars] = df[valid_pars].astype(dtype=pint_dtypes)
+        return df
 
     def output_reporters(self, ks, agents):
         D = self.kdict
@@ -2132,13 +2115,15 @@ class ParamRegistry(ParamClass):
                     dic.update({d: p})
                 except:
                     pass
-        return dic
+        return AttrDict(dic)
 
-    def get_reporters(self, agents, **kwargs):
-        ks = set_output(**kwargs)
-        return aux.AttrDict({
-            "step": self.output_reporters(ks=ks['step'], agents=agents),
-            "end": self.output_reporters(ks=ks['end'], agents=agents),
+    def get_reporters(self, agents, cs=None):
+        O = output_dict
+        if cs is None:
+            cs = ['pose']
+        return AttrDict({
+            "step": self.output_reporters(ks=SuperList(O[c]['step'] for c in cs).flatten.unique, agents=agents),
+            "end": self.output_reporters(ks=SuperList(O[c]['endpoint'] for c in cs).flatten.unique, agents=agents),
         })
 
 # par = ParamRegistry()

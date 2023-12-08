@@ -12,6 +12,7 @@ from matplotlib.gridspec import GridSpec
 from scipy.stats import ttest_ind
 
 from .. import reg, aux, plot
+from ..aux import AttrDict
 from ..process.dataset import LarvaDatasetCollection
 
 __all__ = [
@@ -251,8 +252,7 @@ class BasePlot:
                 's': 'fontsize',
                 # 't':title_kws.t,
             }
-            kws = aux.AttrDict(title_kws).replace_keys(pairs)
-            # kws=aux.replace_in_dict(title_kws, pairs, replace_key=True)
+            kws = AttrDict(title_kws).replace_keys(pairs)
             self.fig.suptitle(t=title, **kws)
         if adjust_kws is not None:
             self.adjust(**adjust_kws)
@@ -285,9 +285,9 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
         LarvaDatasetCollection.__init__(self, datasets=datasets, labels=labels, add_samples=add_samples)
         self.key = key
         self.ks = []
-        self.kkdict = aux.AttrDict()
-        self.pdict = aux.AttrDict()
-        self.vdict = aux.AttrDict()
+        self.kkdict = AttrDict()
+        self.pdict = AttrDict()
+        self.vdict = AttrDict()
 
         for k in aux.SuperList(ks).existing(reg.par.ks):
             p = reg.par.kdict[k]
@@ -318,13 +318,13 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
                     return v
 
                 self.vdict[k] = [get_vs_from_df(df) for df in dfs]
-                self.kkdict[k] = aux.AttrDict(zip(self.labels, dfs))
+                self.kkdict[k] = AttrDict(zip(self.labels, dfs))
                 self.pdict[k] = p
                 self.ks.append(k)
             except:
                 reg.vprint(f'Failed to retrieve key {k}', 1)
                 pass
-        self.dkdict = aux.AttrDict({l: {k: self.kkdict[k][l] for k in self.ks} for l in self.labels})
+        self.dkdict = AttrDict({l: {k: self.kkdict[k][l] for k in self.ks} for l in self.labels})
         self.pars = reg.getPar(self.ks)
         self.Nks = len(self.ks)
         self.ranges = ranges

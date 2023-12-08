@@ -1,5 +1,5 @@
 from ...param import NestedConf, ClassAttr
-from .module_modes import mod_parent_class, mod_gen_multi
+from .module_modes import moduleDB as MD
 
 __all__ = [
     'Locomotor',
@@ -8,11 +8,11 @@ __all__ = [
 
 
 class Locomotor(NestedConf):
-    interference = ClassAttr(class_=mod_parent_class('interference'), default=None, doc='The crawl-bend coupling module')
-    intermitter = ClassAttr(class_=mod_parent_class('intermitter'), default=None, doc='The behavioral intermittency module')
-    feeder = ClassAttr(class_=mod_parent_class('feeder'), default=None, doc='The feeding module')
-    turner = ClassAttr(class_=mod_parent_class('turner'), default=None, doc='The body-bending module')
-    crawler = ClassAttr(class_=mod_parent_class('crawler'), default=None, doc='The peristaltic crawling module')
+    interference = ClassAttr(class_=MD.parent_class('interference'), default=None, doc='The crawl-bend coupling module')
+    intermitter = ClassAttr(class_=MD.parent_class('intermitter'), default=None, doc='The behavioral intermittency module')
+    feeder = ClassAttr(class_=MD.parent_class('feeder'), default=None, doc='The feeding module')
+    turner = ClassAttr(class_=MD.parent_class('turner'), default=None, doc='The body-bending module')
+    crawler = ClassAttr(class_=MD.parent_class('crawler'), default=None, doc='The peristaltic crawling module')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -65,7 +65,7 @@ class Locomotor(NestedConf):
 class DefaultLocomotor(Locomotor):
     def __init__(self, conf, dt=0.1, **kwargs):
         self.dt = dt
-        kwargs.update(mod_gen_multi(self.param_keys, conf, dt=dt))
+        kwargs.update(MD.mod_gen_multi(self.param_keys, conf, dt=dt))
         super().__init__(**kwargs)
 
     def step(self, A_in=0, length=1, on_food=False):

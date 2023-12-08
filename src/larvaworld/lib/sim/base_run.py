@@ -1,16 +1,9 @@
 import agentpy
-# import larvaworld.lib.reg as reg
-# import larvaworld.lib.aux as aux
-# import larvaworld.lib.model.agents as agents
-# import larvaworld.lib.model.envs as envs
-# import larvaworld.lib.sim as sim
 
 
 from .. import reg, aux, sim, screen
 from ..model import envs, agents
 
-# from ..sim import ABModel
-# import larvaworld.lib.screen as screen
 
 __all__ = [
     'BaseRun',
@@ -220,8 +213,8 @@ class BaseRun(sim.ABModel):
         for a in agent_list:
             self.delete_agent(a)
 
-    def set_collectors(self, collections):
-        self.collectors = reg.par.get_reporters(collections=collections, agents=self.agents)
+    def set_collectors(self, cs):
+        self.collectors = reg.par.get_reporters(cs=cs, agents=self.agents)
         self.p.collectors = aux.AttrDict({'step': list(self.collectors['step'].keys()),
                                           'end': list(self.collectors['end'].keys())})
 

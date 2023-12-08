@@ -127,7 +127,7 @@ def grouped_exp_dic():
                                   ids=['CoupledOsc', 'RL'], N=10)},
         'chemorbit_x4': {'env': 'odor_gaussian_square', 'dur': 3.0, 'l': lgs_x4()},
         'chemotaxis_diffusion': {'env': 'mid_odor_diffusion', 'l': lg(mID='navigator', N=30)},
-        'chemotaxis_RL': {'env': 'mid_odor_diffusion', 'c': ['memory'],
+        'chemotaxis_RL': {'env': 'mid_odor_diffusion',
                           'l': lg(mID='RLnavigator', N=10, mode='periphery', s=(0.04,0.04))},
         'reorientation': {'env': 'mid_odor_diffusion', 'l': lg(mID='immobile', N=200, s=(0.05,0.05))},
         'food_at_bottom': {'dur': 1.0,
@@ -175,11 +175,11 @@ def grouped_exp_dic():
             'PItest_off': pref_exp('PItest_off', env='CS_UCS_off_food', dur=3.0,
                                    l=lg(N=25, s=(0.005, 0.02), mID='navigator_x2')),
             'PItest_on': pref_exp('PItest_on', env='CS_UCS_on_food', l=lg(N=25, s=(0.005, 0.02), mID='forager_x2')),
-            'PItrain_mini': pref_exp('PItrain_mini', env='CS_UCS_on_food_x2', dur=1.0, c=['olfactor', 'memory'],
+            'PItrain_mini': pref_exp('PItrain_mini', env='CS_UCS_on_food_x2', dur=1.0, c=['olfactor'],
                                      trials=reg.conf.Trial.getID('odor_preference_short'), l=lg(N=25, s=(0.005, 0.02), mID='forager_RL')),
-            'PItrain': pref_exp('PItrain', env='CS_UCS_on_food_x2', dur=41.0, c=['olfactor', 'memory'],
+            'PItrain': pref_exp('PItrain', env='CS_UCS_on_food_x2', dur=41.0, c=['olfactor'],
                                 trials=reg.conf.Trial.getID('odor_preference'), l=lg(N=25, s=(0.005, 0.02), mID='forager_RL')),
-            'PItest_off_RL': pref_exp('PItest_off_RL', env='CS_UCS_off_food', dur=105.0, c=['olfactor', 'memory'],
+            'PItest_off_RL': pref_exp('PItest_off_RL', env='CS_UCS_off_food', dur=105.0, c=['olfactor'],
                                       l=lg(N=25, s=(0.005, 0.02), mID='RLnavigator'))},
         'foraging': {
             'patchy_food': food_exp('patchy_food', env='patchy_food', l=lg(mID='forager', N=25)),
@@ -206,7 +206,7 @@ def grouped_exp_dic():
                                                     'patch_residency'],
                                          proc_keys=['spatial', 'angular', 'source'])),
 
-            '4corners': exp('4corners', env='4corners', c=['memory'], l=lg(mID='forager_RL', N=10, s=(0.04,0.04)))
+            '4corners': exp('4corners', env='4corners', l=lg(mID='forager_RL', N=10, s=(0.04,0.04)))
         },
 
         'tactile' : {

@@ -3,7 +3,7 @@ import numpy as np
 from ... import reg, aux
 from .. import modules
 from ...param import NestedConf, ClassAttr
-from .module_modes import ModuleModeDict, mod_gen_multi,mod_parent_class
+from .module_modes import moduleDB as MD
 
 __all__ = [
     'Brain',
@@ -12,10 +12,10 @@ __all__ = [
 
 
 class Brain(NestedConf):
-    olfactor = ClassAttr(class_=mod_parent_class('olfactor'), default=None, doc='The olfactory sensor')
-    toucher = ClassAttr(class_=mod_parent_class('toucher'), default=None, doc='The tactile sensor')
-    windsensor = ClassAttr(class_=mod_parent_class('windsensor'), default=None, doc='The wind sensor')
-    thermosensor = ClassAttr(class_=mod_parent_class('thermosensor'), default=None, doc='The temperature sensor')
+    olfactor = ClassAttr(class_=MD.parent_class('olfactor'), default=None, doc='The olfactory sensor')
+    toucher = ClassAttr(class_=MD.parent_class('toucher'), default=None, doc='The tactile sensor')
+    windsensor = ClassAttr(class_=MD.parent_class('windsensor'), default=None, doc='The wind sensor')
+    thermosensor = ClassAttr(class_=MD.parent_class('thermosensor'), default=None, doc='The temperature sensor')
 
     def __init__(self, agent=None, dt=None, **kwargs):
         super().__init__(**kwargs)
@@ -93,17 +93,19 @@ class Brain(NestedConf):
 
 
 class DefaultBrain(Brain):
-    def __init__(self, conf, agent=None, **kwargs):
-        kws={'dt':self.dt, 'brain':self}
-        kwargs.update(mod_gen_multi(self.param_keys, conf, **kws))
-        super().__init__(agent=agent, **kwargs)
+    def __init__(self, conf, agent=None,dt=None, **kwargs):
+        if dt is None:
+            dt = agent.model.dt
+        kws={'dt':dt, 'brain':self}
+        kwargs.update(MD.mod_gen_multi(self.param_keys, conf, **kws))
+        super().__init__(agent=agent,dt =dt, **kwargs)
         self.locomotor = modules.DefaultLocomotor(conf=conf, dt=self.dt)
         m = conf['memory']
         if m is not None:
             M=self.modalities[m.modality]
             if M.sensor:
                 m.gain = M.sensor.gain
-                M.mem = ModuleModeDict['memory'][m.mode][m.modality](**kws, **m)
+                M.mem = MD.dict.memory.mode_dict[m.mode][m.modality](**kws, **{k: m[k] for k in m if k not in ['mode', 'modality']})
 
     def sense(self, pos=None, reward=False):
         kws={'pos':pos}

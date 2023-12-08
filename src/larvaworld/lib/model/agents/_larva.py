@@ -221,7 +221,7 @@ class LarvaMotile(LarvaSegmented):
             self.deb = None
             self.V = self.length ** 3
             self.mass = None
-            self.length = None
+            # self.length = None
 
     def run_energetics(self, V_eaten):
         self.deb.run_check(dt=self.model.dt,X_V=V_eaten)

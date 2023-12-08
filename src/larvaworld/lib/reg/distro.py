@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 import powerlaw
 import typing
@@ -337,24 +339,7 @@ def fit_bout_distros(x0, xmin=None, xmax=None, discrete=False, xmid=np.nan, over
             Ks = np.array([F(c2cum, cdf0) if cdf0 is not None else np.nan for cdf0 in cdfs])
         elif fit_by == 'pdf':
             Ks = np.array([F(c2, pdf0) if pdf0 is not None else np.nan for pdf0 in pdfs])
-        # if fit_by == 'cdf':
-        #     KS_pow = F(c2cum, p_cdf)
-        #     KS_exp = F(c2cum, e_cdf)
-        #     KS_logn = F(c2cum, l_cdf)
-        #     KS_lognNpow = F(c2cum, lp_cdf) if lp_cdf is not None else np.nan
-        #     KS_lev = F(c2cum, lev_cdf)
-        #     KS_norm = F(c2cum, nor_cdf)
-        #     KS_uni = F(c2cum, uni_cdf)
-        # elif fit_by == 'pdf':
-        #     KS_pow = F(c2, p_pdf)
-        #     KS_exp = F(c2, e_pdf)
-        #     KS_logn = F(c2, l_pdf)
-        #     KS_lognNpow = F(c2, lp_pdf) if lp_pdf is not None else np.nan
-        #     KS_lev = F(c2, lev_pdf)
-        #     KS_norm = F(c2, nor_pdf)
-        #     KS_uni = F(c2, uni_pdf)
-        #
-        # Ks = np.array([KS_pow, KS_exp, KS_logn, KS_lognNpow, KS_lev, KS_norm, KS_uni])
+
         idx_Kmax = np.nanargmin(Ks)
         KS_pow, KS_exp, KS_logn, KS_lognNpow, KS_lev, KS_norm, KS_uni=Ks
         res = np.round(
@@ -510,7 +495,7 @@ def test_boutGens(mID, refID=None, refDataset=None, **kwargs):
 
     m = reg.conf.Model.getID(mID)
     m = c.get_sample_bout_distros(m.get_copy())
-    dicM = m.brain.intermitter_params
+    dicM = m.brain.intermitter
     dic = {}
     for n, n0 in zip(['pause', 'run', 'stridechain'], ['pause_dur', 'run_dur', 'run_count']):
         N = Npau if n == 'pause' else Nrun
@@ -523,9 +508,17 @@ def test_boutGens(mID, refID=None, refDataset=None, **kwargs):
             B = BoutGenerator(**kk, dt=dt)
             vs = B.sample(N)
             dic[n0] = fit_bout_distros(vs, dataset_id=mID, bout=n, combine=False, discrete=discr)
-    datasets = [{'id': 'model', 'fitted_epochs': dic, 'color': 'blue'},
-                {'id': 'experiment', 'fitted_epochs': refDataset.fitted_epochs, 'color': 'red'}]
-    return [aux.AttrDict(dd) for dd in datasets]
+    d1=copy.deepcopy(refDataset)
+    d1.config.color= 'red'
+    d1.config.id= 'experiment'
+    d2 = copy.deepcopy(refDataset)
+    d2.config.color = 'blue'
+    d2.config.id = 'model'
+    d2.fitted_epochs=dic
+    # datasets = [aux.AttrDict({'id': 'model', 'fitted_epochs': dic, 'color': 'blue'}),
+    #             aux.AttrDict({'id': 'experiment', 'fitted_epochs': refDataset.fitted_epochs, 'color': 'red'})]
+    # datasets=[d1,d2]
+    return aux.SuperList([d1,d2])
 
 
 

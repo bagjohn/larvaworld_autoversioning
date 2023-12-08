@@ -53,7 +53,7 @@ nutritious_compounds = [a for a in compound_dict if a not in ['water', 'agar']]
 
 class Substrate(NestedConf):
     composition = param.Dict({k: 0.0 for k in all_compounds}, doc='The substrate composition')
-    quality = param.Magnitude(1.0,
+    quality = param.Magnitude(1.0,step=0.01,
                               doc='The substrate quality as percentage of nutrients relative to the intact substrate type')
 
     def __init__(self, quality=1.0, type=None, **kwargs):

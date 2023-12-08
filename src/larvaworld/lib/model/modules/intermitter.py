@@ -43,7 +43,7 @@ default_bout_distros = aux.AttrDict({'turn_dur': {'range': [0.25, 3.25], 'name':
 
 
 class Intermitter(Timer):
-    EEB = param.Magnitude(0.0, label='exploitation-exploration balance',
+    EEB = param.Magnitude(0.0, step=0.01,label='exploitation-exploration balance',
                           doc='The baseline exploitation-exploration balance. 0 means only exploitation, 1 only exploration.')
     EEB_decay = PositiveNumber(1.0, softmax=2.0,doc='The exponential decay coefficient of the exploitation-exploration balance when no food is detected.')
     crawl_freq = PositiveNumber(10 / 7, bounds=(0.5, 3.0),doc='The default crawling frequency.')
@@ -52,9 +52,9 @@ class Intermitter(Timer):
     feeder_reoccurence_rate = OptionalPositiveNumber(softmax=1.0, label='feed reoccurence',
                                                      doc='The default reoccurence rate of the feeding motion.')
     feed_bouts = param.Boolean(False, doc='Whether feeding epochs are generated.')
-    pause_dist = param.Parameter(default=None, doc='The temporal distribution of pause epochs.')
-    stridechain_dist = param.Parameter(default=None, doc='The stride-number distribution of run epochs (stridechains).')
-    run_dist = param.Parameter(default=None, doc='The temporal distribution of run epochs.')
+    pause_dist = param.Dict(default=None, doc='The temporal distribution of pause epochs.')
+    stridechain_dist = param.Dict(default=None, doc='The stride-number distribution of run epochs (stridechains).')
+    run_dist = param.Dict(default=None, doc='The temporal distribution of run epochs.')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
