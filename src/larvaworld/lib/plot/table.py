@@ -41,7 +41,7 @@ def conf_table(df, row_colors, mID, show=False, save_to=None, save_as=None,
 @reg.funcs.graph('model table')
 def modelConfTable(mID, m=None, columns=['parameter', 'symbol', 'value', 'unit'],
                  colWidths=[0.35, 0.1, 0.25, 0.15], **kwargs):
-    from ..model import ModuleColorDict
+    from ..model import moduleDB as MD
 
     def arrange_index_labels(index):
         ks = index.unique().tolist()
@@ -120,7 +120,7 @@ def modelConfTable(mID, m=None, columns=['parameter', 'symbol', 'value', 'unit']
     if m is None:
         m = reg.conf.Model.getID(mID)
     df = mIDtable_data(m, columns=columns)
-    row_colors = [None] + [ModuleColorDict[ii] for ii in df.index.values]
+    row_colors = [None] + [MD.ModuleColorDict[ii] for ii in df.index.values]
     df.index = arrange_index_labels(df.index)
     return conf_table(df, row_colors, mID=mID, colWidths=colWidths, **kwargs)
 

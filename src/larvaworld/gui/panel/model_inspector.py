@@ -7,13 +7,12 @@ Interactive dashboard to inspect any model configuration available
 import panel as pn
 import pandas as pd
 import holoviews as hv
-from holoviews.streams import Pipe, Buffer
+from holoviews.streams import Buffer
 from panel.template import DarkTheme
 
 import larvaworld.lib.reg as reg
-# import larvaworld.lib.reg as model
 from larvaworld.lib.param import class_objs
-from larvaworld.lib.model import ModuleColorDict, DefaultBrain, Effector,moduleDB as MD
+from larvaworld.lib.model import DefaultBrain, Effector,moduleDB as MD
 from src.larvaworld.lib import aux
 
 w, h = 800, 500
@@ -69,7 +68,7 @@ class ModuleInspector:
                                  ),
                         max_width=280, margin=20,
                         header=pn.pane.Markdown(f"### {k} : {A.name}", align='center'),
-                        header_background=ModuleColorDict[k]
+                        header_background=MD.ModuleColorDict[k]
                     )
                     l.append(c)
                 except:

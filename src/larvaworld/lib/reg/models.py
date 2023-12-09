@@ -603,7 +603,7 @@ class ModelRegistry:
         return FD
 
     def diff_df(self, mIDs, ms=None, dIDs=None):
-        from ..model import ModuleColorDict
+        from ..model import moduleDB as MD
         dic = {}
         if dIDs is None:
             dIDs = mIDs
@@ -634,7 +634,7 @@ class ModelRegistry:
         df.set_index(['field'], inplace=True)
         df.sort_index(inplace=True)
 
-        row_colors = [None] + [ModuleColorDict[ii] for ii in df.index.values]
+        row_colors = [None] + [MD.ModuleColorDict[ii] for ii in df.index.values]
         df.index = arrange_index_labels(df.index)
 
         return df, row_colors

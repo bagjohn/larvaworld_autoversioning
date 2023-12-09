@@ -93,7 +93,7 @@ class ModelTab(GuiTab):
             ppp = []
             for v in vs:
                 tS=18 if v in ['gut'] else 16
-                cc = PadDict(v, toggle=True if v not in ['body', 'physics'] else None, background_color=model.ModuleColorDict[v], text_kws=t_kws(tS))
+                cc = PadDict(v, toggle=True if v not in ['body', 'physics'] else None, background_color=model.moduleDB.ModuleColorDict[v], text_kws=t_kws(tS))
                 c.update(cc.get_subdicts())
                 if v=='olfactor' :
                     ll = cc.get_layout(size=(ss[0], int(ss[1]/2)))
