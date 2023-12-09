@@ -97,7 +97,7 @@ class DefaultBrain(Brain):
         if dt is None:
             dt = agent.model.dt
         kws={'dt':dt, 'brain':self}
-        kwargs.update(MD.mod_gen_multi(self.param_keys, conf, **kws))
+        kwargs.update(MD.build_modules(mIDs=self.param_keys, conf=conf, **kws))
         super().__init__(agent=agent,dt =dt, **kwargs)
         self.locomotor = modules.DefaultLocomotor(conf=conf, dt=self.dt)
         m = conf['memory']

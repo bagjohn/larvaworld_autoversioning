@@ -65,7 +65,7 @@ class Locomotor(NestedConf):
 class DefaultLocomotor(Locomotor):
     def __init__(self, conf, dt=0.1, **kwargs):
         self.dt = dt
-        kwargs.update(MD.mod_gen_multi(self.param_keys, conf, dt=dt))
+        kwargs.update(MD.build_modules(mIDs=self.param_keys, conf=conf, dt=dt))
         super().__init__(**kwargs)
 
     def step(self, A_in=0, length=1, on_food=False):

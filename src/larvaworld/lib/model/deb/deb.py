@@ -30,7 +30,7 @@ __all__ = [
     'DEB',
 ]
 
-
+# p.257 in S. a. L. M. Kooijman, “Dynamic Energy Budget theory for metabolic organisation : Summary of concepts of the third edition,” Water, vol. 365, p. 68, 2010.
 class DEB_model(NestedConf):
     F_m = PositiveNumber(6.5, doc='maximum surface-area specific searching rate (l cm**-2 d**-1)')
     kap_X = param.Magnitude(0.8, doc='assimilation efficiency')
@@ -696,9 +696,7 @@ class DEB(DEB_basic):
     hunger_gain = param.Magnitude(1.0, label='hunger sensitivity to reserve reduction',
                                   doc='The sensitivy of the hunger drive in deviations of the DEB reserve density.')
 
-    def __init__(self, save_dict=True, save_to=None, base_hunger=0.5, intermitter=None,
-    # def __init__(self, save_dict=True, save_to=None, base_hunger=0.5, intermitter=None, intermitter_from=None, offline=False,EEB=None,
-                 **kwargs):
+    def __init__(self, save_dict=True, save_to=None, base_hunger=0.5, intermitter=None, **kwargs):
         super().__init__(**kwargs)
         self.set_intermitter(base_hunger, intermitter)
         # self.set_intermitter(base_hunger, intermitter, intermitter_from, offline,EEB)
@@ -724,22 +722,6 @@ class DEB(DEB_basic):
         self.base_hunger = base_hunger
         self.update_hunger()
 
-    # def set_intermitter(self, base_hunger=0.5, intermitter=None, intermitter_from=None, offline=False,EEB=None):
-    #     if intermitter is None and offline:
-    #         if intermitter_from is not None:
-    #             kwargs = intermitter_from['intermitter']
-    #             if EEB is None:
-    #                 z = np.poly1d(intermitter_from['EEB_poly1d'])
-    #                 EEB= np.clip(z(self.fr_feed), a_min=0, a_max=1)
-    #             kwargs['EEB'] = EEB
-    #             from ..modules.intermitter import OfflineIntermitter
-    #             intermitter = OfflineIntermitter(**kwargs)
-    #     self.intermitter = intermitter
-    #     if self.intermitter is not None:
-    #         if self.hunger_as_EEB:
-    #             base_hunger = self.intermitter.base_EEB
-    #     self.base_hunger = base_hunger
-    #     self.update_hunger()
 
     def update(self):
         self.update_hunger()
@@ -904,5 +886,4 @@ class DEB(DEB_basic):
         return d.finalize_dict()
 
 
-# p.257 in S. a. L. M. Kooijman, “Dynamic Energy Budget theory for metabolic organisation : Summary of concepts of the third edition,” Water, vol. 365, p. 68, 2010.
 

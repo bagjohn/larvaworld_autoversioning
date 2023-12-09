@@ -10,7 +10,7 @@ from ...param import class_defaults, NestedConf, class_objs
 from .. import deb, agents
 
 __all__ = [
-    'ModuleModes',
+    'BrainModule',
     'BrainModuleDB',
     'LarvaModuleDB',
     'SpaceDict',
@@ -18,7 +18,7 @@ __all__ = [
 ]
 
 
-class ModuleModes(NestedConf):
+class BrainModule(NestedConf):
     ModeShortNames = AttrDict({'realistic': 'RE', 'square': 'SQ', 'gaussian': 'GAU', 'constant': 'CON',
                           'default': 'DEF', 'neural': 'NEU', 'sinusoidal': 'SIN', 'nengo': 'NENGO',
                           'phasic': 'PHI', 'branch': 'BR', 'osn': 'OSN', 'RL': 'RL', 'MB': 'MB'})
@@ -47,14 +47,14 @@ class ModuleModes(NestedConf):
         else:
             return None
 
-    def mod_gen(self, m, **kwargs):
-        if m is not None and 'mode' in m:
-            C = self.get_class(m.mode)
+    def build_module(self, conf, **kwargs):
+        if conf is not None and 'mode' in conf:
+            C = self.get_class(conf.mode)
             if C is not None:
-                return C(**{k: m[k] for k in m if k != 'mode'}, **kwargs)
+                return C(**{k: conf[k] for k in conf if k != 'mode'}, **kwargs)
         return None
 
-    def mod_kws(self, mode=None, excluded=[basic.Effector, 'phi'], include_mode=True, **kwargs):
+    def module_conf(self, mode=None, excluded=[basic.Effector, 'phi'], include_mode=True, **kwargs):
         C = self.get_class(mode=mode)
         if C is not None:
             dic = class_defaults(A=C, excluded=excluded, **kwargs)
@@ -64,7 +64,7 @@ class ModuleModes(NestedConf):
         else:
             return None
 
-    def mod_objs(self, mode=None, excluded=[basic.Effector, 'phi', 'name']):
+    def module_objects(self, mode=None, excluded=[basic.Effector, 'phi', 'name']):
         C = self.get_class(mode=mode)
         if C is not None:
             return class_objs(A=C, excluded=excluded)
@@ -72,12 +72,15 @@ class ModuleModes(NestedConf):
         else:
             return AttrDict()
 
-    def mod_vars(self, **kwargs):
-        return self.mod_objs(**kwargs).keylist
+    def module_pars(self, **kwargs):
+        return self.module_objects(**kwargs).keylist
+
+    def as_entry(self, d):
+        return AttrDict({f'brain.{self.mID}': d})
 
 
 class BrainModuleDB(NestedConf):
-    ModuleModeDict = AttrDict({
+    BrainModuleModes = AttrDict({
         'crawler': {
             'constant': crawler.Crawler,
             'gaussian': crawler.GaussOscillator,
@@ -123,12 +126,30 @@ class BrainModuleDB(NestedConf):
         },
     })
 
+    BrainModuleColors = AttrDict({
+        'crawler': 'lightcoral',
+        'turner': 'indianred',
+        'interference': 'lightsalmon',
+        'intermitter': '#a55af4',
+        'olfactor': 'palegreen',
+        'windsensor': 'plum',
+        'thermosensor': 'plum',
+        'toucher': 'pink',
+        'feeder': 'pink',
+        'memory': 'pink',
+    })
+
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
         self.LocoModsBasic = SuperList(['crawler', 'turner', 'interference', 'intermitter'])
         self.LocoMods = SuperList(['crawler', 'turner', 'interference', 'intermitter', 'feeder'])
         self.SensorMods = SuperList(['olfactor', 'toucher', 'windsensor', 'thermosensor'])
-        self.BrainMods = self.ModuleModeDict.keylist
+        self.BrainMods = self.BrainModuleModes.keylist
+        self.brainDB = AttrDict(
+            {k: BrainModule(mID=k, dict=self.BrainModuleModes[k], color=self.BrainModuleColors[k]) for k in
+             self.BrainMods})
+
+        super().__init__(**kwargs)
+
 
     def mod_modes(self, k, short=False):
         if k not in self.BrainMods:
@@ -139,34 +160,37 @@ class BrainModuleDB(NestedConf):
             else:
                 return self.brainDB[k].modes
 
-    def mod_gen(self, k=None, m=None, **kwargs):
-        return self.brainDB[k].mod_gen(m, **kwargs) if k in self.BrainMods else None
+    def build_module(self, mID=None, conf=None, **kwargs):
+        return self.brainDB[mID].build_module(conf=conf, **kwargs) if mID in self.BrainMods else None
 
-    def mod_gen_multi(self, ks, conf, **kwargs):
-        return AttrDict({k: self.mod_gen(k, conf[k] if k in conf else None, **kwargs) for k in ks})
+    def build_modules(self, mIDs, conf, **kwargs):
+        return AttrDict({mID: self.build_module(mID=mID, conf=conf[mID] if mID in conf else None, **kwargs) for mID in mIDs})
 
-    def mod_kws(self, k=None, mode=None, as_entry=True, **kwargs):
-        C = self.brainDB[k].mod_kws(mode=mode, **kwargs) if k in self.BrainMods else None
-        return AttrDict({f'brain.{k}': C}) if as_entry else C
 
-    def mod_objs(self, k=None, mode=None, as_entry=True, **kwargs):
-        C = self.brainDB[k].mod_objs(mode=mode, **kwargs) if k in self.BrainMods else AttrDict()
-        return AttrDict({f'brain.{k}': C}) if as_entry else C
+    def module_conf(self, mID=None, mode=None, as_entry=True, **kwargs):
+        M=self.brainDB[mID]
+        conf = M.module_conf(mode=mode, **kwargs) if mID in self.BrainMods else None
+        return M.as_entry(conf) if as_entry else conf
 
-    def mod_objs_multi(self, ks, conf, as_entry=True, **kwargs):
-        C = AttrDict({k: self.mod_objs(k, conf[k] if k in conf else AttrDict(), **kwargs) for k in ks})
-        return AttrDict({f'brain.{k}': C[k] for k in C}).flatten() if as_entry else C
+    def module_objects(self, mID=None, mode=None, as_entry=True, **kwargs):
+        M = self.brainDB[mID]
+        objs = M.module_objects(mode=mode, **kwargs) if mID in self.BrainMods else AttrDict()
+        return M.as_entry(objs) if as_entry else objs
 
-    def mod_vars(self, **kwargs):
-        return self.mod_objs(**kwargs).flatten().keylist
+    def modules_objects(self, mIDs, conf, as_entry=True, **kwargs):
+        C = AttrDict({mID: self.module_objects(mID, conf[mID] if mID in conf else AttrDict(),as_entry=False, **kwargs) for mID in mIDs})
+        return AttrDict({f'brain.{mID}': C[mID] for mID in C}).flatten() if as_entry else C
 
-    def mod_vars_multi(self, **kwargs):
-        return self.mod_objs_multi(**kwargs).keylist
+    def module_pars(self, **kwargs):
+        return self.module_objects(**kwargs).flatten().keylist
+
+    def modules_pars(self, **kwargs):
+        return self.modules_objects(**kwargs).keylist
 
     def brainConf(self, ms={}, mkws={}):
         C = AttrDict()
         for k in self.BrainMods:
-            C[k] = self.brainDB[k].mod_kws(mode=ms[k] if k in ms else None, **mkws[k] if k in mkws else {})
+            C[k] = self.brainDB[k].module_conf(mode=ms[k] if k in ms else None, **mkws[k] if k in mkws else {})
         C.nengo = (C.intermitter is not None and C.intermitter.mode == 'nengo')
         return C
 
@@ -186,7 +210,7 @@ class BrainModuleDB(NestedConf):
 
 
 class LarvaModuleDB(BrainModuleDB):
-    ModuleColorDict = AttrDict({
+    LarvaModuleColors = AttrDict({
         'body': 'lightskyblue',
         'physics': 'lightsteelblue',
         'energetics': 'lightskyblue',
@@ -194,23 +218,21 @@ class LarvaModuleDB(BrainModuleDB):
         'gut': 'lightskyblue',
         'Box2D': 'lightcoral',
         'sensorimotor': 'lightcoral',
-        'crawler': 'lightcoral',
-        'turner': 'indianred',
-        'interference': 'lightsalmon',
-        'intermitter': '#a55af4',
-        'olfactor': 'palegreen',
-        'windsensor': 'plum',
-        'thermosensor': 'plum',
-        'toucher': 'pink',
-        'feeder': 'pink',
-        'memory': 'pink',
     })
+
+    # LarvaModuleClasses = AttrDict({
+    #     'body': agents.LarvaSegmented,
+    #     'physics': agents.BaseController,
+    #     # 'energetics': 'lightskyblue',
+    #     'DEB': deb.DEB,
+    #     'gut': deb.Gut,
+    #     # 'Box2D': 'lightcoral',
+    #     'sensorimotor': agents.ObstacleLarvaRobot,
+    # })
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.brainDB = AttrDict(
-            {k: ModuleModes(mID=k, dict=self.ModuleModeDict[k], color=self.ModuleColorDict[k]) for k in
-             self.BrainMods})
+        self.ModuleColorDict=AttrDict(**self.BrainModuleColors,**self.LarvaModuleColors)
         self.LarvaMods = SuperList(['energetics', 'body', 'physics', 'sensorimotor', 'Box2D'])
         self.AllModules = self.BrainMods + self.LarvaMods
 
@@ -422,7 +444,7 @@ def Model_dict():
     LMs = MD.LocoModsBasic
 
     def olf_kws(g={'Odor': 150.0}, mode='default', **kwargs):
-        return MD.mod_kws('olfactor', mode=mode, gain_dict=g, **kwargs)
+        return MD.module_conf(mID='olfactor', mode=mode, gain_dict=g, **kwargs)
 
     def mem_kws(mode='RL', modality='olfaction', **kwargs):
         return AttrDict({'brain.memory': class_defaults(MD.brainDB.memory.dict[mode][modality], excluded=['dt'],
@@ -449,7 +471,7 @@ def Model_dict():
                     new0(f'{idd}_{k}', {**o, **mem_kws(k)})
 
         for ss, eeb in zip(['', '_max'], [0.5, 0.9]):
-            f = AttrDict({**MD.mod_kws('feeder', mode='default'), 'brain.intermitter.feed_bouts': True,
+            f = AttrDict({**MD.module_conf(mID='feeder', mode='default'), 'brain.intermitter.feed_bouts': True,
                           'brain.intermitter.EEB': eeb})
             new0(f'{id0}{ss}_feeder', f)
             for sg, g in zip(['', '0', '_x2'], [{'Odor': 150.0}, {'Odor': 0.0}, {'CS': 150.0, 'UCS': 0.0}]):
@@ -491,12 +513,12 @@ def Model_dict():
                       [{'body.Nsegs': 11},
                        {'body.body_plan': 'zebrafish_larva', 'Box2D': {'joint_types': {
                            'revolute': {'N': 1, 'args': {'maxMotorTorque': 10 ** 5, 'motorSpeed': 1}}}}},
-                       MD.mod_kws('thermosensor', mode='default'),
+                       MD.module_conf(mID='thermosensor', mode='default'),
                        olf_kws(mode='osn'),
                        olf_kws({'CS': 150.0, 'UCS': 0.0}, mode='osn')]):
         new(id, 'explorer', dd)
     for ss, kkws in zip(['', '_2', '_brute'], [{}, {'touch_sensors': [0, 2]}, {'brute_force': True}]):
-        new(f'toucher{ss}', 'explorer', MD.mod_kws('toucher', mode='default', **kkws))
+        new(f'toucher{ss}', 'explorer', MD.module_conf(mID='toucher', mode='default', **kkws))
         new(f'RLtoucher{ss}', f'toucher{ss}', mem_kws(modality='touch'))
     for id, gd in zip(['follower-R', 'follower-L', 'gamer', 'gamer-5x'], [{'Left_odor': 150.0, 'Right_odor': 0.0},
                                                                           {'Left_odor': 0.0, 'Right_odor': 150.0},
@@ -510,13 +532,11 @@ def Model_dict():
 
     new('immobile', 'navigator', {'brain.crawler': None, 'brain.turner': None,
                                   'brain.intermitter': None, 'brain.interference': None,
-                                  **MD.mod_kws('toucher', mode='default')})
+                                  **MD.module_conf(mID='toucher', mode='default')})
     new('obstacle_avoider', 'navigator', {'sensorimotor': MD.sensorimotor_kws()})
 
     for id in ['explorer', 'navigator', 'feeder', 'forager']:
-        new(f'{id}_sample', id, {k: 'sample' for k in MD.mod_vars(k='crawler', mode='RE')})
-        # new(f'{id}_sample', id, {f'brain.crawler.{k}': 'sample' for k in
-        #                          ['stride_dst_mean', 'stride_dst_std', 'max_scaled_vel', 'max_vel_phase', 'freq']})
+        new(f'{id}_sample', id, {k: 'sample' for k in MD.module_pars(mID='crawler', mode='RE')})
 
     for sp, k_abs, eeb in zip(['rover', 'sitter'], [0.8, 0.4], [0.67, 0.37]):
         en_ws = MD.energetics_kws(gut_kws={'k_abs': k_abs}, DEB_kws={'species': sp})

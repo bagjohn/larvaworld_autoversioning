@@ -122,6 +122,7 @@ def grouped_exp_dic():
                        'l': lg(mID='NEU_Levy_continuous_nav', N=8, loc=(-0.04, 0.0), s=(0.005, 0.02),
                                ors=(-30.0, 30.0))},
         'chemorbit': {'env': 'mid_odor_gaussian', 'dur': 3.0, 'l': lg(mID='navigator', N=3)},
+        'chemorbit_OSN': {'env': 'mid_odor_gaussian', 'dur': 3.0, 'l': lg(mID='OSNnavigator', N=3)},
         'chemorbit_x2': {'env': 'mid_odor_gaussian', 'dur': 3.0,
                          'l': lgs(mIDs=['navigator', 'RLnavigator'],
                                   ids=['CoupledOsc', 'RL'], N=10)},
@@ -174,6 +175,8 @@ def grouped_exp_dic():
         'odor_preference': {
             'PItest_off': pref_exp('PItest_off', env='CS_UCS_off_food', dur=3.0,
                                    l=lg(N=25, s=(0.005, 0.02), mID='navigator_x2')),
+            'PItest_off_OSN': pref_exp('PItest_off', env='CS_UCS_off_food', dur=3.0,
+                                   l=lg(N=25, s=(0.005, 0.02), mID='OSNnavigator_x2')),
             'PItest_on': pref_exp('PItest_on', env='CS_UCS_on_food', l=lg(N=25, s=(0.005, 0.02), mID='forager_x2')),
             'PItrain_mini': pref_exp('PItrain_mini', env='CS_UCS_on_food_x2', dur=1.0, c=['olfactor'],
                                      trials=reg.conf.Trial.getID('odor_preference_short'), l=lg(N=25, s=(0.005, 0.02), mID='forager_RL')),

@@ -36,7 +36,7 @@ def module_endpoint_hists(e, mkey='crawler', mode='realistic', Nbins=None, show_
     if Nbins is None:
         Nbins = int(e.index.values.shape[0] / 10)
 
-    pars=MD.mod_vars(k=mkey, mode=mode)
+    pars=MD.module_pars(mID=mkey, mode=mode)
     pars = reg.sample_ps(pars, e)
     N = len(pars)
 

@@ -224,7 +224,7 @@ def adapt_mID(d, mID0, mID, ks):
     if 'intermitter' in ks:
         m0 = d.config.get_sample_bout_distros(m0.get_copy())
 
-    ps=moduleDB.mod_vars_multi(ks=ks, conf=m0, as_entry=True)
+    ps=moduleDB.modules_pars(mIDs=ks, conf=m0, as_entry=True)
     m0 = m0.update_nestdict(
         AttrDict({p: np.median(vs) for p, vs in d.sample_larvagroup(N=100, ps=ps).items()}))
     reg.conf.Model.setID(mID, m0)
