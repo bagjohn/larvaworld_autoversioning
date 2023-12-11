@@ -306,7 +306,7 @@ class BasicABModel:
         self.sim_setup(steps, seed)
         while self.running:
             self.sim_step()
-            reg.vprint(f"\rCompleted: {self.t} steps", 1)
+            reg.vprint(f"\rCompleted: {self.t} steps", 0)
         self.end()
         self.create_output()
 

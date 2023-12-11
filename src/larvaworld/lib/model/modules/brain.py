@@ -105,7 +105,7 @@ class DefaultBrain(Brain):
             M=self.modalities[m.modality]
             if M.sensor:
                 m.gain = M.sensor.gain
-                M.mem = MD.dict.memory.mode_dict[m.mode][m.modality](**kws, **{k: m[k] for k in m if k not in ['mode', 'modality']})
+                M.mem = MD.brainDB.memory.dict[m.mode][m.modality](**kws, **{k: m[k] for k in m if k not in ['mode', 'modality']})
 
     def sense(self, pos=None, reward=False):
         kws={'pos':pos}
