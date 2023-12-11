@@ -16,10 +16,6 @@ from ..model import Food, Source, Border, WindScape, ThermoScape, FoodGrid, Odor
     GaussianValueLayer
 
 __all__ = [
-    # 'ConfType',
-    # 'RefType',
-    # 'conf',
-    # 'resetConfs',
     'gen',
     'SimConfiguration',
     'SimConfigurationParams',
@@ -833,8 +829,7 @@ class ReplayConfUnit(NestedConf):
 class ReplayConf(ReplayConfGroup, ReplayConfUnit):
     refID = reg.conf.Ref.confID_selector()
     refDir = param.String(None)
-    time_range = OptionalPositiveRange(default=None,
-                                       doc='Whether to only replay a defined temporal slice of the dataset.')
+    time_range = OptionalPositiveRange(doc='Whether to only replay a defined temporal slice of the dataset.')
     overlap_mode = param.Boolean(False, doc='Whether to draw overlapped image of the track.')
     draw_Nsegs = OptionalPositiveInteger(softmin=1, softmax=12,
                                          doc='Whether to artificially simplify the experimentally tracked larva body to a segmented virtual body of the given number of segments.')
@@ -859,18 +854,17 @@ class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
     color = RandomizedColor(default='black', doc='The color of the dataset', instantiate=True)
     env_params = ClassAttr(gen.Env, doc='The environment configuration')
     larva_group = ClassAttr(LarvaGroup, doc='The larva group object')
-    agent_ids = param.List(item_type=None, doc='The unique IDs of the agents in the dataset')
-    N = OptionalPositiveInteger(default=None, softmax=500, doc='The number of agents in the group')
+    agent_ids = param.List(doc='The unique IDs of the agents in the dataset')
+    N = OptionalPositiveInteger(softmax=500, doc='The number of agents in the group')
     sample = reg.conf.Ref.confID_selector()
-    filtered_at = OptionalPositiveNumber(default=None)
-    rescaled_by = OptionalPositiveNumber(default=None)
-    pooled_cycle_curves = param.Dict(default=None,
-                                     doc='The average across-larvae curves of diverse parameters during the stridecycle')
-    bout_distros = param.Dict(default=None, doc='The temporal distributions of the diverse types of behavioral bouts')
-    intermitter = param.Dict(default=None, doc='The fitted parameters for the intermittency module')
+    filtered_at = OptionalPositiveNumber(doc='Whether data has been low-pass filtered at a certain cut-off frequency during preprocessing')
+    rescaled_by = OptionalPositiveNumber(doc='Whether data has been rescaled by a certain value during preprocessing')
+    pooled_cycle_curves = param.Dict(doc='The average across-larvae curves of diverse parameters during the stridecycle')
+    bout_distros = param.Dict(doc='The temporal distributions of the diverse types of behavioral bouts')
+    intermitter = param.Dict(doc='The fitted parameters for the intermittency module')
     modelConfs = param.Dict(default=AttrDict({'average':  {}, 'variable': {}, 'individual': {}, '3modules':  {}}),
                              doc='The fitted model configurations')
-    EEB_poly1d = param.Parameter(default=None, doc='The polynomial describing the exploration-exploitation balance.')
+    EEB_poly1d = param.Parameter(doc='The polynomial describing the exploration-exploitation balance.')
 
     @property
     def h5_kdic(self):

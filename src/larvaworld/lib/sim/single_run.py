@@ -84,10 +84,7 @@ class ExpRun(BaseRun):
 
     def build_agents(self, larva_groups, parameter_dict={}):
         reg.vprint(f'--- Simulation {self.id} : Generating agent groups!--- ', 1)
-        confs = []
-        for gID, gConf in larva_groups.items():
-            lg = reg.generators.LarvaGroup(**gConf)
-            confs += lg(parameter_dict=parameter_dict)
+        confs = aux.SuperList([reg.generators.LarvaGroup(**v)(parameter_dict=parameter_dict) for v in larva_groups.values()])
         self.place_agents(confs)
 
     def eliminate_overlap(self):

@@ -37,7 +37,7 @@ class BaseRun(sim.ABModel):
 
         super().__init__(**kwargs)
         self.p.update(**self.nestedConf)
-        self.agent_class = self.define_agent_class()
+        self.agent_class = self._agent_class
         self.is_paused = False
         self.datasets = None
         self.results = None
@@ -49,9 +49,6 @@ class BaseRun(sim.ABModel):
         self.obstacles = []
         self._odor_ids = None
         self.screen_kws = screen_kws
-
-        self.screen_class = self.define_screen_class()
-
         self.screen_manager = self.screen_class(model=self, **self.screen_kws)
 
     @property
@@ -60,7 +57,6 @@ class BaseRun(sim.ABModel):
             return self.exp_condition.check(self)
         return False
 
-    # @profile
     def sim_step(self):
         """ Proceeds the simulation by one step, incrementing `Model.t` by 1
         and then calling :func:`Model.step` and :func:`Model.update`."""
@@ -160,9 +156,7 @@ class BaseRun(sim.ABModel):
     def place_food(self, p):
         self.food_grid = envs.FoodGrid(**p.food_grid, model=self) if p.food_grid else None
         sourceConfs = reg.gen.FoodGroup.from_entries(p.source_groups) + reg.gen.Food.from_entries(p.source_units)
-        # print([a.pos for a in sourceConfs])
         source_list = [agents.Food(model=self, **conf) for conf in sourceConfs]
-        # print([a.pos for a in source_list])
         self.p.source_xy = aux.AttrDict({a.id: a.pos for a in source_list})
         self.space.add_sources(source_list, positions=[a.pos for a in source_list])
         self.sources = agentpy.AgentList(model=self, objs=source_list)
@@ -175,7 +169,8 @@ class BaseRun(sim.ABModel):
         self.space.add_agents(agent_list, positions=[a.pos for a in agent_list])
         self.agents = agentpy.AgentList(model=self, objs=agent_list)
 
-    def define_agent_class(self):
+    @property
+    def _agent_class(self):
         if self.runtype == 'Replay':
             if self.p.draw_Nsegs is None:
                 return agents.LarvaReplayContoured
@@ -193,11 +188,9 @@ class BaseRun(sim.ABModel):
         else:
             return agents.LarvaSim
 
-    def define_screen_class(self):
-        if self.runtype == 'Ga':
-            return screen.GA_ScreenManager
-        else:
-            return screen.ScreenManager
+    @property
+    def screen_class(self):
+        return screen.GA_ScreenManager if self.runtype == 'Ga' else screen.ScreenManager
 
     def delete_agent(self, a):
         self.agents.remove(a)
@@ -279,9 +272,3 @@ class BaseRun(sim.ABModel):
         m.end()
         m.screen_manager.close()
 
-
-if __name__ == "__main__":
-    m = BaseRun(runtype='Exp', experiment='dish', duration=5, screen_kws={'show_display': True, 'mode': 'video'})
-    m.build_env(m.p.env_params)
-    # print(m.id, m.dt, m.duration, m.Nsteps)
-    m.run()
