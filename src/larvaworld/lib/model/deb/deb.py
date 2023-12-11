@@ -723,6 +723,13 @@ class DEB(DEB_basic):
             if self.hunger_as_EEB:
                 self.intermitter.EEB = self.hunger
 
+    @property
+    def EEB(self):
+        if self.intermitter is None:
+            return None
+        else:
+            return self.intermitter.EEB
+
     def update_dict(self):
         if self.dict is not None:
             dict_values = [
@@ -750,7 +757,6 @@ class DEB(DEB_basic):
             d['pupation'] = self.pupation_time_in_hours
             d['death'] = self.death_time_in_hours
             d['id'] = self.id
-            d['EEB'] = self.EEB
             d['epochs'] = self.epochs
             d['epoch_qs'] = self.epoch_qs
             d['fr'] = 1 / self.dt_in_sec
@@ -764,7 +770,6 @@ class DEB(DEB_basic):
 
             try:
                 I = self.intermitter
-                d['EEB'] = I.EEB
                 d['feed_freq_simulated'] = I.mean_feed_freq
                 d_inter = I.build_dict()
                 d.update({

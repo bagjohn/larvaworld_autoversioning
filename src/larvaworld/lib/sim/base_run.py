@@ -54,7 +54,7 @@ class BaseRun(sim.ABModel):
     @property
     def end_condition_met(self):
         if self.exp_condition is not None:
-            return self.exp_condition.check(self)
+            return self.exp_condition.check()
         return False
 
     def sim_step(self):
