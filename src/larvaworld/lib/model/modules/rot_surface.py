@@ -1,8 +1,8 @@
 import math
 import pygame
 
-from larvaworld.lib import aux
-
+from .. import Object
+from ... import aux
 
 __all__ = [
     'RotSurface',
@@ -10,15 +10,15 @@ __all__ = [
     'LightSource',
 ]
 
-class RotSurface:
+class RotSurface(Object):
 
-    def __init__(self, x, y, direction, surf, model=None):
+    def __init__(self, x, y, direction, surf, **kwargs):
+        super().__init__(**kwargs)
         self.x = x
         self.y = y
         self.direction = direction
         self.surf = surf
         self.speed = 0
-        self.model = model
 
     def step(self):
         dx = self.speed * math.cos(self.direction)
@@ -64,7 +64,7 @@ class RotTriangle(RotSurface):
 
 class LightSource(RotSurface):
 
-    def __init__(self, x, y, emitting_power, color_fg, color_bg, **kwargs):
+    def __init__(self, x, y, emitting_power, color_fg=aux.Color.YELLOW, color_bg=aux.Color.BLACK, **kwargs):
         self.emitting_power = emitting_power
         self.color_fg = color_fg
         self.color_bg = color_bg

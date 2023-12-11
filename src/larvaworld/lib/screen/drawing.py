@@ -4,19 +4,19 @@ Screen management for pygame-based simulation visualization
 
 import os
 import sys
-
 import agentpy
 import numpy as np
 import param
 import imageio
 from param import Boolean, String
+from shapely import geometry
 
 from ..param import NestedConf, PositiveNumber, OptionalSelector, PositiveInteger, Area2DPixel
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
-from .. import reg, aux, screen
+from .. import reg, aux
 from ..screen import Viewer, SidePanel, ScreenMsgText, SimulationClock, SimulationScale, \
     SimulationState, ScreenTextBoxRect
 
@@ -140,7 +140,6 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
     def __init__(self, model, background_motion=None, **kwargs):
         m = self.model = model
         super().__init__(dims=aux.get_window_dims(m.p.env_params.arena.dims), **kwargs)
-        # super().__init__(dims=aux.get_window_dims(m.space.dims), **kwargs)
         if self.model.offline:
             self.show_display = False
         if self.video_file is None:
@@ -150,14 +149,10 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
         if self.media_dir is None:
             self.media_dir = m.dir
         self._fps = int(self.fps / m.dt)
-        # if vis_kwargs is not None:
-        #     self.vis_mode = vis_kwargs.render.mode
         if self.vis_mode == 'video' and not self.save_video:
             self.show_display = True
 
         self.bg = background_motion
-
-        # self.active = self.save_video or self.image_mode or self.show_display or (self.mode is not None)
         self.v = None
 
         self.selected_type = ''
@@ -173,11 +168,6 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
         self.odorscape_counter = 0
 
         self.pygame_keys = None
-        self.screen_kws = aux.AttrDict({
-            'manager': self,
-
-        })
-        print(self.active, self.vis_mode, self.show_display)
 
     def increase_fps(self):
         if self._fps < 60:
@@ -247,20 +237,6 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
 
         return None
 
-    # def evaluate_input(self):
-    #     """
-    #     Evaluation of user input through keyboard and mouse.
-    #     """
-    #
-    #     for e in pygame.event.get():
-    #         if e.type == pygame.QUIT or (e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE):
-    #             self.close()
-    #             sys.exit()
-    #         elif e.type == pygame.KEYDOWN and (e.key == pygame.K_PLUS or e.key == 93 or e.key == 270):
-    #             self.increase_fps()
-    #         elif e.type == pygame.KEYDOWN and (e.key == pygame.K_MINUS or e.key == 47 or e.key == 269):
-    #             self.decrease_fps()
-
     def evaluate_graphs(self):
         """
         Evaluation of dynamic graphs on the screen.
@@ -271,12 +247,6 @@ class BaseScreenManager(Area2DPixel, ScreenOps):
             if not running:
                 self.dynamic_graphs.remove(g)
                 del g
-
-    # def draw_arena(self, v):
-    #     pass
-    #
-    # def draw_aux(self, v, **kwargs):
-    #     pass
 
     @property
     def screen_color(self):
@@ -626,26 +596,20 @@ class GA_ScreenManager(BaseScreenManager):
 
     def __init__(self, black_background=True, panel_width=600, scene='no_boxes', **kwargs):
         super().__init__(black_background=black_background, panel_width=panel_width, **kwargs)
-        self.screen_kws.caption = f'GA {self.model.experiment} : {self.model.id}'
-        self.screen_kws.file_path = f'{reg.ROOT_DIR}/lib/sim/ga_scenes/{scene}.txt'
+        self.scene_filepath = f'{reg.ROOT_DIR}/lib/sim/ga_scenes/{scene}.txt'
 
     def initialize(self):
         """
         Initialize the pygame display
         """
-
-        v, objects = Viewer.load_from_file(**self.screen_kws)
-        self.model.objects = agentpy.AgentList(model=self.model, objs=objects)
+        m=self.model
+        v = Viewer(manager=self, caption=f'GA {m.experiment} : {m.id}')
+        self.model.objects = agentpy.AgentList(model=m, objs=self.load_scene_from_file(self.scene_filepath, m=m))
         self.side_panel = SidePanel(v)
         self.build_aux(v)
         self.draw_arena(v)
         reg.vprint('Screen opened', 1)
         return v
-
-    # def draw_arena(self, v):
-    #
-    #     v._window.fill(self.screen_color)
-    #     self.draw_arena_tank(v)
 
     def draw_aux(self, v, **kwargs):
         self.side_panel.draw(v)
@@ -653,6 +617,40 @@ class GA_ScreenManager(BaseScreenManager):
     def finalize(self):
         if self.v:
             self.v.close()
+
+    def load_scene_from_file(self, file_path, m):
+        from larvaworld.lib.model.envs.obstacle import Wall, Box
+        obs = []
+        with open(file_path) as f:
+            n = 1
+            for line in f:
+                ws = line.split()
+
+                # skip empty lines
+                if len(ws) == 0:
+                    n += 1
+                    continue
+
+                # skip comments in file
+                if ws[0][0] == '#':
+                    n += 1
+                    continue
+
+                if ws[0] == 'Box':
+                    obs.append(Box(x=int(ws[1]), y=int(ws[2]), size=int(ws[3]), model=m, color='lightgreen',
+                                   unique_id=f'Box_{n}'))
+                elif ws[0] == 'Wall':
+                    obs.append(Wall(point1=geometry.Point(int(ws[1]), int(ws[2])),
+                                    point2=geometry.Point(int(ws[3]), int(ws[4])),
+                                    model=m, color='lightgreen', unique_id=f'Wall_{n}'))
+                elif ws[0] == 'Light':
+                    from larvaworld.lib.model.modules.rot_surface import LightSource
+                    obs.append(LightSource(x=int(ws[1]), y=int(ws[2]), emitting_power=int(ws[3]), model=m,
+                                           unique_id=f'LightSource_{n}'))
+
+                n += 1
+
+        return obs
 
 
 class ScreenManager(BaseScreenManager):
@@ -662,14 +660,13 @@ class ScreenManager(BaseScreenManager):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.screen_kws.caption = str(self.model.id)
 
     def initialize(self):
         """
         Initialize the pygame display
         """
 
-        v = Viewer(**self.screen_kws)
+        v = Viewer(manager=self, caption=str(self.model.id))
         reg.vprint('Screen opened', 1)
         self.build_aux(v)
         self.draw_arena(v)

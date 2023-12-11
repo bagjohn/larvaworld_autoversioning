@@ -33,45 +33,6 @@ __all__ = [
     'SimulationState',
 ]
 
-
-# class ScreenWindowAreaBasic(Area2DPixel):
-#     # scaling_factor = PositiveNumber(1., doc='Scaling factor')
-#     # space = param.ClassSelector(Area, default=Area(), doc='Arena')
-#     #
-#     # def __init__(self, **kwargs):
-#     #     super().__init__(**kwargs)
-#     #     self.dims = aux.get_window_dims(self.space.dims)
-#
-#     def space2screen_pos(self, pos):
-#         if pos is None:
-#             return None
-#         if any(np.isnan(pos)):
-#             return (np.nan, np.nan)
-#         try:
-#             return self._transform(pos)
-#         except:
-#             s = self.scaling_factor
-#             rw, rh = self.w / self.space.w, self.h / self.space.h
-#             # X, Y = np.array(self.space.dims) * self.scaling_factor
-#
-#             # p = pos[0] * 2 / self.space.w/s, pos[1] * 2 / self.space.h/s
-#             pp = (pos[0] / s * rw + self.w / 2, -pos[1] * 2 / s * rh + self.h)
-#             return pp
-#
-#     def get_rect_at_pos(self, pos=(0, 0), convert2screen_pos=True):
-#         if convert2screen_pos:
-#             pos = self.space2screen_pos(pos)
-#         return super().get_rect_at_pos(pos)
-#
-#     def get_relative_pos(self, pos_scale):
-#         w, h = pos_scale
-#         x_pos = int(self.w * w)
-#         y_pos = int(self.h * h)
-#         return x_pos, y_pos
-#
-#     def get_relative_font_size(self, font_size_scale):
-#         return int(self.w * font_size_scale)
-
 class ScreenArea(Area2DPixel):
     def __init__(self, manager, **kwargs):
         self.manager = manager
@@ -397,71 +358,7 @@ class Viewer(ScreenAreaPygame):
 
         reg.vprint('Screen closed', 1)
 
-    @staticmethod
-    def load_from_file(file_path, **kwargs):
-        from larvaworld.lib.model.envs.obstacle import Wall, Box
-        objects = []
-        with open(file_path) as f:
-            line_number = 1
-            viewer = Viewer(**kwargs)
-            m = viewer.manager.model
-            for line in f:
-                words = line.split()
 
-                # skip empty lines
-                if len(words) == 0:
-                    line_number += 1
-                    continue
-
-                # skip comments in file
-                if words[0][0] == '#':
-                    line_number += 1
-                    continue
-
-                if words[0] == 'Scene':
-                    pass
-                    # width = int(words[1])
-                    # height = int(words[2])
-                    # viewer = Viewer(**kwargs)
-                # elif words[0] == 'SensorDrivenRobot':
-                #     x = float(words[1])
-                #     y = float(words[2])
-                #     robot = SensorDrivenRobot(x, y, ROBOT_SIZE, ROBOT_WHEEL_RADIUS)
-                #     robot.label = line_number
-                #     viewer.put(robot)
-                elif words[0] == 'Box':
-                    x = int(words[1])
-                    y = int(words[2])
-                    size = int(words[3])
-                    box = Box(x, y, size, model=m, color='lightgreen')
-                    box.label = line_number
-                    # viewer.put(box)
-                    objects.append(box)
-                elif words[0] == 'Wall':
-                    x1 = int(words[1])
-                    y1 = int(words[2])
-                    x2 = int(words[3])
-                    y2 = int(words[4])
-
-                    point1 = geometry.Point(x1, y1)
-                    point2 = geometry.Point(x2, y2)
-                    wall = Wall(point1, point2, model=m, color='lightgreen')
-                    wall.label = line_number
-                    # viewer.put(wall)
-                    objects.append(wall)
-                elif words[0] == 'Light':
-                    from larvaworld.lib.model.modules.rot_surface import LightSource
-                    x = int(words[1])
-                    y = int(words[2])
-                    emitting_power = int(words[3])
-                    light = LightSource(x, y, emitting_power, aux.Color.YELLOW, aux.Color.BLACK, model=m)
-                    light.label = line_number
-                    # viewer.put(light)
-                    objects.append(light)
-
-                line_number += 1
-
-        return viewer, objects
 
 
 class ScreenTextFont(NestedConf):
@@ -534,24 +431,6 @@ class ScreenTextFont(NestedConf):
         self.start_time = pygame.time.get_ticks() + int(0.1 * 1000)
 
 
-# class ScreenTextBox2(ScreenTextFont, ViewableToggleable):
-#     visible = param.Boolean(False)
-#
-#     def get_input(self, event):
-#         if self.visible:
-#             self.switch(event)
-#             if event.type == pygame.KEYDOWN:
-#                 if self.active:
-#                     if event.key == pygame.K_RETURN:
-#                         self.submit()
-#                     elif event.key == pygame.K_BACKSPACE:
-#                         self.text = self.text[:-1]
-#                     else:
-#                         self.text += event.unicode
-#
-#     def submit(self):
-#         print(self.text)
-#         self.visible = False
 
 class ScreenTextFontRel(ScreenTextFont):
     text_centre_scale = PositiveRange((0.9, 0.9), softmax=10.0, step=0.01,
@@ -639,7 +518,6 @@ class IDBox(ScreenTextFont, ViewableToggleable):
         ScreenTextFont.draw(self, v=v, **kwargs)
 
 
-
 class PosPixelRel2AreaViewable(PosPixelRel2Area, Viewable): pass
 
 
@@ -662,25 +540,6 @@ class ScreenMsgText(ScreenTextFontRel, Viewable):
         super().set_default_color(color)
         self.text_color = self.color
 
-
-# class ScreenMsgText(PosPixelRel2AreaViewable):
-#     pos_scale = PositiveRange((0.85, 0.1))
-#
-#     def __init__(self,**kwargs):
-#         super().__init__(**kwargs)
-#         kws = {
-#             'reference_object': self,
-#             'text_color': self.default_color,
-#         }
-#         self.text_font = ScreenMsgTextFont(**kws)
-#
-#
-#     def set_text(self, text):
-#         self.text_font.set_text(text)
-#
-#     def draw(self, v, **kwargs):
-#         # ScreenTextFont.draw(v, **kwargs)
-#         self.text_font.draw(v, **kwargs)
 
 
 class SimulationClock(PosPixelRel2AreaViewable):
