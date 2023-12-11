@@ -10,7 +10,7 @@ import param
 from ... import reg, aux
 from ...aux import nam, simplex, beta0
 from . import Gut
-from ...param import Substrate, NestedConf, PositiveNumber,  ClassAttr, OptionalPositiveNumber
+from ...param import Substrate, NestedConf, PositiveNumber,  ClassAttr, OptionalPositiveNumber, Life
 
 __all__ = [
     'DEB_model',
@@ -689,8 +689,7 @@ class DEB(DEB_basic):
 
     def update(self):
         self.update_hunger()
-        if self.dict is not None:
-            self.update_dict()
+        self.update_dict()
 
     @property
     def birth_time_in_hours(self):
@@ -724,30 +723,24 @@ class DEB(DEB_basic):
             if self.hunger_as_EEB:
                 self.intermitter.EEB = self.hunger
 
-    @property
-    def EEB(self):
-        if self.intermitter is None:
-            return None
-        else:
-            return self.intermitter.EEB
-
     def update_dict(self):
-        dict_values = [
-            self.age * 24,
-            self.Ww * 1000,
-            self.Lw * 10,
-            self.E,
-            self.e,
-            self.hunger,
-            self.pupation_buffer,
-            self.f,
-            self.deb_p_A / self.V,
-            self.sim_p_A / self.V,
-            self.EEB
-        ]
-        for k, v in zip(self.dict.keylist, dict_values):
-            self.dict[k].append(v)
-        self.gut.update_dict()
+        if self.dict is not None:
+            dict_values = [
+                self.age * 24,
+                self.Ww * 1000,
+                self.Lw * 10,
+                self.E,
+                self.e,
+                self.hunger,
+                self.pupation_buffer,
+                self.f,
+                self.deb_p_A / self.V,
+                self.sim_p_A / self.V,
+                self.EEB
+            ]
+            for k, v in zip(self.dict.keylist, dict_values):
+                self.dict[k].append(v)
+            self.gut.update_dict()
 
     def finalize_dict(self):
         if self.dict is not None:
@@ -769,16 +762,17 @@ class DEB(DEB_basic):
             d['gut_residence_time'] = self.gut.residence_time
             d.update(self.gut.dict)
 
-            if self.intermitter is not None:
-                try:
-                    d['feed_freq_simulated'] = self.intermitter.mean_feed_freq
-                    d_inter = self.intermitter.build_dict()
-                    d.update({
-                        **{f'{q} ratio': np.round(d_inter[nam.dur_ratio(p)], 2) for p, q in
-                           zip(['stridechain', 'pause', 'feedchain'], ['crawl', 'pause', 'feed'])},
-                    })
-                except:
-                    pass
+            try:
+                I = self.intermitter
+                d['EEB'] = I.EEB
+                d['feed_freq_simulated'] = I.mean_feed_freq
+                d_inter = I.build_dict()
+                d.update({
+                    **{f'{q} ratio': np.round(d_inter[nam.dur_ratio(p)], 2) for p, q in
+                       zip(['stridechain', 'pause', 'feedchain'], ['crawl', 'pause', 'feed'])},
+                })
+            except:
+                pass
 
 
         return d
@@ -795,13 +789,16 @@ class DEB(DEB_basic):
             aux.save_dict(d, f'{path}/{self.id}.txt')
 
     @classmethod
-    def default_growth(cls, id='DEB default', epochs={}, **kwargs):
+    def default_growth(cls, id='DEB default', life_history=None, **kwargs):
+        if life_history is None:
+            life_history=Life.from_epoch_ticks(reach_pupation=True)
         d = cls(id=id, **kwargs)
-        d.grow_larva(epochs=epochs)
+        d.grow_larva(epochs=life_history.epochs)
         return d.finalize_dict()
 
-    def run_larva_stage_offline(self):
-        I = self.intermitter
+    def run_larva_stage_offline(self, intermitter):
+        I = intermitter
+        assert I is not None
         cum_feeds = 0
         while self.stage == 'larva':
             I.step()
@@ -815,10 +812,10 @@ class DEB(DEB_basic):
         c = reg.conf.Ref.getRef(refID)
         kws2 = c.intermitter
         if EEB is None:
-            EEB = np.clip(np.poly1d(c.EEB_poly1d)(DEB_basic(substrate=substrate, **kwargs).fr_feed), a_min=0, a_max=1)
+            EEB = DEB_basic(substrate=substrate, **kwargs).get_best_EEB(c)
         kws2['EEB'] = EEB
         from ..modules.intermitter import OfflineIntermitter
         d = cls(id=id, assimilation_mode='gut', substrate=substrate, intermitter=OfflineIntermitter(**kws2), **kwargs)
         d.run_stage(stage='embryo')
-        d.run_larva_stage_offline()
+        d.run_larva_stage_offline(intermitter=d.intermitter)
         return d.finalize_dict()
