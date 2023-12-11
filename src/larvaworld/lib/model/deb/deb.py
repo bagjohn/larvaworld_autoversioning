@@ -543,7 +543,8 @@ class DEB_basic(DEB_model):
         while self.stage == stage and self.alive:
             self.apply_fluxes(assimilation_mode=assimilation_mode, **kwargs)
             t += self.dt
-        self.age += t
+            self.age += self.dt
+            self.update()
         return t
 
     def run_life_history(self, **kwargs):
@@ -614,8 +615,7 @@ class DEB_basic(DEB_model):
 
                 self.epochs.append([e.start + tb, self.age * 24])
                 self.epoch_qs.append(e.substrate.quality)
-        if self.gut is not None:
-            self.gut.update()
+        # self.gut.update()
 
     def get_p_A(self, f=None, assimilation_mode=None, X_V=0.0):
         if f is None:
@@ -627,7 +627,7 @@ class DEB_basic(DEB_model):
             assimilation_mode = self.assimilation_mode
         if assimilation_mode == 'sim':
             return self.sim_p_A
-        elif assimilation_mode == 'gut' and self.gut is not None:
+        elif assimilation_mode == 'gut':
             self.gut.update(X_V)
             return self.gut.p_A
         elif assimilation_mode == 'deb':
@@ -669,7 +669,6 @@ class DEB_basic(DEB_model):
 class DEB(DEB_basic):
     hunger_as_EEB = param.Boolean(True,
                                   doc='Whether the DEB-generated hunger drive informs the exploration-exploitation balance.')
-
     hunger_gain = param.Magnitude(1.0, label='hunger sensitivity to reserve reduction',
                                   doc='The sensitivy of the hunger drive in deviations of the DEB reserve density.')
 
