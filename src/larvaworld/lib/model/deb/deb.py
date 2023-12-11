@@ -6,29 +6,18 @@ import os
 import numpy as np
 import param
 
+
 from ... import reg, aux
 from ...aux import nam, simplex, beta0
-
-from ...model import deb
-from ...param import Substrate, NestedConf, PositiveNumber, PositiveInteger, ClassAttr, substrate_dict, \
-    Epoch, OptionalPositiveNumber
-
-'''
-Standard culture medium
-50g Baker’s yeast; 100g sucrose; 16g agar; 0.1gKPO4; 8gKNaC4H4O6·4H2O; 0.5gNaCl; 0.5gMgCl2; and 0.5gFe2(SO4)3 per liter of tap water. 
-Larvae were reared from egg-hatch to mid- third-instar (96±2h post-hatch) in 25°C at densities of 100 larvae per 35ml of medium in 100mm⫻15mm Petri dishes
-
-
-[1] K. R. Kaun, M. Chakaborty-Chatterjee, and M. B. Sokolowski, “Natural variation in plasticity of glucose homeostasis and food intake,” J. Exp. Biol., vol. 211, no. 19, pp. 3160–3166, 2008.
-
---> 0.35 ml medium per larva for the 4 days
-'''
+from . import Gut
+from ...param import Substrate, NestedConf, PositiveNumber,  ClassAttr, OptionalPositiveNumber
 
 __all__ = [
     'DEB_model',
     'DEB_basic',
     'DEB',
 ]
+
 
 # p.257 in S. a. L. M. Kooijman, “Dynamic Energy Budget theory for metabolic organisation : Summary of concepts of the third edition,” Water, vol. 365, p. 68, 2010.
 class DEB_model(NestedConf):
@@ -361,12 +350,6 @@ class DEB_model(NestedConf):
         kwargs.update(**d)
         return cls(**kwargs)
 
-    # def get_fr_feed(self, X, V_bite):
-    #     F= self.J_X_Am * self.F_m / (self.Lb * (self.J_X_Am + X * self.F_m))
-    #     freq = F / V_bite * self.T_factor
-    #     freq /= (24 * 60 * 60)
-    #     return freq
-
 
 class DEB_basic(DEB_model):
     id = param.String('DEB model', doc='The unique ID of the DEB model')
@@ -378,7 +361,6 @@ class DEB_basic(DEB_model):
     substrate = ClassAttr(Substrate, doc='The substrate where the agent feeds')
     assimilation_mode = param.Selector(objects=['gut', 'sim', 'deb'], label='assimilation mode',
                                        doc='The method used to calculate the DEB assimilation energy flow.')
-    use_gut = param.Boolean(True, doc='Whether to use the gut module.')
 
     def __init__(self, species='default', save_dict=True, V_bite=0.001, gut_params={}, **kwargs):
 
@@ -410,7 +392,7 @@ class DEB_basic(DEB_model):
         self.X_V_buffer = 0
         self.time_buffer = 0
 
-        self.gut = deb.Gut(deb=self, save_dict=save_dict, **gut_params) if self.use_gut else None
+        self.gut = Gut(deb=self, save_dict=save_dict, **gut_params)
         self.scale_time()
 
     @property
@@ -473,9 +455,7 @@ class DEB_basic(DEB_model):
         self.J_E_Amm_dt = self.J_E_Am / self.Lb * dt
         self.k_E_dt = self.k_E * dt
 
-        if self.gut is not None:
-            self.gut.get_residence_ticks(dt)
-            self.J_X_A_array = np.ones(self.gut.residence_ticks) * self.J_X_A
+        self.J_X_A_array = np.ones(int(self.gut.residence_time / dt)) * self.J_X_A
 
     def hex_model(self):
         # p.161    [1] S. a. L. M. Kooijman, “Comments on Dynamic Energy Budget theory,” Changes, 2010.
@@ -570,10 +550,7 @@ class DEB_basic(DEB_model):
         if not self.age == 0:
             return
         Es, Wws, Lws, Durs = [self.E], [self.Ww], [self.Lw], []
-        while self.alive :
-        # for st in self.stages:
-        #     if self.alive :
-        #         assert self.stage == st
+        while self.alive:
             t = self.run_stage(self.stage, **kwargs)
             Durs.append(t)
             Es.append(self.E)
@@ -699,29 +676,16 @@ class DEB(DEB_basic):
     def __init__(self, save_dict=True, save_to=None, base_hunger=0.5, intermitter=None, **kwargs):
         super().__init__(**kwargs)
         self.set_intermitter(base_hunger, intermitter)
-        # self.set_intermitter(base_hunger, intermitter, intermitter_from, offline,EEB)
-
         self.save_to = save_to
-
-        self.dict = self.init_dict() if save_dict else None
+        self.dict = aux.AttrDict({k: [] for k in ['age','mass','length','reserve','reserve_density','hunger','pupation_buffer','f','deb_p_A','sim_p_A','EEB']}) if save_dict else None
 
     def set_intermitter(self, base_hunger=0.5, intermitter=None):
-        # if intermitter is None and offline:
-        #     if intermitter_from is not None:
-        #         kwargs = intermitter_from['intermitter']
-        #         if EEB is None:
-        #             z = np.poly1d(intermitter_from['EEB_poly1d'])
-        #             EEB= np.clip(z(self.fr_feed), a_min=0, a_max=1)
-        #         kwargs['EEB'] = EEB
-        #         from ..modules.intermitter import OfflineIntermitter
-        #         intermitter = OfflineIntermitter(**kwargs)
         self.intermitter = intermitter
         if self.intermitter is not None:
             if self.hunger_as_EEB:
                 base_hunger = self.intermitter.base_EEB
         self.base_hunger = base_hunger
         self.update_hunger()
-
 
     def update(self):
         self.update_hunger()
@@ -767,23 +731,6 @@ class DEB(DEB_basic):
         else:
             return self.intermitter.EEB
 
-    def init_dict(self):
-        self.dict_keys = [
-            'age',
-            'mass',
-            'length',
-            'reserve',
-            'reserve_density',
-            'hunger',
-            'pupation_buffer',
-            'f',
-            'deb_p_A',
-            'sim_p_A',
-            'EEB'
-        ]
-        d = aux.AttrDict({k: [] for k in self.dict_keys})
-        return d
-
     def update_dict(self):
         dict_values = [
             self.age * 24,
@@ -798,10 +745,9 @@ class DEB(DEB_basic):
             self.sim_p_A / self.V,
             self.EEB
         ]
-        for k, v in zip(self.dict_keys, dict_values):
+        for k, v in zip(self.dict.keylist, dict_values):
             self.dict[k].append(v)
-        if self.gut is not None:
-            self.gut.update_dict()
+        self.gut.update_dict()
 
     def finalize_dict(self):
         if self.dict is not None:
@@ -818,6 +764,10 @@ class DEB(DEB_basic):
             d['feed_freq_estimate'] = self.fr_feed
             d['f_mean'] = np.mean(d['f'])
             d['f_deviation_mean'] = np.mean(np.array(d['f']) - 1)
+            d['Nfeeds'] = self.gut.Nfeeds
+            d['mean_feed_freq'] = self.gut.Nfeeds / (self.age - self.birth_time_in_hours) / (60 * 60)
+            d['gut_residence_time'] = self.gut.residence_time
+            d.update(self.gut.dict)
 
             if self.intermitter is not None:
                 try:
@@ -830,13 +780,8 @@ class DEB(DEB_basic):
                 except:
                     pass
 
-            if self.gut is not None:
-                d['Nfeeds'] = self.gut.Nfeeds
-                d['mean_feed_freq'] = self.gut.Nfeeds / (self.age - self.birth_time_in_hours) / (60 * 60)
-                d['gut_residence_time'] = self.gut.residence_time
-                d.update(self.gut.dict)
-        return d
 
+        return d
 
     def save_dict(self, path=None):
         if path is None:
@@ -844,18 +789,14 @@ class DEB(DEB_basic):
                 path = self.save_to
             else:
                 return
-                # raise ValueError ('No path to save DEB dict')
         if self.dict is not None:
             os.makedirs(path, exist_ok=True)
-            if self.gut is not None:
-                d = {**self.dict, **self.gut.dict}
-            else:
-                d = self.dict
+            d = {**self.dict, **self.gut.dict}
             aux.save_dict(d, f'{path}/{self.id}.txt')
 
     @classmethod
     def default_growth(cls, id='DEB default', epochs={}, **kwargs):
-        d = cls(id=id, use_gut=False, **kwargs)
+        d = cls(id=id, **kwargs)
         d.grow_larva(epochs=epochs)
         return d.finalize_dict()
 
@@ -867,23 +808,17 @@ class DEB(DEB_basic):
             self.run_check(dt=I.dt, X_V=self.V_bite * self.V * (I.Nfeeds - cum_feeds))
             cum_feeds = I.Nfeeds
 
-
     @classmethod
-    def sim_run(cls, refID=None, id='DEB sim', EEB=None, substrate=Substrate(type='standard'),**kwargs):
+    def sim_run(cls, refID=None, id='DEB sim', EEB=None, substrate=Substrate(type='standard'), **kwargs):
         if refID is None:
-            refID=reg.default_refID
+            refID = reg.default_refID
         c = reg.conf.Ref.getRef(refID)
-        kws2 = c['intermitter']
+        kws2 = c.intermitter
         if EEB is None:
-            ff=DEB_basic(substrate=substrate,**kwargs).fr_feed
-            z = np.poly1d(c['EEB_poly1d'])
-            EEB = np.clip(z(ff), a_min=0, a_max=1)
+            EEB = np.clip(np.poly1d(c.EEB_poly1d)(DEB_basic(substrate=substrate, **kwargs).fr_feed), a_min=0, a_max=1)
         kws2['EEB'] = EEB
         from ..modules.intermitter import OfflineIntermitter
-        d = cls(id=id, assimilation_mode='gut', substrate=substrate,intermitter=OfflineIntermitter(**kws2), **kwargs)
+        d = cls(id=id, assimilation_mode='gut', substrate=substrate, intermitter=OfflineIntermitter(**kws2), **kwargs)
         d.run_stage(stage='embryo')
         d.run_larva_stage_offline()
         return d.finalize_dict()
-
-
-

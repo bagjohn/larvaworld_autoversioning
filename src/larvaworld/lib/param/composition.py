@@ -110,7 +110,16 @@ class Substrate(NestedConf):
     def get_X_ratio(self, **kwargs):
         return self.get_X(**kwargs) / self.get_C(**kwargs)
 
+'''
+Standard culture medium
+50g Baker’s yeast; 100g sucrose; 16g agar; 0.1gKPO4; 8gKNaC4H4O6·4H2O; 0.5gNaCl; 0.5gMgCl2; and 0.5gFe2(SO4)3 per liter of tap water. 
+Larvae were reared from egg-hatch to mid- third-instar (96±2h post-hatch) in 25°C at densities of 100 larvae per 35ml of medium in 100mm⫻15mm Petri dishes
 
+
+[1] K. R. Kaun, M. Chakaborty-Chatterjee, and M. B. Sokolowski, “Natural variation in plasticity of glucose homeostasis and food intake,” J. Exp. Biol., vol. 211, no. 19, pp. 3160–3166, 2008.
+
+--> 0.35 ml medium per larva for the 4 days
+'''
 # Compound densities (g/cm**3)
 substrate_dict = aux.AttrDict(
     {

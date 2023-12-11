@@ -93,8 +93,7 @@ class PrefTrainCondition:
                 PI = aux.comp_PI(xs=[l.pos[0] for l in env.agents], arena_xdim=env.space.dims[0])
                 print()
                 print(f'Test trial off food ended with PI={PI}')
-                text = f'Test trial off food PI={PI}'
-                env.input_box.flash_text(text)
+                env.input_box.flash_text(f'Test trial off food PI={PI}')
                 return True
         return False
 
