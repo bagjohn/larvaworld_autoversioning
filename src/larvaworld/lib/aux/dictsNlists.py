@@ -358,6 +358,9 @@ class ItemList(agentpy.sequences.AgentSequence, list):
             for obj in self:
                 setattr(obj, name, value)
 
+    # def _select(self, dic={}):
+    #     return ItemList([a for a in self if all([getattr(a,k)==v for k,v in dic.items()])])
+
 
 def existing_cols(cols, df):
     if isinstance(df, pd.DataFrame):

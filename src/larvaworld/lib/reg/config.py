@@ -150,7 +150,7 @@ class ConfType(param.Parameterized):
 
         return conf
 
-    @param.depends('confIDs','dict', watch=True)
+    # @param.depends('confIDs','dict', watch=True)
     def confID_selector(self, default=None, single=True):
         kws = {
             'default': default,

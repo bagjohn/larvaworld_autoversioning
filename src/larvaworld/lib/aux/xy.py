@@ -33,8 +33,6 @@ __all__ = [
     'get_display_dims',
     'get_window_dims',
     'get_arena_bounds',
-    'screen2space_pos',
-    'space2screen_pos',
     'circle_to_polygon',
     'apply_per_level',
     'moving_average',
@@ -577,23 +575,6 @@ def get_window_dims(arena_dims):
 def get_arena_bounds(arena_dims, s=1):
     X, Y = np.array(arena_dims) * s
     return np.array([-X / 2, X / 2, -Y / 2, Y / 2])
-
-
-def screen2space_pos(pos, screen_dims, space_dims):
-    X, Y = space_dims
-    X0, Y0 = screen_dims
-    p = (2 * pos[0] / X0 - 1), -(2 * pos[1] / Y0 - 1)
-    pp = p[0] * X / 2, p[1] * Y / 2
-    return pp
-
-
-def space2screen_pos(pos, screen_dims, space_dims):
-    X, Y = space_dims
-    X0, Y0 = screen_dims
-
-    p = pos[0] * 2 / X, pos[1] * 2 / Y
-    pp = ((p[0] + 1) * X0 / 2, (-p[1] + 1) * Y0)
-    return pp
 
 
 def circle_to_polygon(N, r):

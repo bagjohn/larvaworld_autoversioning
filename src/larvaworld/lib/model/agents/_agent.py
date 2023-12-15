@@ -53,7 +53,7 @@ class PointAgent(RadiallyExtended, NonSpatialAgent, Viewable):
 
     def draw(self, v, filled=True):
         if self.odor.peak_value > 0:
-            if v.manager.odor_aura:
+            if v.odor_aura:
                 kws = {
                     'color': self.color,
                     'filled': False,
@@ -66,7 +66,7 @@ class PointAgent(RadiallyExtended, NonSpatialAgent, Viewable):
     def draw_selected(self, v, **kwargs):
         r = self.radius
         v.draw_circle(position=self.get_position(), radius=self.radius * 0.5,
-                      color=v.manager.selection_color, filled=False, width=0.0002)
+                      color=v.selection_color, filled=False, width=0.0002)
 
 
 class OrientedAgent(OrientedPoint, PointAgent):

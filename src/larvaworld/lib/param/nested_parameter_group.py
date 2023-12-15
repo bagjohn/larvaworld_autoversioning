@@ -24,7 +24,7 @@ class NestedConf(param.Parameterized):
         :param kwargs: Keyword arguments for configuring the instance.
         """
 
-        param_classes = self.param.objects()
+        param_classes = self.param.objects(instance=False)
         for k, p in param_classes.items():
             try:
                 if k in kwargs:

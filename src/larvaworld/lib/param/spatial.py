@@ -7,8 +7,7 @@ from .. import aux
 
 from .nested_parameter_group import NestedConf
 from .custom import PositiveNumber, RandomizedPhase, XYLine, \
-    PositiveIntegerRange, PositiveRange, NumericTuple2DRobust, IntegerTuple2DRobust
-
+    PositiveIntegerRange, PositiveRange, NumericTuple2DRobust, IntegerTuple2DRobust, IntegerTuple
 
 __all__ = [
     'Pos2D',
@@ -199,7 +198,8 @@ class LineClosed(LineExtended):
 
 
 class Area2D(NestedConf):
-    dims = PositiveRange(doc='The arena dimensions')
+    dims = param.NumericTuple((0.1, 0.1), doc='The arena dimensions in meters')
+    # dims = PositiveRange(doc='The arena dimensions')
     centered = param.Boolean(True, doc='Whether area is centered to (0,0)')
 
     @property
@@ -215,11 +215,30 @@ class Area2D(NestedConf):
         X, Y = self.dims
         return np.array([-X / 2, X / 2, -Y / 2, Y / 2])
 
+    def adjust_pos_to_area(self, pos, area, scaling_factor=1):
+        if pos is None:
+            return None
+        if any(np.isnan(pos)):
+            return (np.nan, np.nan)
+        try:
+            return self._transform(pos)
+        except:
+            s = scaling_factor
+            rw, rh = self.w / area.w, self.h / area.h
+            pp = (pos[0] / s * rw + self.w / 2, -pos[1] * 2 / s * rh + self.h)
+            return pp
+
+
+
 
 class Area2DPixel(Area2D):
-    dims = PositiveIntegerRange((100, 100), softmax=10000, step=1, doc='The arena dimensions in pixels')
+    dims = IntegerTuple((100, 100), doc='The arena dimensions in pixels')
+    # dims = PositiveIntegerRange((100, 100), softmax=10000, step=1, doc='The arena dimensions in pixels')
 
-    def get_rect_at_pos(self, pos=(0, 0), **kwargs):
+    def get_rect_at_pos(self, pos=(0, 0),area=None, **kwargs):
+        if area is not None:
+            pos = self.adjust_pos_to_area(pos=pos, area=area)
+
         import pygame
         if pos is not None and not any(np.isnan(pos)):
             if self.centered:
@@ -229,17 +248,28 @@ class Area2DPixel(Area2D):
         else:
             return None
 
+    def get_relative_pos(self, pos_scale, reference=None):
+        if reference is None:
+            reference = (self.w, self.h)
+        w, h = pos_scale
+        x_pos = int(reference[0] * w)
+        y_pos = int(reference[1] * h)
+        return x_pos, y_pos
+
+    def get_relative_font_size(self, font_size_scale):
+        return int(self.w * font_size_scale)
+
 
 class Area(Area2D):
-    dims = PositiveRange((0.1, 0.1), softmax=1.0, step=0.01, doc='The arena dimensions in meters')
     geometry = param.Selector(objects=['circular', 'rectangular'], doc='The arena shape')
     torus = param.Boolean(False, doc='Whether to allow a toroidal space')
 
 
+
+
 class PosPixelRel2Point(Pos2DPixel):
-    reference_point = param.ClassSelector(Pos2DPixel, doc='The reference position instance', is_instance=False)
-    pos_scale = PositiveRange((0.5, 0.5), softmax=1.0, step=0.01,
-                              doc='The position relative to reference position')
+    reference_point = param.ClassSelector(class_=Pos2DPixel, doc='The reference position instance', is_instance=False)
+    pos_scale = param.NumericTuple((0.5, 0.5), doc='The position relative to reference position')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -254,9 +284,8 @@ class PosPixelRel2Point(Pos2DPixel):
 
 
 class PosPixelRel2Area(Pos2DPixel):
-    reference_area = param.ClassSelector(Area2DPixel, doc='The reference position instance', is_instance=True)
-    pos_scale = PositiveRange((0.5, 0.5), softmax=1.0, step=0.01,
-                              doc='The position relative to reference position')
+    reference_area = param.ClassSelector(class_=Area2DPixel, doc='The reference position instance', is_instance=True)
+    pos_scale = param.NumericTuple((0.5, 0.5), doc='The position relative to reference position')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

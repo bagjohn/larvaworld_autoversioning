@@ -162,8 +162,6 @@ def buildInitDict():
         return {'dtype': str, 'h': h, 'k': k,
                 'vfunc': param.Foldername, **kwargs}
 
-    # def pSaveTo(h='The directory to save data, plots and media', k='save_to', **kwargs):
-    #     return pPath(h=h, k=k, **kwargs)
 
     def pID(conftype, h=None, k=None, **kwargs):
         if h is None:
@@ -2002,7 +2000,9 @@ class ParamClass:
 class ParamRegistry(ParamClass):
     def __init__(self):
         super().__init__()
+        # self.PI = AttrDict()
         self.PI = buildInitDict()
+        # self.DEF = AttrDict()
         self.DEF = buildDefaultDict(self.PI)
 
     def null(self, name, key='v', **kwargs):

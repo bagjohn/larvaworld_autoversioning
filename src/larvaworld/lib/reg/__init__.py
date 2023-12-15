@@ -35,7 +35,7 @@ __all__ = [
 ]
 
 __displayname__ = 'Registry'
-VERBOSE = 2
+VERBOSE = 0
 
 
 def vprint(text='', verbose=0):
@@ -105,15 +105,17 @@ class FunctionDict:
 funcs = FunctionDict()
 
 from . import keymap
-
 controls = keymap.ControlRegistry()
 
 from .distro import *
 from .data_aux import *
 
-from . import parDB, parFunc
+vprint(f"Function registry complete", 1)
 
+from . import parDB, parFunc
 par = parDB.ParamRegistry()
+
+vprint(f"Parameter registry complete", 1)
 
 from .config import conf
 from .generators import gen
@@ -122,6 +124,7 @@ from . import config, generators, models, graph, stored_confs
 model = models.ModelRegistry()
 graphs = graph.GraphRegistry()
 
+vprint(f"Configuration registry complete", 1)
 
 def getPar(k=None, p=None, d=None, to_return='d'):
     return par.getPar(k=k, d=d, p=p, to_return=to_return)

@@ -101,7 +101,15 @@ class RangeInf(RangeRobust):
             raise ValueError("NumericTuple parameter %r only takes numeric "
                              "values, not type %r." % (self.name, type(n)))
 
-    def _validate_bounds(self, val, bounds, inclusive_bounds):
+    def _validate_bounds(self, val, bounds, inclusive_bounds, kind):
+        if bounds is not None:
+            for pos, v in zip(['lower', 'upper'], bounds):
+                if v is None:
+                    continue
+                self._validate_bound_type(v, pos, kind)
+        if kind == 'softbound':
+            return
+
         if bounds is None or (val is None and self.allow_None):
             return
         vmin, vmax = bounds
@@ -112,8 +120,25 @@ class RangeInf(RangeRobust):
             too_low = (vmin is not None) and (v < vmin if incmin else v <= vmin)
             too_high = (vmax is not None) and (v > vmax if incmax else v >= vmax)
             if too_low or too_high:
-                raise ValueError("Range parameter %r's %s bound must be in range %s."
-                                 % (self.name, bound, self.rangestr()))
+                raise ValueError(
+                    f"{param._utils._validate_error_prefix(self)} {bound} bound must be in "
+                    f"range {self.rangestr()}, not {v}."
+                )
+
+
+    # def _validate_bounds(self, val, bounds, inclusive_bounds):
+    #     if bounds is None or (val is None and self.allow_None):
+    #         return
+    #     vmin, vmax = bounds
+    #     incmin, incmax = inclusive_bounds
+    #     for bound, v in zip(['lower', 'upper'], val):
+    #         if v is None and self.allow_None:
+    #             continue
+    #         too_low = (vmin is not None) and (v < vmin if incmin else v <= vmin)
+    #         too_high = (vmax is not None) and (v > vmax if incmax else v >= vmax)
+    #         if too_low or too_high:
+    #             raise ValueError("Range parameter %r's %s bound must be in range %s."
+    #                              % (self.name, bound, self.rangestr()))
 
 
 class PositiveRange(RangeRobust):

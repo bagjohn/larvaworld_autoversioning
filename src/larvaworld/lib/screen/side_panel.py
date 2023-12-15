@@ -40,7 +40,7 @@ class SidePanel:
             self.font = pygame.font.Font(None, self.FONT_SIZE)
         else:
             self.font = None
-        self.panel_rect = pygame.Rect(self.viewer.w, 0, self.viewer.manager.panel_width, self.viewer.h)
+        self.panel_rect = pygame.Rect(self.viewer.w, 0, self.viewer.panel_width, self.viewer.h)
 
 
 
@@ -50,7 +50,7 @@ class SidePanel:
         Displays information about the Genetic Algorithm (GA) on the side panel.
         """
         v=self.viewer
-        m = v.manager.model
+        m = v.model
         self.line_num = 1
         """
         Renders introductory information on the side panel.
@@ -104,7 +104,7 @@ class SidePanel:
         :param text: The text to render.
         :param extra_margin: Additional margin for the text.
         """
-        line = self.font.render(text, 1, self.viewer.manager.tank_color)
+        line = self.font.render(text, 1, self.viewer.tank_color)
         x = self.viewer.w + self.DEFAULT_MARGIN + extra_margin
         y = self.line_num * self.line_spacing
         lint_pos = pygame.Rect(x, y, 20, 20)
@@ -119,6 +119,6 @@ class SidePanel:
         :param kwargs: Additional drawing arguments.
         """
         # Draw a black background for the side panel
-        pygame.draw.rect(v._window, v.manager.sidepanel_color, self.panel_rect)
+        pygame.draw.rect(v._window, v.sidepanel_color, self.panel_rect)
         v.draw_line((v.w, 0), (v.w, v.h), color=aux.Color.RED)
         self.display_ga_info()

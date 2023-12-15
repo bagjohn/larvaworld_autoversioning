@@ -37,8 +37,8 @@ class ObstacleLarvaRobot(LarvaRobot):
             'robot': self,
             'saturation_value': self.sensor_saturation_value,
             'error': self.obstacle_sensor_error,
-            'max_distance': int(self.model.screen_manager.viewer._scale[0, 0] * self.sensor_max_distance * self.length),
-            'collision_distance': int(self.model.screen_manager.viewer._scale[0, 0] * self.length / 5),
+            'max_distance': int(self.model.screen_manager._scale[0, 0] * self.sensor_max_distance * self.length),
+            'collision_distance': int(self.model.screen_manager._scale[0, 0] * self.length / 5),
         }
 
         M_kws = {
@@ -52,7 +52,7 @@ class ObstacleLarvaRobot(LarvaRobot):
 
     def sense(self):
         if not self.collision_with_object:
-            pos = self.model.screen_manager.viewer._transform(self.olfactor_pos)
+            pos = self.model.screen_manager._transform(self.olfactor_pos)
             try:
 
                 self.Lmotor.sense_and_act(pos=pos, direction=self.direction)
