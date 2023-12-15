@@ -383,44 +383,48 @@ def annotate_plot(box, data, x, y, hue=None, show_ns=True, target_only=None, **k
     - None
     """
     import statannot
-    # from statannotations.Annotator import Annotator
-    subIDs0 = np.unique(data[x].values)
+    d=data
+    ids = np.unique(d[x].values)
+    pairs=[]
+    pvs=[]
+
+    def get_data(id, h=None):
+        dd=d[(d[x] == id) & (d[hue] == h)] if h is not None else d[d[x] == id]
+        return dd[y].dropna()
+
+    def get_pv(id1,id2,h1=None,h2=None):
+        return mannwhitneyu(get_data(id1, h1), get_data(id2, h2), alternative="two-sided").pvalue
+
+    def eval_pair(id1,id2,h1=None,h2=None):
+        pv = get_pv(id1, id2, h1, h2)
+        pair=((id1, h1), (id2, h2)) if (h1 is not None or h2 is not None) else (id1,id2)
+        if not show_ns and pv >= 0.05:
+            pass
+        else:
+            pairs.append(pair)
+            pvs.append(pv)
+
 
     if hue is not None:
-        h1, h2 = np.unique(data[hue].values)
-        pairs = [((subID, h1), (subID, h2)) for subID in subIDs0]
-        pvs = [mannwhitneyu(
-            data[(data[x] == subID) & (data[hue] == h1)][y].dropna(),
-            data[(data[x] == subID) & (data[hue] == h2)][y].dropna(),
-            alternative="two-sided").pvalue for subID in subIDs0]
+        h1, h2 = np.unique(d[hue].values)
+        for id in ids:
+            eval_pair(id, id, h1, h2)
+
+
     else:
         if target_only is None:
-            pairs = list(itertools.combinations(subIDs0, 2))
-            pvs = [mannwhitneyu(
-                data[data[x] == subID0][y].dropna(),
-                data[data[x] == subID1][y].dropna(),
-                alternative="two-sided").pvalue for subID0, subID1 in pairs]
+            for id1, id2 in list(itertools.combinations(ids, 2)) :
+                eval_pair(id1, id2)
+
         else:
-            pairs = [(target_only, subID) for subID in subIDs0 if subID != target_only]
-            dd0 = data[data[x] == target_only][y].dropna()
-            pvs = [mannwhitneyu(
-                dd0,
-                data[data[x] == subID][y].dropna(),
-                alternative="two-sided").pvalue for subID in subIDs0 if subID != target_only]
-
-    # f_pvs = [pvalue_star(pv) for pv in pvs]
-
-    if not show_ns:
-        valid_idx = [i for i, f_pv in enumerate(f_pvs) if f_pv != 'ns']
-        pairs = [pairs[i] for i in valid_idx]
-        # f_pvs = [f_pvs[i] for i in valid_idx]
+            for id in ids :
+                if id != target_only :
+                    eval_pair(target_only, id)
 
     if len(pairs) > 0:
-        statannot.add_stat_annotation(box, data=data, perform_stat_test=False, pvalues=pvs, box_pairs=pairs,
+        statannot.add_stat_annotation(box, data=d, perform_stat_test=False, pvalues=pvs, box_pairs=pairs,
                                       text_format='star', loc='inside', verbose=0, **kwargs)
-        # annotator = Annotator(pairs=pairs, data=data, x=x, y=y, hue=hue, **kwargs)
-        # annotator.verbose = False
-        # annotator.annotate_custom_annotations(f_pvs)
+
 
 
 def dual_half_circle(center, radius=0.04, angle=90, ax=None, colors=('W', 'k'), **kwargs):
