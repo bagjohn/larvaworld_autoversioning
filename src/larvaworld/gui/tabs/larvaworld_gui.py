@@ -5,7 +5,7 @@ import time
 
 import pandas as pd
 
-from ...lib import reg
+from ...lib import reg, screen
 from ...gui import gui_aux, tabs
 
 __all__ = [
@@ -101,13 +101,13 @@ class LarvaworldGui:
     def get_vis_kwargs(self, v, **kwargs):
         c = self.collapsibles
         w = self.window
-        return c['visualization'].get_dict(v, w) if 'visualization' in c.keys() else reg.par.get_null('visualization',
-                                                                                                     **kwargs)
+        return c['visualization'].get_dict(v, w) if 'visualization' in c.keys() else screen.ScreenOps(**kwargs).nestedConf
+
 
     def get_replay_kwargs(self, v):
         c = self.collapsibles
         w = self.window
-        return c['Replay'].get_dict(v, w) if 'Replay' in c.keys() else reg.par.get_null('Replay')
+        return c['Replay'].get_dict(v, w) if 'Replay' in c.keys() else reg.generators.ReplayConf().nestedConf
 
     def run0(self, e, v):
         w = self.window

@@ -280,7 +280,6 @@ class DrawEnvTab(gui_aux.DrawTab):
                                     **dic['sample_pars']
                                 }
                                 dic['current'] = {v[Gid]: class_defaults(reg.gen.FoodGroup, **temp_dic)}
-                                # dic['current'] = {v[Gid]: reg.par.get_null('FoodGroup', **temp_dic)}
                                 dic['prior_rect'] = self.draw_shape(shape=v[f'{D}_shape'], p1=p1,
                                                                     p2=p2, line_color=color)
                         elif v[L0] and not self.check_abort(L0, w, v, db[self.Lu]['items'], db[self.Lg]['items']):
@@ -305,7 +304,6 @@ class DrawEnvTab(gui_aux.DrawTab):
                                     **sample_larva_pars
                                 }
                                 dic['current'] = {v[Gid]: class_defaults(reg.generators.LarvaGroup, **temp_dic)}
-                                # dic['current'] = {v[Gid]: reg.par.get_null('LarvaGroup', **temp_dic)}
                                 dic['prior_rect'] = self.draw_shape(shape=v[f'{D}_shape'], p1=p1,
                                                                     p2=p2, line_color=color)
 

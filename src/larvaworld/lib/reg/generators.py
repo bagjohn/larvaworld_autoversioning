@@ -323,7 +323,7 @@ class EnvConf(NestedConf):
         if w is not None:
             if 'puffs' in w:
                 for id, args in w['puffs'].items():
-                    w['puffs'][id] = reg.par.get_null('air_puff', **args)
+                    w['puffs'][id] = AirPuff(**args).nestedConf
             else:
                 w['puffs'] = {}
             w = gen.WindScape(**w)

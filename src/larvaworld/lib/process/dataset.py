@@ -15,7 +15,7 @@ import param
 
 from .. import reg, aux, process
 from ..aux import nam, AttrDict, SuperList
-from ..param import ClassAttr, StepDataFrame, EndpointDataFrame, ClassDict
+from ..param import ClassAttr, StepDataFrame, EndpointDataFrame, ClassDict, SimMetricOps
 
 __all__ = [
     'ParamLarvaDataset',
@@ -1692,7 +1692,7 @@ class BaseLarvaDataset(ParamLarvaDataset):
         if c0.fr is not None:
             c0.dt = 1 / c0.fr
         if c0.metric_definition is None:
-            c0.metric_definition = reg.par.get_null('metric_definition')
+            c0.metric_definition = SimMetricOps().nestedConf
 
         points = nam.midline(c0.Npoints, type='point')
 

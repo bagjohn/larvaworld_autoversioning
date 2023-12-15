@@ -2,6 +2,7 @@ import PySimpleGUI as sg
 
 from ...lib import reg
 from ...gui import gui_aux
+from ...lib.param import Substrate
 
 __all__ = [
     'LifeTab',
@@ -81,7 +82,7 @@ class LifeTab(gui_aux.GuiTab):
     def get(self, w, v, c, as_entry=False):
         rows = w.Element(self.K).get()
         return {
-            'epochs': {i : {'start': r[0], 'stop': r[1], 'substrate': reg.par.get_null('substrate', type=r[3], quality=r[2])} for
+            'epochs': {i : {'start': r[0], 'stop': r[1], 'substrate': Substrate(type=r[3], quality=r[2])} for
                         i, r in enumerate(rows)},
             'age': v[self.Sa],
         }
