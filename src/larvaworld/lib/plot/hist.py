@@ -141,7 +141,7 @@ def plot_distros(name=None, ks=['v', 'a', 'sv', 'sa', 'b', 'bv', 'ba', 'fov', 'f
                 pass
             if annotation:
                 try:
-                    plot.annotate_plot(show_ns=show_ns, target_only=target_only, **kws)
+                    plot.annotate_plot(box=g1, show_ns=show_ns, target_only=target_only, **kws)
                 except:
                     pass
 

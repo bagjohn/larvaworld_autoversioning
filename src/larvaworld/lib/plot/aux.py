@@ -359,7 +359,7 @@ def pvalue_star(pv):
     return "ns"
 
 
-def annotate_plot(data, x, y, hue=None, show_ns=True, target_only=None, **kwargs):
+def annotate_plot(box, data, x, y, hue=None, show_ns=True, target_only=None, **kwargs):
     """
     Annotate a plot with Mann-Whitney U test p-values.
 
@@ -382,7 +382,8 @@ def annotate_plot(data, x, y, hue=None, show_ns=True, target_only=None, **kwargs
     Returns:
     - None
     """
-    from statannotations.Annotator import Annotator
+    import statannot
+    # from statannotations.Annotator import Annotator
     subIDs0 = np.unique(data[x].values)
 
     if hue is not None:
@@ -407,17 +408,19 @@ def annotate_plot(data, x, y, hue=None, show_ns=True, target_only=None, **kwargs
                 data[data[x] == subID][y].dropna(),
                 alternative="two-sided").pvalue for subID in subIDs0 if subID != target_only]
 
-    f_pvs = [pvalue_star(pv) for pv in pvs]
+    # f_pvs = [pvalue_star(pv) for pv in pvs]
 
     if not show_ns:
         valid_idx = [i for i, f_pv in enumerate(f_pvs) if f_pv != 'ns']
         pairs = [pairs[i] for i in valid_idx]
-        f_pvs = [f_pvs[i] for i in valid_idx]
+        # f_pvs = [f_pvs[i] for i in valid_idx]
 
     if len(pairs) > 0:
-        annotator = Annotator(pairs=pairs, data=data, x=x, y=y, hue=hue, **kwargs)
-        annotator.verbose = False
-        annotator.annotate_custom_annotations(f_pvs)
+        statannot.add_stat_annotation(box, data=data, perform_stat_test=False, pvalues=pvs, box_pairs=pairs,
+                                      text_format='star', loc='inside', verbose=0, **kwargs)
+        # annotator = Annotator(pairs=pairs, data=data, x=x, y=y, hue=hue, **kwargs)
+        # annotator.verbose = False
+        # annotator.annotate_custom_annotations(f_pvs)
 
 
 def dual_half_circle(center, radius=0.04, angle=90, ax=None, colors=('W', 'k'), **kwargs):
