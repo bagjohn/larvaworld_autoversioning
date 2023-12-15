@@ -124,12 +124,6 @@ class ColorDrawOps(NestedConf):
     panel_width = PositiveInteger(0, doc='The width of the side panel in pixels')
 
 
-# class VisOps(NestedConf):
-# visible_clock = Boolean(True, doc='Whether clock is visible')
-# visible_scale = Boolean(True, doc='Whether scale is visible')
-# visible_state = Boolean(False, doc='Whether state is visible')
-# visible_ids = Boolean(False, doc='Whether the agent IDs are visible')
-
 class ScreenOps(ColorDrawOps, AgentDrawOps, MediaDrawOps): pass
 
 
@@ -206,6 +200,7 @@ class ScreenAreaZoomable(ScreenArea):
 
 class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
     caption = param.String('', doc='The caption of the screen window')
+    scene = param.String(None, doc='The scene ID to be loaded from file')
 
     def __init__(self, background_motion=None, **kwargs):
         super().__init__(**kwargs)
@@ -227,7 +222,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
 
         pygame.init()
         os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (1550, 400)
-        self._window = self.init_screen()
+        self.v = self.init_screen()
         # self._t = pygame.time.Clock()
 
         if self.bg is not None:
@@ -252,7 +247,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         pygame.draw.polygon(surf1, tank_color, vs, 0)
         pygame.draw.rect(surf2, screen_color, surf2.get_rect())
         surf2.blit(surf1, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)
-        self._window.blit(surf2, (0, 0))
+        self.v.blit(surf2, (0, 0))
 
     def init_screen(self):
         flags = pygame.HWSURFACE | pygame.DOUBLEBUF
@@ -268,13 +263,13 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         p = self._transform(position)
         r = int(self._scale[0, 0] * radius)
         w = 0 if filled else int(self._scale[0, 0] * width)
-        pygame.draw.circle(self._window, color, p, r, w)
+        pygame.draw.circle(self.v, color, p, r, w)
 
     def draw_polygon(self, vertices, color=(0, 0, 0), filled=True, width=.01):
         if vertices is not None and len(vertices) > 1:
             vs = [self._transform(v) for v in vertices]
             w = 0 if filled else int(self._scale[0, 0] * width)
-            pygame.draw.polygon(self._window, color, vs, w)
+            pygame.draw.polygon(self.v, color, vs, w)
 
     def draw_convex(self, points, **kwargs):
         from scipy.spatial import ConvexHull
@@ -287,32 +282,32 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         all_vertices = [[self._transform(v) for v in vertices] for vertices in all_vertices]
         w = 0 if filled else int(self._scale[0, 0] * width)
         for vs, c in zip(all_vertices, colors):
-            pygame.draw.polygon(self._window, c, vs, w)
+            pygame.draw.polygon(self.v, c, vs, w)
 
     def draw_polyline(self, vertices, color=(0, 0, 0), closed=False, width=.01):
         vs = [self._transform(v) for v in vertices]
         w = int(self._scale[0, 0] * width)
         if isinstance(color, list):
             for v1, v2, c in zip(vs[:-1], vs[1:], color):
-                pygame.draw.lines(self._window, c, closed=closed, points=[v1, v2], width=w)
+                pygame.draw.lines(self.v, c, closed=closed, points=[v1, v2], width=w)
         else:
-            pygame.draw.lines(self._window, color, closed=closed, points=vs, width=w)
+            pygame.draw.lines(self.v, color, closed=closed, points=vs, width=w)
 
     def draw_line(self, start, end, color=(0, 0, 0), width=.01):
         start = self._transform(start)
         end = self._transform(end)
         w = int(self._scale[0, 0] * width)
-        pygame.draw.line(self._window, color, start, end, w)
+        pygame.draw.line(self.v, color, start, end, w)
 
     def draw_transparent_circle(self, position=(0, 0), radius=.1, color=(0, 0, 0, 125), filled=True, width=.01):
         r = int(self._scale[0, 0] * radius)
         s = pygame.Surface((2 * r, 2 * r), pygame.HWSURFACE | pygame.SRCALPHA)
         w = 0 if filled else int(self._scale[0, 0] * width)
         pygame.draw.circle(s, color, (r, r), radius, w)
-        self._window.blit(s, self._transform(position) - r)
+        self.v.blit(s, self._transform(position) - r)
 
     def draw_text_box(self, font, rect):
-        self._window.blit(font, rect)
+        self.v.blit(font, rect)
 
     def draw_envelope(self, points, **kwargs):
         vs = list(geometry.MultiPoint(points).envelope.exterior.coords)
@@ -322,7 +317,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         a0 = math.atan2(end[1] - start[1], end[0] - start[0])
         l0 = np.sqrt((end[0] - start[0]) ** 2 + (end[1] - start[1]) ** 2)
         w = int(self._scale[0, 0] * width)
-        pygame.draw.line(self._window, color, self._transform(start), self._transform(end), w)
+        pygame.draw.line(self.v, color, self._transform(start), self._transform(end), w)
 
         a = a0 + np.pi / 2
         sin0, cos0 = math.sin(a) * s, math.cos(a) * s
@@ -335,7 +330,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
             p0 = (pos[0] + sin0, pos[1] + cos0)
             p1 = (pos[0] + sin1, pos[1] + cos1)
             p2 = (pos[0] + sin2, pos[1] + cos2)
-            pygame.draw.polygon(self._window, color, (p0, p1, p2))
+            pygame.draw.polygon(self.v, color, (p0, p1, p2))
             l += dl
 
     def set_background(self):
@@ -347,8 +342,8 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         self.bgimagerect = self.bgimage.get_rect()
         self.tw = self.bgimage.get_width()
         self.th = self.bgimage.get_height()
-        self.th_max = int(self._window.get_height() / self.th) + 2
-        self.tw_max = int(self._window.get_width() / self.tw) + 2
+        self.th_max = int(self.v.get_height() / self.th) + 2
+        self.tw_max = int(self.v.get_width() / self.tw) + 2
 
     def draw_background(self, bg=[0, 0, 0]):
         if self.bgimage is not None and self.bgimagerect is not None:
@@ -362,7 +357,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
                         if a != 0.0:
                             pass
                         p = ((px - x) * (self.tw - 1), (py + y) * (self.th - 1))
-                        self._window.blit(self.bgimage, p)
+                        self.v.blit(self.bgimage, p)
             except:
                 pass
 
@@ -464,10 +459,10 @@ class BaseScreenManager(ScreenAreaPygame):
     def _render(self):
         if self.show_display:
             pygame.display.flip()
-            image = pygame.surfarray.pixels3d(self._window)
+            image = pygame.surfarray.pixels3d(self.v)
             # self._t.tick(self.manager._fps)
         else:
-            image = pygame.surfarray.array3d(self._window)
+            image = pygame.surfarray.array3d(self.v)
         if self.vid_writer:
             self.vid_writer.append_data(np.flipud(np.rot90(image)))
         if self.img_writer:
@@ -481,6 +476,12 @@ class BaseScreenManager(ScreenAreaPygame):
         """
         self.vid_writer = self.new_video_writer(fps=self._fps)
         self.img_writer = self.new_image_writer()
+        if self.scene is not None:
+            path = f'{reg.ROOT_DIR}/lib/sim/ga_scenes/{self.scene}.txt'
+            self.model.objects = agentpy.AgentList(model=self.model, objs=self.load_scene_from_file(path, m=self.model))
+
+        self.build_aux()
+        self.draw_arena()
         self.initialized=True
         reg.vprint('Screen opened', 1)
 
@@ -757,7 +758,6 @@ class BaseScreenManager(ScreenAreaPygame):
             self._render()
             pygame.time.wait(2000)
             box.visible = False
-
             self.draw_arena_tank()
 
         kws = {
@@ -796,6 +796,8 @@ class BaseScreenManager(ScreenAreaPygame):
             'is_paused',
         ] + list(m.odor_layers.keys())
                                           })
+
+        self.side_panel = SidePanel(self) if self.panel_width>0 else None
 
     def capture_snapshot(self):
         """
@@ -858,36 +860,21 @@ class BaseScreenManager(ScreenAreaPygame):
 
         rel['text_center'] = rel[['text2pos', 'pos']].apply(temp2)
 
-
-class GA_ScreenManager(BaseScreenManager):
-    """
-    Screen manager for the Genetic Algorithm simulations.
-    """
-
-    def __init__(self, model,black_background=True, panel_width=600, scene='no_boxes', **kwargs):
-        super().__init__(model=model, black_background=black_background, panel_width=panel_width,caption=f'GA {model.experiment} : {model.id}',
-                         **kwargs)
-        self.scene_filepath = f'{reg.ROOT_DIR}/lib/sim/ga_scenes/{scene}.txt'
-
-    def initialize(self):
+    def draw_aux(self):
         """
-        Initialize the pygame display
+        Draw additional items on screen
         """
-        # m = self.model
-        # v = Viewer(manager=self, caption=f'GA {m.experiment} : {m.id}')
-        super().initialize()
-        self.model.objects = agentpy.AgentList(model=self.model, objs=self.load_scene_from_file(self.scene_filepath, m=self.model))
-        self.side_panel = SidePanel(self)
-        self.build_aux()
-        self.draw_arena()
-        # reg.vprint('Screen opened', 1)
-        # return v
+        try:
+            for t in [self.screen_clock, self.screen_scale, self.screen_state]:
+                t._draw(self)
+            for t in list(self.screen_texts.values()) + [self.input_box]:
+                t.visible = t.start_time < pygame.time.get_ticks() < t.end_time
+                t._draw(self)
+        except:
+            pass
 
-    def draw_aux(self, **kwargs):
-        self.side_panel.draw(self)
-
-    def finalize(self):
-        self.close()
+        if self.side_panel is not None:
+            self.side_panel.draw(self)
 
     def load_scene_from_file(self, file_path, m):
         from larvaworld.lib.model.envs.obstacle import Wall, Box
@@ -923,26 +910,6 @@ class GA_ScreenManager(BaseScreenManager):
 
         return obs
 
-
-class ScreenManager(BaseScreenManager):
-    """
-    Screen manager for the default single experiment simulations.
-    """
-
-    def __init__(self, model, **kwargs):
-        super().__init__(model=model,caption=str(model.id), **kwargs)
-
-    def initialize(self):
-        """
-        Initialize the pygame display
-        """
-        super().initialize()
-        # v = Viewer(manager=self, caption=str(self.model.id))
-
-        self.build_aux()
-        self.draw_arena()
-        # return v
-
     def finalize(self):
         """
         Apply final actions before closing the screen manager
@@ -956,13 +923,26 @@ class ScreenManager(BaseScreenManager):
                 self.capture_snapshot()
         self.close()
 
-    def draw_aux(self, **kwargs):
-        """
-        Draw additional items on screen
-        """
 
-        for t in [self.screen_clock, self.screen_scale, self.screen_state]:
-            t._draw(self)
-        for t in list(self.screen_texts.values()) + [self.input_box]:
-            t.visible = t.start_time < pygame.time.get_ticks() < t.end_time
-            t._draw(self)
+class GA_ScreenManager(BaseScreenManager):
+    """
+    Screen manager for the Genetic Algorithm simulations.
+    """
+
+    def __init__(self, model,black_background=True, panel_width=600, scene='no_boxes', **kwargs):
+        super().__init__(model=model, black_background=black_background, panel_width=panel_width,caption=f'GA {model.experiment} : {model.id}',
+                         scene=scene, **kwargs)
+
+
+class ScreenManager(BaseScreenManager):
+    """
+    Screen manager for the default single experiment simulations.
+    """
+
+    def __init__(self, model, **kwargs):
+        super().__init__(model=model,caption=str(model.id), **kwargs)
+
+
+
+
+

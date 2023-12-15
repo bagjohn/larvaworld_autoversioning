@@ -31,7 +31,7 @@ class RotSurface(Object):
         rotated_surf = pygame.transform.rotate(self.surf, degrees)
         rot_rect = rotated_surf.get_rect()
         rot_rect.center = (self.x, self.y)
-        viewer._window.blit(rotated_surf, rot_rect)
+        viewer.v.blit(rotated_surf, rot_rect)
 
 class RotTriangle(RotSurface):
 

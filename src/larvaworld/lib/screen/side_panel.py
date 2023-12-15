@@ -119,6 +119,6 @@ class SidePanel:
         :param kwargs: Additional drawing arguments.
         """
         # Draw a black background for the side panel
-        pygame.draw.rect(v._window, v.sidepanel_color, self.panel_rect)
+        pygame.draw.rect(v.v, v.sidepanel_color, self.panel_rect)
         v.draw_line((v.w, 0), (v.w, v.h), color=aux.Color.RED)
         self.display_ga_info()

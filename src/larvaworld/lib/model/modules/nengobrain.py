@@ -72,9 +72,7 @@ class NengoBrain(Network, Brain):
             def oscillator_interference(x):
                 coup = self.osc_coupling
                 c0, c1 = coup.crawler_phi_range
-                # cr = 1 - coup.feeder_interference_free_window / np.pi
                 f0, f1 = coup.feeder_phi_range
-                # fr = 1 - coup.feeder_interference_free_window / np.pi
                 r = coup.attenuation
                 if x[0] > 0 or x[2] > 0:
                     v = [x[0], 0, x[2]]
