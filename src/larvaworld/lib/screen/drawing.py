@@ -26,7 +26,6 @@ __all__ = [
     'AgentDrawOps',
     'ColorDrawOps',
     'ScreenOps',
-    'BaseScreenManager',
     'GA_ScreenManager',
     'ScreenManager',
 ]
@@ -223,6 +222,9 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         if self.vis_mode == 'video' and not self.save_video:
             self.show_display = True
 
+        if self.caption is None:
+            self.caption = str(m.id)
+
 
         pygame.init()
         os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (1550, 400)
@@ -366,7 +368,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
                 pass
 
 
-class BaseScreenManager(ScreenAreaPygame):
+class ScreenManager(ScreenAreaPygame):
     """
     Base class managing the pygame screen.
     """
@@ -928,7 +930,7 @@ class BaseScreenManager(ScreenAreaPygame):
         self.close()
 
 
-class GA_ScreenManager(BaseScreenManager):
+class GA_ScreenManager(ScreenManager):
     """
     Screen manager for the Genetic Algorithm simulations.
     """
@@ -938,13 +940,7 @@ class GA_ScreenManager(BaseScreenManager):
                          scene=scene, **kwargs)
 
 
-class ScreenManager(BaseScreenManager):
-    """
-    Screen manager for the default single experiment simulations.
-    """
 
-    def __init__(self, model, **kwargs):
-        super().__init__(model=model,caption=str(model.id), **kwargs)
 
 
 
