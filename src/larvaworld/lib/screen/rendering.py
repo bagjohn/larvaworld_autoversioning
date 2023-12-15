@@ -265,24 +265,24 @@ class SimulationScale(PosPixelRel2AreaViewable):
         self.text_font = ScreenTextFontRel(font_size_scale=(1 / 40), text_centre_scale=(1, 1.5), **kws)
 
         self.lines = None
-        self.update_scale()
+        # self.update_scale()
 
-    @param.depends('reference_area.zoom', watch=True)
-    def update_scale(self):
-        def closest(lst, k):
-            return lst[min(range(len(lst)), key=lambda i: abs(lst[i] - k))]
-
-        w_in_mm = self.reference_area.model.space.w * self.reference_area.zoom * 1000
-        # Get 1/10 of max real dimension, transform it to mm and find the closest reasonable scale
-        self.scale_in_mm = closest(
-            lst=[0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10, 25, 50, 75, 100, 250, 500, 750, 1000], k=w_in_mm / 10)
-        self.text_font.set_text(f'{self.scale_in_mm} mm')
-        self.lines = self.compute_lines(self.x, self.y, self.scale_in_mm / w_in_mm * self.reference_area.w)
-
-    def compute_lines(self, x, y, scale):
-        return [[(x - scale / 2, y), (x + scale / 2, y)],
-                [(x + scale / 2, y * 0.75), (x + scale / 2, y * 1.25)],
-                [(x - scale / 2, y * 0.75), (x - scale / 2, y * 1.25)]]
+    # @param.depends('reference_area.zoom', watch=True)
+    # def update_scale(self):
+    #     def closest(lst, k):
+    #         return lst[min(range(len(lst)), key=lambda i: abs(lst[i] - k))]
+    #
+    #     w_in_mm = self.reference_area.model.space.w * self.reference_area.zoom * 1000
+    #     # Get 1/10 of max real dimension, transform it to mm and find the closest reasonable scale
+    #     self.scale_in_mm = closest(
+    #         lst=[0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10, 25, 50, 75, 100, 250, 500, 750, 1000], k=w_in_mm / 10)
+    #     self.text_font.set_text(f'{self.scale_in_mm} mm')
+    #     self.lines = self.compute_lines(self.x, self.y, self.scale_in_mm / w_in_mm * self.reference_area.w)
+    #
+    # def compute_lines(self, x, y, scale):
+    #     return [[(x - scale / 2, y), (x + scale / 2, y)],
+    #             [(x + scale / 2, y * 0.75), (x + scale / 2, y * 1.25)],
+    #             [(x - scale / 2, y * 0.75), (x - scale / 2, y * 1.25)]]
 
     def draw(self, v, **kwargs):
         for line in self.lines:

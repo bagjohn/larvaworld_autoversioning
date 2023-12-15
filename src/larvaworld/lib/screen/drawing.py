@@ -195,8 +195,12 @@ class ScreenAreaZoomable(ScreenArea):
         # Get 1/10 of max real dimension, transform it to mm and find the closest reasonable scale
         scale_in_mm = closest(
             lst=[0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10, 25, 50, 75, 100, 250, 500, 750, 1000], k=w_in_mm / 10)
-        # self.text_font.set_text(f'{scale_in_mm} mm')
-        # self.lines = compute_lines(self.x, self.y, scale_in_mm / w_in_mm * self.w)
+        try:
+            S=self.screen_scale
+            S.text_font.set_text(f'{scale_in_mm} mm')
+            S.lines = compute_lines(S.x, S.y, scale_in_mm / w_in_mm * self.w)
+        except:
+            pass
 
 class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
     caption = param.String('', doc='The caption of the screen window')
