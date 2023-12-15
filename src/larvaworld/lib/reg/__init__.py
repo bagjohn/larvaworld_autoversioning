@@ -35,7 +35,7 @@ __all__ = [
 ]
 
 __displayname__ = 'Registry'
-VERBOSE = 0
+VERBOSE = 1
 
 
 def vprint(text='', verbose=0):

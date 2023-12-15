@@ -210,6 +210,8 @@ class BaseRun(sim.ABModel):
         self.collectors = reg.par.get_reporters(cs=cs, agents=self.agents)
         self.p.collectors = aux.AttrDict({'step': list(self.collectors['step'].keys()),
                                           'end': list(self.collectors['end'].keys())})
+        # print(self.collectors['end'])
+        # raise
 
     @property
     def configuration_text(self):

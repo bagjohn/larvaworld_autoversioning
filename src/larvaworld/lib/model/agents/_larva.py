@@ -33,6 +33,7 @@ class Larva(MobileAgent):
         self.trajectory = [self.initial_pos]
         self.orientation_trajectory = [self.initial_orientation]
         self.cum_dur = 0
+        # self.cum_t = 0
 
     def draw(self, v, **kwargs):
         p, c, r, l = self.get_position(), self.color, self.radius, self.length

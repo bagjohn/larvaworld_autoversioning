@@ -389,6 +389,9 @@ class ScreenManager(ScreenAreaPygame):
         self.odorscape_counter = 0
 
         self.pygame_keys = None
+
+        self.vid_writer = None
+        self.img_writer = None
         self.initialized=False
 
 

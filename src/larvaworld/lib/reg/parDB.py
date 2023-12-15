@@ -1425,6 +1425,7 @@ class ParamClass:
     def build_initial(self):
         kws1 = {'vfunc': param.Number,'lim': (0.0, None), 'dtype': float, 'u': reg.units.s}
         self.add(**{'p': 't', 'sym': '$t$', 'v0': 0.0, **kws1})
+        self.add_operators(k0='t')
         self.add(**{'p': 'model.dt', 'd': 'dt', 'sym': '$dt$', 'v0': 0.1, **kws1})
         self.add(**{'p': 'cum_dur', 'k': nam.cum('t'), 'sym': nam.tex.sub('t', 'cum'), 'v0': 0.0, **kws1})
 
@@ -1434,7 +1435,7 @@ class ParamClass:
         self.add(**{'p': 'num_ticks', 'k': 'N_ticks', 'sym': nam.tex.sub('N', 'ticks'), **kws2})
 
 
-        self.add_operators(k0='t')
+
         self.add_operators(k0='tick')
 
 
