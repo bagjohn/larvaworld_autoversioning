@@ -1,6 +1,6 @@
 [tool.poetry]
 name='larvaworld'
-version = "0.0.486"
+version = "0.0.487"
 description='Drosophila larva behavioral analysis and simulation platform'
 authors=['Panagiotis Sakagiannis']
 license = "GPL-3"
@@ -15,40 +15,41 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
 python = "^3.8"
+
+agentpy = "*"
+argparse = "*"
+geopandas = "*"
+holoviews = "*"
+hvplot = "*"
+imageio = "*"
+importlib = "*"
+matplotlib = "*"
+movingpandas = "*"
+numpy = "*"
+panel = "*"
 pandas = "2.*"
 param = "2.*"
-numpy = "*"
-typing-extensions = "*"
-importlib = "*"
-PySimpleGUI = "*"
-shapely = "*"
-imageio = "*"
-agentpy = "*"
-pygame = "*"
-argparse = "*"
 pint = "*"
 pint_pandas = "*"
-matplotlib = "*"
+powerlaw = "*"
+progressbar = "*"
+pygame = "*"
+pypdf = "*"
+PySimpleGUI = "*"
 seaborn = "*"
 scikit-learn = "*"
 scipy = "*"
-pypdf = "*"
+shapely = "*"
 statannot = "*"
-#statannotations = "*"
-powerlaw = "*"
-progressbar = "*"
+typing-extensions = "*"
 
-movingpandas = "*"
-geopandas = "*"
-panel = "*"
-holoviews = "*"
-hvplot = "*"
 
 [tool.poetry.dev-dependencies]
+build = "*"
 pytest = "*"
 pytest-cov = "*"
 python-semantic-release = "*"
-build = "*"
+
 
 [project.optional-dependencies]
 dev = [
@@ -69,7 +70,6 @@ repository = "https://github.com/nawrotlab/larvaworld"
 [tool.poetry.scripts]
 larvaworld-cli = "larvaworld.cli.main:main"
 larvaworld-gui = "larvaworld.gui.main:main"
-#larvaworld-examples = "larvaworld.examples.main:main"
 
 [tool.semantic_release]
 version_variable = "pyproject.toml:version"
