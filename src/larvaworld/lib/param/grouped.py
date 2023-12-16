@@ -20,7 +20,8 @@ __all__ = [
     'Filesystem',
     'TrackedPointIdx',
     'SimMetricOps',
-    'TrackerOps'
+    'TrackerOps',
+    # 'OptimizationOps',
 ]
 
 __displayname__ = 'Configuration parameter groups'
@@ -276,6 +277,5 @@ class SimMetricOps(TrackedPointIdx):
 
 
 class TrackerOps(SimMetricOps, FramerateOps): pass
-
 
 

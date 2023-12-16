@@ -1,4 +1,5 @@
-from ... import reg
+from ... import reg, aux
+from ...sim.batch_run import OptimizationOps
 
 __all__ = [
     'Batch_dict',
@@ -14,7 +15,8 @@ def batch(exp, proc=[], ss=None, ssbool=None, o=None, o_kws={}, as_entry=True, *
     # else:
     #     bm_kws = bm
     if ss is not None:
-        ss = {p: reg.par.get_null('space_search_par', range=r, Ngrid=N) for p, (r, N) in ss.items()}
+        ss = ss
+        # ss = {p: reg.par.get_null('space_search_par', range=r, Ngrid=N) for p, (r, N) in ss.items()}
     else:
         ss = {}
     if ssbool is not None:
@@ -25,10 +27,9 @@ def batch(exp, proc=[], ss=None, ssbool=None, o=None, o_kws={}, as_entry=True, *
     if len(ss0) == 0:
         ss0 = None
 
-    conf = reg.par.get_null('Batch',
-                         exp=exp,
+    conf = aux.AttrDict(exp=exp,
                          exp_kws={'enrichment': reg.gen.EnrichConf(proc_keys=proc).nestedConf, 'experiment': exp},
-                         optimization=reg.par.get_null("optimization", fit_par=o, **o_kws) if o is not None else None,
+                         optimization=OptimizationOps(fit_par=o, **o_kws).nestedConf,
                          space_search=ss0,
                          **kwargs)
     if as_entry:
@@ -41,47 +42,32 @@ def Batch_dict():
     d = {
         **batch('chemotaxis',
                 ss={'Odor.mean': [[300.0, 1300.0], 3], 'decay_coef': [[0.1, 0.5], 3]},
-                o='final_dst_to_Source',
-                proc=['angular', 'spatial', 'source']),
+                o='final_dst_to_Source',proc=['angular', 'spatial', 'source']),
         **batch('chemorbit',
                 ss={'Odor.mean': [[300.0, 1300.0], 3], 'decay_coef': [[0.1, 0.5], 3]},
-                o='final_dst_to_Source',
-                proc=['angular', 'spatial', 'source']),
+                o='final_dst_to_Source',proc=['angular', 'spatial', 'source']),
         **batch('PItest_off',
-                ss={'gain_dict.CS': [[-100.0, 100.0], 4], 'gain_dict.UCS': [[-100.0, 100.0], 4]},
-                # bm='PI',
-                proc=['PI']),
+                ss={'gain_dict.CS': [[-100.0, 100.0], 4], 'gain_dict.UCS': [[-100.0, 100.0], 4]},proc=['PI']),
         **batch('PItrain_mini',
-                ss={'input_noise': [[0.0, 0.4], 2], 'decay_coef': [[0.1, 0.5], 2]},
-                # bm='PI',
-                proc=['PI']),
+                ss={'input_noise': [[0.0, 0.4], 2], 'decay_coef': [[0.1, 0.5], 2]},proc=['PI']),
         **batch('PItrain',
-                ss={'input_noise': [[0.0, 0.4], 2], 'decay_coef': [[0.1, 0.5], 2]},
-                # bm='PI',
-                proc=['PI']),
+                ss={'input_noise': [[0.0, 0.4], 2], 'decay_coef': [[0.1, 0.5], 2]},proc=['PI']),
         **batch('patchy_food',
-                ss={'EEB': [[0.0, 1.0], 3], 'freq': [[1.5, 2.5], 3]},
-                o='ingested_food_volume'),
+                ss={'EEB': [[0.0, 1.0], 3], 'freq': [[1.5, 2.5], 3]},o='ingested_food_volume'),
         **batch('food_grid',
-                ss={'EEB': [[0.0, 1.0], 6], 'EEB_decay': [[0.1, 2.0], 6]},
-                o='ingested_food_volume'),
-        **batch('growth',
+                ss={'EEB': [[0.0, 1.0], 6], 'EEB_decay': [[0.1, 2.0], 6]},o='ingested_food_volume'),
+        **batch('growth',absolute = True,
                 ss={'EEB': [[0.5, 0.8], 8], 'hunger_gain': [[0.0, 0.0], 1]},
-                o='deb_f_deviation', o_kws={'max_Nsims': 20, 'operations': {'mean': True, 'abs': True, 'std': False}}),
+                o='deb_f_deviation', o_kws={'max_Nsims': 20}),
         **batch('imitation',
                 ss={'activation_noise': [[0.0, 0.8], 3], 'base_activation': [[15.0, 25.0], 3]},
-                o='sample_fit',
-                o_kws={'threshold': 1.0, 'max_Nsims': 20, 'operations': {'mean': False, 'abs': False, 'std': False}},
-                # bm={'exec': 'exp_fit'}
-                ),
+                o='sample_fit',o_kws={'threshold': 1.0, 'max_Nsims': 20}),
         **batch('tactile_detection',
                 ss={'initial_gain': [[25.0, 75.0], 10], 'decay_coef': [[0.01, 0.5], 4]},
-                o='cum_food_detected', o_kws={'threshold': 100000.0, 'max_Nsims': 600, 'minimize': False, 'Nbest': 8,
-                                              'operations': {'mean': True, 'abs': False, 'std': False}}),
+                o='cum_food_detected', o_kws={'threshold': 100000.0, 'max_Nsims': 600, 'minimize': False}),
         **batch('anemotaxis',
                 ss={f'windsensor.weights.{m1}_{m2}': [[-20.0, 20.0], 3] for m1, m2 in
                     zip(['bend', 'hunch'], ['ang', 'lin'])},
-                o='anemotaxis', o_kws={'threshold': 1000.0, 'max_Nsims': 100, 'minimize': False, 'Nbest': 8,
-                                       'operations': {'mean': True, 'abs': False}}, proc=['wind'])
+                o='anemotaxis', o_kws={'threshold': 1000.0, 'max_Nsims': 100, 'minimize': False}, proc=['wind'])
     }
     return d

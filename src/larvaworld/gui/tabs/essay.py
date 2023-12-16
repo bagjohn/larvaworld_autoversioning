@@ -1,7 +1,7 @@
 import os
 
 
-from ...lib import reg
+from ...lib import reg,aux
 from ...gui import gui_aux
 
 __all__ = [
@@ -37,7 +37,7 @@ class EssayTab(gui_aux.GuiTab):
     def update(self, w, c, conf, id):
         self.datalists[self.essay_exps_key].dict = conf['experiments']
         self.datalists[self.essay_exps_key].update_window(w)
-        essay = reg.par.get_null('Essay', essay_ID=f'{id}_{reg.config.next_idx(id=id, conftype="Essay")}', path=f'essays/{id}')
+        essay = aux.AttrDict(essay_ID=f'{id}_{reg.config.next_idx(id=id, conftype="Essay")}', path=f'essays/{id}')
         c['Essay'].update(w, essay)
         fdir = conf['exp_fig_folder']
         temp = {f.split('.')[0]: f'{fdir}/{f}' for f in os.listdir(fdir)}
