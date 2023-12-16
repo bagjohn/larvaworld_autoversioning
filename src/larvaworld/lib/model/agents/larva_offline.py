@@ -105,7 +105,7 @@ def sim_model(mID, Nids=1, refID=None, refDataset=None, imitation=False,
 
 
 def sim_single_agent(m, Nticks=1000, dt=0.1, df_columns=None, p0=None, fo0=None):
-    from ..modules.locomotor import DefaultLocomotor
+    from ..modules.locomotor import Locomotor
     from ._larva_sim import BaseController
     if fo0 is None:
         fo0 = 0.0
@@ -119,7 +119,7 @@ def sim_single_agent(m, Nticks=1000, dt=0.1, df_columns=None, p0=None, fo0=None)
     controller = BaseController(**m.physics)
     l = m.body.length
     bend_errors = 0
-    DL = DefaultLocomotor(dt=dt, conf=m.brain)
+    DL = Locomotor(dt=dt, conf=m.brain)
     for qq in range(100):
         if random.uniform(0, 1) < 0.5:
             DL.step(A_in=0, length=l)

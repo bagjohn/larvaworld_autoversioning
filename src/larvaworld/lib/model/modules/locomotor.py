@@ -3,7 +3,6 @@ from .module_modes import moduleDB as MD
 
 __all__ = [
     'Locomotor',
-    'DefaultLocomotor',
 ]
 
 
@@ -62,10 +61,6 @@ class Locomotor(NestedConf):
             return self.feeder.complete_iteration
         else:
             return False
-
-
-class DefaultLocomotor(Locomotor):
-
 
     def step(self, A_in=0, length=1, on_food=False):
         C, F, T, If = self.crawler, self.feeder, self.turner, self.interference

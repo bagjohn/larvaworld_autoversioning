@@ -99,7 +99,7 @@ class DefaultBrain(Brain):
         kws={'dt':dt, 'brain':self}
         kwargs.update(MD.build_sensormodules(conf=conf, **kws))
         super().__init__(agent=agent,dt =dt, **kwargs)
-        self.locomotor = modules.DefaultLocomotor(conf=conf, dt=self.dt)
+        self.locomotor = modules.Locomotor(conf=conf, dt=self.dt)
         m = conf['memory']
         if m is not None:
             M=self.modalities[m.modality]
