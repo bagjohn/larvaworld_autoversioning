@@ -97,13 +97,19 @@ class GAselector(SpaceDict):
 
     selection_ratio = param.Magnitude(default=0.3, label='selection ratio',
                                       doc='Fraction of agent population to include in the next generation')
-    bestConfID = param.String(default='best_model', label='model ID for optimized model',
+    bestConfID = param.String(default=None, label='model ID for optimized model',
                               doc='ID for the optimized model')
 
 
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        if self.bestConfID is None:
+            for i in range(1000):
+                id = f'{self.base_model}_fit{i}'
+                if id not in reg.conf.Model.confIDs:
+                    self.bestConfID=id
+                    break
 
         self.Nagents_min = round(self.Nagents * self.selection_ratio)
         if self.Nagents_min < 2:
