@@ -16,10 +16,21 @@ __all__ = [
     'mdiff_table',
     'error_table',
     'store_model_graphs',
+    'diff_df',
 ]
 
 
+def arrange_index_labels(index):
+    ks = index.unique().tolist()
+    Nks = index.value_counts(sort=False)
 
+    def merge(k, Nk):
+        Nk1 = int((Nk - 1) / 2)
+        Nk2 = Nk - 1 - Nk1
+        return [''] * Nk1 + [k.upper()] + [''] * Nk2
+
+    new = aux.flatten_list([merge(k, Nks[k]) for k in ks])
+    return new
 
 
 def conf_table(df, row_colors, mID, show=False, save_to=None, save_as=None,
@@ -43,75 +54,106 @@ def modelConfTable(mID, m=None, columns=['parameter', 'symbol', 'value', 'unit']
                  colWidths=[0.35, 0.1, 0.25, 0.15], **kwargs):
     from ..model import moduleDB as MD
 
-    def arrange_index_labels(index):
-        ks = index.unique().tolist()
-        Nks = index.value_counts(sort=False)
 
-        def merge(k, Nk):
-            Nk1 = int((Nk - 1) / 2)
-            Nk2 = Nk - 1 - Nk1
-            return [''] * Nk1 + [k.upper()] + [''] * Nk2
 
-        new = aux.flatten_list([merge(k, Nks[k]) for k in ks])
-        return new
+    # def mIDtable_data2(m, columns):
+    #     D = M.dict
+    #
+    #     def gen_rows2(var_mdict, parent, columns, data):
+    #         for k, p in var_mdict.items():
+    #             if isinstance(p, param.Parameterized):
+    #                 ddd = [getattr(p, pname) for pname in columns]
+    #                 row = [parent] + ddd
+    #                 data.append(row)
+    #
+    #     mF = m.flatten()
+    #     data = []
+    #     for mkey in D.brain.keys:
+    #         if m.brain[mkey] is not None:
+    #             d0 = D.model.init[mkey]
+    #             if f'{d0.pref}mode' in mF.keys():
+    #                 mod_v = mF[f'{d0.pref}mode']
+    #             else:
+    #                 mod_v = 'default'
+    #
+    #             if mkey == 'intermitter':
+    #                 run_mode = m.brain[f'{mkey}']['run_mode']
+    #                 var_ks = d0.mode[mod_v].variable
+    #                 for var_k in var_ks:
+    #                     if var_k == 'run_dist' and run_mode == 'stridechain':
+    #                         continue
+    #                     if var_k == 'stridechain_dist' and run_mode == 'exec':
+    #                         continue
+    #                     v = m.brain[f'{mkey}'][var_k]
+    #                     if v is not None:
+    #                         if v.name is not None:
+    #                             vs1, vs2 = reg.get_dist(k=var_k, k0=mkey, v=v, return_tabrows=True)
+    #                             data.append(vs1)
+    #                             data.append(vs2)
+    #             else:
+    #                 var_mdict = M.variable_mdict(mkey, mode=mod_v)
+    #                 var_mdict = aux.update_mdict(var_mdict, m.brain[f'{mkey}'])
+    #                 gen_rows2(var_mdict, mkey, columns, data)
+    #     for aux_key in D.aux.keys:
+    #         if aux_key not in ['energetics', 'sensorimotor']:
+    #             var_ks = D.aux.init[aux_key].variable
+    #             var_mdict = aux.AttrDict({k: D.aux.m[aux_key].args[k] for k in var_ks})
+    #             var_mdict = aux.update_mdict(var_mdict, m[aux_key])
+    #             gen_rows2(var_mdict, aux_key, columns, data)
+    #     if m['energetics']:
+    #         for mod, dic in D.aux.init['energetics'].mode.items():
+    #             var_ks = dic.variable
+    #             var_mdict = aux.AttrDict({k: D.aux.m['energetics'].mode[mod].args[k] for k in var_ks})
+    #             var_mdict = aux.update_mdict(var_mdict, m['energetics'].mod)
+    #             gen_rows2(var_mdict, f'energetics.{mod}', columns, data)
+    #     if 'sensorimotor' in m.keys():
+    #         for mod, dic in D.aux.init['sensorimotor'].mode.items():
+    #             var_ks = dic.variable
+    #             var_mdict = aux.AttrDict({k: D.aux.m['sensorimotor'].mode[mod].args[k] for k in var_ks})
+    #             var_mdict = aux.update_mdict(var_mdict, m['sensorimotor'])
+    #             gen_rows2(var_mdict, 'sensorimotor', columns, data)
+    #     df = pd.DataFrame(data, columns=['field'] + columns)
+    #     df.set_index(['field'], inplace=True)
+    #     return df
 
     def mIDtable_data(m, columns):
-        M = reg.model
-        D = M.dict
-
-        def gen_rows2(var_mdict, parent, columns, data):
-            for k, p in var_mdict.items():
+        def gen_rows2(d, parent, data):
+            for k, p in d.items():
                 if isinstance(p, param.Parameterized):
                     ddd = [getattr(p, pname) for pname in columns]
                     row = [parent] + ddd
                     data.append(row)
 
-        mF = m.flatten()
         data = []
-        for mkey in D.brain.keys:
-            if m.brain[mkey] is not None:
-                d0 = D.model.init[mkey]
-                if f'{d0.pref}mode' in mF.keys():
-                    mod_v = mF[f'{d0.pref}mode']
-                else:
-                    mod_v = 'default'
-
-                if mkey == 'intermitter':
-                    run_mode = m.brain[f'{mkey}']['run_mode']
-                    var_ks = d0.mode[mod_v].variable
-                    for var_k in var_ks:
-                        if var_k == 'run_dist' and run_mode == 'stridechain':
+        for k in MD.BrainMods:
+            d0=m.brain[k]
+            if d0 is not None:
+                d=MD.module_conf(mID=k, mode=d0.mode, as_entry=False)
+                if k == 'intermitter':
+                    run_mode = d['run_mode']
+                    for p in d.keylist:
+                        if p == 'run_dist' and run_mode == 'stridechain':
                             continue
-                        if var_k == 'stridechain_dist' and run_mode == 'exec':
+                        if p == 'stridechain_dist' and run_mode == 'exec':
                             continue
-                        v = m.brain[f'{mkey}'][var_k]
+                        v = d[p]
                         if v is not None:
                             if v.name is not None:
-                                vs1, vs2 = reg.get_dist(k=var_k, k0=mkey, v=v, return_tabrows=True)
+                                vs1, vs2 = reg.get_dist(k=p, k0=k, v=v, return_tabrows=True)
                                 data.append(vs1)
                                 data.append(vs2)
                 else:
-                    var_mdict = M.variable_mdict(mkey, mode=mod_v)
-                    var_mdict = aux.update_mdict(var_mdict, m.brain[f'{mkey}'])
-                    gen_rows2(var_mdict, mkey, columns, data)
-        for aux_key in D.aux.keys:
-            if aux_key not in ['energetics', 'sensorimotor']:
-                var_ks = D.aux.init[aux_key].variable
-                var_mdict = aux.AttrDict({k: D.aux.m[aux_key].args[k] for k in var_ks})
-                var_mdict = aux.update_mdict(var_mdict, m[aux_key])
-                gen_rows2(var_mdict, aux_key, columns, data)
-        if m['energetics']:
-            for mod, dic in D.aux.init['energetics'].mode.items():
-                var_ks = dic.variable
-                var_mdict = aux.AttrDict({k: D.aux.m['energetics'].mode[mod].args[k] for k in var_ks})
-                var_mdict = aux.update_mdict(var_mdict, m['energetics'].mod)
-                gen_rows2(var_mdict, f'energetics.{mod}', columns, data)
-        if 'sensorimotor' in m.keys():
-            for mod, dic in D.aux.init['sensorimotor'].mode.items():
-                var_ks = dic.variable
-                var_mdict = aux.AttrDict({k: D.aux.m['sensorimotor'].mode[mod].args[k] for k in var_ks})
-                var_mdict = aux.update_mdict(var_mdict, m['sensorimotor'])
-                gen_rows2(var_mdict, 'sensorimotor', columns, data)
+                    gen_rows2(d, k, data)
+
+        gen_rows2(MD.body_kws(**m.body), 'body', data)
+        gen_rows2(MD.physics_kws(**m.physics), 'physics', data)
+        if 'sensorimotor' in m and m.sensorimotor is not None:
+            gen_rows2(MD.sensorimotor_kws(**m.sensorimotor), 'sensorimotor', data)
+        if m.energetics is not None:
+            d=MD.energetics_kws(DEB_kws=m.energetics.DEB, gut_kws=m.energetics.gut)
+            gen_rows2(d.DEB, 'DEB', data)
+            gen_rows2(d.gut, 'gut', data)
+
         df = pd.DataFrame(data, columns=['field'] + columns)
         df.set_index(['field'], inplace=True)
         return df
@@ -222,7 +264,7 @@ def mpl_table(data, cellLoc='center',colLoc='center', rowLoc='center', font_size
 
 @reg.funcs.graph('model diff')
 def mdiff_table(mIDs, dIDs,show=False, save_to=None, save_as=None, **kwargs):
-    data, row_colors = reg.model.diff_df(mIDs=mIDs, dIDs=dIDs)
+    data, row_colors = diff_df(mIDs=mIDs, dIDs=dIDs)
     mpl_kws = {
         'name': 'mdiff_table',
         'header0': 'MODULE',
@@ -276,5 +318,40 @@ def store_model_graphs(mIDs=None):
 
     aux.combine_pdfs(file_dir=f1, save_as="___ALL_MODEL_CONFIGURATIONS___.pdf")
     aux.combine_pdfs(file_dir=f2, save_as="___ALL_MODEL_SUMMARIES___.pdf")
+
+def diff_df(mIDs, ms=None, dIDs=None):
+    from ..model import moduleDB as MD
+
+    dic = {}
+    if dIDs is None:
+        dIDs = mIDs
+    if ms is None:
+        ms = reg.conf.Model.getID(mIDs)
+    ms = [m.flatten() for m in ms]
+    ks = aux.unique_list(aux.flatten_list([m.keylist for m in ms]))
+
+    for k in ks:
+        entry = {dID: m[k] if k in m else None for dID, m in zip(dIDs, ms)}
+        l = list(entry.values())
+        if all([a == l[0] for a in l]):
+            continue
+        else:
+            k0 = k.split('.')[-1]
+            k00 = k.split('.')[0]
+            if k00 == 'brain':
+                k01 = k.split('.')[1]
+                k00 = k01.split('_')[0]
+            entry['field'] = k00
+            dic[k0] = entry
+    df = pd.DataFrame.from_dict(dic).T
+    df.index = df.index.set_names(['parameter'])
+    df.reset_index(drop=False, inplace=True)
+    df.set_index(['field'], inplace=True)
+    df.sort_index(inplace=True)
+
+    row_colors = [None] + [MD.ModuleColorDict[ii] for ii in df.index.values]
+    df.index = arrange_index_labels(df.index)
+
+    return df, row_colors
 
 

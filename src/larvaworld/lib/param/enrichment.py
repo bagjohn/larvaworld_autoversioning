@@ -38,9 +38,6 @@ class ProcessConf(NestedConf):
 
 class EnrichConf(ProcessConf):
     pre_kws = ClassAttr(PreprocessConf, doc='The preprocessing pipelines')
-    # proc_keys = param.ListSelector(default=['angular', 'spatial', 'dispersion', 'tortuosity'],
-    #                          objects=['angular', 'spatial', 'source', 'dispersion', 'tortuosity', 'PI', 'wind'],
-    #                          doc='The processing pipelines')
     anot_keys = param.ListSelector(default=['bout_detection', 'bout_distribution', 'interference'],
                              objects=['bout_detection', 'bout_distribution', 'interference', 'source_attraction',
                                       'patch_residency'], doc='The annotation pipelines')

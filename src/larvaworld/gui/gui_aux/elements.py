@@ -795,9 +795,9 @@ class CollapsibleTable(Collapsible):
         self.dict_name = dict_name
         self.key = f'TABLE {name}'
 
-        self.null_dict = reg.par.get_null(dict_name)
-        if heading_dict is None:
-            heading_dict = {k: k for k in self.null_dict.keys()}
+        # self.null_dict = reg.par.get_null(dict_name)
+        # if heading_dict is None:
+        #     heading_dict = {k: k for k in self.null_dict.keys()}
         self.heading_dict = heading_dict
         self.heading_dict_inv = {v: k for k, v in heading_dict.items()}
         self.headings = list(heading_dict.keys())
@@ -1238,9 +1238,9 @@ class PadTable(PadElement):
             index = self.name
         self.index = index
         self.key = f'TABLE {self.name}'
-        if heading_dict is None:
-
-            heading_dict = {k: k for k in reg.par.get_null(self.dict_name).keys()}
+        # if heading_dict is None:
+        #
+        #     heading_dict = {k: k for k in reg.par.get_null(self.dict_name).keys()}
         self.heading_dict = heading_dict
         self.headings = list(heading_dict.keys())
         self.dict = dict

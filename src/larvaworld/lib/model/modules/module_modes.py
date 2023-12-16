@@ -20,12 +20,18 @@ __all__ = [
 
 class BrainModule(NestedConf):
     ModeShortNames = AttrDict({'realistic': 'RE', 'square': 'SQ', 'gaussian': 'GAU', 'constant': 'CON',
-                          'default': 'DEF', 'neural': 'NEU', 'sinusoidal': 'SIN', 'nengo': 'NENGO',
-                          'phasic': 'PHI', 'branch': 'BR', 'osn': 'OSN', 'RL': 'RL', 'MB': 'MB'})
+                               'default': 'DEF', 'neural': 'NEU', 'sinusoidal': 'SIN', 'nengo': 'NENGO',
+                               'phasic': 'PHI', 'branch': 'BR', 'osn': 'OSN', 'RL': 'RL', 'MB': 'MB'})
 
     mID = param.String(default=None, doc='The unoique ID of the module')
     color = param.Color(default=None, doc='The background color when plotting module tables')
     dict = param.Dict(default=aux.AttrDict(), doc='A dictionary of implemented modes as classes')
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.excluded = [basic.Effector, 'phi', 'name']
+        self.default_dict = AttrDict(
+            {mode: class_defaults(A=self.dict[mode], excluded=self.excluded) for mode in self.modes if not isinstance(self.dict[mode], dict)})
 
     @property
     def parent_class(self):
@@ -54,17 +60,21 @@ class BrainModule(NestedConf):
                 return C(**{k: conf[k] for k in conf if k != 'mode'}, **kwargs)
         return None
 
-    def module_conf(self, mode=None, excluded=[basic.Effector, 'phi'], include_mode=True, **kwargs):
-        C = self.get_class(mode=mode)
-        if C is not None:
-            dic = class_defaults(A=C, excluded=excluded, **kwargs)
+    def module_conf(self, mode=None, include_mode=True, **kwargs):
+        if mode in self.short_modes:
+            mode = [k for k in self.modes if self.ModeShortNames[k] == mode][0]
+        if mode in self.default_dict:
+            d=self.default_dict[mode]
+            d.update_existingdict(kwargs)
             if include_mode:
-                dic['mode'] = mode
-            return dic
+                d['mode'] = mode
+            return d
         else:
             return None
 
-    def module_objects(self, mode=None, excluded=[basic.Effector, 'phi', 'name']):
+    def module_objects(self, mode=None, excluded=None):
+        if excluded is None:
+            excluded = self.excluded
         C = self.get_class(mode=mode)
         if C is not None:
             return class_objs(A=C, excluded=excluded)
@@ -124,6 +134,10 @@ class BrainModuleDB(NestedConf):
             'RL': {'olfaction': memory.RLOlfMemory, 'touch': memory.RLTouchMemory},
             'MB': {'olfaction': memory.RemoteBrianModelMemory, 'touch': memory.RemoteBrianModelMemory}
         },
+        # 'memory': {
+        #     'RL': memory.RLmemory,
+        #     'MB': memory.RemoteBrianModelMemory
+        # },
     })
 
     BrainModuleColors = AttrDict({
@@ -150,7 +164,6 @@ class BrainModuleDB(NestedConf):
 
         super().__init__(**kwargs)
 
-
     def mod_modes(self, k, short=False):
         if k not in self.BrainMods:
             return None
@@ -164,11 +177,11 @@ class BrainModuleDB(NestedConf):
         return self.brainDB[mID].build_module(conf=conf, **kwargs) if mID in self.BrainMods else None
 
     def build_modules(self, mIDs, conf, **kwargs):
-        return AttrDict({mID: self.build_module(mID=mID, conf=conf[mID] if mID in conf else None, **kwargs) for mID in mIDs})
-
+        return AttrDict(
+            {mID: self.build_module(mID=mID, conf=conf[mID] if mID in conf else None, **kwargs) for mID in mIDs})
 
     def module_conf(self, mID=None, mode=None, as_entry=True, **kwargs):
-        M=self.brainDB[mID]
+        M = self.brainDB[mID]
         conf = M.module_conf(mode=mode, **kwargs) if mID in self.BrainMods else None
         return M.as_entry(conf) if as_entry else conf
 
@@ -178,7 +191,9 @@ class BrainModuleDB(NestedConf):
         return M.as_entry(objs) if as_entry else objs
 
     def modules_objects(self, mIDs, conf, as_entry=True, **kwargs):
-        C = AttrDict({mID: self.module_objects(mID, conf[mID] if mID in conf else AttrDict(),as_entry=False, **kwargs) for mID in mIDs})
+        C = AttrDict(
+            {mID: self.module_objects(mID, conf[mID] if mID in conf else AttrDict(), as_entry=False, **kwargs) for mID
+             in mIDs})
         return AttrDict({f'brain.{mID}': C[mID] for mID in C}).flatten() if as_entry else C
 
     def module_pars(self, **kwargs):
@@ -220,20 +235,12 @@ class LarvaModuleDB(BrainModuleDB):
         'sensorimotor': 'lightcoral',
     })
 
-    # LarvaModuleClasses = AttrDict({
-    #     'body': agents.LarvaSegmented,
-    #     'physics': agents.BaseController,
-    #     # 'energetics': 'lightskyblue',
-    #     'DEB': deb.DEB,
-    #     'gut': deb.Gut,
-    #     # 'Box2D': 'lightcoral',
-    #     'sensorimotor': agents.ObstacleLarvaRobot,
-    # })
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.ModuleColorDict=AttrDict(**self.BrainModuleColors,**self.LarvaModuleColors)
-        self.LarvaMods = SuperList(['energetics', 'body', 'physics', 'sensorimotor', 'Box2D'])
+        self.ModuleColorDict = AttrDict(**self.BrainModuleColors, **self.LarvaModuleColors)
+        self.LarvaModsBasic = SuperList(['body', 'physics'])
+        self.LarvaModsOptional = SuperList(['energetics', 'sensorimotor', 'Box2D'])
+        self.LarvaMods = self.LarvaModsBasic + self.LarvaModsOptional
         self.AllModules = self.BrainMods + self.LarvaMods
 
     def sensorimotor_kws(self, **kwargs):
@@ -247,46 +254,41 @@ class LarvaModuleDB(BrainModuleDB):
 
     def body_kws(self, **kwargs):
         return class_defaults(agents.LarvaSegmented,
-                  excluded=[agents.OrientedAgent, 'vertices', 'base_vertices', 'width', 'guide_points', 'segs'],
-                  **kwargs)
+                              excluded=[agents.OrientedAgent, 'vertices', 'base_vertices', 'width', 'guide_points',
+                                        'segs'],
+                              **kwargs)
 
     def physics_kws(self, **kwargs):
         return class_defaults(agents.BaseController, **kwargs)
 
     def larvaConf(self, ms={}, mkws={}):
+        def Box2D_kws(**kwargs):
+            d = AttrDict({
+                'joint_types': {
+                    'friction': {'N': 0, 'args': {}},
+                    'revolute': {'N': 0, 'args': {}},
+                    'distance': {'N': 0, 'args': {}}
+                }})
+            return d.update_existingnestdict(kwargs)
+
+        D = AttrDict({
+            'body': self.body_kws,
+            'physics': self.physics_kws,
+            'energetics': self.energetics_kws,
+            'sensorimotor': self.sensorimotor_kws,
+            'Box2D': Box2D_kws
+        })
+
         C = AttrDict({'brain': self.brainConf(ms=ms, mkws=mkws)})
-        for k in self.LarvaMods:
-            if k == 'energetics':
-                if k not in mkws:
-                    C[k] = None
-                else:
-                    C[k] = self.energetics_kws(**mkws[k])
-            elif k == 'sensorimotor':
-                if k not in mkws:
-                    C[k] = None
-                else:
-                    C[k] = self.sensorimotor_kws(**mkws[k])
-            elif k == 'physics':
-                if k not in mkws:
-                    mkws[k] = {}
-                C[k] = self.physics_kws(**mkws[k])
-            elif k == 'body':
-                if k not in mkws:
-                    mkws[k] = {}
-                C[k] = self.body_kws(**mkws[k])
-            elif k == 'Box2D':
-                if k not in mkws:
-                    C[k] = None
-                else:
-                    d = AttrDict({
-                        'joint_types': {
-                            'friction': {'N': 0, 'args': {}},
-                            'revolute': {'N': 0, 'args': {}},
-                            'distance': {'N': 0, 'args': {}}
-                        }})
-                    C[k] = d.update_existingnestdict(mkws[k])
+        for k in self.LarvaModsBasic:
+            if k not in mkws:
+                mkws[k] = {}
+            C[k] = D[k](**mkws[k])
+        for k in self.LarvaModsOptional:
+            if k not in mkws:
+                C[k] = None
             else:
-                raise
+                C[k] = D[k](**mkws[k])
         return C
 
 
@@ -448,7 +450,7 @@ def Model_dict():
 
     def mem_kws(mode='RL', modality='olfaction', **kwargs):
         return AttrDict({'brain.memory': class_defaults(MD.brainDB.memory.dict[mode][modality], excluded=['dt'],
-                                            included={'mode': mode, 'modality': modality}, **kwargs)})
+                                                        included={'mode': mode, 'modality': modality}, **kwargs)})
 
     E = {}
 

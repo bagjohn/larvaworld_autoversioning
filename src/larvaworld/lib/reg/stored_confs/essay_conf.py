@@ -1,6 +1,7 @@
 import shutil
 
 from ... import reg, aux
+from ...plot.table import diff_df
 from ...reg.generators import LarvaGroup
 from ...param import Larva_Distro, Odor
 
@@ -88,7 +89,7 @@ class RvsS_Essay(Essay):
 
         }
 
-        self.mdiff_df, row_colors = reg.model.diff_df(mIDs=['rover', 'sitter'])
+        self.mdiff_df, row_colors = diff_df(mIDs=['rover', 'sitter'])
 
     def RvsS_env(self, on_food=True):
         grid = reg.gen.FoodGrid() if on_food else None
@@ -354,7 +355,7 @@ class DoublePatch_Essay(Essay):
         self.ms = reg.conf.Model.getID(self.mIDs)
         self.exp_dict = self.time_ratio_exp()
 
-        self.mdiff_df, row_colors = reg.model.diff_df(mIDs=self.mID0s, ms=self.ms)
+        self.mdiff_df, row_colors = diff_df(mIDs=self.mID0s, ms=self.ms)
 
     def get_larvagroups(self, age=120.0):
         def lg(id=None, **kwargs):
@@ -454,7 +455,7 @@ class Chemotaxis_Essay(Essay):
             self.models = self.get_models3(gain)
         elif mode == 4:
             self.models = self.get_models4(gain)
-        self.mdiff_df, row_colors = reg.model.diff_df(mIDs=list(self.models.keys()),
+        self.mdiff_df, row_colors = diff_df(mIDs=list(self.models.keys()),
                                                       ms=[v.model for v in self.models.values()])
         self.exp_dict = self.chemo_exps(self.models)
 

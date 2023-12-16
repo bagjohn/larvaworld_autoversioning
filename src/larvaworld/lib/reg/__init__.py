@@ -28,7 +28,6 @@ __all__ = [
     'funcs',
     'controls',
     'par',
-    'model',
     'graphs',
     'getPar',
     'loadRef',
@@ -119,9 +118,9 @@ vprint(f"Parameter registry complete", 1)
 
 from .config import conf
 from .generators import gen
-from . import config, generators, models, graph, stored_confs
+from . import config, generators, graph, stored_confs
 
-model = models.ModelRegistry()
+# model = models.ModelRegistry()
 graphs = graph.GraphRegistry()
 
 vprint(f"Configuration registry complete", 1)

@@ -13,6 +13,7 @@ from .. import reg, aux
 from ..aux import AttrDict
 from ..param import ClassAttr, class_generator, SimOps, OptionalSelector
 from ..model import SpaceDict
+from ..plot.table import diff_df
 from ..process.evaluation import Evaluation
 from .base_run import BaseRun
 
@@ -330,7 +331,7 @@ class GAlauncher(BaseRun):
 
         self.corr_df = df[['fitness'] + cols].corr()
         try:
-            self.diff_df, row_colors = reg.model.diff_df(mIDs=[self.selector.base_model, self.selector.bestConfID],
+            self.diff_df, row_colors = diff_df(mIDs=[self.selector.base_model, self.selector.bestConfID],
                                                          ms=[self.selector.mConf0, self.best_genome.mConf])
         except:
             pass
