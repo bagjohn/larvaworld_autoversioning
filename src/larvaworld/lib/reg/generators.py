@@ -164,20 +164,23 @@ class FoodConf(NestedConf):
     source_units = ClassDict(item_type=gen.Food, doc='The individual sources  of odor or food in the arena')
     food_grid = ClassAttr(gen.FoodGrid, default=None, doc='The food grid in the arena')
 
+
+
     @classmethod
     def CS_UCS(cls, grid=None, sg={},N=1, x=0.04, colors=['red', 'blue'],o = 'G',  **kwargs):
+        F=gen.Food
         CS_kws = {'odor': Odor.oO(o=o, id='CS'), 'c': colors[0], **kwargs}
         UCS_kws = {'odor': Odor.oO(o=o, id='UCS'), 'c': colors[1], **kwargs}
 
         if N == 1:
-            su= {**gen.Food(pos=(-x, 0.0), **CS_kws).entry('CS'),
-                    **gen.Food(pos=(x, 0.0), **UCS_kws).entry('UCS')}
+            su= {**F(pos=(-x, 0.0), **CS_kws).entry('CS'),
+                    **F(pos=(x, 0.0), **UCS_kws).entry('UCS')}
         elif N == 2:
             su= {
-                **gen.Food(pos=(-x, 0.0), **CS_kws).entry('CS_l'),
-                **gen.Food(pos=(x, 0.0), **CS_kws).entry('CS_r'),
-                **gen.Food(pos=(-x, 0.0), **UCS_kws).entry('UCS_l'),
-                **gen.Food(pos=(x, 0.0), **UCS_kws).entry('UCS_r')
+                **F(pos=(-x, 0.0), **CS_kws).entry('CS_l'),
+                **F(pos=(x, 0.0), **CS_kws).entry('CS_r'),
+                **F(pos=(-x, 0.0), **UCS_kws).entry('UCS_l'),
+                **F(pos=(x, 0.0), **UCS_kws).entry('UCS_r')
             }
         else :
             raise
@@ -186,9 +189,10 @@ class FoodConf(NestedConf):
 
     @classmethod
     def double_patch(cls, grid=None, sg={},type='standard', q=1.0, c='green', x=0.06, r=0.025, a=0.1,o = 'G', **kwargs):
+        F = gen.Food
         kws = {'odor': Odor.oO(o=o), 'c': c, 'r': r, 'a': a, 'sub': [q, type], **kwargs}
-        su= {**gen.Food(pos=(-x, 0.0), **kws).entry('Left_patch'),
-                **gen.Food(pos=(x, 0.0), **kws).entry('Right_patch')}
+        su= {**F(pos=(-x, 0.0), **kws).entry('Left_patch'),
+                **F(pos=(x, 0.0), **kws).entry('Right_patch')}
         return cls(source_groups=sg, source_units=su, food_grid=grid)
 
     @classmethod
@@ -253,6 +257,14 @@ class EnvConf(NestedConf):
         BaseRun.visualize_Env(envConf=self.nestedConf, envID=self.name, **kwargs)
 
     @classmethod
+    def food_params_class(cls):
+        return EnvConf.param.food_params.class_
+
+    @classmethod
+    def arena_class(cls):
+        return EnvConf.param.arena.class_
+
+    @classmethod
     def maze(cls, n=15, h=0.1,o='G', **kwargs):
         def get_maze(nx=15, ny=15, ix=0, iy=0, h=0.1, return_points=False):
             from ..model.envs.maze import Maze
@@ -269,41 +281,41 @@ class EnvConf(NestedConf):
             else:
                 return lines
 
-        return cls.rect(h,f=gen.FoodConf.su(id='Target', odor=Odor.oO(o=o), c='blue'),
-                   bl=AttrDict({'Maze': gen.Border(vertices=get_maze(nx=n, ny=n, h=h, return_points=True),
+        return cls.rect(h,f=cls.food_params_class().su(id='Target', odor=Odor.oO(o=o), c='blue'),
+                   bl=AttrDict({'Maze': EnvConf.param.border_list.item_type(vertices=get_maze(nx=n, ny=n, h=h, return_points=True),
                                                                 color='black', width=0.001)}),o=o, **kwargs)
 
     @classmethod
     def game(cls, dim=0.1, x=0.4, y=0.0,o='G', **kwargs):
         x = np.round(x * dim, 3)
         y = np.round(y * dim, 3)
+        F=gen.Food
+        sus = {**F(c='green', can_be_carried=True, a=0.01, odor=Odor.oO(o=o,c=2, id='Flag_odor')).entry('Flag'),
+               **F(pos=(-x, y), c='blue', odor=Odor.oO(o=o, id='Left_base_odor')).entry('Left_base'),
+               **F(pos=(+x, y), c='red', odor=Odor.oO(o=o, id='Right_base_odor')).entry('Right_base')}
 
-        sus = {**gen.Food(c='green', can_be_carried=True, a=0.01, odor=Odor.oO(o=o,c=2, id='Flag_odor')).entry('Flag'),
-               **gen.Food(pos=(-x, y), c='blue', odor=Odor.oO(o=o, id='Left_base_odor')).entry('Left_base'),
-               **gen.Food(pos=(+x, y), c='red', odor=Odor.oO(o=o, id='Right_base_odor')).entry('Right_base')}
-
-        return cls.rect(dim,f=gen.FoodConf(source_units=sus),o=o, **kwargs)
+        return cls.rect(dim,f=cls.food_params_class()(source_units=sus),o=o, **kwargs)
 
     @classmethod
     def foodNodor_4corners(cls, dim=0.2,o='D', **kwargs):
-        return cls.rect(dim,f=gen.FoodConf.foodNodor_4corners(d=dim/4,o=o, **kwargs),o=o)
+        return cls.rect(dim,f=cls.food_params_class().foodNodor_4corners(d=dim/4,o=o, **kwargs),o=o)
 
     @classmethod
     def CS_UCS(cls, dim=0.1, o='G', **kwargs):
-        return cls.dish(dim, f=gen.FoodConf.CS_UCS(x=0.4*dim,o=o, **kwargs), o=o)
+        return cls.dish(dim, f=cls.food_params_class().CS_UCS(x=0.4*dim,o=o, **kwargs), o=o)
 
     @classmethod
     def double_patch(cls, dim=0.24, o='G', **kwargs):
-        return cls.rect(dim, f=gen.FoodConf.double_patch(x=0.25 * dim, o=o, **kwargs), o=o)
+        return cls.rect(dim, f=cls.food_params_class().double_patch(x=0.25 * dim, o=o, **kwargs), o=o)
 
     @classmethod
     def odor_gradient(cls, dim=(0.1, 0.06), o='G', c=1,**kwargs):
-        return cls.rect(dim, f=gen.FoodConf.su(odor=Odor.oO(o=o, c=c), **kwargs), o=o)
+        return cls.rect(dim, f=cls.food_params_class().su(odor=Odor.oO(o=o, c=c), **kwargs), o=o)
 
     @classmethod
     def dish(cls, xy=0.1, **kwargs):
         assert isinstance(xy, float)
-        return cls.scapes(arena=gen.Arena(geometry='circular', dims=(xy, xy)),**kwargs)
+        return cls.scapes(arena=cls.arena_class()(geometry='circular', dims=(xy, xy)),**kwargs)
 
     @classmethod
     def rect(cls, xy=0.1, **kwargs):
@@ -313,10 +325,12 @@ class EnvConf(NestedConf):
             dims = xy
         else :
             raise
-        return cls.scapes(arena=gen.Arena(geometry='rectangular', dims=dims), **kwargs)
+        return cls.scapes(arena=cls.arena_class()(geometry='rectangular', dims=dims), **kwargs)
 
     @classmethod
-    def scapes(cls, o=None, w=None, th=None,f=gen.FoodConf(), bl={}, **kwargs):
+    def scapes(cls, o=None, w=None, th=None,f=None, bl={}, **kwargs):
+        if f is None:
+            f = cls.food_params_class()()
         if o == 'D':
             o = gen.DiffusionValueLayer()
         elif o == 'G':
@@ -327,9 +341,9 @@ class EnvConf(NestedConf):
                     w['puffs'][id] = AirPuff(**args).nestedConf
             else:
                 w['puffs'] = {}
-            w = gen.WindScape(**w)
+            w = EnvConf.param.windscape.class_(**w)
         if th is not None:
-            th = gen.ThermoScape(**th)
+            th = EnvConf.param.thermoscape.class_(**th)
         return cls(odorscape=o, windscape=w, thermoscape=th,food_params=f, border_list=bl, **kwargs)
 
 
