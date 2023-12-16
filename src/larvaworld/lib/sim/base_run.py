@@ -244,7 +244,7 @@ class BaseRun(sim.ABModel):
 
         kws = aux.AttrDict({
             'screen_kws': {'show_display': True,
-                           'mode': 'video',
+                           'vis_mode': 'video',
                            'odor_aura': True,
                            'intro_text': False,
                            'fps': 60,

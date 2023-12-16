@@ -117,6 +117,9 @@ def Exp_dict():
                 id = l.model
             return l.entry(id)
 
+        def lgID(mID,**kwargs):
+            return lg(mID=mID, **kwargs)
+
         def lgs(mIDs, ids=None, cs=None, **kwargs):
             if ids is None:
                 ids = mIDs
@@ -132,7 +135,7 @@ def Exp_dict():
             return gen.Exp(larva_groups=l, env_params=reg.conf.Env.get(env), experiment=id, enrichment=en,
                            collections=c0 + c, duration=dur, **kwargs).nestedConf
 
-        def fE(id, c=['feeder'], dur=10.0,en=ENR.source_proc(),env='patch_grid', **kwargs):
+        def fE(id, c=['feeder', 'olfactor','toucher'], dur=10.0,en=ENR.source_proc(),env='patch_grid', **kwargs):
             return exp(id, c=c, dur=dur, en=en,env=env,**kwargs)
 
         def tE(id, c=['toucher'], dur=600.0,en=ENR.source_proc(),env='single_patch', **kwargs):
@@ -149,7 +152,7 @@ def Exp_dict():
             return exp(id, dur=dur, c=['thermo'], **kwargs)
 
         def prE(id, mID,dur=5.0, env='CS_UCS_off_food',trialID='default',**kwargs):
-            return exp(id, dur=dur, en=ENR.PI_proc(),l=lg(N=25, s=(0.005, 0.02), mID=mID),
+            return exp(id, dur=dur, en=ENR.PI_proc(),l=lgID(mID, s=(0.005, 0.02)),
                        trials=reg.conf.Trial.getID(trialID),env=env,c=['olfactor'],**kwargs)
 
         def game_groups(dim=0.1, N=10, x=0.4, y=0.0, mode='king'):
@@ -175,16 +178,16 @@ def Exp_dict():
 
         d0 = {
             'tethered': {'env': 'focus', 'dur': 30.0,
-                         'l': lg(mID='immobile', N=1, ors=(90.0, 90.0))
+                         'l': lgID('immobile', N=1, ors=(90.0, 90.0))
                          },
             'focus': {
-                'l': lg(mID='Levy', N=1, ors=(90.0, 90.0))
+                'l': lgID('Levy', N=1, ors=(90.0, 90.0))
             },
             'dish': {
-                'l': lg(mID='explorer', N=25, s=(0.02, 0.02))
+                'l': lgID('explorer', s=(0.02, 0.02))
             },
             'dispersion': {'env': 'arena_200mm',
-                           'l': lg(mID='explorer', N=25)
+                           'l': lgID('explorer')
                            },
             'dispersion_x2': {'env': 'arena_200mm',
                               'l': lgs(mIDs=['explorer', 'Levy'], ids=['CoupledOsc', 'Levy'],
@@ -195,18 +198,18 @@ def Exp_dict():
 
         d1 = {
             'chemotaxis': {'env': 'odor_gradient',
-                           'l': lg(mID='NEU_Levy_continuous_nav', N=8, loc=(-0.04, 0.0), s=(0.005, 0.02),
+                           'l': lgID('NEU_Levy_continuous_nav', N=8, loc=(-0.04, 0.0), s=(0.005, 0.02),
                                    ors=(-30.0, 30.0))},
-            'chemorbit': {'env': 'mid_odor_gaussian','l': lg(mID='navigator', N=3)},
-            'chemorbit_OSN': {'env': 'mid_odor_gaussian','l': lg(mID='OSNnavigator', N=3)},
+            'chemorbit': {'env': 'mid_odor_gaussian','l': lgID('navigator', N=3)},
+            'chemorbit_OSN': {'env': 'mid_odor_gaussian','l': lgID('OSNnavigator', N=3)},
             'chemorbit_x2': {'env': 'mid_odor_gaussian',
                              'l': lgs(mIDs=['navigator', 'RLnavigator'],
                                       ids=['CoupledOsc', 'RL'], N=10)},
             'chemorbit_x4': {'env': 'odor_gaussian_square', 'l': lgs_x4()},
-            'chemotaxis_diffusion': {'env': 'mid_odor_diffusion', 'l': lg(mID='navigator', N=30)},
+            'chemotaxis_diffusion': {'env': 'mid_odor_diffusion', 'l': lgID('navigator')},
             'chemotaxis_RL': {'env': 'mid_odor_diffusion',
-                              'l': lg(mID='RLnavigator', N=10, mode='periphery', s=(0.04, 0.04))},
-            'reorientation': {'env': 'mid_odor_diffusion', 'l': lg(mID='immobile', N=200, s=(0.05, 0.05))},
+                              'l': lgID('RLnavigator', N=10, mode='periphery', s=(0.04, 0.04))},
+            'reorientation': {'env': 'mid_odor_diffusion', 'l': lgID('immobile', N=200, s=(0.05, 0.05))},
             'food_at_bottom': {'l': lgs(mIDs=['max_feeder', 'max_forager'],
                                         ids=['Orco', 'control'], N=5, sh='oval', loc=(0.0, 0.04), s=(0.04, 0.01))}
         }
@@ -222,26 +225,34 @@ def Exp_dict():
 
 
         d3 = {
-            'single_puff': {'env': 'single_puff', 'dur': 2.5,
-                            'l': lg(mID='explorer', N=20)}
+            'single_puff': {'env': 'single_puff', 'dur': 2.5,'l': lgID('explorer')}
         }
 
-        d4= {
-
-
-        }
+        # d4= {
+        #     'PItest_off': {'env': 'CS_UCS_off_food','mID': 'navigator_x2'},
+        #     'PItest_off_OSN': {'env': 'CS_UCS_off_food','mID': 'OSNnavigator_x2'},
+        #     'PItest_on': {'env': 'CS_UCS_off_food','mID': 'OSNnavigator_x2'},
+        #     # 'PItest_on': prE('PItest_on', env='CS_UCS_on_food', mID='forager_x2'),
+        #     'PItrain_mini': {'env': 'CS_UCS_on_food_x2','mID': 'forager_RL','dur': 1.0,'trialID': 'odor_preference_short'},
+        #     # 'PItrain_mini': prE('PItrain_mini', env='CS_UCS_on_food_x2', dur=1.0, trialID='odor_preference_short',mID='forager_RL'),
+        #     'PItrain': {'env': 'CS_UCS_on_food_x2','mID': 'forager_RL','dur':41.0,'trialID': 'odor_preference'},
+        #     # 'PItrain': prE('PItrain', env='CS_UCS_on_food_x2', dur=41.0, trialID='odor_preference', mID='forager_RL'),
+        #     'PItest_off_RL': {'env': 'CS_UCS_off_food','mID': 'RLnavigator','dur': 105.0},
+        #     # 'PItest_off_RL': prE('PItest_off_RL', dur=105.0, mID='RLnavigator')
+        #
+        # }
 
 
 
         d = {
             'exploration': {id: exp(id=id, **kws) for id, kws in d0.items()},
             'chemotaxis': {id: exp(id=id, c0=['olfactor', 'pose'],en=ENR.source_proc(),**kws) for id, kws in d1.items()},
-            'anemotaxis': {id: exp(id=id, c0=['wind', 'pose'],en=ENR.wind_proc(),l=lg(mID='explorer', N=4), dur=0.5, **kws) for id, kws in d2.items()},
+            'anemotaxis': {id: exp(id=id, c0=['wind', 'pose'],en=ENR.wind_proc(),l=lgID('explorer', N=4), dur=0.5, **kws) for id, kws in d2.items()},
             'chemanemotaxis': {id: exp(id=id, c0=['wind', 'olfactor', 'pose'], en=ENR.sourcewind_proc(),
                        **kws) for id, kws in d3.items()},
 
             'thermotaxis': {
-                'thermotaxis': thermo_exp('thermotaxis', env='thermo_arena', l=lg(mID='thermo_navigator', N=10)),
+                'thermotaxis': thermo_exp('thermotaxis', env='thermo_arena', l=lgID('thermo_navigator')),
 
             },
 
@@ -253,26 +264,23 @@ def Exp_dict():
                 'PItrain': prE('PItrain', env='CS_UCS_on_food_x2', dur=41.0, trialID='odor_preference',mID='forager_RL'),
                 'PItest_off_RL': prE('PItest_off_RL', dur=105.0,mID='RLnavigator')},
             'foraging': {
-                'patchy_food': fE('patchy_food', env='patchy_food', l=lg(mID='forager', N=25)),
+                'patchy_food': fE('patchy_food', env='patchy_food', l=lgID('forager')),
                 'patch_grid': fE('patch_grid',  l=lgs_x4()),
-                'MB_patch_grid': fE('MB_patch_grid', c=['feeder', 'olfactor'],l=lgs(mIDs=['max_forager0_MB', 'max_forager_MB'], N=3)),
-                'noMB_patch_grid': fE('noMB_patch_grid', c=['feeder', 'olfactor'],l=lgs(mIDs=['max_forager0', 'max_forager'], N=4)),
-                'random_food': fE('random_food', env='random_food', c=['feeder', 'toucher'],
-                                        l=lgs(mIDs=['feeder', 'forager_RL'],ids=['Orco', 'RL'], N=5, mode='uniform',shape='rect', s=(0.04, 0.04))),
-                'uniform_food': fE('uniform_food', env='uniform_food',l=lg(mID='feeder', N=5, s=(0.005, 0.005))),
-                'food_grid': fE('food_grid', env='food_grid', l=lg(mID='feeder', N=5)),
+                'MB_patch_grid': fE('MB_patch_grid', l=lgs(mIDs=['max_forager0_MB', 'max_forager_MB'], N=3)),
+                'noMB_patch_grid': fE('noMB_patch_grid', l=lgs(mIDs=['max_forager0', 'max_forager'], N=4)),
+                'random_food': fE('random_food', env='random_food', l=lgs(mIDs=['feeder', 'forager_RL'],ids=['Orco', 'RL'], N=5, mode='uniform',shape='rect', s=(0.04, 0.04))),
+                'uniform_food': fE('uniform_food', env='uniform_food',l=lgID('feeder', N=5, s=(0.005, 0.005))),
+                'food_grid': fE('food_grid', env='food_grid', l=lgID('feeder', N=5)),
                 'single_odor_patch': fE('single_odor_patch', env='single_odor_patch',
                                               l=lgs(mIDs=['feeder', 'forager'],ids=['Orco', 'control'], N=5, mode='periphery', s=(0.01, 0.01))),
                 'single_odor_patch_x4': fE('single_odor_patch_x4', env='single_odor_patch', l=lgs_x4()),
-                'double_patch': fE('double_patch', env='double_patch', l=GTRvsS(N=5),
-                                         c=['toucher', 'feeder', 'olfactor'],
-                                         en=ENR.patch_proc()),
+                'double_patch': fE('double_patch', env='double_patch', l=GTRvsS(N=5),en=ENR.patch_proc()),
 
-                '4corners': exp('4corners', env='4corners', l=lg(mID='forager_RL', N=10, s=(0.04, 0.04)))
+                '4corners': exp('4corners', env='4corners', l=lgID('forager_RL', N=10, s=(0.04, 0.04)))
             },
 
             'tactile': {
-                'tactile_detection': tE('tactile_detection', l=lg(mID='toucher', N=15, mode='periphery', s=(0.03, 0.03))),
+                'tactile_detection': tE('tactile_detection', l=lgID('toucher', mode='periphery', s=(0.03, 0.03))),
                 'tactile_detection_x4': tE('tactile_detection_x4', l=lgs(mIDs=['RLtoucher_2', 'RLtoucher', 'toucher', 'toucher_brute'],
                                                         ids=['RL_3sensors', 'RL_1sensor', 'control', 'brute'],
                                                         N=10)),
@@ -299,7 +307,7 @@ def Exp_dict():
 
             'games': {
                 'maze': gE('maze', env='maze', c=['olfactor'],
-                                 l=lg(N=5, loc=(-0.4 * 0.1, 0.0), ors=(-60.0, 60.0), mID='navigator')),
+                                 l=lgID('navigator',N=5, loc=(-0.4 * 0.1, 0.0), ors=(-60.0, 60.0))),
                 'keep_the_flag': gE('keep_the_flag', env='game', l=game_groups(mode='king')),
                 'capture_the_flag': gE('capture_the_flag', env='game', l=game_groups(mode='flag')),
                 'catch_me': gE('catch_me', env='arena_50mm_diffusion', l=game_groups(mode='catch_me'))
@@ -307,11 +315,10 @@ def Exp_dict():
 
 
             'other': {
-                'realistic_imitation': exp('realistic_imitation', env='dish', l=lg(mID='imitator', N=25),
+                'realistic_imitation': exp('realistic_imitation', env='dish', l=lgID('imitator'),
                                            Box2D=True, c=['midline', 'contour']),
                 'prey_detection': exp('prey_detection', env='windy_blob_arena',
-                                      l=lg(mID='zebrafish', N=4, s=(0.002, 0.005)),
-                                      dur=20.0)
+                                      l=lgID('zebrafish', N=4, s=(0.002, 0.005)))
                 # 'imitation': imitation_exp('None.150controls', model='explorer'),
             }
         }
