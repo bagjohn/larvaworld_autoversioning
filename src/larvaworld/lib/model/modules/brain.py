@@ -97,7 +97,7 @@ class DefaultBrain(Brain):
         if dt is None:
             dt = agent.model.dt
         kws={'dt':dt, 'brain':self}
-        kwargs.update(MD.build_modules(mIDs=self.param_keys, conf=conf, **kws))
+        kwargs.update(MD.build_sensormodules(conf=conf, **kws))
         super().__init__(agent=agent,dt =dt, **kwargs)
         self.locomotor = modules.DefaultLocomotor(conf=conf, dt=self.dt)
         m = conf['memory']
@@ -105,7 +105,7 @@ class DefaultBrain(Brain):
             M=self.modalities[m.modality]
             if M.sensor:
                 m.gain = M.sensor.gain
-                M.mem = MD.brainDB.memory.dict[m.mode][m.modality](**kws, **{k: m[k] for k in m if k not in ['mode', 'modality']})
+                M.mem = MD.build_memory_module(conf=m)
 
     def sense(self, pos=None, reward=False):
         kws={'pos':pos}

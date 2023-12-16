@@ -95,7 +95,8 @@ class BrainModuleDB(NestedConf):
             'constant': crawler.Crawler,
             'gaussian': crawler.GaussOscillator,
             'square': crawler.SquareOscillator,
-            'realistic': crawler.PhaseOscillator
+            'realistic': crawler.PhaseOscillator,
+            'nengo': basic.NengoEffector
 
         },
         'interference': {
@@ -106,7 +107,8 @@ class BrainModuleDB(NestedConf):
         'turner': {
             'neural': turner.NeuralOscillator,
             'sinusoidal': turner.SinTurner,
-            'constant': turner.ConstantTurner
+            'constant': turner.ConstantTurner,
+            'nengo': basic.NengoEffector
         },
         'intermitter': {
             'default': intermitter.Intermitter,
@@ -115,6 +117,7 @@ class BrainModuleDB(NestedConf):
         },
         'feeder': {
             'default': feeder.Feeder,
+            'nengo': basic.NengoEffector
 
         },
         'olfactor': {
@@ -180,6 +183,12 @@ class BrainModuleDB(NestedConf):
         return AttrDict(
             {mID: self.build_module(mID=mID, conf=conf[mID] if mID in conf else None, **kwargs) for mID in mIDs})
 
+    def build_locomodules(self, conf, **kwargs):
+        return self.build_modules(mIDs=self.LocoMods, conf=conf, **kwargs)
+
+    def build_sensormodules(self, conf, **kwargs):
+        return self.build_modules(mIDs=self.SensorMods, conf=conf, **kwargs)
+
     def module_conf(self, mID=None, mode=None, as_entry=True, **kwargs):
         M = self.brainDB[mID]
         conf = M.module_conf(mode=mode, **kwargs) if mID in self.BrainMods else None
@@ -222,6 +231,30 @@ class BrainModuleDB(NestedConf):
 
     def parent_class(self, k):
         return self.brainDB[k].parent_class if k in self.BrainMods else None
+
+    def get_memory_class(self, mode, modality):
+        try:
+            return self.brainDB['memory'].dict[mode][modality]
+        except:
+            return None
+
+    def memory_kws(self, mode='RL', modality='olfaction',as_entry=True, **kwargs):
+        A=self.get_memory_class(mode, modality)
+        if A is not None:
+            c=class_defaults(A=A, excluded=['dt'],included={'mode': mode, 'modality': modality}, **kwargs)
+            return AttrDict({'brain.memory':c}) if as_entry else c
+        else:
+            return None
+
+    def build_memory_module(self, conf, **kwargs):
+        if conf is not None and 'mode' in conf and 'modality' in conf:
+            A = self.get_memory_class(conf.mode, conf.modality)
+            if A is not None:
+                return A(**{k: conf[k] for k in conf if k not in ['mode', 'modality']}, **kwargs)
+        return None
+
+    def detect_brainconf_modes(self, m):
+        return AttrDict({k: m[k].mode if (k in m and 'mode' in m[k]) else None for k in self.BrainMods})
 
 
 class LarvaModuleDB(BrainModuleDB):
@@ -448,10 +481,6 @@ def Model_dict():
     def olf_kws(g={'Odor': 150.0}, mode='default', **kwargs):
         return MD.module_conf(mID='olfactor', mode=mode, gain_dict=g, **kwargs)
 
-    def mem_kws(mode='RL', modality='olfaction', **kwargs):
-        return AttrDict({'brain.memory': class_defaults(MD.brainDB.memory.dict[mode][modality], excluded=['dt'],
-                                                        included={'mode': mode, 'modality': modality}, **kwargs)})
-
     E = {}
 
     def new(id, id0, kws={}):
@@ -470,7 +499,7 @@ def Model_dict():
                 o = olf_kws(g=g, brute_force=br)
                 new0(idd, o)
                 for k in ['RL', 'MB']:
-                    new0(f'{idd}_{k}', {**o, **mem_kws(k)})
+                    new0(f'{idd}_{k}', {**o, **MD.memory_kws(k)})
 
         for ss, eeb in zip(['', '_max'], [0.5, 0.9]):
             f = AttrDict({**MD.module_conf(mID='feeder', mode='default'), 'brain.intermitter.feed_bouts': True,
@@ -481,7 +510,7 @@ def Model_dict():
                 o = olf_kws(g=g)
                 new0(idd, {**o, **f})
                 for k in ['RL', 'MB']:
-                    new0(f'{idd}_{k}', {**o, **f, **mem_kws(k)})
+                    new0(f'{idd}_{k}', {**o, **f, **MD.memory_kws(k)})
 
         for mm in [f'{id0}_avg', f'{id0}_var', f'{id0}_var2']:
             if mm in reg.conf.Model.confIDs:
@@ -494,7 +523,12 @@ def Model_dict():
         extend(id0=id)
 
     for mms in MD.mod_combs(LMs, short=True):
-        id = "_".join(mms)
+        if 'NENGO' in mms:
+            if list(mms) != ['NENGO','NENGO','SQ','NENGO']:
+                continue
+            id='nengo_explorer'
+        else:
+            id = "_".join(mms)
         E[id] = MD.larvaConf(ms=AttrDict(zip(LMs, mms)),
                              mkws={'interference': {'attenuation': 0.1, 'attenuation_max': 0.6}} if mms[
                                                                                                         2] != 'DEF' else {})
@@ -521,7 +555,7 @@ def Model_dict():
         new(id, 'explorer', dd)
     for ss, kkws in zip(['', '_2', '_brute'], [{}, {'touch_sensors': [0, 2]}, {'brute_force': True}]):
         new(f'toucher{ss}', 'explorer', MD.module_conf(mID='toucher', mode='default', **kkws))
-        new(f'RLtoucher{ss}', f'toucher{ss}', mem_kws(modality='touch'))
+        new(f'RLtoucher{ss}', f'toucher{ss}', MD.memory_kws(modality='touch'))
     for id, gd in zip(['follower-R', 'follower-L', 'gamer', 'gamer-5x'], [{'Left_odor': 150.0, 'Right_odor': 0.0},
                                                                           {'Left_odor': 0.0, 'Right_odor': 150.0},
                                                                           {'Flag_odor': 150.0, 'Left_base_odor': 0.0,

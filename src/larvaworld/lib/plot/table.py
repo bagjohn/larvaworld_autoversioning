@@ -128,8 +128,9 @@ def modelConfTable(mID, m=None, columns=['parameter', 'symbol', 'value', 'unit']
         for k in MD.BrainMods:
             d0=m.brain[k]
             if d0 is not None:
-                d=MD.module_conf(mID=k, mode=d0.mode, as_entry=False)
+
                 if k == 'intermitter':
+                    d = MD.module_conf(mID=k, mode=d0.mode, as_entry=False, **d0)
                     run_mode = d['run_mode']
                     for p in d.keylist:
                         if p == 'run_dist' and run_mode == 'stridechain':
@@ -143,7 +144,7 @@ def modelConfTable(mID, m=None, columns=['parameter', 'symbol', 'value', 'unit']
                                 data.append(vs1)
                                 data.append(vs2)
                 else:
-                    gen_rows2(d, k, data)
+                    gen_rows2(d0, k, data)
 
         gen_rows2(MD.body_kws(**m.body), 'body', data)
         gen_rows2(MD.physics_kws(**m.physics), 'physics', data)

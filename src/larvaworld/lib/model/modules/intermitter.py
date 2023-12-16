@@ -48,7 +48,7 @@ class Intermitter(Timer):
     EEB_decay = PositiveNumber(1.0, softmax=2.0,doc='The exponential decay coefficient of the exploitation-exploration balance when no food is detected.')
     crawl_freq = PositiveNumber(10 / 7, bounds=(0.5, 3.0),doc='The default crawling frequency.')
     feed_freq = PositiveNumber(2.0, bounds=(1.0, 3.0),doc='The default feeding frequency.')
-    run_mode = param.Selector(objects=['stridechain', 'exec'], doc='The generation mode of the crawling epochs.')
+    run_mode = param.Selector(default='stridechain', objects=['stridechain', 'exec'], doc='The generation mode of the crawling epochs.')
     feeder_reoccurence_rate = OptionalPositiveNumber(softmax=1.0, label='feed reoccurence',
                                                      doc='The default reoccurence rate of the feeding motion.')
     feed_bouts = param.Boolean(False, doc='Whether feeding epochs are generated.')
@@ -75,7 +75,7 @@ class Intermitter(Timer):
             self.run_generator = None
 
         elif self.run_mode == 'exec':
-            if self.run_dist is not None or self.run_dist.range is None:
+            if self.run_dist is None or self.run_dist.range is None:
                 self.run_dist = default_bout_distros.run_dur
             self.stridechain_min, self.stridechain_max = self.run_dist.range
             self.run_generator = reg.BoutGenerator(**self.run_dist, dt=self.dt)

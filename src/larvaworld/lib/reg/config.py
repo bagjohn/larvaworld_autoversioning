@@ -101,6 +101,13 @@ class ConfType(param.Parameterized):
             self.set_dict(self.stored_dict)
             reg.vprint(f'{self.conftype} configuration dict initialized with {len(self.dict)} entries', 1)
 
+    def selectIDs(self, dic={}):
+        valid=aux.SuperList()
+        for id in self.confIDs:
+            c=self.getID(id).flatten()
+            if all([(k in c and c[k]==v) for k,v in dic.items()]):
+                valid.append(id)
+        return valid
 
 
     def setID(self, id, conf, mode='overwrite'):

@@ -4,14 +4,12 @@ from nengo.networks import EnsembleArray
 
 
 from ... import aux
-from . import Brain,StepOscillator,SquareCoupling, Locomotor,NengoIntermitter
+from . import Brain,Locomotor
 
 
 
 __all__ = [
     'NengoBrain',
-    'NengoEffector',
-    'NengoLocomotor',
 ]
 
 class NengoBrain(Network, Brain):
@@ -20,7 +18,7 @@ class NengoBrain(Network, Brain):
         super().__init__(**kwargs)
         Brain.__init__(self, agent=agent, dt=dt)
         self.food_feedback = False
-        self.locomotor = NengoLocomotor(conf=conf,dt=self.dt)
+        self.locomotor = Locomotor(conf=conf,dt=self.dt)
         self.build()
         self.sim = Simulator(self, dt=0.01, progress_bar=False)
         self.Nsteps = int(self.dt / self.sim.dt)
@@ -291,29 +289,3 @@ class NengoBrain(Network, Brain):
     def save_dicts(self, path):
         if self.dict is not None:
             aux.save_dict(self.dict, f'{path}/{self.agent.unique_id}.txt')
-
-class NengoEffector(StepOscillator):
-
-    def start_effector(self):
-        self.active = True
-        self.set_freq(self.initial_freq)
-
-    def stop_effector(self):
-        self.active = False
-        self.ticks = 0
-        self.set_freq(0)
-
-class NengoLocomotor(Locomotor):
-    def __init__(self,conf,dt=0.1,  **kwargs):
-        self.dt = dt
-        for k in self.param_keys:
-            m = conf[k]
-            if m is not None:
-                if k=='interference':
-                    _class=SquareCoupling
-                elif k=='intermitter':
-                    _class=NengoIntermitter
-                else :
-                    _class=NengoEffector
-                kwargs[k] = _class(dt=dt, **{k: m[k] for k in m if k != 'mode'})
-        super().__init__(**kwargs)
