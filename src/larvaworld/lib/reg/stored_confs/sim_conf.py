@@ -109,8 +109,7 @@ def Exp_dict():
         from ...reg import gen
         from ...reg.generators import GTRvsS
 
-        enr_source = gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],
-                            proc_keys=['spatial', 'angular', 'source'])
+        ENR = reg.gen.EnrichConf
 
         def lg(id=None, **kwargs):
             l = reg.gen.LarvaGroup(**kwargs)
@@ -127,16 +126,16 @@ def Exp_dict():
             return AttrDict(
                 aux.merge_dicts([lg(id=id, c=c, mID=mID, **kwargs) for mID, c, id in zip(mIDs, cs, ids)]))
 
-        def exp(id, env=None, l={}, en=reg.gen.EnrichConf(), dur=5.0, c=[], c0=['pose'], **kwargs):
+        def exp(id, env=None, l={}, en=ENR(), dur=5.0, c=[], c0=['pose'], **kwargs):
             if env is None:
                 env = id
             return gen.Exp(larva_groups=l, env_params=reg.conf.Env.get(env), experiment=id, enrichment=en,
                            collections=c0 + c, duration=dur, **kwargs).nestedConf
 
-        def fE(id, c=['feeder'], dur=10.0,en=enr_source,env='patch_grid', **kwargs):
+        def fE(id, c=['feeder'], dur=10.0,en=ENR.source_proc(),env='patch_grid', **kwargs):
             return exp(id, c=c, dur=dur, en=en,env=env,**kwargs)
 
-        def tE(id, c=['toucher'], dur=600.0,en=enr_source,env='single_patch', **kwargs):
+        def tE(id, c=['toucher'], dur=600.0,en=ENR.source_proc(),env='single_patch', **kwargs):
             return exp(id, c=c, dur=dur, en=en,env=env,**kwargs)
 
         def gE(id, dur=20.0, **kwargs):
@@ -144,13 +143,13 @@ def Exp_dict():
 
         def dE(id, dur=5.0, env='food_grid',h_starved=0.0,age=72.0,q=1.0, **kwargs):
             return exp(id, dur=dur, env=env, c=['feeder', 'gut'],l=GTRvsS(age=age,q=q,h_starved=h_starved),
-                       en=gen.EnrichConf(proc_keys=['spatial'], anot_keys=[]), **kwargs)
+                       en=ENR.spatial_proc(), **kwargs)
 
         def thermo_exp(id, dur=10.0, **kwargs):
             return exp(id, dur=dur, c=['thermo'], **kwargs)
 
         def prE(id, mID,dur=5.0, env='CS_UCS_off_food',trialID='default',**kwargs):
-            return exp(id, dur=dur, en=gen.EnrichConf(proc_keys=['PI'], anot_keys=[]),l=lg(N=25, s=(0.005, 0.02), mID=mID),
+            return exp(id, dur=dur, en=ENR.PI_proc(),l=lg(N=25, s=(0.005, 0.02), mID=mID),
                        trials=reg.conf.Trial.getID(trialID),env=env,c=['olfactor'],**kwargs)
 
         def game_groups(dim=0.1, N=10, x=0.4, y=0.0, mode='king'):
@@ -236,11 +235,9 @@ def Exp_dict():
 
         d = {
             'exploration': {id: exp(id=id, **kws) for id, kws in d0.items()},
-            'chemotaxis': {id: exp(id=id, c0=['olfactor', 'pose'],en=enr_source,**kws) for id, kws in d1.items()},
-            'anemotaxis': {id: exp(id=id, c0=['wind', 'pose'],en=gen.EnrichConf(proc_keys=['spatial', 'angular', 'wind']),l=lg(mID='explorer', N=4), dur=0.5, **kws) for id, kws in d2.items()},
-            'chemanemotaxis': {id: exp(id=id, c0=['wind', 'olfactor', 'pose'],
-                       en=gen.EnrichConf(anot_keys=['bout_detection', 'bout_distribution', 'source_attraction'],
-                                         proc_keys=['spatial', 'angular', 'source', 'wind']),
+            'chemotaxis': {id: exp(id=id, c0=['olfactor', 'pose'],en=ENR.source_proc(),**kws) for id, kws in d1.items()},
+            'anemotaxis': {id: exp(id=id, c0=['wind', 'pose'],en=ENR.wind_proc(),l=lg(mID='explorer', N=4), dur=0.5, **kws) for id, kws in d2.items()},
+            'chemanemotaxis': {id: exp(id=id, c0=['wind', 'olfactor', 'pose'], en=ENR.sourcewind_proc(),
                        **kws) for id, kws in d3.items()},
 
             'thermotaxis': {
@@ -269,10 +266,7 @@ def Exp_dict():
                 'single_odor_patch_x4': fE('single_odor_patch_x4', env='single_odor_patch', l=lgs_x4()),
                 'double_patch': fE('double_patch', env='double_patch', l=GTRvsS(N=5),
                                          c=['toucher', 'feeder', 'olfactor'],
-                                         en=reg.gen.EnrichConf(
-                                             anot_keys=['bout_detection', 'bout_distribution', 'interference',
-                                                        'patch_residency'],
-                                             proc_keys=['spatial', 'angular', 'source'])),
+                                         en=ENR.patch_proc()),
 
                 '4corners': exp('4corners', env='4corners', l=lg(mID='forager_RL', N=10, s=(0.04, 0.04)))
             },

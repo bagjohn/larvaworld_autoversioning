@@ -222,7 +222,8 @@ class FoodConf(NestedConf):
 
 
 gen.FoodConf = FoodConf
-gen.EnrichConf = class_generator(EnrichConf)
+gen.EnrichConf = EnrichConf
+# gen.EnrichConf = class_generator(EnrichConf)
 
 
 class EnvConf(NestedConf):
