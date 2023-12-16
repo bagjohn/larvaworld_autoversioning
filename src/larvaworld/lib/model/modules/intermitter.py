@@ -11,7 +11,6 @@ from ...param import PositiveNumber, OptionalPositiveNumber
 __all__ = [
     'Intermitter',
     'OfflineIntermitter',
-    'NengoIntermitter',
     'BranchIntermitter',
     'FittedIntermitter',
     'get_EEB_poly1d',
@@ -298,10 +297,6 @@ class OfflineIntermitter(Intermitter):
         return self.update_state(stride_completed, feed_motion, on_food)
 
 
-class NengoIntermitter(Intermitter):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
 
 class BranchIntermitter(Intermitter):
     feed_bouts = param.Boolean(False, readonly=True)
@@ -333,13 +328,6 @@ class FittedIntermitter(OfflineIntermitter):
         stored_conf.update(kwargs)
         stored_conf['feed_bouts'] = True if stored_conf['feed_freq'] is not None else False
         super().__init__(**stored_conf)
-
-
-# ModeDict = aux.AttrDict({
-#             'default': Intermitter,
-#             'nengo': NengoIntermitter,
-#             'branch': BranchIntermitter
-#         })
 
 
 def get_EEB_poly1d(**kws):

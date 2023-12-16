@@ -112,7 +112,6 @@ class BrainModuleDB(NestedConf):
         },
         'intermitter': {
             'default': intermitter.Intermitter,
-            'nengo': intermitter.NengoIntermitter,
             'branch': intermitter.BranchIntermitter
         },
         'feeder': {
@@ -215,7 +214,7 @@ class BrainModuleDB(NestedConf):
         C = AttrDict()
         for k in self.BrainMods:
             C[k] = self.brainDB[k].module_conf(mode=ms[k] if k in ms else None, **mkws[k] if k in mkws else {})
-        C.nengo = (C.intermitter is not None and C.intermitter.mode == 'nengo')
+        C.nengo = (C.crawler is not None and C.crawler.mode == 'nengo')
         return C
 
     def mcolor(self, k):
@@ -524,7 +523,7 @@ def Model_dict():
 
     for mms in MD.mod_combs(LMs, short=True):
         if 'NENGO' in mms:
-            if list(mms) != ['NENGO','NENGO','SQ','NENGO']:
+            if list(mms) != ['NENGO','NENGO','SQ','DEF']:
                 continue
             id='nengo_explorer'
         else:
