@@ -288,8 +288,9 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
         self.kkdict = AttrDict()
         self.pdict = AttrDict()
         self.vdict = AttrDict()
-
+        reg.par.update_kdict(ks=ks)
         for k in aux.SuperList(ks).existing(reg.par.ks):
+
             p = reg.par.kdict[k]
             if p.u == reg.units.m and space_unit == 'mm':
                 p.u = reg.units.millimeter
@@ -428,6 +429,7 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
         try:
             if k is None:
                 k = reg.getPar(d=par, to_return='k')
+            reg.par.update_kdict(ks=[k])
             p = reg.par.kdict[k]
 
             if ylab is None:

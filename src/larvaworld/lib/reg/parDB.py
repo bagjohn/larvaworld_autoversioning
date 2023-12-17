@@ -723,6 +723,7 @@ class ParamRegistry(ParamClass):
         return df
 
     def output_reporters(self, ks, agents):
+        self.update_kdict(ks=ks)
         D = self.kdict
         dic = {}
         for k in ks:
@@ -745,7 +746,7 @@ class ParamRegistry(ParamClass):
         })
 
     def select_output(self, pref):
-        return AttrDict({p.d: p.codename for k, p in reg.par.kdict.items() if p.codename.startswith(pref)})
+        return AttrDict({p.d: p.codename for k, p in reg.par.dict.items() if p.codename.startswith(pref)})
 
     @property
     def brain_output(self):

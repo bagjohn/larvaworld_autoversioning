@@ -112,7 +112,7 @@ def plot_distros(name=None, ks=['v', 'a', 'sv', 'sa', 'b', 'bv', 'ba', 'fov', 'f
         vvs = np.hstack(vs)
         vmin, vmax = np.quantile(vvs, 0.005), np.quantile(vvs, 0.995)
         lims[par] = (vmin, vmax)
-        parlabs[par] = reg.par.kdict[sh].l
+        parlabs[par] = reg.getPar(sh, to_return='l')
     for i, (par, dic) in enumerate(Ddata.items()):
 
         if mode == 'box':
@@ -236,30 +236,19 @@ def plot_bout_ang_pars(name='bout_ang_pars', absolute=True, include_rear=True, s
     chunks = ['run', 'pause']
     chunk_cols = ['green', 'purple']
     for i, k in enumerate(ks):
-        p = reg.par.kdict[k]
+        pdisp,par = reg.getPar(k, to_return=['disp', 'd'])
         r = ranges[i]
         xlim = (r0, r1) = (0, r) if absolute else (-r, r)
         bins = np.linspace(r0, r1, 200)
 
-        P.conf_ax(i, xlab=p.disp, xlim=xlim, yMaxN=3)
+        P.conf_ax(i, xlab=pdisp, xlim=xlim, yMaxN=3)
         for d, l in zip(P.datasets, P.labels):
-            vs = [d.get_chunk_par(chunk=c, par=p.d) for c in chunks]
+            vs = [d.get_chunk_par(chunk=c, par=par) for c in chunks]
             if absolute:
                 vs = [np.abs(v) for v in vs]
             plot.prob_hist(vs, chunk_cols, chunks, ax=P.axs[i], bins=bins, alpha=1.0, histtype='step', linewidth=2)
 
-            # vs = []
-            # for c, col in zip(chunks, chunk_cols):
-            #     v=d.get_chunk_par(chunk=c,par=p)
-            #     v = d.step_data.dropna(subset=[nam.id(c)])[p].values
-            # if absolute:
-            #     v = np.abs(v)
-            # vs.append(v)
-            # ax.hist(v, color=col, bins=bins, label=c, weights=np.ones_like(v) / float(len(v)),
-            #         alpha=1.0, histtype='step', linewidth=2)
-            # if P.Ndatasets>1:
-            #     P.comp_pvalue(l, vs[0], vs[1], p)
-            #     P.plot_half_circle(p, ax, col1=chunk_cols[0], col2=chunk_cols[1], v=P.fit_df[p].loc[l], ind=l)
+
 
     P.conf_ax(0, ylab='probability', ylim=[0, 0.04], leg_loc='upper left')
     P.conf_ax(ylab='probability', leg_loc='upper left')
