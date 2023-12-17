@@ -203,7 +203,7 @@ def get_dist(k, k0='intermitter', v=None, return_tabrows=False, return_all=False
 
 
 def fit_bout_distros(x0, xmin=None, xmax=None, discrete=False, xmid=np.nan, overlap=0.0, Nbins=64, print_fits=False,
-                     dataset_id='dataset', bout='pause', combine=True, fit_by='pdf', eval_func_id='KS2'):
+                     bout='pause', combine=True, fit_by='pdf', eval_func_id='KS2'):
 
     def compute_density(x, xmin, xmax, Nbins=64):
         log_range = np.linspace(np.log2(xmin), np.log2(xmax), Nbins)
@@ -420,7 +420,7 @@ def fit_bout_distros(x0, xmin=None, xmax=None, discrete=False, xmid=np.nan, over
 
     if print_fits:
         print()
-        print(f'-----{dataset_id}-{bout}----------')
+        print(f'-----{bout}-epochs---------')
         print(f'initial range : {np.min(x0)} - {np.max(x0)}, Nbouts : {len(x0)}')
         print(f'accepted range : {xmin} - {xmax}, Nbouts : {len(x)}')
         print("powerlaw exponent MLE:", a2)
@@ -439,7 +439,7 @@ def fit_bout_distros(x0, xmin=None, xmax=None, discrete=False, xmid=np.nan, over
         print('MSE uniform', KS_uni)
 
         print()
-        print(f'---{dataset_id}-{bout}-distro')
+        print(f'---{bout} epochs distro---')
         print(dic.best)
         print()
 

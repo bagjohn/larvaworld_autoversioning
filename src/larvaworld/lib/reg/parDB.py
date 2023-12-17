@@ -75,6 +75,13 @@ class ParamClass:
 
         })
         self.build()
+        # dict0=self.dict.get_copy()
+        # for k,p in dict0.items():
+        #     p.u=str(p.u)
+        #     p.dtype=str(p.dtype)
+        #     p.vparfunc=p.vparfunc.default
+        #     p.func=None
+        # aux.save_dict(dict0,f'{reg.CONF_DIR}/parDB.txt')
 
 
 

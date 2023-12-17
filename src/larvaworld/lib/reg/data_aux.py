@@ -107,7 +107,6 @@ class LarvaworldParam(param.Parameterized):
     codename = param.String(default='', doc='Name of the parameter in code')
     flatname = param.String(default=None, doc='Name of the parameter in model configuration')
     dtype = param.Parameter(default=float, doc='Data type of the parameter value')
-    mdict = param.Dict(default=None, doc='The parameter dict in case of a dict header', allow_None=True)
     func = param.Callable(default=None, doc='Function to get the parameter from a dataset', allow_None=True)
     required_ks = param.List(default=[], doc='Keys of prerequired parameters for computation in a dataset')
 
@@ -143,12 +142,6 @@ class LarvaworldParam(param.Parameterized):
     def short(self):
         return self.k
 
-    @property
-    def gConf(self):
-        if self.mdict is None:
-            return None
-        else:
-            return gConf(self.mdict)
 
     @property
     def v0(self):
@@ -224,7 +217,7 @@ class LarvaworldParam(param.Parameterized):
             return self.param.v.step
         elif self.parclass == param.Magnitude:
             return 0.01
-        elif self.dtype in [float, typing.List[float], typing.List[typing.Tuple[float]], typing.Tuple[float]]:
+        elif self.parclass in [param.NumericTuple]:
             return 0.01
         else:
             return None
@@ -312,10 +305,10 @@ class LarvaworldParam(param.Parameterized):
                 self.v = (vv0, vv1)
 
 
-def get_LarvaworldParam(vparfunc, v0=None, dv=None, u_name=None, **kws):
+def get_LarvaworldParam(vparfunc, v0=None, dv=None, **kws):
     class _LarvaworldParam(LarvaworldParam):
         v = vparfunc
-        u = param.Parameter(default=reg.units.dimensionless, doc='Unit of the parameter values', label=u_name)
+        u = param.Parameter(default=reg.units.dimensionless, doc='Unit of the parameter values')
 
     par = _LarvaworldParam(**kws)
     return par
@@ -377,10 +370,10 @@ def get_vfunc(dtype, lim, vs):
         return param.Parameter
 
 
-def vpar(vfunc, v0, h, lab, lim, dv, vs):
+def vpar(vfunc, v0, doc, lab, lim, dv, vs):
     f_kws = {
         'default': v0,
-        'doc': h,
+        'doc': doc,
         'label': lab,
         'allow_None': True
     }
@@ -396,9 +389,8 @@ def vpar(vfunc, v0, h, lab, lim, dv, vs):
     return func
 
 
-def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None, symbol=None, codename=None, lab=None,
-                            h=None,
-                            u_name=None, mdict=None, flatname=None,
+def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None, codename=None, lab=None,
+                            doc=None,flatname=None,
                             required_ks=[], u=reg.units.dimensionless, v0=None, v=None, lim=None, dv=None, vs=None,
                             vfunc=None, vparfunc=None, func=None, **kwargs):
     '''
@@ -417,10 +409,7 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
             flatname = p
 
     if sym is None:
-        if symbol is not None:
-            sym = symbol
-        else:
-            sym = k
+        sym = k
 
     if dv is None:
         if dtype in [float, typing.List[float], typing.List[typing.Tuple[float]], typing.Tuple[float]]:
@@ -439,8 +428,8 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
             else:
                 ulab = fr'${u}$'
                 lab = fr'{disp} ({ulab})'
-        h = lab if h is None else h
-        vparfunc = vpar(vfunc, v0, h, lab, lim, dv, vs)
+        doc = lab if doc is None else doc
+        vparfunc = vpar(vfunc, v0, doc, lab, lim, dv, vs)
     else:
         vparfunc = vparfunc()
 
@@ -456,10 +445,8 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
         'dtype': dtype,
         'func': func,
         'u': u,
-        'u_name': u_name,
         'required_ks': required_ks,
         'vparfunc': vparfunc,
-        'mdict': mdict,
         'dv': dv,
         'v0': v0,
 
