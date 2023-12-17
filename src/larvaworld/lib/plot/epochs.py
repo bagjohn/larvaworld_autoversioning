@@ -58,10 +58,9 @@ def plot_single_bout(x0, bout, color, label, ax, fit_dic=None, plot_fits='best',
 
 @reg.funcs.graph('sample_epochs', required={'dicts':['pooled_epochs']})
 def plot_sample_bouts(mID, d, **kwargs) :
-    dic=d.generate_pooled_epochs(mID=mID)
     d2 = copy.deepcopy(d)
     d2.config.dir = None
-    d2.fitted_epochs = dic
+    d2.fitted_epochs=d.generate_pooled_epochs(mID=mID)
     kws = {'datasets': aux.ItemList([d,d2]), 'labels': ['experiment', 'model'], 'colors': ['red', 'blue']}
     return plot_bouts(**kws,**kwargs)
 

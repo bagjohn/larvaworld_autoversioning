@@ -63,6 +63,17 @@ output_keys = list(output_dict.keys())
 class ParamClass:
     def __init__(self):
         self.func_dict = reg.funcs.param_computing
+        self.k_ops = AttrDict({
+            'mean': ['bar', '_mu'],
+            'std': ['tilde', 'std'],
+            'var': ['tilde', 'var'],
+            'min': ['sub', 'min'],
+            'max': ['sub', 'max'],
+            'final': ['sub', '_fin'],
+            'initial': ['sub', '0'],
+            'cum': ['sub', 'cum'],
+
+        })
         self.build()
         self.ddict = AttrDict({p.d: p for k, p in self.kdict.items()})
         self.pdict = AttrDict({p.p: p for k, p in self.kdict.items()})
@@ -78,12 +89,19 @@ class ParamClass:
     def build(self):
         self.dict = AttrDict()
         self.kdict = AttrDict()
+        # print(0)
         self.build_initial()
+        # print(1)
         self.build_angular()
+        # print(2)
         self.build_spatial()
+        # print(3)
         self.build_chunks()
+        # print(4)
         self.build_sim_pars()
+        # print(5)
         self.build_deb_pars()
+        # print(6)
 
     def add(self, **kwargs):
         prepar = reg.prepare_LarvaworldParam(**kwargs)
@@ -139,17 +157,7 @@ class ParamClass:
         b = self.dict[k0]
         kws0 = {'u': b.u, 'required_ks': [k0]}
 
-        self.k_ops = AttrDict({
-            'mean': ['bar', '_mu'],
-            'std': ['tilde', 'std'],
-            'var': ['tilde', 'var'],
-            'min': ['sub', 'min'],
-            'max': ['sub', 'max'],
-            'final': ['sub', '_fin'],
-            'initial': ['sub', '0'],
-            'cum': ['sub', 'cum'],
 
-        })
 
         def cum_disp(k0):
             if k0 == 'd':
@@ -184,98 +192,46 @@ class ParamClass:
         kN = f'{kc}_N'
         kN_mu = f'{kN}_mu'
         kt = f'{kc}_t'
+        self.add(p=pc, k=kc, sym=f'${kc}$')
+        self.add(p=ptr, k=ktr, sym=nam.tex.sub('r', kc), disp=f'time fraction in {pc}s', vfunc=param.Magnitude, required_ks=[nam.cum(nam.dur(pc)), nam.cum(nam.dur(''))], func=self.func_dict.tr(pc))
+        self.add(p=pN, k=kN, sym=nam.tex.sub('N', f'{pc}s'), disp=f'# {pc}s', vfunc=param.Integer, codename=f'brain.locomotor.intermitter.N{pc}s',dtype=int,**f_kws)
+        self.add(p=nam.dur(pc), k=kt, sym=nam.tex.sub(nam.tex.Delta('t'), kc), disp=f'{pc} duration', vfunc=param.Number, u=reg.units.s,**f_kws)
 
-        kwlist = [
-            {
-                'p': pc,
-                'k': kc,
-                'sym': f'${kc}$',
-                'disp': pc
-            },
-            # {
-            #     'p': nam.start(pc),
-            #     'k': f'{kc}0',
-            #     'u': reg.units.s,
-            #     'sym': nam.tex.subsup('t', kc, '0'),
-            #     'disp': f'{pc} start',
-            #     **f_kws
-            # },
-            # {'p': nam.stop(pc),
-            #  'k': f'{kc}1',
-            #  'u': reg.units.s,
-            #  'sym': nam.tex.subsup('t', kc, '1'),
-            #  'disp': f'{pc} end',
-            #  **f_kws},
-            # {
-            #     'p': nam.id(pc),
-            #     'k': f'{kc}_id',
-            #     'sym': nam.tex.sub('idx', kc),
-            #     'disp': f'{pc} idx',
-            #     'dtype': str
-            # },
-            {'p': ptr,
-             'k': ktr,
-             'sym': nam.tex.sub('r', kc),
-             'disp': f'time fraction in {pc}s',
-             'vfunc': param.Magnitude,
-             'required_ks': [nam.cum(nam.dur(pc)), nam.cum(nam.dur(''))],
-             'func': self.func_dict.tr(pc)},
-            {
-                'p': pN,
-                'codename': f'brain.locomotor.intermitter.N{pc}s',
-                'k': kN,
-                'sym': nam.tex.sub('N', f'{pc}s'),
-                'disp': f'# {pc}s',
-                'vfunc': param.Integer,
-                'dtype': int,
-                **f_kws
-            },
-            {
-                'p': nam.dur(pc),
-                'k': kt,
-                'sym': nam.tex.sub(nam.tex.Delta('t'), kc),
-                'disp': f'{pc} duration',
-                'vfunc': param.Number,
-                'u': reg.units.s,
-                **f_kws
-            }]
-
-        for kws in kwlist:
-            self.add(**kws)
 
         for ii in ['on', 'off']:
-            self.add(**{'p': f'{pN_mu}_{ii}_food', 'k': f'{kN_mu}_{ii}_food'})
-            self.add(**{'p': f'{ptr}_{ii}_food', 'k': f'{ktr}_{ii}_food', 'lim': (0.0, 1.0)})
+            self.add(p=f'{pN_mu}_{ii}_food', k=f'{kN_mu}_{ii}_food')
+            self.add(p=f'{ptr}_{ii}_food', k=f'{ktr}_{ii}_food',vfunc=param.Magnitude)
 
-        self.add_rate(k_num=kN, k_den=nam.cum('t'), k=kN_mu, p=pN_mu, sym=nam.tex.bar(kN), disp=f'avg. # {pc}s per sec',
-                      func=func)
+        self.add_rate(k_num=kN, k_den=nam.cum('t'), k=kN_mu, p=pN_mu, sym=nam.tex.bar(kN), disp=f'avg. # {pc}s per sec',func=func)
         self.add_operators(k0=kt)
 
         if str.endswith(pc, 'chain'):
             self.add(**{'p': pl, 'k': kl, 'sym': nam.tex.sub('l', kc), 'dtype': int, **f_kws})
             self.add_operators(k0=kl)
 
-    def add_chunk_track(self, kc, k):
-        bc = self.dict[kc]
+    def add_chunk_track(self, kc, k, pc=None):
+        if pc is None:
+            pc=self.dict[kc].p
+        # bc = self.dict[kc]
         b = self.dict[k]
         kws = {
-            'func': self.func_dict.track_par(bc.p, b.p),
+            'func': self.func_dict.track_par(pc, b.p),
             'u': b.u
         }
         k01 = f'{kc}_{k}'
-        p0,p1,pdp=nam.atStartStopChunk(b.p, bc.p)
+        p0,p1,pdp=nam.atStartStopChunk(b.p, pc)
 
         kws0 = {
             'p': p0,
             'k': f'{kc}_{k}0',
-            'disp': f'{b.disp} at {bc.p} start',
+            'disp': f'{b.disp} at {pc} start',
             'sym': nam.tex.subsup(b.sym, kc, '0'),
             **kws
         }
         kws1 = {
             'p': p1,
             'k': f'{kc}_{k}1',
-            'disp': f'{b.disp} at {bc.p} stop',
+            'disp': f'{b.disp} at {pc} stop',
             'sym': nam.tex.subsup(b.sym, kc, '1'),
             **kws
         }
@@ -283,7 +239,7 @@ class ParamClass:
         kws01 = {
             'p': pdp,
             'k': k01,
-            'disp': f'{b.disp} during {bc.p}s',
+            'disp': f'{b.disp} during {pc}s',
             'sym': nam.tex.sub(nam.tex.Delta(b.sym), kc),
             **kws
         }
@@ -519,7 +475,7 @@ class ParamClass:
                              disp_v=f'scaled {point} crawling speed',
                              disp_a=f'scaled {point} crawling acceleration',
                              func_v=self.func_dict.vel(d_sd, d_sv))
-            for k0 in [k_d, k_v, k_a, k_sd, k_sv, k_sa, px, py, k_d]:
+            for k0 in [k_d, k_v, k_a, k_sd, k_sv, k_sa, px, py]:
                 self.add_freq(k0=k0)
                 self.add_operators(k0=k0)
                 if k0 in [k_v, k_a, k_sv, k_sa]:
@@ -531,11 +487,11 @@ class ParamClass:
         self.add(
             **{'p': 'dispersion', 'k': 'dsp', 'sym': nam.tex.circledast('d'), 'disp': 'dispersal', **kws})
 
-        for i in [(0, 40), (0, 60), (0, 70), (0, 80), (10, 60), (10, 70), (10, 80), (20, 60), (20, 70), (20, 80),
-                  (10, 100), (20, 100), (0, 120), (0, 240), (0, 300), (0, 600), (60, 120), (60, 300)]:
+        for i in [(0, 40), (0, 60), (0, 80), (10, 60), (10, 80), (20, 60), (20, 80),
+                   (20, 100), (0, 120), (0, 240), (60, 120)]:
             self.add_dsp(range=i)
         self.add(**{'p': 'tortuosity', 'k': 'tor', 'vfunc': param.Magnitude, 'sym': 'tor'})
-        for dur in [1, 2, 5, 10, 20, 60, 120, 240, 300, 600]:
+        for dur in [1, 2, 5, 10, 20, 60]:
             self.add_tor(dur=dur)
         self.add(**{'p': 'anemotaxis', 'sym': 'anemotaxis'})
 
@@ -548,7 +504,7 @@ class ParamClass:
             'tur': 'turn',
             'Ltur': 'Lturn',
             'Rtur': 'Rturn',
-            'exec': 'exec',
+            # 'exec': 'exec',
             'str_c': nam.chain('stride'),
             'fee_c': nam.chain('feed'),
             'on_food': 'on_food',
@@ -556,13 +512,14 @@ class ParamClass:
         }
         for kc, pc in d0.items():
             temp = self.func_dict.chunk(kc)
-            func = temp.func
-            required_ks = temp.required_ks
+            # func = temp.func
+            # required_ks = temp.required_ks
 
-            self.add_chunk(pc=pc, kc=kc, func=func, required_ks=required_ks)
-            for k in ['fov', 'rov', 'foa', 'roa', 'x', 'y', 'fo', 'fou', 'ro', 'rou', 'b', 'bv', 'ba', 'v', 'sv', 'a',
-                      'sa', 'd', 'sd']:
-                self.add_chunk_track(kc=kc, k=k)
+            self.add_chunk(pc=pc, kc=kc, func=temp.func, required_ks=temp.required_ks)
+            for k in ['fov', 'rov',  'x', 'y', 'fo', 'fou', 'ro', 'rou', 'b', 'bv',  'v', 'sv',
+                      # 'a','sa','foa', 'roa','ba',
+                      'd', 'sd']:
+                self.add_chunk_track(kc=kc, k=k, pc=pc)
             self.add(p=f'handedness_score_{kc}', k=f'tur_H_{kc}')
             if kc == 'fee':
                 self.add_freq(k0=kc)

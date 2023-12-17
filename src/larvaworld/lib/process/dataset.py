@@ -722,34 +722,38 @@ class ParamLarvaDataset(param.Parameterized):
 
     def fit_pooled_epochs(self):
         try:
-            dic = self.pooled_epochs
-            assert dic is not None
-            fitted = {}
-            for k, v in dic.items():
+            D = self.pooled_epochs
+            assert D is not None
+            d = {}
+            for k in D:
                 try:
-                    fitted[k] = reg.fit_bout_distros(np.abs(v), bout=k, combine=False,
+                    x0=np.abs(D[k])
+                    d[k] = reg.fit_bout_distros(x0, bout=k, combine=False,
                                                       discrete=True if k == 'run_count' else False)
                 except:
-                    fitted[k] = None
-            self.fitted_epochs = AttrDict(fitted)
+                    d[k] = None
+            self.fitted_epochs = AttrDict(d)
             reg.vprint(f'Fitted pooled epoch durations.', 1)
         except:
             reg.vprint(f'Failed to fit pooled epoch durations.', 1)
 
     def generate_pooled_epochs(self, mID):
-        D=self.pooled_epochs
-        m=reg.conf.Model.getID(mID)
+        m = reg.conf.Model.getID(mID)
         Im = self.c.get_sample_bout_distros(m.get_copy()).brain.intermitter
-        dic = AttrDict()
-        for n, n0 in zip(['pause', 'run', 'stridechain'], ['pause_dur', 'run_dur', 'run_count']):
-            kk = Im[f'{n}_dist']
-            if kk is not None:
-                discr = True if n == 'stridechain' else False
-                dt = 1 if n == 'stridechain' else self.c.dt
-                N=D[n0].shape[0]
-                dic[n0] = reg.fit_bout_distros(reg.BoutGenerator(**kk, dt=dt).sample(N),
-                                               dataset_id=mID, bout=n,combine=False, discrete=discr)
-        return dic
+        try:
+            D = self.pooled_epochs
+            assert D is not None
+            d = {}
+            for n, k in zip(['pause', 'run', 'stridechain'], ['pause_dur', 'run_dur', 'run_count']):
+                try:
+                    x0=reg.BoutGenerator(**Im[f'{n}_dist'], dt=1 if k == 'run_count' else self.c.dt).sample(D[k].shape[0])
+                    d[k] = reg.fit_bout_distros(x0,bout=k,combine=False, discrete=True if k == 'run_count' else False)
+                except:
+                    d[k] = None
+            reg.vprint(f'Generated pooled epoch durations.', 1)
+            return AttrDict(d)
+        except:
+            reg.vprint(f'Failed to generate pooled epoch durations.', 1)
 
     def comp_bout_distros(self):
         c = self.config
