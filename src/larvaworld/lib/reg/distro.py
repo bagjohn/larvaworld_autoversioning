@@ -485,6 +485,27 @@ class BoutGenerator:
         return func(x=x, **self.args)
 
 
+def sample_boutGens(mID, d):
+    c = d.config
+    D=d.pooled_epochs
+
+    # d.fit_pooled_epochs()
+
+    Im = c.get_sample_bout_distros(reg.conf.Model.getID(mID).get_copy()).brain.intermitter
+    dic = aux.AttrDict()
+    for n, n0 in zip(['pause', 'run', 'stridechain'], ['pause_dur', 'run_dur', 'run_count']):
+        kk = Im[f'{n}_dist']
+        if kk is not None:
+            discr = True if n == 'stridechain' else False
+            dt = 1 if n == 'stridechain' else c.dt
+            dic[n0] = fit_bout_distros(BoutGenerator(**kk, dt=dt).sample(D[n0].shape[0]), dataset_id=mID, bout=n, combine=False, discrete=discr)
+    # d1=copy.deepcopy(d)
+    # # d1.color= 'red'
+    # # d1.set_id('experiment', save=False)
+    # d2 = copy.deepcopy(d)
+    # d2.config.dir=None
+    # d2.fitted_epochs=dic
+    return dic
 
 
 

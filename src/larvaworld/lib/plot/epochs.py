@@ -56,7 +56,7 @@ def plot_single_bout(x0, bout, color, label, ax, fit_dic=None, plot_fits='best',
         else:
             plot.dataset_legend(distro_ls0, distro_cs0, ax=ax, loc='lower left', fontsize=15)
 
-@reg.funcs.graph('sample_epochs', required={'dicts':['fitted_epochs']})
+@reg.funcs.graph('sample_epochs', required={'dicts':['pooled_epochs']})
 def plot_sample_bouts(mID, d, **kwargs) :
     dic=d.generate_pooled_epochs(mID=mID)
     d2 = copy.deepcopy(d)
