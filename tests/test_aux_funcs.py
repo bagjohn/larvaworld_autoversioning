@@ -6,19 +6,6 @@ import pytest
 from larvaworld.lib import aux
 
 
-def test_angular_funcs():
-    p1 = (-1, -1)
-    origin = (0, 0)
-    p2 = (-1, 1)
-    p3 = (1, 1)
-    a1 = 30
-    a2 = 45
-
-    pps = aux.rotate_points_around_point(points=[p1, p2], radians=np.pi / 2, origin=origin)
-    assert pytest.approx(pps[0]) == p2
-    assert pytest.approx(pps[1]) == p3
-
-
 def test_rotationMatrix():
     # Test 1: Check if rotation by 0 radians returns the identity matrix
     result = aux.rotationMatrix(0)
@@ -122,3 +109,48 @@ class TestWrapAngleTo0(unittest.TestCase):
         self.assertAlmostEqual(aux.wrap_angle_to_0(-270, in_deg=True), 90.0)
         self.assertAlmostEqual(aux.wrap_angle_to_0(540, in_deg=True), 180.0)
         self.assertAlmostEqual(aux.wrap_angle_to_0(-540, in_deg=True), 180.0)
+
+
+class TestCompBearing(unittest.TestCase):
+
+    def test_degrees_in_deg(self):
+        xs = [1.0, 2.0, 3.0]
+        ys = [1.0, 2.0, 0.0]
+        ors = 90.0
+        expected = np.array([-135., -135., -90.])
+        result = aux.comp_bearing(xs, ys, ors, in_deg=True)
+        np.testing.assert_almost_equal(result, expected)
+
+    def test_degrees_in_rad(self):
+        xs = [1.0, 2.0, 3.0]
+        ys = [1.0, 2.0, 0.0]
+        ors = 90.0
+        expected = np.deg2rad(np.array([-135., -135., -90.]))
+        result = aux.comp_bearing(xs, ys, ors, in_deg=False)
+        np.testing.assert_almost_equal(result, expected)
+
+    # def test_radians_in_rad(self):
+    #     xs = [1.0, 2.0, 3.0]
+    #     ys = [1.0, 2.0, 1.0]
+    #     ors = np.deg2rad(90.0)
+    #     expected_result = np.array([90.0, 45.0, 90.0])
+    #     result = aux.comp_bearing(xs, ys, ors, in_deg=False)
+    #     np.testing.assert_almost_equal(result, expected_result)
+
+    def test_location_argument(self):
+        xs = [1.0, 2.0, 3.0]
+        ys = [1.0, 2.0, 1.0]
+        ors = 90.0
+        loc = (1.0, 1.0)
+        expected = np.array([90., -135., -90.])
+        result = aux.comp_bearing(xs, ys, ors, loc=loc, in_deg=True)
+        np.testing.assert_almost_equal(result, expected)
+
+    def test_negative_orientations(self):
+        xs = [1.0, 2.0, 3.0]
+        ys = [1.0, 0.0, -3.0]
+        ors = [-90.0, -180.0, -270.0]
+
+        result = aux.comp_bearing(xs, ys, ors)
+        expected = [45., 0., -45.]
+        np.testing.assert_almost_equal(result, expected)

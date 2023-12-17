@@ -101,12 +101,12 @@ def model_summary(mID, refID=None, refDataset=None, Nids=1, model_table=False, *
 
     shorts = ['sv', 'fov', 'foa', 'b']
     P.plot(func='stride cycle',
-           kws={'datasets': [refDataset, dd], 'labels': ['experiment', dd.id], 'shorts': shorts, 'individuals': True,
+           kws={'datasets': [refDataset, dd], 'labels': ['experiment', 'model'],'colors': ['red', 'blue'], 'shorts': shorts, 'individuals': True,
                 'save_to': None, 'title':None},
            N=len(shorts), w=29, h=32, h0=hh0 + 18, share_w=True, x0=True)
 
-    ds = reg.test_boutGens(**{'mID': mID, 'refDataset': refDataset})
-    P.plot(func='epochs', kws={'datasets': ds, 'save_to': None},
+    # ds = reg.sample_boutGens(**{'mID': mID, 'd': refDataset})
+    P.plot(func='sample_epochs', kws={'mID': mID, 'd': refDataset, 'save_to': None},
            N=2, w=29, h0=hh0 + 56, share_h=True, dw=1, x0=True)
 
     P.plot(func='sample track', kws={'mID': mID, 'dur': 0.5, 'd': dd, 'save_to': None},

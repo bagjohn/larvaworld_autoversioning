@@ -186,7 +186,7 @@ class GAlauncher(BaseRun):
             temp = 'unlimited'
         reg.vprint(
             f'Launching {temp} generations of {self.duration} minutes, with {self.selector.Nagents} agents each!', 1)
-        self.p.collections = ['pose']
+        self.p.collections = ['pose', 'brain']
         self.build_env(self.p.env_params)
 
         self.build_generation()

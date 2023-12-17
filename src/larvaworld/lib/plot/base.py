@@ -272,7 +272,7 @@ class AutoBasePlot(BasePlot):
 
 
 class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
-    def __init__(self, ks=[], key='step', klabels={}, datasets=[], labels=None, add_samples=False,
+    def __init__(self, ks=[], key='step', klabels={}, datasets=[], labels=None, colors=None,add_samples=False,
                  ranges=None, absolute=False, rad2deg=False, space_unit='mm', **kwargs):
         '''
         Extension of the basic plotting class that receives datasets of type larvaworld.LarvaDataset
@@ -282,7 +282,7 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
             add_samples: Whether to also plot the reference datasets of any simulated datasets
             **kwargs:
         '''
-        LarvaDatasetCollection.__init__(self, datasets=datasets, labels=labels, add_samples=add_samples)
+        LarvaDatasetCollection.__init__(self, datasets=datasets, labels=labels, colors=colors,add_samples=add_samples)
         self.key = key
         self.ks = []
         self.kkdict = AttrDict()

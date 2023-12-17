@@ -15,7 +15,7 @@ __all__ = [
     'get_dist',
     'fit_bout_distros',
     'BoutGenerator',
-    'test_boutGens',
+    'sample_boutGens',
 ]
 
 
@@ -485,40 +485,27 @@ class BoutGenerator:
         return func(x=x, **self.args)
 
 
-def test_boutGens(mID, refID=None, refDataset=None, **kwargs):
-    if refDataset is None:
-        refDataset = reg.conf.Ref.loadRef(refID, load=True)
-    c = refDataset.config
-    aux_dic = refDataset.pooled_epochs
-    Npau = aux_dic['pause_dur'].shape[0]
-    Nrun = aux_dic['run_dur'].shape[0]
+def sample_boutGens(mID, d):
+    c = d.config
+    D=d.pooled_epochs
 
-    m = reg.conf.Model.getID(mID)
-    m = c.get_sample_bout_distros(m.get_copy())
-    dicM = m.brain.intermitter
-    dic = {}
+    # d.fit_pooled_epochs()
+
+    Im = c.get_sample_bout_distros(reg.conf.Model.getID(mID).get_copy()).brain.intermitter
+    dic = aux.AttrDict()
     for n, n0 in zip(['pause', 'run', 'stridechain'], ['pause_dur', 'run_dur', 'run_count']):
-        N = Npau if n == 'pause' else Nrun
-        discr = True if n == 'stridechain' else False
-        dt = 1 if n == 'stridechain' else c.dt
-
-        k = f'{n}_dist'
-        kk = dicM[k]
+        kk = Im[f'{n}_dist']
         if kk is not None:
-            B = BoutGenerator(**kk, dt=dt)
-            vs = B.sample(N)
-            dic[n0] = fit_bout_distros(vs, dataset_id=mID, bout=n, combine=False, discrete=discr)
-    d1=copy.deepcopy(refDataset)
-    d1.config.color= 'red'
-    d1.config.id= 'experiment'
-    d2 = copy.deepcopy(refDataset)
-    d2.config.color = 'blue'
-    d2.config.id = 'model'
-    d2.fitted_epochs=dic
-    # datasets = [aux.AttrDict({'id': 'model', 'fitted_epochs': dic, 'color': 'blue'}),
-    #             aux.AttrDict({'id': 'experiment', 'fitted_epochs': refDataset.fitted_epochs, 'color': 'red'})]
-    # datasets=[d1,d2]
-    return aux.SuperList([d1,d2])
+            discr = True if n == 'stridechain' else False
+            dt = 1 if n == 'stridechain' else c.dt
+            dic[n0] = fit_bout_distros(BoutGenerator(**kk, dt=dt).sample(D[n0].shape[0]), dataset_id=mID, bout=n, combine=False, discrete=discr)
+    # d1=copy.deepcopy(d)
+    # # d1.color= 'red'
+    # # d1.set_id('experiment', save=False)
+    # d2 = copy.deepcopy(d)
+    # d2.config.dir=None
+    # d2.fitted_epochs=dic
+    return dic
 
 
 

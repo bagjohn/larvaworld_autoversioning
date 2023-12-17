@@ -1813,7 +1813,7 @@ class LarvaDataset(BaseLarvaDataset):
 
 
 class LarvaDatasetCollection:
-    def __init__(self, labels=None, add_samples=False, config=None, **kwargs):
+    def __init__(self, labels=None,colors=None, add_samples=False, config=None, **kwargs):
         ds = self.get_datasets(**kwargs)
 
         for d in ds:
@@ -1829,9 +1829,11 @@ class LarvaDatasetCollection:
         self.datasets = ds
         self.labels = labels
         self.Ndatasets = len(ds)
-        self.colors = self.get_colors()
+        if colors is None:
+            colors = self.get_colors()
+        self.colors = colors
         assert self.Ndatasets == len(self.labels)
-
+        # print(self.labels, self.colors)
         self.group_ids = SuperList(ds.config.group_id).unique
         self.Ngroups = len(self.group_ids)
         self.dir = self.set_dir()

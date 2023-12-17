@@ -71,16 +71,10 @@ class FunctionDict:
         self.graphs = aux.AttrDict()
         self.graph_required_data = aux.AttrDict()
         self.stored_confs = aux.AttrDict()
-        self.preprocessing = aux.AttrDict()
-        self.processing = aux.AttrDict()
-        self.annotating = aux.AttrDict()
         self.param_computing = aux.AttrDict()
 
     def param(self, name):
         return self.register_func(name, "param_computing")
-
-    def annotation(self, name):
-        return self.register_func(name, "annotating")
 
     def graph(self, name, required={}):
         self.graph_required_data[name] = aux.AttrDict(required)
