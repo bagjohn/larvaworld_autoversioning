@@ -736,6 +736,19 @@ class ParamLarvaDataset(param.Parameterized):
         except:
             reg.vprint(f'Failed to fit pooled epoch durations.', 1)
 
+    def generate_pooled_epochs(self, mID):
+        m=reg.conf.Model.getID(mID)
+        Im = self.c.get_sample_bout_distros(m.get_copy()).brain.intermitter
+        dic = AttrDict()
+        for n, n0 in zip(['pause', 'run', 'stridechain'], ['pause_dur', 'run_dur', 'run_count']):
+            kk = Im[f'{n}_dist']
+            if kk is not None:
+                discr = True if n == 'stridechain' else False
+                dt = 1 if n == 'stridechain' else self.c.dt
+                dic[n0] = reg.fit_bout_distros(reg.BoutGenerator(**kk, dt=dt).sample(self.fitted_epochs[n0].shape[0]),
+                                               dataset_id=mID, bout=n,combine=False, discrete=discr)
+        return dic
+
     def comp_bout_distros(self):
         c = self.config
         c.bout_distros = AttrDict()
