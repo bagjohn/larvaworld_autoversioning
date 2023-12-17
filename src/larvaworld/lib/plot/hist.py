@@ -44,14 +44,14 @@ def module_endpoint_hists(e, mkey='crawler', mode='realistic', Nbins=None, show_
                           **kwargs)
     for i, par in enumerate(pars):
         vs = e[par].dropna().values
-        p=reg.par.ddict[par]
+        plab,psym=reg.getPar(d=par, to_return=['label', 'symbol'])
         P.axs[i].hist(vs, bins=Nbins)
-        P.conf_ax(i, xlab=p.label, ylab='# larvae' if i == 0 else None, xMaxN=3, xlabelfontsize=18,
+        P.conf_ax(i, xlab=plab, ylab='# larvae' if i == 0 else None, xMaxN=3, xlabelfontsize=18,
                   xticklabelsize=18, yvis=False if i != 0 else True)
 
         if show_median:
             v_mu = np.median(vs)
-            text = f'{p.symbol} = {np.round(v_mu, 2)}'
+            text = f'{psym} = {np.round(v_mu, 2)}'
             P.axs[i].axvline(v_mu, color='red', alpha=1, linestyle='dashed', linewidth=3)
             P.axs[i].annotate(text, rotation=0, fontsize=15, va='center', ha='left',
                               xy=(0.55, 0.8), xycoords='axes fraction')

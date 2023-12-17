@@ -75,38 +75,46 @@ class ParamClass:
 
         })
         self.build()
-        self.ddict = AttrDict({p.d: p for k, p in self.kdict.items()})
-        self.pdict = AttrDict({p.p: p for k, p in self.kdict.items()})
+
+
+
+    def update_kdict(self, ks):
+        for k in ks:
+            if k in self.ks and k not in self.kdict:
+                self.kdict[k] = reg.get_LarvaworldParam(**self.dict[k])
+
+    def finalize(self):
+        for k,prepar in self.dict.items():
+            self.kdict[k] = reg.get_LarvaworldParam(**prepar)
+
+    @property
+    def dkeys(self):
+        return SuperList([p.d for k, p in self.dict.items()]).sorted
 
     @property
     def pkeys(self):
-        return SuperList([p.d for k, p in self.kdict.items()]).sorted
+        return SuperList([p.p for k, p in self.dict.items()]).sorted
 
     @property
     def ks(self):
-        return SuperList(self.kdict.keys()).sorted
+        return SuperList(self.dict.keys()).sorted
 
     def build(self):
         self.dict = AttrDict()
         self.kdict = AttrDict()
-        # print(0)
         self.build_initial()
-        # print(1)
         self.build_angular()
-        # print(2)
         self.build_spatial()
-        # print(3)
         self.build_chunks()
-        # print(4)
         self.build_sim_pars()
-        # print(5)
         self.build_deb_pars()
-        # print(6)
+        self.p2k_dict=AttrDict({p.p: p.k for k, p in self.dict.items()})
+        self.d2k_dict=AttrDict({p.d: p.k for k, p in self.dict.items()})
 
     def add(self, **kwargs):
         prepar = reg.prepare_LarvaworldParam(**kwargs)
         self.dict[prepar.k] = prepar
-        self.kdict[prepar.k] = reg.get_LarvaworldParam(**prepar)
+
 
     def build_initial(self):
         kws1 = {'vfunc': param.Number, 'lim': (0.0, None), 'dtype': float, 'u': reg.units.s}
@@ -623,8 +631,9 @@ class ParamRegistry(ParamClass):
         self.PI = AttrDict()
 
     def get(self, k, d, compute=True):
-        if k not in self.kdict:
+        if k not in self.ks:
             raise ValueError(f'parameter key "{k}" not in database')
+        self.update_kdict(ks=[k])
         p = self.kdict[k]
         res = p.exists(d)
 
@@ -659,26 +668,31 @@ class ParamRegistry(ParamClass):
             p.compute(d)
 
     def getPar(self, k=None, p=None, d=None, to_return='d'):
-        if k is not None:
-            d0 = self.kdict
-            k0 = k
-        elif d is not None:
-            d0 = self.ddict
-            k0 = d
-        elif p is not None:
-            d0 = self.pdict
-            k0 = p
-        else:
+        # print(k,'--',d,'--',p,'--')
+        if k is None:
+            if d is not None:
+                if isinstance(d, str):
+                    k=self.d2k_dict[d] if d in self.d2k_dict else None
+                else:
+                    k=[self.d2k_dict[dd] for dd in d if dd in self.d2k_dict]
+            elif p is not None :
+                if isinstance(p, str):
+                    k=self.p2k_dict[p] if p in self.p2k_dict else None
+                else:
+                    k=[self.p2k_dict[pp] for pp in p if pp in self.p2k_dict]
+        if k is None:
             raise
 
-        if isinstance(k0, str):
-            par = d0[k0]
+        if isinstance(k, str):
+            self.update_kdict(ks=[k])
+            par = self.kdict[k]
             if isinstance(to_return, list):
                 return [getattr(par, i) for i in to_return]
             elif isinstance(to_return, str):
                 return getattr(par, to_return)
-        elif isinstance(k0, list):
-            pars = [d0[i] for i in k0]
+        else:
+            self.update_kdict(ks=k)
+            pars=[self.kdict[kk] for kk in k]
             if isinstance(to_return, list):
                 return [[getattr(par, i) for par in pars] for i in to_return]
             elif isinstance(to_return, str):
@@ -703,7 +717,7 @@ class ParamRegistry(ParamClass):
 
         '''
         from pint_pandas.pint_array import PintType
-        valid_pars = [col for col in self.pkeys.existing(df.columns) if not isinstance(df.dtypes[col], PintType)]
+        valid_pars = [col for col in self.dkeys.existing(df.columns) if not isinstance(df.dtypes[col], PintType)]
         pint_dtypes = {par: PintType(f'pint[{self.getPar(d=par, to_return="u")}]') for par in valid_pars}
         df[valid_pars] = df[valid_pars].astype(dtype=pint_dtypes)
         return df
