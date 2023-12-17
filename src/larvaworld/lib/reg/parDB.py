@@ -1,7 +1,6 @@
 import numpy as np
 import param
 
-
 from ..aux import nam, AttrDict, SuperList
 from .. import reg, aux
 
@@ -12,14 +11,13 @@ __all__ = [
     'ParamRegistry',
 ]
 
-
 output_dict = AttrDict({
     'olfactor': {
         'step': ['c_odor1', 'dc_odor1', 'c_odor2', 'dc_odor2', 'A_olf'],
         'endpoint': []},
 
     'loco': {
-        'step': ['A_CT','A0_CT','Amax_CT',  'A_T', 'I_T', 'phi_T', 'A_C', 'I_C', 'phi_C', 'phi_Amax_CT'],
+        'step': ['A_CT', 'A0_CT', 'Amax_CT', 'A_T', 'I_T', 'phi_T', 'A_C', 'I_C', 'phi_C', 'phi_Amax_CT'],
         'endpoint': []},
 
     'thermo': {
@@ -35,7 +33,7 @@ output_dict = AttrDict({
         'endpoint': []},
 
     'feeder': {
-        'step': ['l', 'f_am', 'EEB', 'on_food', 'fee_reocc', 'beh', 'phi_F','A_F', 'I_F'],
+        'step': ['l', 'f_am', 'EEB', 'on_food', 'fee_reocc', 'beh', 'phi_F', 'A_F', 'I_F'],
         'endpoint': ['l', 'f_am', 'on_food_tr', 'pau_N', 'str_N', 'run_N', 'fee_N', 'str_c_N', 'fee_c_N',
                      'fee_N_success', 'fee_N_fail']
     },
@@ -52,6 +50,12 @@ output_dict = AttrDict({
     'midline': nam.midline_xy(3, flat=True),
     'contour': nam.contour_xy(0, flat=True),
 })
+
+ks = ['loco', 'olfactor', 'feeder', 'thermo', 'wind', 'memory', 'toucher']
+output_dict.brain = AttrDict({
+    'step': SuperList([output_dict[k].step for k in ks]).flatten.unique,
+    'endpoint': SuperList([output_dict[k].endpoint for k in ks]).flatten.unique}
+)
 
 output_keys = list(output_dict.keys())
 
@@ -86,24 +90,19 @@ class ParamClass:
         self.dict[prepar.k] = prepar
         self.kdict[prepar.k] = reg.get_LarvaworldParam(**prepar)
 
-
     def build_initial(self):
-        kws1 = {'vfunc': param.Number,'lim': (0.0, None), 'dtype': float, 'u': reg.units.s}
+        kws1 = {'vfunc': param.Number, 'lim': (0.0, None), 'dtype': float, 'u': reg.units.s}
         self.add(**{'p': 't', 'sym': '$t$', 'v0': 0.0, **kws1})
         self.add_operators(k0='t')
         self.add(**{'p': 'model.dt', 'd': 'dt', 'sym': '$dt$', 'v0': 0.1, **kws1})
         self.add(**{'p': 'cum_dur', 'k': nam.cum('t'), 'sym': nam.tex.sub('t', 'cum'), 'v0': 0.0, **kws1})
 
-        kws2 = {'vfunc': param.Integer,'lim': (0, None),'v0': 0,'dtype': int, 'u': reg.units.dimensionless}
+        kws2 = {'vfunc': param.Integer, 'lim': (0, None), 'v0': 0, 'dtype': int, 'u': reg.units.dimensionless}
         self.add(**{'p': 'num_ts', 'k': 'N_ts', 'sym': nam.tex.sub('N', 'ts'), **kws2})
         self.add(**{'p': 'tick', 'sym': '$tick$', **kws2})
         self.add(**{'p': 'num_ticks', 'k': 'N_ticks', 'sym': nam.tex.sub('N', 'ticks'), **kws2})
 
-
-
         self.add_operators(k0='tick')
-
-
 
     def add_rate(self, k0=None, k_time='t', p=None, k=None, d=None, sym=None, k_num=None, k_den=None, **kwargs):
         if k0 is not None:
@@ -161,14 +160,14 @@ class ParamClass:
                 disp = f'total {b.disp}'
             return disp
 
-        for k,(tex, k2) in self.k_ops.items():
-            f=nam[k]
+        for k, (tex, k2) in self.k_ops.items():
+            f = nam[k]
 
             kws = {
                 'd': f(b.d),
                 'p': f(b.p),
-                'sym': nam.tex[tex](b.sym) if tex!='sub' else nam.tex.sub(b.sym, k2),
-                'disp': f'{k} {b.disp}' if k!='cum' else cum_disp(k0),
+                'sym': nam.tex[tex](b.sym) if tex != 'sub' else nam.tex.sub(b.sym, k2),
+                'disp': f'{k} {b.disp}' if k != 'cum' else cum_disp(k0),
                 'func': self.func_dict[k](b.d),
                 'k': f'{b.k}{k2}' if k in ['mean', 'final', 'initial'] else f(b.k)}
             self.add(**kws, **kws0)
@@ -193,20 +192,20 @@ class ParamClass:
                 'sym': f'${kc}$',
                 'disp': pc
             },
-            {
-                'p': nam.start(pc),
-                'k': f'{kc}0',
-                'u': reg.units.s,
-                'sym': nam.tex.subsup('t', kc, '0'),
-                'disp': f'{pc} start',
-                **f_kws
-            },
-            {'p': nam.stop(pc),
-             'k': f'{kc}1',
-             'u': reg.units.s,
-             'sym': nam.tex.subsup('t', kc, '1'),
-             'disp': f'{pc} end',
-             **f_kws},
+            # {
+            #     'p': nam.start(pc),
+            #     'k': f'{kc}0',
+            #     'u': reg.units.s,
+            #     'sym': nam.tex.subsup('t', kc, '0'),
+            #     'disp': f'{pc} start',
+            #     **f_kws
+            # },
+            # {'p': nam.stop(pc),
+            #  'k': f'{kc}1',
+            #  'u': reg.units.s,
+            #  'sym': nam.tex.subsup('t', kc, '1'),
+            #  'disp': f'{pc} end',
+            #  **f_kws},
             # {
             #     'p': nam.id(pc),
             #     'k': f'{kc}_id',
@@ -259,21 +258,22 @@ class ParamClass:
     def add_chunk_track(self, kc, k):
         bc = self.dict[kc]
         b = self.dict[k]
-        b0, b1 = self.dict[f'{kc}0'], self.dict[f'{kc}1']
         kws = {
             'func': self.func_dict.track_par(bc.p, b.p),
             'u': b.u
         }
         k01 = f'{kc}_{k}'
+        p0,p1,pdp=nam.atStartStopChunk(b.p, bc.p)
+
         kws0 = {
-            'p': nam.at(b.p, b0.p),
+            'p': p0,
             'k': f'{kc}_{k}0',
             'disp': f'{b.disp} at {bc.p} start',
             'sym': nam.tex.subsup(b.sym, kc, '0'),
             **kws
         }
         kws1 = {
-            'p': nam.at(b.p, b1.p),
+            'p': p1,
             'k': f'{kc}_{k}1',
             'disp': f'{b.disp} at {bc.p} stop',
             'sym': nam.tex.subsup(b.sym, kc, '1'),
@@ -281,7 +281,7 @@ class ParamClass:
         }
 
         kws01 = {
-            'p': nam.chunk_track(bc.p, b.p),
+            'p': pdp,
             'k': k01,
             'disp': f'{b.disp} during {bc.p}s',
             'sym': nam.tex.sub(nam.tex.Delta(b.sym), kc),
@@ -432,7 +432,7 @@ class ParamClass:
             'u': reg.units.rad,
             'sym': nam.tex.sub('Phi', b.sym),
             'disp': f'{b.disp} phase',
-            'lim': (0, 2*np.pi),
+            'lim': (0, 2 * np.pi),
             'vfunc': param.Number
         }
         kws.update(kwargs)
@@ -446,7 +446,7 @@ class ParamClass:
         dur = int(r1 - r0)
         p = f'{a}_{r0}_{r1}'
         k = f'{k0}_{r0}_{r1}'
-        self.add(p=p, k=k, u = reg.units.m,sym=nam.tex.subsup(s0, f'{r0}', f'{r1}'), disp=f'dispersal in {dur}"',
+        self.add(p=p, k=k, u=reg.units.m, sym=nam.tex.subsup(s0, f'{r0}', f'{r1}'), disp=f'dispersal in {dur}"',
                  vfunc=param.Number, func=self.func_dict.dsp(range), required_ks=['x', 'y'])
         self.add_scaled(k0=k)
         self.add_operators(k0=k)
@@ -456,12 +456,12 @@ class ParamClass:
         p0 = 'tortuosity'
         k0 = 'tor'
         k = f'{k0}{dur}'
-        self.add(p=f'{p0}_{dur}', k=k,sym=nam.tex.sub(k0, str(dur)), disp=f"{p0} over {dur}''",
-                 vfunc=param.Magnitude,func=self.func_dict.tor(dur))
+        self.add(p=f'{p0}_{dur}', k=k, sym=nam.tex.sub(k0, str(dur)), disp=f"{p0} over {dur}''",
+                 vfunc=param.Magnitude, func=self.func_dict.tor(dur))
         self.add_operators(k0=k)
 
     def build_angular(self):
-        kws = {'dv': np.round(np.pi / 180, 2), 'u': reg.units.rad, 'v0': 0.0,'vfunc': param.Number,'dtype':float}
+        kws = {'dv': np.round(np.pi / 180, 2), 'u': reg.units.rad, 'v0': 0.0, 'vfunc': param.Number, 'dtype': float}
         self.add(
             **{'p': 'bend', 'codename': 'body_bend', 'k': 'b', 'sym': nam.tex.theta('b', sep='_'),
                'disp': 'bending angle', 'lim': (-np.pi, np.pi), **kws})
@@ -493,7 +493,7 @@ class ParamClass:
             self.add_operators(k0=k0)
 
     def build_spatial(self):
-        kws = {'u':  reg.units.m, 'vfunc': param.Number}
+        kws = {'u': reg.units.m, 'vfunc': param.Number}
         self.add(
             **{'p': 'length', 'k': 'l', 'disp': 'body length', 'flatname': 'body.length',
                'sym': '$l$', 'v0': 0.004, 'lim': (0.0005, 0.01), 'dv': 0.0005, **kws})
@@ -501,7 +501,7 @@ class ParamClass:
         self.add_operators(k0='l')
 
         for point in ['', 'centroid']:
-            px,py=nam.xy(point)
+            px, py = nam.xy(point)
             self.add(**{'p': px, 'disp': f'{point} X position', 'sym': f'{point} X', **kws})
             self.add(**{'p': py, 'disp': f'{point} Y position', 'sym': f'{point} Y', **kws})
             self.add_dst(point=point)
@@ -512,14 +512,14 @@ class ParamClass:
             self.add_velNacc(k0=k_d, k_v=k_v, k_a=k_a, p_v=d_v, d_v=d_v, p_a=d_a, d_a=d_a,
                              sym_v=k_v, disp_v=f'{point} crawling speed', disp_a=f'{point} crawling acceleration',
                              func_v=self.func_dict.vel(d_d, d_v))
-            for k0 in [px,py, k_d]:
+            for k0 in [px, py, k_d]:
                 self.add_scaled(k0=k0)
             self.add_velNacc(k0=k_sd, k_v=k_sv, k_a=k_sa, p_v=d_sv, d_v=d_sv, p_a=d_sa, d_a=d_sa,
                              sym_v=nam.tex.mathring(k_v),
                              disp_v=f'scaled {point} crawling speed',
                              disp_a=f'scaled {point} crawling acceleration',
                              func_v=self.func_dict.vel(d_sd, d_sv))
-            for k0 in [k_d, k_v, k_a, k_sd, k_sv, k_sa,px,py, k_d]:
+            for k0 in [k_d, k_v, k_a, k_sd, k_sv, k_sa, px, py, k_d]:
                 self.add_freq(k0=k0)
                 self.add_operators(k0=k0)
                 if k0 in [k_v, k_a, k_sv, k_sa]:
@@ -528,18 +528,13 @@ class ParamClass:
             for k0 in [nam.cum(k_d)]:
                 self.add_scaled(k0=k0)
 
-
         self.add(
             **{'p': 'dispersion', 'k': 'dsp', 'sym': nam.tex.circledast('d'), 'disp': 'dispersal', **kws})
 
-
-
-
-
         for i in [(0, 40), (0, 60), (0, 70), (0, 80), (10, 60), (10, 70), (10, 80), (20, 60), (20, 70), (20, 80),
-                      (10, 100), (20, 100), (0, 120), (0, 240), (0, 300), (0, 600), (60, 120), (60, 300)]:
+                  (10, 100), (20, 100), (0, 120), (0, 240), (0, 300), (0, 600), (60, 120), (60, 300)]:
             self.add_dsp(range=i)
-        self.add(**{'p': 'tortuosity', 'k': 'tor', 'vfunc':param.Magnitude, 'sym': 'tor'})
+        self.add(**{'p': 'tortuosity', 'k': 'tor', 'vfunc': param.Magnitude, 'sym': 'tor'})
         for dur in [1, 2, 5, 10, 20, 60, 120, 240, 300, 600]:
             self.add_tor(dur=dur)
         self.add(**{'p': 'anemotaxis', 'sym': 'anemotaxis'})
@@ -556,7 +551,7 @@ class ParamClass:
             'exec': 'exec',
             'str_c': nam.chain('stride'),
             'fee_c': nam.chain('feed'),
-            'on_food' : 'on_food',
+            'on_food': 'on_food',
             # 'off_food' : 'off_food'
         }
         for kc, pc in d0.items():
@@ -568,13 +563,13 @@ class ParamClass:
             for k in ['fov', 'rov', 'foa', 'roa', 'x', 'y', 'fo', 'fou', 'ro', 'rou', 'b', 'bv', 'ba', 'v', 'sv', 'a',
                       'sa', 'd', 'sd']:
                 self.add_chunk_track(kc=kc, k=k)
-            self.add(p= f'handedness_score_{kc}', k=f'tur_H_{kc}')
+            self.add(p=f'handedness_score_{kc}', k=f'tur_H_{kc}')
             if kc == 'fee':
                 self.add_freq(k0=kc)
 
     def build_sim_pars(self):
         L = 'brain.locomotor'
-        IF= f'{L}.interference'
+        IF = f'{L}.interference'
         Im = f'{L}.intermitter'
 
         for ii, jj in zip(['C', 'T', 'F'], ['crawler', 'turner', 'feeder']):
@@ -582,16 +577,20 @@ class ParamClass:
                         'sym': nam.tex.sub('A', ii)})
             self.add(**{'p': f'{L}.{jj}.input', 'k': f'I_{ii}', 'd': f'{jj} input', 'sym': nam.tex.sub('I', ii)})
             self.add(**{'p': f'{L}.{jj}.phi', 'k': f'phi_{ii}', 'd': f'{jj} phase',
-                        'sym': nam.tex.sub('Phi', ii), 'u':reg.units.rad})
-        self.add(**{'p': f'cur_attenuation','codename': f'{IF}.cur_attenuation', 'k': f'A_CT', 'l': f'C->T suppression',
-                    'sym': nam.tex.sub('A', 'CT'),'disp': 'CRAWLER:TURNER interference suppression.'})
-        self.add(**{'p': f'attenuation','codename': f'{IF}.attenuation', 'k': f'A0_CT', 'l': f'C->T baseline suppression',
-                    'sym': nam.tex.sub('A0', 'CT'), 'disp': 'CRAWLER:TURNER baseline interference suppression.'})
-        self.add(**{'p': nam.max('attenuation'),'codename': f'{IF}.attenuation_max', 'k': f'Amax_CT', 'l': f'C->T max suppression',
+                        'sym': nam.tex.sub('Phi', ii), 'u': reg.units.rad})
+        self.add(
+            **{'p': f'cur_attenuation', 'codename': f'{IF}.cur_attenuation', 'k': f'A_CT', 'l': f'C->T suppression',
+               'sym': nam.tex.sub('A', 'CT'), 'disp': 'CRAWLER:TURNER interference suppression.'})
+        self.add(
+            **{'p': f'attenuation', 'codename': f'{IF}.attenuation', 'k': f'A0_CT', 'l': f'C->T baseline suppression',
+               'sym': nam.tex.sub('A0', 'CT'), 'disp': 'CRAWLER:TURNER baseline interference suppression.'})
+        self.add(**{'p': nam.max('attenuation'), 'codename': f'{IF}.attenuation_max', 'k': f'Amax_CT',
+                    'l': f'C->T max suppression',
                     'sym': nam.tex.sub('Amax', 'CT'), 'disp': 'CRAWLER:TURNER maximum interference suppression.'})
-        self.add(**{'p': nam.phi(nam.max('attenuation')),'codename': f'{IF}.max_attenuation_phase', 'k': 'phi_Amax_CT',
-                    'u':reg.units.rad,'l': f'C->T max suppression phase',
-                    'sym': nam.tex.sub('Phi_Amax', 'CT'), 'disp': 'CRAWLER:TURNER maximum interference suppression phase.'})
+        self.add(**{'p': nam.phi(nam.max('attenuation')), 'codename': f'{IF}.max_attenuation_phase', 'k': 'phi_Amax_CT',
+                    'u': reg.units.rad, 'l': f'C->T max suppression phase',
+                    'sym': nam.tex.sub('Phi_Amax', 'CT'),
+                    'disp': 'CRAWLER:TURNER maximum interference suppression phase.'})
         # self.add(**{'p': 'brain.locomotor.cur_ang_suppression', 'k': 'c_CT', 'd': 'ang_suppression',
         #             'disp': 'angular suppression output', 'sym': sub('c', 'CT'), 'lim': (0.0, 1.0)})
 
@@ -661,13 +660,10 @@ class ParamClass:
             self.add(**{'p': p, 'k': k, 'd': d, 'disp': disp})
 
 
-
-
 class ParamRegistry(ParamClass):
     def __init__(self):
         super().__init__()
         self.PI = AttrDict()
-
 
     def get(self, k, d, compute=True):
         if k not in self.kdict:
@@ -777,4 +773,9 @@ class ParamRegistry(ParamClass):
             "end": self.output_reporters(ks=SuperList(O[c]['endpoint'] for c in cs).flatten.unique, agents=agents),
         })
 
+    def select_output(self, pref):
+        return AttrDict({p.d: p.codename for k, p in reg.par.kdict.items() if p.codename.startswith(pref)})
 
+    @property
+    def brain_output(self):
+        return self.select_output(pref='brain')

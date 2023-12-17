@@ -16,9 +16,9 @@ class NengoBrain(Network, Brain):
 
     def __init__(self, conf, agent=None, dt=None, **kwargs):
         super().__init__(**kwargs)
-        Brain.__init__(self, agent=agent, dt=dt)
+        Brain.__init__(self, conf=conf, agent=agent, dt=dt)
         self.food_feedback = False
-        self.locomotor = Locomotor(conf=conf,dt=self.dt)
+        # self.locomotor = Locomotor(conf=conf,dt=self.dt)
         self.build()
         self.sim = Simulator(self, dt=0.01, progress_bar=False)
         self.Nsteps = int(self.dt / self.sim.dt)

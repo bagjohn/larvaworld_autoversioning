@@ -274,6 +274,15 @@ class LarvaModuleDB(BrainModuleDB):
         self.LarvaModsOptional = SuperList(['energetics', 'sensorimotor', 'Box2D'])
         self.LarvaMods = self.LarvaModsBasic + self.LarvaModsOptional
         self.AllModules = self.BrainMods + self.LarvaMods
+        self.LarvaModsConfDict = AttrDict({
+            'body': self.body_kws,
+            'physics': self.physics_kws,
+            'energetics': self.energetics_kws,
+            'sensorimotor': self.sensorimotor_kws,
+            'Box2D': self.Box2D_kws
+        })
+        self.LarvaModsDefaultDict = AttrDict({k : f() for k,f in self.LarvaModsConfDict.items()})
+
 
     def sensorimotor_kws(self, **kwargs):
         return class_defaults(agents.ObstacleLarvaRobot, excluded=[agents.LarvaRobot], **kwargs)
@@ -293,34 +302,25 @@ class LarvaModuleDB(BrainModuleDB):
     def physics_kws(self, **kwargs):
         return class_defaults(agents.BaseController, **kwargs)
 
+    def Box2D_kws(self, **kwargs):
+        d = AttrDict({
+            'joint_types': {
+                'friction': {'N': 0, 'args': {}},
+                'revolute': {'N': 0, 'args': {}},
+                'distance': {'N': 0, 'args': {}}
+            }})
+        return d.update_existingnestdict(kwargs)
+
     def larvaConf(self, ms={}, mkws={}):
-        def Box2D_kws(**kwargs):
-            d = AttrDict({
-                'joint_types': {
-                    'friction': {'N': 0, 'args': {}},
-                    'revolute': {'N': 0, 'args': {}},
-                    'distance': {'N': 0, 'args': {}}
-                }})
-            return d.update_existingnestdict(kwargs)
-
-        D = AttrDict({
-            'body': self.body_kws,
-            'physics': self.physics_kws,
-            'energetics': self.energetics_kws,
-            'sensorimotor': self.sensorimotor_kws,
-            'Box2D': Box2D_kws
-        })
-
         C = AttrDict({'brain': self.brainConf(ms=ms, mkws=mkws)})
-        for k in self.LarvaModsBasic:
+        for k, c in self.LarvaModsDefaultDict.items():
+            if k in self.LarvaModsOptional :
+                if k not in mkws:
+                    C[k] = None
+                    continue
             if k not in mkws:
                 mkws[k] = {}
-            C[k] = D[k](**mkws[k])
-        for k in self.LarvaModsOptional:
-            if k not in mkws:
-                C[k] = None
-            else:
-                C[k] = D[k](**mkws[k])
+            C[k] = c.update_existingnestdict(mkws[k])
         return C
 
 

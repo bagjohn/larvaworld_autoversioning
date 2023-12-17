@@ -152,8 +152,7 @@ class ExpRun(BaseRun):
         os.makedirs(self.data_dir, exist_ok=True)
         for d in self.datasets:
             d.save()
-            for type, vs in d.larva_dicts.items():
-                aux.storeSoloDics(vs, path=f'{d.dir}/data/individuals/{type}.txt')
+            d.store_larva_dicts()
 
     def load_agentpy_output(self):
         df = agentpy.DataDict.load(**self.p.agentpy_output_kws)

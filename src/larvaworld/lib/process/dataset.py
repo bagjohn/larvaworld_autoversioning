@@ -1084,8 +1084,20 @@ class ParamLarvaDataset(param.Parameterized):
         if type in ds0 and all([id in ds0[type] for id in ids]):
             ds = [ds0[type][id] for id in ids]
         else:
-            ds = aux.loadSoloDics(agent_ids=ids, path=f'{self.config.data_dir}/individuals/{type}.txt')
+            path = f'{self.config.data_dir}/individuals/{type}'
+            ds = [aux.load_dict(f'{path}/{id}.txt') for id in ids]
         return ds
+
+    def store_dicts(self, type, dicts):
+        path = f'{self.config.data_dir}/individuals/{type}'
+        if path is not None:
+            os.makedirs(path, exist_ok=True)
+            for id, d in dicts.items():
+                aux.save_dict(d, f'{path}/{id}.txt')
+
+    def store_larva_dicts(self):
+        for type, dicts in self.larva_dicts.items():
+            self.store_dicts(type, dicts)
 
     @property
     def contour_xy_data_byID(self):

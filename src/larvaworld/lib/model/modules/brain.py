@@ -17,26 +17,33 @@ class Brain(NestedConf):
     windsensor = ClassAttr(class_=MD.parent_class('windsensor'), default=None, doc='The wind sensor')
     thermosensor = ClassAttr(class_=MD.parent_class('thermosensor'), default=None, doc='The temperature sensor')
 
-    def __init__(self, agent=None, dt=None, **kwargs):
+    def __init__(self, conf, agent=None, dt=None, **kwargs):
         super().__init__(**kwargs)
         self.agent = agent
-        self.modalities = aux.AttrDict({
-            'olfaction': {'sensor': self.olfactor,'func': self.sense_odors, 'A': 0.0, 'mem': None},
-            'touch': {'sensor': self.toucher,'func': self.sense_food_multi, 'A': 0.0, 'mem': None},
-            'thermosensation': {'sensor': self.thermosensor,'func': self.sense_thermo, 'A': 0.0, 'mem': None},
-            'windsensation': {'sensor': self.windsensor,'func': self.sense_wind, 'A': 0.0, 'mem': None}
-        })
-
         if dt is None:
             dt = self.agent.model.dt
         self.dt = dt
+        self.locomotor = modules.Locomotor(conf=conf, dt=self.dt)
+        self.modalities = aux.AttrDict({
+            'olfaction': {'sensor': self.olfactor, 'func': self.sense_odors, 'A': 0.0, 'mem': None},
+            'touch': {'sensor': self.toucher, 'func': self.sense_food_multi, 'A': 0.0, 'mem': None},
+            'thermosensation': {'sensor': self.thermosensor, 'func': self.sense_thermo, 'A': 0.0, 'mem': None},
+            'windsensation': {'sensor': self.windsensor, 'func': self.sense_wind, 'A': 0.0, 'mem': None}
+        })
+
+        m = conf['memory']
+        if m is not None:
+            M = self.modalities[m.modality]
+            if M.sensor:
+                m.gain = M.sensor.gain
+                M.mem = MD.build_memory_module(conf=m)
 
     def sense_odors(self, pos=None):
         try:
             a = self.agent
             if pos is None:
                 pos = a.olfactor_pos
-            return {id:l.get_value(pos) for id, l in a.model.odor_layers.items()}
+            return {id: l.get_value(pos) for id, l in a.model.odor_layers.items()}
         except:
             return {}
 
@@ -50,15 +57,12 @@ class Brain(NestedConf):
         except:
             return {}
 
-
-
     def sense_wind(self, **kwargs):
         try:
             a = self.agent
             return {'windsensor': a.model.windscape.get_value(a)}
         except:
             return {'windsensor': 0.0}
-
 
     def sense_thermo(self, pos=None):
         try:
@@ -69,6 +73,13 @@ class Brain(NestedConf):
             return a.model.thermoscape.get_value([(pos[0] + (ad[0] * 0.5)) / ad[0], (pos[1] + (ad[1] * 0.5)) / ad[1]])
         except AttributeError:
             return {'cool': 0, 'warm': 0}
+
+    def sense(self, pos=None, reward=False):
+        kws = {'pos': pos}
+        for m, M in self.modalities.items():
+            if M.sensor:
+                M.sensor.update_gain_via_memory(mem=M.mem, reward=reward)
+                M.A = M.sensor.step(M.func(**kws))
 
     @property
     def A_in(self):
@@ -93,28 +104,12 @@ class Brain(NestedConf):
 
 
 class DefaultBrain(Brain):
-    def __init__(self, conf, agent=None,dt=None, **kwargs):
+    def __init__(self, conf, agent=None, dt=None, **kwargs):
         if dt is None:
             dt = agent.model.dt
-        kws={'dt':dt, 'brain':self}
+        kws = {'dt': dt, 'brain': self}
         kwargs.update(MD.build_sensormodules(conf=conf, **kws))
-        super().__init__(agent=agent,dt =dt, **kwargs)
-        self.locomotor = modules.Locomotor(conf=conf, dt=self.dt)
-        m = conf['memory']
-        if m is not None:
-            M=self.modalities[m.modality]
-            if M.sensor:
-                m.gain = M.sensor.gain
-                M.mem = MD.build_memory_module(conf=m)
-
-    def sense(self, pos=None, reward=False):
-        kws={'pos':pos}
-        for m, M in self.modalities.items():
-            if M.sensor:
-                M.sensor.update_gain_via_memory(mem=M.mem, reward=reward)
-                M.A = M.sensor.step(M.func(**kws))
-
-
+        super().__init__(agent=agent, dt=dt, conf=conf, **kwargs)
 
     def step(self, pos, on_food=False, **kwargs):
         self.sense(pos=pos, reward=on_food)

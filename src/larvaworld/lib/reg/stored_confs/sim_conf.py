@@ -126,34 +126,33 @@ def Exp_dict():
             N = len(mIDs)
             if cs is None:
                 cs = aux.N_colors(N)
-            return AttrDict(
-                aux.merge_dicts([lg(id=id, c=c, mID=mID, **kwargs) for mID, c, id in zip(mIDs, cs, ids)]))
+            return AttrDict.merge_dicts([lg(id=id, c=c, mID=mID, **kwargs) for mID, c, id in zip(mIDs, cs, ids)])
 
-        def exp(id, env=None, l={}, en=ENR(), dur=5.0, c=[], c0=['pose'], **kwargs):
+        def exp(id, env=None, l={}, en=ENR(), dur=5.0, c=[], c0=['pose', 'brain'], **kwargs):
             if env is None:
                 env = id
             return gen.Exp(larva_groups=l, env_params=reg.conf.Env.get(env), experiment=id, enrichment=en,
                            collections=c0 + c, duration=dur, **kwargs).nestedConf
 
-        def fE(id, c=['feeder', 'olfactor','toucher'], dur=10.0,en=ENR.source_proc(),env='patch_grid', **kwargs):
-            return exp(id, c=c, dur=dur, en=en,env=env,**kwargs)
+        def fE(id, dur=10.0,en=ENR.source_proc(),env='patch_grid', **kwargs):
+            return exp(id, dur=dur, en=en,env=env,**kwargs)
 
-        def tE(id, c=['toucher'], dur=600.0,en=ENR.source_proc(),env='single_patch', **kwargs):
-            return exp(id, c=c, dur=dur, en=en,env=env,**kwargs)
+        def tE(id, dur=600.0,en=ENR.source_proc(),env='single_patch', **kwargs):
+            return exp(id, dur=dur, en=en,env=env,**kwargs)
 
         def gE(id, dur=20.0, **kwargs):
             return exp(id, dur=dur, **kwargs)
 
         def dE(id, dur=5.0, env='food_grid',h_starved=0.0,age=72.0,q=1.0, **kwargs):
-            return exp(id, dur=dur, env=env, c=['feeder', 'gut'],l=GTRvsS(age=age,q=q,h_starved=h_starved),
+            return exp(id, dur=dur, env=env, c=['gut'],l=GTRvsS(age=age,q=q,h_starved=h_starved),
                        en=ENR.spatial_proc(), **kwargs)
 
         def thermo_exp(id, dur=10.0, **kwargs):
-            return exp(id, dur=dur, c=['thermo'], **kwargs)
+            return exp(id, dur=dur, **kwargs)
 
         def prE(id, mID,dur=5.0, env='CS_UCS_off_food',trialID='default',**kwargs):
             return exp(id, dur=dur, en=ENR.PI_proc(),l=lgID(mID, s=(0.005, 0.02)),
-                       trials=reg.conf.Trial.getID(trialID),env=env,c=['olfactor'],**kwargs)
+                       trials=reg.conf.Trial.getID(trialID),env=env,**kwargs)
 
         def game_groups(dim=0.1, N=10, x=0.4, y=0.0, mode='king'):
             x = np.round(x * dim, 3)
@@ -246,9 +245,9 @@ def Exp_dict():
 
         d = {
             'exploration': {id: exp(id=id, **kws) for id, kws in d0.items()},
-            'chemotaxis': {id: exp(id=id, c0=['olfactor', 'pose'],en=ENR.source_proc(),**kws) for id, kws in d1.items()},
-            'anemotaxis': {id: exp(id=id, c0=['wind', 'pose'],en=ENR.wind_proc(),l=lgID('explorer', N=4), dur=0.5, **kws) for id, kws in d2.items()},
-            'chemanemotaxis': {id: exp(id=id, c0=['wind', 'olfactor', 'pose'], en=ENR.sourcewind_proc(),
+            'chemotaxis': {id: exp(id=id, en=ENR.source_proc(),**kws) for id, kws in d1.items()},
+            'anemotaxis': {id: exp(id=id, en=ENR.wind_proc(),l=lgID('explorer', N=4), dur=0.5, **kws) for id, kws in d2.items()},
+            'chemanemotaxis': {id: exp(id=id, en=ENR.sourcewind_proc(),
                        **kws) for id, kws in d3.items()},
 
             'thermotaxis': {
@@ -306,8 +305,7 @@ def Exp_dict():
                        },
 
             'games': {
-                'maze': gE('maze', env='maze', c=['olfactor'],
-                                 l=lgID('navigator',N=5, loc=(-0.4 * 0.1, 0.0), ors=(-60.0, 60.0))),
+                'maze': gE('maze', env='maze', l=lgID('navigator',N=5, loc=(-0.4 * 0.1, 0.0), ors=(-60.0, 60.0))),
                 'keep_the_flag': gE('keep_the_flag', env='game', l=game_groups(mode='king')),
                 'capture_the_flag': gE('capture_the_flag', env='game', l=game_groups(mode='flag')),
                 'catch_me': gE('catch_me', env='arena_50mm_diffusion', l=game_groups(mode='catch_me'))
@@ -325,7 +323,7 @@ def Exp_dict():
 
         return d
 
-    return aux.merge_dicts(list(d().values()))
+    return AttrDict.merge_dicts(list(d().values()))
 
 
 @reg.funcs.stored_conf("Ga")

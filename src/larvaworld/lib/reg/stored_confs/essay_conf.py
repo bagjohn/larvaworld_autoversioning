@@ -367,8 +367,7 @@ class DoublePatch_Essay(Essay):
         kws0 = {'N': self.N, 's': (0.005, 0.005), 'sample': reg.default_refID,
                 'age': age, 'epochs': {'0': reg.gen.Epoch(age_range=(0.0, age)).nestedConf}}
 
-        return aux.AttrDict(aux.merge_dicts(
-            [lg(id=id, c=c, mID=mID, **kws0) for mID, c, id in zip(self.mIDs, ['blue', 'red'], ['rover', 'sitter'])]))
+        return aux.AttrDict.merge_dicts([lg(id=id, c=c, mID=mID, **kws0) for mID, c, id in zip(self.mIDs, ['blue', 'red'], ['rover', 'sitter'])])
 
     def get_sources(self, type='standard', q=1.0, Cpeak=2.0, Cscale=0.0002):
 
