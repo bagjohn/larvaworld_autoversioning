@@ -488,13 +488,15 @@ def Model_dict():
         except:
             pass
 
-    def extend(id0):
+    def extend(id0, pref=None):
+        if pref is None:
+            pref=id0
         def new0(id, kws={}):
             new(id=id, id0=id0, kws=kws)
 
         for sg, g in zip(['', '0', '_x2'], [{'Odor': 150.0}, {'Odor': 0.0}, {'CS': 150.0, 'UCS': 0.0}]):
             for sb, br in zip(['', '_brute'], [False, True]):
-                idd = f'{id0}_nav{sg}{sb}'
+                idd = f'{pref}_navigator{sg}{sb}'
                 o = olf_kws(g=g, brute_force=br)
                 new0(idd, o)
                 for k in ['RL', 'MB']:
@@ -503,46 +505,46 @@ def Model_dict():
         for ss, eeb in zip(['', '_max'], [0.5, 0.9]):
             f = AttrDict({**MD.module_conf(mID='feeder', mode='default'), 'brain.intermitter.feed_bouts': True,
                           'brain.intermitter.EEB': eeb})
-            new0(f'{id0}{ss}_feeder', f)
+            new0(f'{pref}{ss}_feeder', f)
             for sg, g in zip(['', '0', '_x2'], [{'Odor': 150.0}, {'Odor': 0.0}, {'CS': 150.0, 'UCS': 0.0}]):
-                idd = f'{id0}{ss}_forager{sg}'
+                idd = f'{pref}{ss}_forager{sg}'
                 o = olf_kws(g=g)
                 new0(idd, {**o, **f})
                 for k in ['RL', 'MB']:
                     new0(f'{idd}_{k}', {**o, **f, **MD.memory_kws(k)})
 
-        for mm in [f'{id0}_avg', f'{id0}_var', f'{id0}_var2']:
+        for mm in [f'{pref}_avg', f'{pref}_var', f'{pref}_var2']:
             if mm in reg.conf.Model.confIDs:
                 E[mm] = reg.conf.Model.getID(mm)
 
     for id, (Tm, ImM) in zip(['Levy', 'NEU_Levy', 'NEU_Levy_continuous'],
-                             [('SIN', 'DEF'), ('NEU', 'DEF'), ('neural', None)]):
+                             [('SIN', 'DEF'), ('NEU', 'DEF'), ('NEU', None)]):
         E[id] = MD.larvaConf(ms=AttrDict(zip(LMs, ['CON', Tm, 'DEF', ImM])),
                              mkws={'interference': {'attenuation': 0.0}, 'intermitter': {'run_mode': 'exec'}})
         extend(id0=id)
 
     for mms in MD.mod_combs(LMs, short=True):
+        kws={'ms': AttrDict(zip(LMs, mms)), 'mkws' : {'interference': {'attenuation': 0.1, 'attenuation_max': 0.6}} if mms[
+                                                                                                        2] != 'DEF' else {}}
         if 'NENGO' in mms:
             if list(mms) != ['NENGO','NENGO','SQ','DEF']:
                 continue
             id='nengo_explorer'
+            E[id] = MD.larvaConf(**kws)
+            extend(id0=id, pref='nengo')
         else:
             id = "_".join(mms)
-        E[id] = MD.larvaConf(ms=AttrDict(zip(LMs, mms)),
-                             mkws={'interference': {'attenuation': 0.1, 'attenuation_max': 0.6}} if mms[
-                                                                                                        2] != 'DEF' else {})
-        if mms[0] == 'RE' and mms[3] == 'DEF':
-            extend(id0=id)
-            if mms[1] == 'NEU' and mms[2] == 'PHI':
-                for idd in ['forager', 'forager0', 'forager_x2', 'max_forager', 'max_forager0',
-                            'forager_RL', 'forager0_RL', 'max_forager_RL', 'max_forager0_RL',
-                            'forager_MB', 'forager0_MB', 'max_forager_MB', 'max_forager0_MB',
-                            'feeder', 'max_feeder']:
-                    E[idd] = E[f'{id}_{idd}']
-                E['explorer'] = E[id]
-                E['navigator'] = E[f'{id}_nav']
-                E['navigator_x2'] = E[f'{id}_nav_x2']
-                E['RLnavigator'] = E[f'{id}_nav_RL']
+            E[id] = MD.larvaConf(**kws)
+            if mms[0] == 'RE' and mms[3] == 'DEF':
+                extend(id0=id)
+                if mms[1] == 'NEU' and mms[2] == 'PHI':
+                    for idd in ['navigator', 'navigator_x2', 'forager', 'forager0', 'forager_x2', 'max_forager', 'max_forager0',
+                                'forager_RL', 'forager0_RL', 'max_forager_RL', 'max_forager0_RL',
+                                'forager_MB', 'forager0_MB', 'max_forager_MB', 'max_forager0_MB',
+                                'feeder', 'max_feeder']:
+                        E[idd] = E[f'{id}_{idd}']
+                    E['explorer'] = E[id]
+                    E['RLnavigator'] = E[f'{id}_navigator_RL']
 
     for id, dd in zip(['imitator', 'zebrafish', 'thermo_navigator', 'OSNnavigator', 'OSNnavigator_x2'],
                       [{'body.Nsegs': 11},
