@@ -198,10 +198,12 @@ class OSNOlfactor(Olfactor):
         self.response_key = response_key
         self.remote_dt = remote_dt
         self.agent_id = RemoteBrianModelInterface.getRandomModelId()
+        self.sim_id = RemoteBrianModelInterface.getRandomModelId()
 
 
     def update(self):
         agent_id = self.brain.agent.unique_id if self.brain is not None else self.agent_id
+        sim_id = self.brain.agent.model.id if self.brain is not None else self.sim_id
 
         msg_kws = {
             # Default :
@@ -213,6 +215,6 @@ class OSNOlfactor(Olfactor):
             'concentration_change_mmol': self.first_odor_concentration_change, # 1st ODOR concentration change
         }
 
-        response = self.brianInterface.executeRemoteModelStep(agent_id, t_sim=self.remote_dt, t_warmup=self.brian_warmup, **msg_kws)
+        response = self.brianInterface.executeRemoteModelStep(sim_id, agent_id, self.remote_dt, t_warmup=self.brian_warmup, **msg_kws)
         self.output = response.param(self.response_key)
         super().update()
