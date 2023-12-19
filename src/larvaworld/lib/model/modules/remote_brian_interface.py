@@ -44,6 +44,6 @@ class RemoteBrianModelInterface(object):
         with Client((self.server_host, self.server_port)) as client:
             print("RemoteBrianModelInterface: BrianInterfaceMessage sent: {}".format(msg))
             [response] = client.send([msg])  # this is a LarvaMessage object again
-            self.step_cache[response.model_id] = response.step
+            self.step_cache[response.model_id] += 1
             print("RemoteBrianModelInterface: BrianInterfaceMessage received: {}".format(response))
             return response

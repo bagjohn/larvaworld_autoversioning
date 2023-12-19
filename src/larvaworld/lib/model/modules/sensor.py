@@ -191,7 +191,7 @@ class Thermosensor(Sensor):
 
 
 class OSNOlfactor(Olfactor):
-    def __init__(self, response_key='OSN_rate', server_host='localhost', server_port=5795, remote_dt=100, remote_warmup=0, **kwargs):
+    def __init__(self, response_key='OSN_rate', server_host='localhost', server_port=5795, remote_dt=100, remote_warmup=500, **kwargs):
         super().__init__(**kwargs)
         self.brianInterface = RemoteBrianModelInterface(server_host, server_port, remote_dt)
         self.brian_warmup = remote_warmup
