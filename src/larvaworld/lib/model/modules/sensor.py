@@ -200,6 +200,15 @@ class OSNOlfactor(Olfactor):
         self.agent_id = RemoteBrianModelInterface.getRandomModelId()
         self.sim_id = RemoteBrianModelInterface.getRandomModelId()
 
+    def normalized_sigmoid(self, a, b, x):
+        '''
+        Returns array of a horizontal mirrored normalized sigmoid function
+        output between 0 and 1
+        Function parameters a = center; b = width
+        '''
+        s = 1 / (1 + np.exp(b * (x - a)))
+        #return 1 * (s - min(s)) / (max(s) - min(s))  # normalize function to 0-1
+        return s
 
     def update(self):
         agent_id = self.brain.agent.unique_id if self.brain is not None else self.agent_id
@@ -216,5 +225,5 @@ class OSNOlfactor(Olfactor):
         }
 
         response = self.brianInterface.executeRemoteModelStep(sim_id, agent_id, self.remote_dt, t_warmup=self.brian_warmup, **msg_kws)
-        self.output = response.param(self.response_key)
+        self.output = self.normalized_sigmoid(15, 8, response.param(self.response_key))
         super().update()
