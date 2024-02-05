@@ -15,6 +15,9 @@ __name__ = 'larvaworld'
 
 
 import importlib.metadata
-
-__version__ = importlib.metadata.version("larvaworld")
+# Workaround to fix sphinx documentation build in readthedocs
+try :
+    __version__ = importlib.metadata.version("larvaworld")
+except :
+    pass
 # print('now')

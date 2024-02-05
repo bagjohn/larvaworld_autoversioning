@@ -1,10 +1,11 @@
 # For building the documentation:
 gendocs
-sphinx
+sphinx==6.0
 myst-nb
-myst-parser
+# myst-parser
 sphinx-autobuild
 sphinx-rtd-theme
 sphinx-autoapi
 # recommonmark
 # m2r2
+# larvaworld
