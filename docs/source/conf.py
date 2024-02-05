@@ -48,7 +48,7 @@ extensions = [
     'sphinx.ext.autosummary',
     "myst_nb",
     # "myst_parser",
-    "autoapi.extension",
+    # "autoapi.extension",
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     # "nbsphinx",
