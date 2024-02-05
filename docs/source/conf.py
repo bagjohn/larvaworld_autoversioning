@@ -45,12 +45,12 @@ extensions = [
     'sphinx.ext.graphviz',
     'sphinx.ext.autosummary',
     "myst_nb",
-    "myst_parser",
-    "autoapi.extension",
+    # "myst_parser",
+    # "autoapi.extension",
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    "nbsphinx",
-    "sphinx_gallery.load_style",
+    # "nbsphinx",
+    # "sphinx_gallery.load_style",
     # "autodocsumm",  # to generate tables of functions, attributes, methods, etc.
 ]
 
