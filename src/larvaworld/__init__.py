@@ -14,10 +14,9 @@ __displayname__ = 'larvaworld'
 __name__ = 'larvaworld'
 
 
-import importlib.metadata
-# Workaround to fix sphinx documentation build in readthedocs
-try :
-    __version__ = importlib.metadata.version("larvaworld")
-except :
-    pass
+# TODO : the automatic version naming requires the package itself. Woraround by simply naming it 0.1
+# import importlib.metadata
+# __version__ = importlib.metadata.version("larvaworld")
+__version__ = 0.1
+
 # print('now')
