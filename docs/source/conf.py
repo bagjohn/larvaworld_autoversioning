@@ -20,7 +20,10 @@ author = 'Panagiotis Sakagiannis'
 copyright = '2023, Panagiotis Sakagiannis'
 
 # The short X.Y version
-version = importlib.metadata.version("larvaworld")
+try :
+    version = importlib.metadata.version("larvaworld")
+except :
+    pass
 # The full version, including alpha/beta/rc tags
 # release = ''
 
