@@ -22,7 +22,7 @@ copyright = '2023, Panagiotis Sakagiannis'
 # The short X.Y version
 # TODO : the automatic version naming requires the package itself. Woraround by simply naming it 0.1
 # version = importlib.metadata.version("larvaworld")
-version = 0.1
+version = '0.1'
 # The full version, including alpha/beta/rc tags
 # release = ''
 
