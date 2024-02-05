@@ -104,6 +104,12 @@ autodoc_typehints = "description"
 html_theme = "sphinx_rtd_theme"
 html_static_path = ['_static']
 
+# Avoid running the notebooks
+nb_execution_mode = "off"
+
+myst_footnote_transition = False
+
+
 append_material = """
 
 .. toctree::
