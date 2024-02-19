@@ -17,7 +17,6 @@ __all__ = [
     'moduleDB',
 ]
 
-
 class BrainModule(NestedConf):
     ModeShortNames = AttrDict({'realistic': 'RE', 'square': 'SQ', 'gaussian': 'GAU', 'constant': 'CON',
                                'default': 'DEF', 'neural': 'NEU', 'sinusoidal': 'SIN', 'nengo': 'NENGO',
@@ -43,7 +42,7 @@ class BrainModule(NestedConf):
 
     @property
     def short_modes(self):
-        return SuperList([self.ModeShortNames[m] for m in self.modes])
+        return SuperList([self.ModeShortNames[m] if m in self.ModeShortNames else m for m in self.modes])
 
     def get_class(self, mode):
         if mode in self.short_modes:
