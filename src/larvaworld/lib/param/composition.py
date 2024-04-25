@@ -176,7 +176,7 @@ class Odor(NestedConf):
 
     @classmethod
     def oG(cls, c=1, id='Odor'):
-        return cls(id=id, intensity=2.0 * c, spread=0.0002 * np.sqrt(c))
+        return cls(id=id, intensity=2.0 * c, spread=0.002 * np.sqrt(c))
 
     @classmethod
     def oD(cls, c=1, id='Odor'):
