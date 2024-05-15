@@ -3,7 +3,7 @@ from typing import List
 from argparse import ArgumentParser
 import param
 from ..lib import reg, aux, sim, screen
-from ..lib.param import SimOps,RuntimeOps
+from ..lib.param import SimOps, RuntimeOps
 
 # from ..lib.param.custom import ClassAttr, ClassDict
 
@@ -387,11 +387,18 @@ class SimModeParser:
         """
         Initialize parsers for different simulation modes.
         """
-        ks = aux.SuperList(self.dict.values()).flatten.unique
-        self.parsers = aux.AttrDict({k: ParserArgumentDict.from_dict(reg.par.PI[k]) for k in ks})
+        #ks = aux.SuperList(self.dict.values()).flatten.unique
+        #self.parsers = aux.AttrDict({k: ParserArgumentDict.from_dict(reg.par.PI[k]) for k in ks})
         self.parsers.screen_kws = ParserArgumentDict.from_param(d0=screen.ScreenOps)
         self.parsers.SimOps = ParserArgumentDict.from_param(d0=SimOps)
         self.parsers.RuntimeOps = ParserArgumentDict.from_param(d0=RuntimeOps)
+
+        # TODO set the parsers per mode
+        self.parsers.Replay = ParserArgumentDict.from_param(d0=reg.gen.Replay)
+        self.parsers.Eval = ParserArgumentDict.from_param(d0=reg.gen.Eval)
+        self.parsers.GAselector = ParserArgumentDict.from_param(d0=reg.gen.GAselector)
+        self.parsers.GAevaluation = ParserArgumentDict.from_param(d0=reg.gen.GAevaluation)
+
         self.cli_parser = self.build_cli_parser()
         self.mode = None
         self.run = None
@@ -416,8 +423,8 @@ class SimModeParser:
         sp = self.parsers.RuntimeOps.add(sp)
         if m not in ['Replay', 'Eval']:
             sp = self.parsers.SimOps.add(sp)
-        for k in self.dict[m]:
-            sp = self.parsers[k].add(sp)
+        # for k in self.dict[m]:
+        #     sp = self.parsers[k].add(sp)
         return sp
 
     def init_mode_subparser(self, sp, m):
@@ -433,7 +440,7 @@ class SimModeParser:
             sp.add_argument('experiment', choices=reg.conf[m].confIDs, help='The experiment mode')
         if m in ['Exp', 'Batch']:
             sp.add_argument('-N', '--Nagents', type=int, help='The number of simulated larvae in each larva group')
-            sp.add_argument('-mIDs', '--models', type=str, nargs='+',
+            sp.add_argument('-mIDs', '--modelIDs', type=str, nargs='+',
                             help='The larva models to use for creating the simulation larva groups')
             sp.add_argument('-gIDs', '--groupIDs', type=str, nargs='+',
                             help='The displayed IDs of the simulation larva groups')
@@ -495,17 +502,17 @@ class SimModeParser:
             self.run = sim.ExpRun(**kw)
         elif m == 'Ga':
             p = reg.conf.Ga.expand(kw.experiment)
-            ev=self.eval_parser('ga_eval_kws')
-            sel=self.eval_parser('ga_select_kws')
-            ref=self.eval_parser('reference_dataset')
+            ev = self.eval_parser('GAevaluation')
+            sel = self.eval_parser('GAselector')
+            #ref=self.eval_parser('reference_dataset')
 
             for k in ['base_model', 'bestConfID', 'space_mkeys']:
                 if sel[k] is None:
                     sel.pop(k)
             p.ga_select_kws.update(**sel)
 
-            if ref.refID is not None:
-                p.refID = ref.refID
+            if ev.refID is not None:
+                p.refID = ev.refID
             kw.parameters = p
             self.run = sim.GAlauncher(**kw)
         elif m == 'Eval':
@@ -546,7 +553,7 @@ class SimModeParser:
         """
         Launch the simulation run.
         """
-        anal_kws=aux.AttrDict({'show': self.args.show})
+        anal_kws = aux.AttrDict({'show': self.args.show})
         m = self.mode
         r = self.run
         if m == 'Batch':
@@ -554,13 +561,13 @@ class SimModeParser:
         elif m == 'Exp':
             _ = r.simulate()
             if self.args.analysis:
-                r.analyze(show= self.args.show)
+                r.analyze(show=self.args.show)
         elif m == 'Ga':
             _ = r.simulate()
         elif m == 'Eval':
             _ = r.simulate()
             if self.args.analysis:
-                r.plot_results(show= self.args.show)
-                r.plot_models(show= self.args.show)
+                r.plot_results(show=self.args.show)
+                r.plot_models(show=self.args.show)
         elif m == 'Replay':
             r.run()
