@@ -389,6 +389,7 @@ class SimModeParser:
         """
         #ks = aux.SuperList(self.dict.values()).flatten.unique
         #self.parsers = aux.AttrDict({k: ParserArgumentDict.from_dict(reg.par.PI[k]) for k in ks})
+        self.parsers = aux.AttrDict()
         self.parsers.screen_kws = ParserArgumentDict.from_param(d0=screen.ScreenOps)
         self.parsers.SimOps = ParserArgumentDict.from_param(d0=SimOps)
         self.parsers.RuntimeOps = ParserArgumentDict.from_param(d0=RuntimeOps)
