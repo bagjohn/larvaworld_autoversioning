@@ -491,6 +491,7 @@ class SimModeParser:
         if m == 'Batch':
             kw.mode = 'batch'
             kw.run_externally = False
+            kw.experiment = a.experiment
             kw.conf = reg.conf.Batch.getID(a.experiment)
             kw.conf.N = a.Nagents
             kw.conf.modelIDs = a.modelIDs

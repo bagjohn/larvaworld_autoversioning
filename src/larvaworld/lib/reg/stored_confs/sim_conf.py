@@ -197,7 +197,7 @@ def Exp_dict():
 
         d1 = {
             'chemotaxis': {'env': 'odor_gradient',
-                           'l': lgID('NEU_Levy_continuous_nav', N=8, loc=(-0.04, 0.0), s=(0.005, 0.02),
+                           'l': lgID('navigator', N=8, loc=(-0.04, 0.0), s=(0.005, 0.02),
                                    ors=(-30.0, 30.0))},
             'chemorbit': {'env': 'mid_odor_gaussian','l': lgID('navigator', N=3)},
             'chemorbit_OSN': {'env': 'mid_odor_gaussian','l': lgID('OSNnavigator', N=3)},

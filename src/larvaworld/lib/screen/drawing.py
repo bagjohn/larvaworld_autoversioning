@@ -396,6 +396,7 @@ class ScreenManager(ScreenAreaPygame):
 
 
 
+
     def increase_fps(self):
         if self._fps < 60:
             self._fps += 1
@@ -674,7 +675,8 @@ class ScreenManager(ScreenAreaPygame):
         elif k == 'visible_trails':
             self.toggle(k, disp='trails')
         elif k == 'pause':
-            self.toggle('is_paused')
+            m.is_paused = not m.is_paused
+            self.toggle('is_paused', 'ON' if m.is_paused else 'OFF')
         elif k == 'move left':
             self.move_center(-0.05, 0)
         elif k == 'move right':

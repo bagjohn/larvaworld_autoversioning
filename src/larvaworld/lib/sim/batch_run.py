@@ -66,13 +66,17 @@ class BatchRun(reg.generators.SimConfiguration, ap.Experiment):
             store_data: Whether to store batch-run results
             **kwargs: Arguments passed to parent class
         '''
+        # FIXME This causes error when the ap.Experiment.name is set to the model_class.name ('ExpRun')
+        # See line 56 in site-packages/agentpy/experiment.py
+        ap.Experiment.__init__(self, model_class=ExpRun, sample=space_search_sample(space_search, **space_kws),
+                               store_data=False, **kwargs)
+
         reg.generators.SimConfiguration.__init__(self, runtype='Batch', experiment=experiment, id=id,
                                                  store_data=store_data)
         self.df_path = f'{self.dir}/results.h5'
         self.exp_conf = reg.conf.Exp.expand(exp) if isinstance(exp, str) else exp
         self.exp_conf.update(**exp_kws)
-        ap.Experiment.__init__(self, model_class=ExpRun, sample=space_search_sample(space_search, **space_kws),
-                               store_data=False, **kwargs)
+
 
         self.datasets = {}
         self.results = None
