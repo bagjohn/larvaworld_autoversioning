@@ -26,16 +26,7 @@ class Sensor(Effector):
     gain_dict = param.Dict(default=aux.AttrDict(), doc='Dictionary of sensor gain per stimulus ID')
 
 
-    @staticmethod
-    def select(mode):
-        d = aux.AttrDict({
-            'olfactor': Olfactor,
-            'brian_olfactor': BrianOlfactor,
-            'toucher': Toucher,
-            'wind': WindSensor,
-            'thermo': Thermosensor
-        })
-        return d[mode]
+
 
     def __init__(self, brain=None, **kwargs):
         super().__init__(**kwargs)
@@ -200,17 +191,28 @@ class Thermosensor(Sensor):
 
 
 class OSNOlfactor(Olfactor):
-    def __init__(self, response_key='OSN_rate', server_host='localhost', server_port=5795, remote_dt=100, remote_warmup=0, **kwargs):
+    def __init__(self, response_key='OSN_rate', server_host='localhost', server_port=5795, remote_dt=100, remote_warmup=500, **kwargs):
         super().__init__(**kwargs)
         self.brianInterface = RemoteBrianModelInterface(server_host, server_port, remote_dt)
         self.brian_warmup = remote_warmup
         self.response_key = response_key
         self.remote_dt = remote_dt
         self.agent_id = RemoteBrianModelInterface.getRandomModelId()
+        self.sim_id = RemoteBrianModelInterface.getRandomModelId()
 
+    def normalized_sigmoid(self, a, b, x):
+        '''
+        Returns array of a horizontal mirrored normalized sigmoid function
+        output between 0 and 1
+        Function parameters a = center; b = width
+        '''
+        s = 1 / (1 + np.exp(b * (x - a)))
+        #return 1 * (s - min(s)) / (max(s) - min(s))  # normalize function to 0-1
+        return s
 
     def update(self):
         agent_id = self.brain.agent.unique_id if self.brain is not None else self.agent_id
+        sim_id = self.brain.agent.model.id if self.brain is not None else self.sim_id
 
         msg_kws = {
             # Default :
@@ -222,6 +224,6 @@ class OSNOlfactor(Olfactor):
             'concentration_change_mmol': self.first_odor_concentration_change, # 1st ODOR concentration change
         }
 
-        response = self.brianInterface.executeRemoteModelStep(agent_id, t_sim=self.remote_dt, t_warmup=self.brian_warmup, **msg_kws)
-        self.output = response.param(self.response_key)
+        response = self.brianInterface.executeRemoteModelStep(sim_id, agent_id, self.remote_dt, t_warmup=self.brian_warmup, **msg_kws)
+        self.output = self.normalized_sigmoid(15, 8, response.param(self.response_key))
         super().update()

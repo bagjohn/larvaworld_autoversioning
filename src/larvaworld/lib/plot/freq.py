@@ -30,10 +30,10 @@ def plot_fft_multi(ks=['v', 'fov'], name=f'frequency_powerspectrum', axx=None, *
             'label': 'angular speed',
         }
     })
-    # kks=list(palette.keys())
-    # lks = [Dk.label for Dk in palette.values()]
-    # col0ks = [Dk.color for Dk in palette.values()]
-    # fr_ranges = [Dk.fr_range for Dk in palette.values()]
+    plist=aux.ItemList(palette.values())
+    col0ks, lks, fr_rs = plist.color, plist.label, plist.fr_range
+
+
 
 
     prob_kws = {
@@ -43,26 +43,25 @@ def plot_fft_multi(ks=['v', 'fov'], name=f'frequency_powerspectrum', axx=None, *
         'labels': P.labels,
     }
 
-    col0ks, lks = [], []
-    for k,Dk in palette.items():
-        colsk, fsk = [], []
-        lk = Dk.label
-        lks.append(lk)
-        col0k = Dk.color
-        col0ks.append(col0k)
+    xfs=[fftfreq(c.Nticks, c.dt)[:c.Nticks // 2] for c in P.datasets.config]
+    dts=P.datasets.config.dt
 
-        for l, d, col in P.data_palette:
-            c = d.config
-            xf = fftfreq(c.Nticks, c.dt)[:c.Nticks // 2]
 
-            res = P.dkdict[l][k].groupby('AgentID').apply(aux.fft_max, dt=c.dt, fr_range=Dk.fr_range,
+    for i, k in enumerate(palette):
+        colsk=[aux.mix2colors(col, col0ks[i]) for col in P.colors]
+
+
+
+        fsk = []
+        for j,l in enumerate(P.labels):
+
+
+            res = P.dkdict[l][k].groupby('AgentID').apply(aux.fft_max, dt=dts[j], fr_range=fr_rs[i],
                                                           return_amps=True).values
-            fk = [r[0] for r in res]
-            fsk.append(fk)
+            fsk.append([r[0] for r in res])
             yk = np.array([r[1] for r in res])
-            colk = aux.mix2colors(col, col0k)
-            colsk.append(colk)
-            plot.plot_quantiles(yk, x=xf, axis=P.axs[0], label=lk, color=colk)
+
+            plot.plot_quantiles(yk, x=xfs[j], axis=P.axs[0], label=lks[i], color=colsk[j])
         plot.prob_hist(vs=fsk, colors=colsk, **prob_kws)
     P.conf_ax(0, ylim=(0, 8), xlim=(0, 3.5), ylab='Amplitude (a.u.)', xlab='Frequency (Hz)',
               title='Fourier analysis', titlefontsize=25, yMaxN=5)

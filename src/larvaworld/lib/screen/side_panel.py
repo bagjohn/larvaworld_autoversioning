@@ -9,6 +9,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
 from .. import aux
+from ..aux import TimeUtil
 
 __all__ = [
     'SidePanel',
@@ -39,27 +40,49 @@ class SidePanel:
             self.font = pygame.font.Font(None, self.FONT_SIZE)
         else:
             self.font = None
-        self.panel_rect = pygame.Rect(self.viewer.w, 0, self.viewer.manager.panel_width, self.viewer.h)
+        self.panel_rect = pygame.Rect(self.viewer.w, 0, self.viewer.panel_width, self.viewer.h)
 
-    def render_intro(self):
+
+
+
+    def display_ga_info(self):
+        """
+        Displays information about the Genetic Algorithm (GA) on the side panel.
+        """
+        v=self.viewer
+        m = v.model
+        self.line_num = 1
         """
         Renders introductory information on the side panel.
         """
-        m = self.viewer.manager.model
         cur_t = aux.TimeUtil.current_time_millis()
         cum_t = math.floor((cur_t - m.start_total_time) / 1000)
         lines = [
             'Total time: ' + aux.TimeUtil.format_time_seconds(cum_t),
             'Generation: ' + str(m.generation_num),
             'Population: ' + str(len(m.agents)) + '/' + str(m.selector.Nagents),
-            'Generation real-time: ' + aux.TimeUtil.format_time_seconds(m.t*m.dt),
+            'Generation real-time: ' + aux.TimeUtil.format_time_seconds(m.t * m.dt),
             '',
         ]
 
         for line in lines:
             self.render_line(line)
-
-    def render_controls(self):
+        """
+        Renders results and information about the current state.
+        """
+        g0 = m.best_genome
+        if g0 is not None:
+            self.render_line('Max fitness: ' + str(round(g0.fitness, 2)))
+            if g0.fitness_dict is not None:
+                for name, dic in g0.fitness_dict.items():
+                    self.render_line(f'{name} error: ')
+                    for short, ks in dic.items():
+                        self.render_line(f'{short}: ' + str(np.round(ks, 2)), self.LEFT_MARGIN)
+            self.render_line('Best genome: ')
+            for k, p in m.selector.space_objs.items():
+                self.render_line(f'{p.name}: {g0.gConf[k]}', self.LEFT_MARGIN)
+        else:
+            self.render_line('No best genome yet!')
         """
         Renders control instructions on the side panel.
         """
@@ -74,34 +97,6 @@ class SidePanel:
         for line in lines:
             self.render_line(line, self.LEFT_MARGIN)
 
-    def render_results(self):
-        """
-        Renders results and information about the current state.
-        """
-        m = self.viewer.manager.model
-        best_gen = m.best_genome
-        if best_gen is not None:
-            self.render_line('Max fitness: ' + str(round(best_gen.fitness, 2)))
-            if best_gen.fitness_dict is not None:
-                for name, dic in best_gen.fitness_dict.items():
-                    self.render_line(f'{name} error: ')
-                    for short, ks in dic.items():
-                        self.render_line(f'{short}: ' + str(np.round(ks, 2)), self.LEFT_MARGIN)
-            self.render_line('Best genome: ')
-            for k, p in m.selector.space_dict.items():
-                self.render_line(f'{p.name}: {best_gen.gConf[k]}', self.LEFT_MARGIN)
-        else:
-            self.render_line('No best genome yet!')
-
-    def display_ga_info(self):
-        """
-        Displays information about the Genetic Algorithm (GA) on the side panel.
-        """
-        self.line_num = 1
-        self.render_intro()
-        self.render_results()
-        self.render_controls()
-
     def render_line(self, text, extra_margin=0):
         """
         Renders a text line on the side panel.
@@ -109,7 +104,7 @@ class SidePanel:
         :param text: The text to render.
         :param extra_margin: Additional margin for the text.
         """
-        line = self.font.render(text, 1, self.viewer.manager.tank_color)
+        line = self.font.render(text, 1, self.viewer.tank_color)
         x = self.viewer.w + self.DEFAULT_MARGIN + extra_margin
         y = self.line_num * self.line_spacing
         lint_pos = pygame.Rect(x, y, 20, 20)
@@ -124,6 +119,6 @@ class SidePanel:
         :param kwargs: Additional drawing arguments.
         """
         # Draw a black background for the side panel
-        pygame.draw.rect(v._window, v.manager.sidepanel_color, self.panel_rect)
+        pygame.draw.rect(v.v, v.sidepanel_color, self.panel_rect)
         v.draw_line((v.w, 0), (v.w, v.h), color=aux.Color.RED)
         self.display_ga_info()

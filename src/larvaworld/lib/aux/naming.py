@@ -96,36 +96,37 @@ class TexNaming:
 class NamingRegistry(AttrDict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.k_pref=['final', 'initial', 'cum', 'lin', 'scal', 'abs', 'dst_to', 'bearing_to', 'non']
 
-        self.ks = ['mean', 'std', 'var', 'min', 'max', 'final', 'initial', 'cum', 'freq', 'lin', 'scal', 'abs', 'non',
-                   'chain', 'dur', 'unwrap', 'dst', 'dst_to', 'bearing_to', 'vel', 'acc', 'orient', 'scal']
-
-        self.tex_symbols = ['bar', 'tilde', 'wave', 'theta_', 'omega_', 'Delta', 'sum', 'delta', 'dot', 'ddot',
-                            'mathring']
-
-        self.tex=TexNaming()
-
-
-
-    def get_kws(self, k):
-        loc_pref = ['final', 'initial', 'cum', 'lin', 'scal', 'abs', 'dst_to', 'bearing_to', 'non']
-
-        noseparator = ['chain']
-
-        key_pairs = {
+        self.k_pairs = AttrDict({
             'vel': 'velocity',
             'acc': 'acceleration',
             'scal': 'scaled',
             'orient': 'orientation',
             'unwrap': 'unwrapped',
             # 'scal': 'scaled',
-        }
+        })
+
+
+
+        # self.ks = SuperList(self.k_pref+self.k_pairs.keylist+self.k_ops.keylist+['freq', 'chain', 'dur', 'dst']).unique
+
+        # self.tex_symbols = ['bar', 'tilde', 'wave', 'theta_', 'omega_', 'Delta', 'sum', 'delta', 'dot', 'ddot',
+        #                     'mathring']
+
+        self.tex=TexNaming()
+
+
+
+    def get_kws(self, k):
+
+        noseparator = ['chain']
 
         kws = {}
-        if k in loc_pref:
+        if k in self.k_pref:
             kws['loc'] = 'pref'
-        if k in key_pairs:
-            kws['s'] = key_pairs[k]
+        if k in self.k_pairs:
+            kws['s'] = self.k_pairs[k]
         else:
             kws['s'] = k
         if k in noseparator:

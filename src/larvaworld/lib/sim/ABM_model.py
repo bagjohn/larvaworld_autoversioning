@@ -3,19 +3,12 @@ Basic Agent-based modeling classes
 """
 
 import sys
-
 import numpy as np
+import agentpy as ap
 import pandas as pd
 import random
-
 from datetime import datetime
-from agentpy.version import __version__
-from agentpy.datadict import DataDict
-from agentpy.sample import Range, Values
 
-from agentpy.tools import make_list, InfoStr
-
-# from ..model import Object
 from .. import reg, aux
 
 
@@ -24,9 +17,7 @@ __all__ = [
     'ABModel',
 ]
 
-
 class BasicABModel:
-# class BasicABModel(Object):
     '''
         Basic Class for the Agent-based model
         Extends the agentpy Model class
@@ -34,18 +25,16 @@ class BasicABModel:
     '''
 
     def __init__(self, id='ABModel', parameters=None, _run_id=None, **kwargs):
-
         # Prepare parameters
         self.p = aux.AttrDict()
         if parameters:
             for k, v in parameters.items():
-                if isinstance(v, (Range, Values)):
+                if isinstance(v, (ap.sample.Range, ap.sample.Values)):
                     v = v.vdef
                 self.p[k] = v
 
         # Iniate model as model object with id 0
         self._id_counter = -1
-        # super().__init__(model=self, id=id)
         self.type = type(self).__name__
         self.id = id
 
@@ -62,11 +51,11 @@ class BasicABModel:
         # Recording
         self._logs = {}
         self.reporters = {}
-        self.output = DataDict()
+        self.output = ap.datadict.DataDict()
         self.output.info = {
             'model_type': self.type,
             'time_stamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            'agentpy_version': __version__,
+            'agentpy_version': ap.version.__version__,
             'python_version': sys.version[:5],
             'experiment': False,
             'completed': False
@@ -133,7 +122,7 @@ class BasicABModel:
                 v = v._short_repr() if '_short_repr' in dir(v) else v
                 rep += f"\n'{k}': {v}"
         rep += '\n}'
-        return InfoStr(rep)
+        return ap.tools.InfoStr(rep)
 
     # Handling object ids --------------------------------------------------- #
 
@@ -187,7 +176,7 @@ class BasicABModel:
                 1            3
                 2            6
         """
-        for rep_key in make_list(rep_keys):
+        for rep_key in ap.tools.make_list(rep_keys):
             if value is not None:
                 self.reporters[rep_key] = value
             else:
@@ -284,7 +273,7 @@ class BasicABModel:
         """ Stops :meth:`Model.run` during an active simulation. """
         self.running = False
 
-    def run(self, steps=None, seed=None, display=True):
+    def run(self, steps=None, seed=None):
         """ Executes the simulation of the model.
         Can also be used to continue a partly-run simulation
         for a given number of additional steps.
@@ -317,8 +306,7 @@ class BasicABModel:
         self.sim_setup(steps, seed)
         while self.running:
             self.sim_step()
-            if display:
-                print(f"\rCompleted: {self.t} steps", end='')
+            reg.vprint(f"\rCompleted: {self.t} steps", 0)
         self.end()
         self.create_output()
 
@@ -327,8 +315,7 @@ class BasicABModel:
         self.output.info['completed_steps'] = self.t
         self.output.info['run_time'] = ct = str(datetime.now() - dt0)
 
-        if display:
-            print(f"\nRun time: {ct}\nSimulation finished")
+        reg.vprint(f"\nRun time: {ct}\nSimulation finished",1)
 
         return self.output
 
@@ -374,7 +361,7 @@ class BasicABModel:
 
         # 1 - Document parameters
         if self.p:
-            self.output['parameters'] = DataDict()
+            self.output['parameters'] = ap.datadict.DataDict()
             self.output['parameters']['constants'] = self.p.copy()
 
         # 2 - Define additional index columns
@@ -387,7 +374,7 @@ class BasicABModel:
 
         # 3 - Create variable output
         if self._logs:
-            self.output['variables'] = DataDict()
+            self.output['variables'] = ap.datadict.DataDict()
             output_from_obj_list(self, self._logs, columns)
 
         # 4 - Create reporters output
@@ -426,12 +413,8 @@ class ABModel(BasicABModel, reg.generators.SimConfigurationParams):
             **kwargs: Arguments passed to the setup method
         """
         reg.generators.SimConfigurationParams.__init__(self, **kwargs)
-        # self.parameters.larva_groups = update_larva_groups(self.parameters.larva_groups, mIDs=mIDs, N=5)
         self.parameters.steps = self.Nsteps
         self.parameters.agentpy_output_kws = {'exp_name': self.experiment, 'exp_id': self.id,
                                               'path': f'{self.dir}/agentpy_output'}
         BasicABModel.__init__(self, parameters=self.parameters, id=self.id)
 
-# if __name__ == "__main__":
-#     m=ABModel(id='my_model')
-#     print(m.id)

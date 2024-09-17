@@ -9,6 +9,7 @@ from scipy.stats import ks_2samp
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 from .. import reg, aux
+from ..aux import nam, AttrDict, SuperList
 from ..param import NestedConf
 
 __all__ = [
@@ -19,6 +20,8 @@ __all__ = [
     'RSS_dic',
     'eval_RSS',
     'col_df',
+    'get_target_data',
+    'arrange_evaluation',
     'Evaluation',
     'DataEvaluation',
 ]
@@ -187,7 +190,29 @@ def cycle_curve_dict(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
 def cycle_curve_dict_multi(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
     return aux.AttrDict({id : cycle_curve_dict(s.xs(id, level="AgentID"), dt=dt, shs=shs) for id in s.index.unique('AgentID').values})
 
+def get_target_data(d, eval_metrics):
+    s, e, c = d.data
+    all_ks = aux.SuperList(eval_metrics.values()).flatten.unique
+    all_ps = aux.SuperList(reg.getPar(all_ks[:]))
+    Eps = all_ps.existing(e)
+    Dps = all_ps.existing(s)
+    Dps = Dps.nonexisting(Eps)
+    return AttrDict({'step': {p: s[p].dropna() for p in Dps}, 'end': {p: e[p] for p in Eps}})
 
+def arrange_evaluation(data, eval_metrics):
+    Eks = reg.getPar(p=list(data.end.keys()), to_return='k')
+    Dks = reg.getPar(p=list(data.step.keys()), to_return='k')
+    dic = AttrDict({'end': {'shorts': [], 'groups': []}, 'step': {'shorts': [], 'groups': []}})
+    for g, shs in eval_metrics.items():
+        Eshorts, Dshorts = aux.existing_cols(shs, Eks), aux.existing_cols(shs, Dks)
+
+        if len(Eshorts) > 0:
+            dic.end.shorts.append(Eshorts)
+            dic.end.groups.append(g)
+        if len(Dshorts) > 0:
+            dic.step.shorts.append(Dshorts)
+            dic.step.groups.append(g)
+    return AttrDict({k: col_df(**v) for k, v in dic.items()})
 
 class Evaluation(NestedConf):
     refID = reg.conf.Ref.confID_selector()
@@ -209,53 +234,42 @@ class Evaluation(NestedConf):
         self.build(d=self.target)
 
     def build(self, d):
-        s, e, c = d.data
-        self.target_data = self.get_target_data(s, e)
-        self.evaluation = self.arrange_evaluation(data=self.target_data)
+        self.target_data = get_target_data(d, eval_metrics=self.eval_metrics)
+        self.evaluation = arrange_evaluation(data=self.target_data, eval_metrics=self.eval_metrics)
+        self.eval_symbols = AttrDict(
+            {'step': dict(zip(self.s_pars, self.s_symbols)), 'end': dict(zip(self.e_pars, self.e_symbols))})
 
         if len(self.cycle_curve_metrics) > 0 and d.pooled_cycle_curves is not None:
             cycle_dict = {'sv': 'abs', 'fov': 'norm', 'rov': 'norm', 'foa': 'norm', 'b': 'norm'}
             self.cycle_modes = {sh: cycle_dict[sh] for sh in self.cycle_curve_metrics}
-            self.cycle_curve_target = aux.AttrDict(
+            self.cycle_curve_target = AttrDict(
                 {sh: np.array(d.pooled_cycle_curves[sh][mod]) for sh, mod in self.cycle_modes.items()})
             self.rss_sym = {sh: sh for sh in self.cycle_curve_metrics}
 
-    def get_target_data(self, s, e):
-        all_ks = aux.SuperList(self.eval_metrics.values()).flatten.unique
-        all_ps = aux.SuperList(reg.getPar(all_ks[:]))
-        Eps = all_ps.existing(e)
-        Dps = all_ps.existing(s)
-        Dps = Dps.nonexisting(Eps)
-        return aux.AttrDict({'step': {p: s[p].dropna() for p in Dps}, 'end': {p: e[p] for p in Eps}})
 
-    def arrange_evaluation(self, data):
-        Eks = reg.getPar(p=list(data.end.keys()), to_return='k')
-        Dks = reg.getPar(p=list(data.step.keys()), to_return='k')
-        dic = aux.AttrDict({'end': {'shorts': [], 'groups': []}, 'step': {'shorts': [], 'groups': []}})
-        for g, shs in self.eval_metrics.items():
-            Eshorts, Dshorts = aux.existing_cols(shs, Eks), aux.existing_cols(shs, Dks)
 
-            if len(Eshorts) > 0:
-                dic.end.shorts.append(Eshorts)
-                dic.end.groups.append(g)
-            if len(Dshorts) > 0:
-                dic.step.shorts.append(Dshorts)
-                dic.step.groups.append(g)
-        ev = aux.AttrDict({k: col_df(**v) for k, v in dic.items()})
 
-        self.s_pars = aux.SuperList(ev.step.pars).flatten
-        self.s_shorts = aux.SuperList(ev.step.shorts).flatten
-        self.s_symbols = aux.SuperList(ev.step.symbols).flatten
-        self.e_pars = aux.SuperList(ev.end.pars).flatten
-        self.e_symbols = aux.SuperList(ev.end.symbols).flatten
-        self.eval_symbols = aux.AttrDict(
-            {'step': dict(zip(self.s_pars, self.s_symbols)), 'end': dict(zip(self.e_pars, self.e_symbols))})
-        return ev
+
+    @property
+    def s_pars(self):
+        return SuperList(self.evaluation.step.pars).flatten
+
+    @property
+    def e_pars(self):
+        return SuperList(self.evaluation.end.pars).flatten
+
+    @property
+    def s_symbols(self):
+        return SuperList(self.evaluation.step.symbols).flatten
+
+    @property
+    def e_symbols(self):
+        return SuperList(self.evaluation.end.symbols).flatten
 
     @property
     def func_eval_metric_solo(self):
         def func(ss):
-            return aux.AttrDict({'KS': {sym: ks_2samp(self.target_data.step[p].values, ss[p].dropna().values)[0] for
+            return AttrDict({'KS': {sym: ks_2samp(self.target_data.step[p].values, ss[p].dropna().values)[0] for
                                         p, sym in self.eval_symbols.step.items()}})
 
         return func
@@ -263,7 +277,7 @@ class Evaluation(NestedConf):
     @property
     def func_eval_metric_multi(self):
         def gfunc(s):
-            return aux.AttrDict(
+            return AttrDict(
                 {'KS': eval_distro_fast(s, self.target_data.step, self.eval_symbols.step, mode='1:pooled',
                                         min_size=10)})
 
@@ -273,8 +287,8 @@ class Evaluation(NestedConf):
     def func_cycle_curve_solo(self):
         def func(ss):
             c0 = cycle_curve_dict(s=ss, dt=self.target.config.dt, shs=self.cycle_curve_metrics)
-            eval_curves = aux.AttrDict(({sh: c0[sh][mode] for sh, mode in self.cycle_modes.items()}))
-            return aux.AttrDict(
+            eval_curves = AttrDict(({sh: c0[sh][mode] for sh, mode in self.cycle_modes.items()}))
+            return AttrDict(
                 {'RSS': {sh: RSS(ref_curve, eval_curves[sh]) for sh, ref_curve in self.cycle_curve_target.items()}})
 
         return func
@@ -283,16 +297,16 @@ class Evaluation(NestedConf):
     def func_cycle_curve_multi(self):
         def gfunc(s):
             rss0 = cycle_curve_dict_multi(s=s, dt=self.target.config.dt, shs=self.cycle_curve_metrics)
-            rss = aux.AttrDict(
+            rss = AttrDict(
                 {id: {sh: dic[sh][mod] for sh, mod in self.cycle_modes.items()} for id, dic in rss0.items()})
-            return aux.AttrDict({'RSS': eval_RSS(rss, self.cycle_curve_target, self.rss_sym, mode='1:pooled')})
+            return AttrDict({'RSS': eval_RSS(rss, self.cycle_curve_target, self.rss_sym, mode='1:pooled')})
 
         return gfunc
 
     @property
     def fit_func_multi(self):
         def fit_func(s):
-            fit_dicts = aux.AttrDict()
+            fit_dicts = AttrDict()
             if len(self.cycle_curve_metrics) > 0:
                 fit_dicts.update(self.func_cycle_curve_multi(s))
             if len(self.eval_metrics) > 0:
@@ -304,7 +318,7 @@ class Evaluation(NestedConf):
     @property
     def fit_func_solo(self):
         def fit_func(ss):
-            fit_dicts = aux.AttrDict()
+            fit_dicts = AttrDict()
             if len(self.cycle_curve_metrics) > 0:
                 fit_dicts.update(self.func_cycle_curve_solo(ss))
             if len(self.eval_metrics) > 0:

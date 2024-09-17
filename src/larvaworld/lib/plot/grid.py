@@ -101,12 +101,12 @@ def model_summary(mID, refID=None, refDataset=None, Nids=1, model_table=False, *
 
     shorts = ['sv', 'fov', 'foa', 'b']
     P.plot(func='stride cycle',
-           kws={'datasets': [refDataset, dd], 'labels': ['experiment', dd.id], 'shorts': shorts, 'individuals': True,
+           kws={'datasets': [refDataset, dd], 'labels': ['experiment', 'model'],'colors': ['red', 'blue'], 'shorts': shorts, 'individuals': True,
                 'save_to': None, 'title':None},
            N=len(shorts), w=29, h=32, h0=hh0 + 18, share_w=True, x0=True)
 
-    ds = reg.test_boutGens(**{'mID': mID, 'refDataset': refDataset})
-    P.plot(func='epochs', kws={'datasets': ds, 'save_to': None},
+    # ds = reg.sample_boutGens(**{'mID': mID, 'd': refDataset})
+    P.plot(func='sample_epochs', kws={'mID': mID, 'd': refDataset, 'save_to': None},
            N=2, w=29, h0=hh0 + 56, share_h=True, dw=1, x0=True)
 
     P.plot(func='sample track', kws={'mID': mID, 'dur': 0.5, 'd': dd, 'save_to': None},
@@ -358,7 +358,7 @@ def model_sample_track(mID=None, m=None, dur=2 / 3, dt=1 / 16, Nids=1, min_turn_
     ss = s.xs(c.agent_ids[0], level='AgentID').loc[:Nticks]
     a_sv = ss[reg.getPar('sv')].values
     a_fov = ss[reg.getPar('fov')].values
-    pars, labs = reg.getPar(['sv', 'c_CT', 'A_T', 'fov', 'b'], to_return=['d', 'symbol'])
+    pars, labs = reg.getPar(['sv', 'A_CT', 'A_T', 'fov', 'b'], to_return=['d', 'symbol'])
 
     Nrows = len(pars)
     P = plot.AutoPlot(name=f'{mID}_test',build_kws={'Nrows':Nrows, 'w':25, 'h':5, 'sharex': True}, **kws0, **kwargs)

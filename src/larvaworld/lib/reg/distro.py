@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 import powerlaw
 import typing
@@ -13,7 +15,7 @@ __all__ = [
     'get_dist',
     'fit_bout_distros',
     'BoutGenerator',
-    'test_boutGens',
+
 ]
 
 
@@ -201,7 +203,7 @@ def get_dist(k, k0='intermitter', v=None, return_tabrows=False, return_all=False
 
 
 def fit_bout_distros(x0, xmin=None, xmax=None, discrete=False, xmid=np.nan, overlap=0.0, Nbins=64, print_fits=False,
-                     dataset_id='dataset', bout='pause', combine=True, fit_by='pdf', eval_func_id='KS2'):
+                     bout='pause', combine=True, fit_by='pdf', eval_func_id='KS2'):
 
     def compute_density(x, xmin, xmax, Nbins=64):
         log_range = np.linspace(np.log2(xmin), np.log2(xmax), Nbins)
@@ -337,24 +339,7 @@ def fit_bout_distros(x0, xmin=None, xmax=None, discrete=False, xmid=np.nan, over
             Ks = np.array([F(c2cum, cdf0) if cdf0 is not None else np.nan for cdf0 in cdfs])
         elif fit_by == 'pdf':
             Ks = np.array([F(c2, pdf0) if pdf0 is not None else np.nan for pdf0 in pdfs])
-        # if fit_by == 'cdf':
-        #     KS_pow = F(c2cum, p_cdf)
-        #     KS_exp = F(c2cum, e_cdf)
-        #     KS_logn = F(c2cum, l_cdf)
-        #     KS_lognNpow = F(c2cum, lp_cdf) if lp_cdf is not None else np.nan
-        #     KS_lev = F(c2cum, lev_cdf)
-        #     KS_norm = F(c2cum, nor_cdf)
-        #     KS_uni = F(c2cum, uni_cdf)
-        # elif fit_by == 'pdf':
-        #     KS_pow = F(c2, p_pdf)
-        #     KS_exp = F(c2, e_pdf)
-        #     KS_logn = F(c2, l_pdf)
-        #     KS_lognNpow = F(c2, lp_pdf) if lp_pdf is not None else np.nan
-        #     KS_lev = F(c2, lev_pdf)
-        #     KS_norm = F(c2, nor_pdf)
-        #     KS_uni = F(c2, uni_pdf)
-        #
-        # Ks = np.array([KS_pow, KS_exp, KS_logn, KS_lognNpow, KS_lev, KS_norm, KS_uni])
+
         idx_Kmax = np.nanargmin(Ks)
         KS_pow, KS_exp, KS_logn, KS_lognNpow, KS_lev, KS_norm, KS_uni=Ks
         res = np.round(
@@ -435,7 +420,7 @@ def fit_bout_distros(x0, xmin=None, xmax=None, discrete=False, xmid=np.nan, over
 
     if print_fits:
         print()
-        print(f'-----{dataset_id}-{bout}----------')
+        print(f'-----{bout}-epochs---------')
         print(f'initial range : {np.min(x0)} - {np.max(x0)}, Nbouts : {len(x0)}')
         print(f'accepted range : {xmin} - {xmax}, Nbouts : {len(x)}')
         print("powerlaw exponent MLE:", a2)
@@ -454,7 +439,7 @@ def fit_bout_distros(x0, xmin=None, xmax=None, discrete=False, xmid=np.nan, over
         print('MSE uniform', KS_uni)
 
         print()
-        print(f'---{dataset_id}-{bout}-distro')
+        print(f'---{bout} epochs distro---')
         print(dic.best)
         print()
 
@@ -499,33 +484,6 @@ class BoutGenerator:
         func = distroDB[self.name][mode]
         return func(x=x, **self.args)
 
-
-def test_boutGens(mID, refID=None, refDataset=None, **kwargs):
-    if refDataset is None:
-        refDataset = reg.conf.Ref.loadRef(refID, load=True)
-    c = refDataset.config
-    aux_dic = refDataset.pooled_epochs
-    Npau = aux_dic['pause_dur'].shape[0]
-    Nrun = aux_dic['run_dur'].shape[0]
-
-    m = reg.conf.Model.getID(mID)
-    m = c.get_sample_bout_distros(m.get_copy())
-    dicM = m.brain.intermitter_params
-    dic = {}
-    for n, n0 in zip(['pause', 'run', 'stridechain'], ['pause_dur', 'run_dur', 'run_count']):
-        N = Npau if n == 'pause' else Nrun
-        discr = True if n == 'stridechain' else False
-        dt = 1 if n == 'stridechain' else c.dt
-
-        k = f'{n}_dist'
-        kk = dicM[k]
-        if kk is not None:
-            B = BoutGenerator(**kk, dt=dt)
-            vs = B.sample(N)
-            dic[n0] = fit_bout_distros(vs, dataset_id=mID, bout=n, combine=False, discrete=discr)
-    datasets = [{'id': 'model', 'fitted_epochs': dic, 'color': 'blue'},
-                {'id': 'experiment', 'fitted_epochs': refDataset.fitted_epochs, 'color': 'red'}]
-    return [aux.AttrDict(dd) for dd in datasets]
 
 
 

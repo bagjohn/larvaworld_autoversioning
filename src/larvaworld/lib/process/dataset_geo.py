@@ -388,19 +388,15 @@ class GeoLarvaDataset(BaseLarvaDataset,mpd.TrajectoryCollection):
 
     def save(self, refID=None):
         # print(self.config.dir)
-        aux.save_dict(self.df, self.path_to_file('geodf'))
-        aux.save_dict(self.get_step_data(), self.path_to_file('geostep'))
+        self.save_dict(self.df, 'geodf.txt')
+        self.save_dict(self.get_step_data(), 'geostep.txt')
 
         if self.endpoint_data is not None:
-            aux.save_dict(self.df, self.path_to_file('geoend'))
+            self.save_dict(self.df, 'geoend.txt')
         self.save_config(refID=refID)
         reg.vprint(f'***** Dataset {self.config.id} stored.-----', 1)
 
-    # def save(self, refID=None):
-    #     aux.save_dict(self.endpoint_data, self.endpoint_data_path)
-    #     aux.save_dict(self.df, self.data_path)
-    #     self.save_config(refID=refID)
-    #     reg.vprint(f'***** Dataset {self.config.id} stored.-----', 1)
+
 
     @property
     def df(self):

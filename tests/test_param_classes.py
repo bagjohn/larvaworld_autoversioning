@@ -3,6 +3,8 @@ import pytest
 
 from larvaworld.lib.param import OrientedPoint
 
+from larvaworld.lib.param import NestedConf
+
 
 def test_oriented_point():
     P = OrientedPoint(pos=(2, 2), orientation=np.pi / 2)
@@ -24,7 +26,6 @@ def ttest_param_keys():
     import inspect
     import pkgutil
     import larvaworld.lib
-    from larvaworld.lib.param.custom import NestedConf
 
     from types import ModuleType
 

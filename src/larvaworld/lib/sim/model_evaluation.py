@@ -1,12 +1,7 @@
 import os
 import warnings
-
-import param
-
-from ..param import NestedConf, PositiveInteger, class_generator
+from ..param import class_generator
 from ..process.evaluation import DataEvaluation
-
-# from src.larvaworld.lib.reg.generators import update_larva_groups
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -15,11 +10,13 @@ import numpy as np
 import pandas as pd
 
 from .. import reg, aux, plot
+from ..aux import AttrDict
+
 from ..reg.generators import SimConfiguration, LarvaGroupMutator
 
 __all__ = [
     'EvalRun',
-    'eval_model_graphs',
+    'evalNplot',
     'modelConf_analysis',
 ]
 
@@ -32,7 +29,6 @@ class EvalConf(LarvaGroupMutator, DataEvaluation):
         self.target.config.id = 'experiment'
         self.target.color = 'grey'
         self.target.config.color = 'grey'
-
 
 
 class EvalRun(EvalConf, SimConfiguration):
@@ -49,15 +45,16 @@ class EvalRun(EvalConf, SimConfiguration):
             experiment: The type of experiment. Defaults to 'dispersion'
             **kwargs: Arguments passed to parent class
         '''
-        EvalConf.__init__(self,runtype='Eval',**kwargs)
+        EvalConf.__init__(self, runtype='Eval', **kwargs)
         kwargs['dt'] = self.target.config.dt
-        kwargs['duration'] = self.target.config.Nticks * kwargs['dt'] / 60
-        SimConfiguration.__init__(self,runtype='Eval', **kwargs)
+        if 'duration' not in kwargs:
+            kwargs['duration'] = self.target.config.Nticks * kwargs['dt'] / 60
+        SimConfiguration.__init__(self, runtype='Eval', **kwargs)
         # super().__init__(runtype='Eval', **kwargs)
         self.screen_kws = screen_kws
         self.enrichment = enrichment
-        self.figs = aux.AttrDict({'errors': {}, 'hist': {}, 'boxplot': {}, 'stride_cycle': {}, 'loco': {}, 'epochs': {},
-                                  'models': {'table': {}, 'summary': {}}})
+        self.figs = AttrDict({'errors': {}, 'hist': {}, 'boxplot': {}, 'stride_cycle': {}, 'loco': {}, 'epochs': {},
+                              'models': {'table': {}, 'summary': {}}})
         self.error_plot_dir = f'{self.plot_dir}/errors'
 
     def simulate(self):
@@ -66,11 +63,10 @@ class EvalRun(EvalConf, SimConfiguration):
             'duration': self.duration,
         }
 
-
         Nm = len(self.modelIDs)
         if self.offline is None:
             from ..model.agents.larva_offline import sim_models
-            print(f'Simulating offline {Nm} models : {self.groupIDs} with {self.N} larvae each')
+            reg.vprint(f'Simulating offline {Nm} models : {self.groupIDs} with {self.N} larvae each', 2)
             temp = self.s_pars + self.e_pars
             tor_durs = np.unique([int(ii[len('tortuosity') + 1:]) for ii in temp if ii.startswith('tortuosity')])
             dsp = reg.getPar('dsp')
@@ -87,8 +83,8 @@ class EvalRun(EvalConf, SimConfiguration):
                                        refDataset=self.target, data_dir=self.data_dir, **kws)
         else:
             from .single_run import ExpRun
-            print(f'Simulating {Nm} models : {self.groupIDs} with {self.N} larvae each')
-            kws0 = aux.AttrDict({
+            reg.vprint(f'Simulating {Nm} models : {self.groupIDs} with {self.N} larvae each', 2)
+            kws0 = AttrDict({
                 'dir': self.dir,
                 'store_data': self.store_data,
                 'experiment': self.experiment,
@@ -116,39 +112,37 @@ class EvalRun(EvalConf, SimConfiguration):
             'pooled': {'end': 'Pooled endpoint values KS$_{D}$', 'step': 'Pooled distributions KS$_{D}$'}
         }
         labels = label_dic[mode]
-        dic = aux.AttrDict()
+        dic = AttrDict()
         for norm in self.norm_modes:
             d = self.norm_error_dict(error_dict, mode=norm)
             df0 = pd.DataFrame.from_dict({k: df.mean(axis=1) for i, (k, df) in enumerate(d.items())})
             kws = {
-                'save_to': f'{self.error_plot_dir}/{norm}',
+                'save_to': f'{self.error_plot_dir}/{norm}'
             }
             bars = {}
             tabs = {}
             for k, df in d.items():
                 tabs[k] = GD['error table'](data=df, k=k, title=labels[k], **kws)
             tabs['mean'] = GD['error table'](data=df0, k='mean', title='average error', **kws)
-            # print(d.step.keys())
-            # print(d.end.keys())
             bars['full'] = GD['error barplot'](error_dict=d, evaluation=self.evaluation, labels=labels, **kws)
             # Summary figure with barplots and tables for both endpoint and timeseries metrics
             bars['summary'] = GD['error summary'](norm_mode=norm, eval_mode=mode, error_dict=d,
                                                   evaluation=self.evaluation, **kws)
             dic[norm] = {'tables': tabs, 'barplots': bars}
-        return aux.AttrDict(dic)
+        return AttrDict(dic)
 
     def analyze(self, **kwargs):
-        reg.vprint('Evaluating all models',1)
+        reg.vprint('Evaluating all models', 1)
         os.makedirs(self.plot_dir, exist_ok=True)
 
-        for mode in self.eval_modes:
-            d = self.eval_datasets(self.datasets, mode=mode, **kwargs)
-            self.figs.errors[mode] = self.get_error_plots(d, mode)
-            self.error_dicts[mode] = d
+        for m in self.eval_modes:
+            self.error_dicts[m] = self.eval_datasets(self.datasets, mode=m, **kwargs)
+            self.figs.errors[m] = self.get_error_plots(self.error_dicts[m], m)
 
     def store(self):
-        aux.save_dict(self.error_dicts, f'{self.data_dir}/error_dicts.txt')
-        reg.vprint(f'Results saved at {self.data_dir}')
+        if self.data_dir is not None:
+            aux.save_dict(self.error_dicts, f'{self.data_dir}/error_dicts.txt')
+            reg.vprint(f'Results saved at {self.data_dir}', 1)
 
     def plot_models(self, **kwargs):
         GD = reg.graphs.dict
@@ -156,6 +150,11 @@ class EvalRun(EvalConf, SimConfiguration):
         for mID in self.modelIDs:
             self.figs.models.table[mID] = GD['model table'](mID=mID, save_to=save_to, figsize=(14, 11), **kwargs)
             self.figs.models.summary[mID] = GD['model summary'](mID=mID, save_to=save_to, refID=self.refID, **kwargs)
+
+    @property
+    def existing_dispersion_ranges(self):
+        ds = [self.target] + self.datasets
+        return aux.SuperList([d.existing_dispersion_ranges for d in ds]).flatten.unique
 
     def plot_results(self, plots=['hists', 'trajectories', 'dispersion', 'bouts', 'fft', 'boxplots'], **kwargs):
         GD = reg.graphs.dict
@@ -181,8 +180,9 @@ class EvalRun(EvalConf, SimConfiguration):
         self.figs.stride_cycle.norm = GD['stride cycle'](shorts=['sv', 'fov', 'rov', 'foa', 'b'],
                                                          individuals=True, **kws)
         if 'dispersion' in plots:
-            for r0, r1 in itertools.product(self.dsp_starts, self.dsp_stops):
-                self.figs.loco[f'dsp_{r0}_{r1}'] = aux.AttrDict({
+            for r0, r1 in self.existing_dispersion_ranges:
+                # for r0, r1 in itertools.product(self.dsp_starts, self.dsp_stops):
+                self.figs.loco[f'dsp_{r0}_{r1}'] = AttrDict({
                     'plot': GD['dispersal'](range=(r0, r1), **kws1),
                     'traj': GD['trajectories'](name=f'traj_{r0}_{r1}', range=(r0, r1), mode='origin', **kws1),
                     'summary': GD['dispersal summary'](range=(r0, r1), **kws2)
@@ -207,31 +207,37 @@ class EvalRun(EvalConf, SimConfiguration):
 reg.gen.Eval = class_generator(EvalConf)
 
 
-def eval_model_graphs(refID, mIDs, groupIDs=None, id=None, dir=None, N=10,**kwargs):
-    if id is None:
-        id = f'{len(mIDs)}mIDs'
-    if dir is None:
-        dir = f'{reg.conf.Ref.getID(refID)}/model/evaluation'
+def evalNplot(show=True, **kwargs):
+    E = EvalRun(**kwargs)
+    E.simulate()
+    E.plot_models(show=show)
+    E.plot_results(show=show)
+    return E
 
 
-    evrun = EvalRun(refID=refID, modelIDs=mIDs, groupIDs=groupIDs, N=N, id=id,dir=dir, **kwargs)
-    evrun.simulate()
-    evrun.plot_models()
-    evrun.plot_results()
-    return evrun
+def adapt_mID(d, mID0, mID, ks):
+    from ..model import moduleDB
+    reg.vprint(f'Adapting {mID0} on {d.refID} as {mID}, fitting {ks} modules', 1)
+    ps = ['body.length']
+
+    m0 = reg.conf.Model.getID(mID0)
+    if 'intermitter' in ks:
+        m0 = d.config.get_sample_bout_distros(m0.get_copy())
+
+    ps=moduleDB.modules_pars(mIDs=ks, conf=m0, as_entry=True)
+    m0 = m0.update_nestdict(
+        AttrDict({p: np.median(vs) for p, vs in d.sample_larvagroup(N=100, ps=ps).items()}))
+    reg.conf.Model.setID(mID, m0)
+
+
+
 
 
 def modelConf_analysis(d):
     from collections import ChainMap
-    from .genetic_algorithm import adapt_mID
+    from .genetic_algorithm import GAevaluation, optimize_mID
+    from ..model.modules.module_modes import moduleDB as MD
     warnings.filterwarnings('ignore')
-    CM=reg.conf.Model
-
-    mods = aux.AttrDict({
-        'C': ['RE', 'SQ', 'GAU', 'CON'],
-        'T': ['NEU', 'SIN', 'CON'],
-        'If': ['PHI', 'SQ', 'DEF'],
-    })
 
     fit_kws = {
         'eval_metrics': {
@@ -243,56 +249,65 @@ def modelConf_analysis(d):
         'cycle_curve_metrics': ['fov', 'foa', 'b']
     }
 
-    sample_kws = {k: 'sample' for k in [
-        'brain.crawler.stride_dst_mean',
-        'brain.crawler.stride_dst_std',
-        'brain.crawler.max_scaled_vel',
-        'brain.crawler.max_vel_phase',
-        'brain.crawler.freq',
-    ]}
-
-    c = d.config
-    kws = {'refID': c.refID}
-    kws1 = {'N': 10, **kws}
-    kws2 = {'dataset': d, **fit_kws}
-    D = aux.AttrDict({'average': {}, 'variable': {}, 'individual': {}, '3modules': {}})
-    ee = []
-    for tt in mods.T[:2]:
-        for ii in mods.If:
-            ee.append(adapt_mID(mID0=f'RE_{tt}_{ii}_DEF', mID=f'{ii}on{tt}', space_mkeys=['turner', 'interference'], **kws2))
-    D.average=dict(ChainMap(*ee))
-
-    mIDs_avg = list(D.average)
-    mIDs_var = [f'{mID0}_var' for mID0 in mIDs_avg]
-
-    for mID0, mID in zip(mIDs_avg, mIDs_var):
-        m0 = CM.getID(mID0).get_copy()
-        D.variable[mID] = m0.update_existingnestdict(sample_kws)
-        CM.setID(mID, D.variable[mID])
+    def comp_D():
+        kws2 = {'evaluator': GAevaluation(dataset=d, refID=d.config.refID, **fit_kws), 'dir': f'{d.config.dir}/model/optimization', 'dt': d.config.dt}
+        def fit_3modules():
+            ee = []
+            ks0 = ['crawler', 'turner', 'interference']
+            ks = MD.ids.nonexisting(ks0)
+            for c, t, f in MD.mod_combs(ks0, short=True):
+                if c!='CON':
+                    mID0 = f'{c}_{t}_{f}_DEF'
+                    mID = f'{mID0}_fit'
+                    print(mID0)
+                    adapt_mID(d=d, mID0=mID0, mID=mID, ks=ks)
+                    # print(mID0)
+                    ee.append(optimize_mID(mID0=mID, ks=ks0, id=mID, **kws2))
+            return AttrDict(ChainMap(*ee))
 
 
+        def fit_average():
+            ks0 = ['turner', 'interference']
+            ks=MD.ids.nonexisting(ks0)
+            ee = [adapt_mID(d=d, mID0=f'RE_{t}_{f}_DEF', mID=f'{f}on{t}', ks=ks) for t, f in
+                  MD.mod_combs(ks0, short=True)]
+            return AttrDict(ChainMap(*ee))
 
-    ee=[]
-    for cc in mods.C:
-        for ii in mods.If:
-            mIDs0x3=[f'{cc}_{tt}_{ii}_DEF' for tt in mods.T]
-            mIDsx3 =[f'{mID0}_fit' for mID0 in mIDs0x3]
-            ee+=[adapt_mID(mID0=mID0, mID=mID, space_mkeys=['crawler', 'turner', 'interference'],
-                                **kws2) for mID0,mID in zip(mIDs0x3,mIDsx3)]
-            eval_model_graphs(mIDs=mIDsx3, groupIDs=mods.T, id=f'Tmod_variable_Cmod_{cc}_Ifmod_{ii}', **kws1)
-    D['3modules']=dict(ChainMap(*ee))
-    mIDs_3m = list(D['3modules'])
+        def fit_variable(mIDs_avg):
+            A = AttrDict()
+            CM = reg.conf.Model
+            sample_kws = {f'brain.crawler.{k}': 'sample' for k in
+                          ['stride_dst_mean', 'stride_dst_std', 'max_scaled_vel', 'max_vel_phase', 'freq']}
+            for mID0, in mIDs_avg:
+                mID=f'{mID0}_var'
+                m0 = CM.getID(mID0).get_copy()
+                A[mID] = m0.update_existingnestdict(sample_kws)
+                CM.setID(mID, A[mID])
+
+            return A
+
+        D = d.config.modelConfs
+        D['3modules'] = fit_3modules()
+        D.average = fit_average()
+        D.variable = fit_variable(list(D.average))
+        d.save_config()
+
+    def eval_D():
+        D = d.config.modelConfs
+        mIDs_avg = list(D.average)
+        mIDs_var = list(D.variable.keys())
+        Dataevaluator = DataEvaluation(dataset=d, refID=d.config.refID, **fit_kws)
+        kws1 = {'dir': f'{d.config.dir}/model/evaluation', 'N': 5, 'duration': 1, 'refID': d.config.refID}
+        ts = MD.mod_modes('turner', short=True)
+        for c, f in MD.mod_combs(['crawler', 'intermitter'], short=True):
+            mIDs = [f'{c}_{t}_{f}_DEF_fit' for t in ts]
+            evalNplot(modelIDs=mIDs, groupIDs=ts, id=f'Tmod_variable_Cmod_{c}_Ifmod_{f}', **kws1)
+        evalNplot(modelIDs=mIDs_avg, id='6mIDs_avg', **kws1)
+        evalNplot(modelIDs=mIDs_var, id='6mIDs_var', **kws1)
+        evalNplot(modelIDs=mIDs_avg[:3] + mIDs_var[:3], id='3mIDs_avgVSvar1', **kws1)
+        evalNplot(modelIDs=mIDs_avg[3:] + mIDs_var[3:], id='3mIDs_avgVSvar2', **kws1)
+        reg.graphs.store_model_graphs(list(D['3modules']), d.dir)
+        reg.graphs.store_model_graphs(list(D.average), d.dir)
 
 
-    reg.graphs.store_model_graphs(mIDs_avg, d.dir)
-    reg.graphs.store_model_graphs(mIDs_3m, d.dir)
-
-    eval_model_graphs(mIDs=mIDs_avg, id='6mIDs_avg', **kws1)
-    eval_model_graphs(mIDs=mIDs_var, id='6mIDs_var', **kws1)
-    eval_model_graphs(mIDs=mIDs_avg[:3] + mIDs_var[:3], id='3mIDs_avgVSvar1', **kws1)
-    eval_model_graphs(mIDs=mIDs_avg[3:] + mIDs_var[3:], id='3mIDs_avgVSvar2', **kws1)
-
-
-
-    d.config.modelConfs = D
-    d.save_config()
+    comp_D()

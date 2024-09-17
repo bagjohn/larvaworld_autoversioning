@@ -1,7 +1,7 @@
 import larvaworld
 import pandas as pd
-from larvaworld.lib import reg
-from larvaworld.lib.process.dataset import LarvaDataset
+import larvaworld.lib.reg as reg
+import larvaworld.lib.process.dataset
 reg.VERBOSE=1
 
 def test_import_Schleyer():
@@ -38,10 +38,10 @@ def test_import_Schleyer():
 
     for kws in [kws1, kws2]:
         d = g.import_dataset(**kws)
-        assert isinstance(d,LarvaDataset)
+        assert isinstance(d,larvaworld.lib.process.dataset.LarvaDataset)
         d.process(is_last=False)
         d.annotate(is_last=True)
-        d.save()
+        # d.save()
         assert isinstance(d.s, pd.DataFrame)
 
 

@@ -13,7 +13,6 @@ __displayname__ = 'Basic ABM class'
 
 
 class Object(NestedConf):
-# class Object:
     """
     Basic Class for all Larvaworld model objects.
 
@@ -272,32 +271,6 @@ class Object(NestedConf):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-
-# class NamedObject(Object):
-#     """
-#     A named simulation object that extends the basic Object class.
-#
-#     Parameters
-#     ----------
-#     model : object, optional
-#         The model this object belongs to.
-#     **kwargs
-#         Additional keyword arguments.
-#
-#     Attributes
-#     ----------
-#     Inherits attributes from Object class.
-#     """
-#     unique_id = param.String(None, doc='The unique ID of the entity')
-#
-#     def __init__(self, unique_id=None,**kwargs):
-#         super().__init__(id=unique_id,unique_id=unique_id,**kwargs)
-#
-#     def __init__(self, model=None, **kwargs):
-#         Object.__init__(self, model=model, id=self.unique_id)
-#
-#     def set_id(self, id):
-#         self.unique_id = id
 
 
 class GroupedObject(Object):

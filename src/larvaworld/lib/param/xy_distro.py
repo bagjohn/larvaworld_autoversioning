@@ -24,8 +24,10 @@ class Spatial_Distro(NestedConf):
     mode = param.Selector(objects=['uniform', 'normal', 'periphery', 'grid'],
                     doc='The way to place agents in the distribution shape')
     N = OptionalPositiveInteger(30, softmax=100, doc='The number of agents in the group')
-    loc = param.Range(default=(0.0, 0.0), softbounds=(-0.1, 0.1),step=0.001, doc='The xy coordinates of the distribution center')
-    scale = param.Range(default=(0.0, 0.0), softbounds=(-0.1, 0.1),step=0.001, doc='The spread in x,y')
+    loc = param.NumericTuple(default=(0.0, 0.0), doc='The xy coordinates of the distribution center')
+    # loc = param.Range(default=(0.0, 0.0), softbounds=(-0.1, 0.1),step=0.001, doc='The xy coordinates of the distribution center')
+    scale = param.NumericTuple(default=(0.0, 0.0), doc='The spread in x,y')
+    # scale = param.Range(default=(0.0, 0.0), softbounds=(-0.1, 0.1),step=0.001, doc='The spread in x,y')
 
     def __call__(self):
         return generate_xy_distro(mode=self.mode, shape=self.shape, N=self.N, loc=self.loc,

@@ -13,7 +13,7 @@ from .sensor import *
 from .memory import *
 from .turner import *
 from .crawl_bend_interference import *
-from .intermitter import Intermitter, BranchIntermitter, NengoIntermitter
+from .intermitter import Intermitter, BranchIntermitter
 from .locomotor import *
 from .brain import *
 from .module_modes import *

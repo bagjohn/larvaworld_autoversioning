@@ -1,6 +1,7 @@
 import numpy as np
 import param
 
+from ... import aux
 from ...param import PositiveNumber, NestedConf
 
 __all__ = [
@@ -46,7 +47,6 @@ class Gut(NestedConf):
         self.M_g = 0
         self.M_c = self.M_c_max
 
-        self.residence_time = self.get_residence_time(self.deb.base_f, self.deb.J_X_Am, self.deb.Lb)
         self.mol_not_digested = 0
         self.mol_not_absorbed = 0
         self.mol_faeces = 0
@@ -58,7 +58,7 @@ class Gut(NestedConf):
         self.Nfeeds = 0
 
         if save_dict:
-            self.dict = self.init_dict()
+            self.dict = aux.AttrDict({k: [] for k in ['R_absorbed','mol_ingested','gut_p_A','M_X','M_P','M_Pu','M_g','M_c','R_M_c','R_M_g','R_M_X','R_M_P','R_M_X_M_P']})
         else:
             self.dict = None
 
@@ -118,15 +118,13 @@ class Gut(NestedConf):
             self.M_c += dM_c
         self.p_A = dM_Pu * self.deb.mu_E
 
-    def get_residence_time(self, f, J_X_Am, Lb):
+    @property
+    def residence_time(self):
+        f=self.deb.base_f
         if f == 0.0:
             return 0.0
         else:
-            return self.r_gut_V * self.M_gm / (J_X_Am / Lb) / f
-
-    def get_residence_ticks(self, dt):
-        # print(dt,self.residence_time)
-        self.residence_ticks = int(self.residence_time / dt)
+            return self.r_gut_V * self.M_gm / (self.deb.J_X_Am / self.deb.Lb) / f
 
     @property
     def M_ingested(self):
@@ -192,30 +190,10 @@ class Gut(NestedConf):
     def Cmax(self):  # in mol
         return self.M_gm * self.V_gm
 
-    def init_dict(self):
-        self.dict_keys = [
-            'R_absorbed',
-            'mol_ingested',
-            # 'mol_absorbed',
-            'gut_p_A',
-            'M_X',
-            'M_P',
-            'M_Pu',
-            'M_g',
-            'M_c',
-            'R_M_c',
-            'R_M_g',
-            'R_M_X',
-            'R_M_P',
-            'R_M_X_M_P'
-        ]
-        return {k: [] for k in self.dict_keys}
-
     def update_dict(self):
         gut_dict_values = [
             self.R_absorbed,
             self.mol_ingested * 1000,
-            # self.mol_absorbed,
             self.p_A / self.deb.V,
             self.M_X,
             self.M_P,
@@ -228,7 +206,7 @@ class Gut(NestedConf):
             self.R_M_P,
             self.R_M_X_M_P,
         ]
-        for k, v in zip(self.dict_keys, gut_dict_values):
+        for k, v in zip(self.dict.keylist, gut_dict_values):
             self.dict[k].append(v)
 
     def ingested_mass(self, unit='g'):

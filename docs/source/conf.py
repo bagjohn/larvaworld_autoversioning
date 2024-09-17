@@ -20,7 +20,9 @@ author = 'Panagiotis Sakagiannis'
 copyright = '2023, Panagiotis Sakagiannis'
 
 # The short X.Y version
-version = importlib.metadata.version("larvaworld")
+# TODO : the automatic version naming requires the package itself. Woraround by simply naming it 0.1
+# version = importlib.metadata.version("larvaworld")
+version = '0.1'
 # The full version, including alpha/beta/rc tags
 # release = ''
 
@@ -45,12 +47,12 @@ extensions = [
     'sphinx.ext.graphviz',
     'sphinx.ext.autosummary',
     "myst_nb",
-    "myst_parser",
-    "autoapi.extension",
+    # "myst_parser",
+    # "autoapi.extension",
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    "nbsphinx",
-    "sphinx_gallery.load_style",
+    # "nbsphinx",
+    # "sphinx_gallery.load_style",
     # "autodocsumm",  # to generate tables of functions, attributes, methods, etc.
 ]
 
@@ -103,6 +105,12 @@ autodoc_typehints = "description"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 html_theme = "sphinx_rtd_theme"
 html_static_path = ['_static']
+
+# Avoid running the notebooks
+nb_execution_mode = "off"
+
+myst_footnote_transition = False
+
 
 append_material = """
 

@@ -314,8 +314,6 @@ class LarvaBox2D(LarvaSim):
                                  base_vertices=self.base_seg_vertices,
                                  length=(self.length * self.segment_ratio).tolist(), **kws)
 
-
-
         if self.model.larva_collisions:
             for seg in self.segs:
                 for fixture in seg._fixtures:
@@ -391,7 +389,6 @@ class LarvaBox2D(LarvaSim):
         self.cum_dst += self.dst
         self.compute_body_bend()
 
-
     # To make peristalsis visible we try to leave some space between the segments.
     # We define an interval proportional to the length : int*l.
     # We subtract it from the front end of all segments except the first and from the rear end of all segments except the last.
@@ -435,7 +432,16 @@ class LarvaBox2D(LarvaSim):
         """
 
         if joint_types is None:
-            joint_types = reg.par.get_null('Box2D').joint_types
+            joint_types = aux.AttrDict({'friction': {'N': 0,
+                                                     'args': {'maxForce': {'v': 1, 'lim': (0.0, 100000)},
+                                                              'maxTorque': {'v': 1, 'lim': (0.0, 100000)}}},
+                                        'revolute': {'N': 0,
+                                                     'args': {'enableMotor': True,
+                                                              'maxMotorTorque': {'v': 0.0, 'lim': (0.0, 100000)},
+                                                              'motorSpeed': {'v': 0.0, 'lim': (0.0, 100000)}}},
+                                        'distance': {'N': 0,
+                                                     'args': {'frequencyHz': {'v': 5.0, 'lim': (0.0, 100000)},
+                                                              'dampingRatio': {'v': 1.0, 'lim': (0.0, 100000)}}}})
         space = self.model.space
         l0 = self.sim_length / self.Nsegs
 

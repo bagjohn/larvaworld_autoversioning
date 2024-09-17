@@ -11,7 +11,6 @@ from ...param import PositiveNumber, OptionalPositiveNumber
 __all__ = [
     'Intermitter',
     'OfflineIntermitter',
-    'NengoIntermitter',
     'BranchIntermitter',
     'FittedIntermitter',
     'get_EEB_poly1d',
@@ -43,18 +42,18 @@ default_bout_distros = aux.AttrDict({'turn_dur': {'range': [0.25, 3.25], 'name':
 
 
 class Intermitter(Timer):
-    EEB = param.Magnitude(0.0, label='exploitation-exploration balance',
+    EEB = param.Magnitude(0.0, step=0.01,label='exploitation-exploration balance',
                           doc='The baseline exploitation-exploration balance. 0 means only exploitation, 1 only exploration.')
     EEB_decay = PositiveNumber(1.0, softmax=2.0,doc='The exponential decay coefficient of the exploitation-exploration balance when no food is detected.')
     crawl_freq = PositiveNumber(10 / 7, bounds=(0.5, 3.0),doc='The default crawling frequency.')
     feed_freq = PositiveNumber(2.0, bounds=(1.0, 3.0),doc='The default feeding frequency.')
-    run_mode = param.Selector(objects=['stridechain', 'exec'], doc='The generation mode of the crawling epochs.')
+    run_mode = param.Selector(default='stridechain', objects=['stridechain', 'exec'], doc='The generation mode of the crawling epochs.')
     feeder_reoccurence_rate = OptionalPositiveNumber(softmax=1.0, label='feed reoccurence',
                                                      doc='The default reoccurence rate of the feeding motion.')
     feed_bouts = param.Boolean(False, doc='Whether feeding epochs are generated.')
-    pause_dist = param.Parameter(default=None, doc='The temporal distribution of pause epochs.')
-    stridechain_dist = param.Parameter(default=None, doc='The stride-number distribution of run epochs (stridechains).')
-    run_dist = param.Parameter(default=None, doc='The temporal distribution of run epochs.')
+    pause_dist = param.Dict(default=None, doc='The temporal distribution of pause epochs.')
+    stridechain_dist = param.Dict(default=None, doc='The stride-number distribution of run epochs (stridechains).')
+    run_dist = param.Dict(default=None, doc='The temporal distribution of run epochs.')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -75,7 +74,7 @@ class Intermitter(Timer):
             self.run_generator = None
 
         elif self.run_mode == 'exec':
-            if self.run_dist is not None or self.run_dist.range is None:
+            if self.run_dist is None or self.run_dist.range is None:
                 self.run_dist = default_bout_distros.run_dur
             self.stridechain_min, self.stridechain_max = self.run_dist.range
             self.run_generator = reg.BoutGenerator(**self.run_dist, dt=self.dt)
@@ -298,10 +297,6 @@ class OfflineIntermitter(Intermitter):
         return self.update_state(stride_completed, feed_motion, on_food)
 
 
-class NengoIntermitter(Intermitter):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
 
 class BranchIntermitter(Intermitter):
     feed_bouts = param.Boolean(False, readonly=True)
@@ -333,13 +328,6 @@ class FittedIntermitter(OfflineIntermitter):
         stored_conf.update(kwargs)
         stored_conf['feed_bouts'] = True if stored_conf['feed_freq'] is not None else False
         super().__init__(**stored_conf)
-
-
-# ModeDict = aux.AttrDict({
-#             'default': Intermitter,
-#             'nengo': NengoIntermitter,
-#             'branch': BranchIntermitter
-#         })
 
 
 def get_EEB_poly1d(**kws):

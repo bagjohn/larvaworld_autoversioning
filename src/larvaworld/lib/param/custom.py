@@ -54,33 +54,33 @@ class StringRobust(param.String):
 class PositiveNumber(param.Number):
     """Number that must be positive"""
 
-    def __init__(self, default=0.0, softmin=0.0, softmax=None, hardmin=0.0, hardmax=None, bounds=None, **kwargs):
+    def __init__(self, default=0.0, softmin=0.0, softmax=None, hardmin=0.0, hardmax=None, bounds=None,  step=0.1,**kwargs):
         if bounds is None:
             bounds = (hardmin, hardmax)
-        super().__init__(default=default, softbounds=(softmin, softmax), bounds=bounds, **kwargs)
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=bounds, step=step, **kwargs)
 
 
 class PositiveInteger(param.Integer):
     """Integer that must be positive"""
 
-    def __init__(self, default=0, softmin=0, softmax=None, hardmin=0, hardmax=None, **kwargs):
-        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), **kwargs)
+    def __init__(self, default=0, softmin=0, softmax=None, hardmin=0, hardmax=None, step=1, **kwargs):
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), step=step, **kwargs)
 
 
 class Phase(param.Number):
     """Phase number within (0,2pi)"""
 
-    def __init__(self, default=0.0, softmin=0.0, softmax=2 * np.pi, hardmin=0.0, hardmax=2 * np.pi, **kwargs):
-        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), **kwargs)
+    def __init__(self, default=0.0, softmin=0.0, softmax=2 * np.pi, hardmin=0.0, hardmax=2 * np.pi, step=0.1, **kwargs):
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), step=step, **kwargs)
 
 
 class RangeRobust(param.Range):
     """Range can be passed as list"""
 
-    def __init__(self, default=(0.0, 0.0), **kwargs):
+    def __init__(self, default=(0.0, 0.0),  step=0.1, **kwargs):
         if default is not None and not isinstance(default, tuple):
             default = tuple(default)
-        super().__init__(default=default, **kwargs)
+        super().__init__(default=default,step=step,  **kwargs)
 
     def _validate_value(self, val, allow_None):
         if val is not None and not isinstance(val, tuple):
@@ -101,7 +101,15 @@ class RangeInf(RangeRobust):
             raise ValueError("NumericTuple parameter %r only takes numeric "
                              "values, not type %r." % (self.name, type(n)))
 
-    def _validate_bounds(self, val, bounds, inclusive_bounds):
+    def _validate_bounds(self, val, bounds, inclusive_bounds, kind):
+        if bounds is not None:
+            for pos, v in zip(['lower', 'upper'], bounds):
+                if v is None:
+                    continue
+                self._validate_bound_type(v, pos, kind)
+        if kind == 'softbound':
+            return
+
         if bounds is None or (val is None and self.allow_None):
             return
         vmin, vmax = bounds
@@ -112,8 +120,25 @@ class RangeInf(RangeRobust):
             too_low = (vmin is not None) and (v < vmin if incmin else v <= vmin)
             too_high = (vmax is not None) and (v > vmax if incmax else v >= vmax)
             if too_low or too_high:
-                raise ValueError("Range parameter %r's %s bound must be in range %s."
-                                 % (self.name, bound, self.rangestr()))
+                raise ValueError(
+                    f"{param._utils._validate_error_prefix(self)} {bound} bound must be in "
+                    f"range {self.rangestr()}, not {v}."
+                )
+
+
+    # def _validate_bounds(self, val, bounds, inclusive_bounds):
+    #     if bounds is None or (val is None and self.allow_None):
+    #         return
+    #     vmin, vmax = bounds
+    #     incmin, incmax = inclusive_bounds
+    #     for bound, v in zip(['lower', 'upper'], val):
+    #         if v is None and self.allow_None:
+    #             continue
+    #         too_low = (vmin is not None) and (v < vmin if incmin else v <= vmin)
+    #         too_high = (vmax is not None) and (v > vmax if incmax else v >= vmax)
+    #         if too_low or too_high:
+    #             raise ValueError("Range parameter %r's %s bound must be in range %s."
+    #                              % (self.name, bound, self.rangestr()))
 
 
 class PositiveRange(RangeRobust):
@@ -133,16 +158,16 @@ class PhaseRange(RangeRobust):
 class OptionalPositiveNumber(param.Number):
     """Number that must be positive"""
 
-    def __init__(self, default=None, softmin=0.0, softmax=None, hardmin=0.0, hardmax=None, **kwargs):
-        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), allow_None=True,
+    def __init__(self, default=None, softmin=0.0, softmax=None, hardmin=0.0, hardmax=None, step=0.1, **kwargs):
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), step=step, allow_None=True,
                          **kwargs)
 
 
 class OptionalPositiveInteger(param.Integer):
     """Integer that must be positive"""
 
-    def __init__(self, default=None, softmin=0, softmax=None, hardmin=0, hardmax=None, **kwargs):
-        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), allow_None=True,
+    def __init__(self, default=None, softmin=0, softmax=None, hardmin=0, hardmax=None, step=1, **kwargs):
+        super().__init__(default=default, softbounds=(softmin, softmax), bounds=(hardmin, hardmax), step=step, allow_None=True,
                          **kwargs)
 
 
@@ -225,8 +250,8 @@ class IntegerTuple(param.NumericTuple):
 class IntegerRange(RangeRobust):
     """Tuple range of integers"""
 
-    def __init__(self, default=(0, 0), **kwargs):
-        super().__init__(default=default, **kwargs)
+    def __init__(self, default=(0, 0), step=1, **kwargs):
+        super().__init__(default=default, step=step, **kwargs)
 
     def _validate_value(self, val, allow_None):
         super(RangeRobust, self)._validate_value(val, allow_None)
@@ -272,11 +297,11 @@ class NegativeIntegerRangeOrdered(IntegerRangeOrdered):
 class NumericTuple2DRobust(param.NumericTuple):
     """XY point coordinates can be passed as list"""
 
-    def __init__(self, default=(0.0, 0.0), **kwargs):
+    def __init__(self, default=(0.0, 0.0),**kwargs):
         if not isinstance(default, tuple):
             default = tuple(default)
 
-        super().__init__(default=default, length=2, **kwargs)
+        super().__init__(default=default, length=2,**kwargs)
 
 
 class IntegerTuple2DRobust(IntegerTuple):

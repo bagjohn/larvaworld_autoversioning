@@ -8,6 +8,7 @@ from types import FunctionType
 import typing
 import param
 import sys
+
 if sys.version_info >= (3, 8):
     from typing import TypedDict  # pylint: disable=no-name-in-module
 else:
@@ -18,6 +19,7 @@ from ..aux import nam
 
 __all__ = [
     'SAMPLING_PARS',
+    'sample_ps',
     'init2mdict',
     # 'LarvaworldParam',
     'get_LarvaworldParam',
@@ -26,12 +28,8 @@ __all__ = [
 ]
 
 
-
-
-
 def param_to_arg(k, p):
     c = p.__class__
-    # dtype=aux.param_dtype(c)
     v = p.default
     d = aux.AttrDict({
         'key': k,
@@ -77,6 +75,7 @@ def gConf(mdict, **kwargs):
     else:
         return aux.AttrDict(mdict)
 
+
 def init2mdict(d0):
     def check(D0):
         D = {}
@@ -95,10 +94,8 @@ def init2mdict(d0):
             else:
                 D[kk] = check(vv)
         return D
+
     return aux.AttrDict(check(d0))
-
-
-
 
 
 class LarvaworldParam(param.Parameterized):
@@ -110,7 +107,6 @@ class LarvaworldParam(param.Parameterized):
     codename = param.String(default='', doc='Name of the parameter in code')
     flatname = param.String(default=None, doc='Name of the parameter in model configuration')
     dtype = param.Parameter(default=float, doc='Data type of the parameter value')
-    mdict = param.Dict(default=None, doc='The parameter dict in case of a dict header', allow_None=True)
     func = param.Callable(default=None, doc='Function to get the parameter from a dataset', allow_None=True)
     required_ks = param.List(default=[], doc='Keys of prerequired parameters for computation in a dataset')
 
@@ -140,25 +136,12 @@ class LarvaworldParam(param.Parameterized):
         else:
             return fr'${self.u}$'
 
-    @property
-    def upint(self):
-        try:
-            from pint_pandas import PintType
-            ustring = f'pint[{self.u}]'
-            return PintType(ustring)
-        except:
-            return self.u
+
 
     @property
     def short(self):
         return self.k
 
-    @property
-    def gConf(self):
-        if self.mdict is None:
-            return None
-        else:
-            return gConf(self.mdict)
 
     @property
     def v0(self):
@@ -234,7 +217,7 @@ class LarvaworldParam(param.Parameterized):
             return self.param.v.step
         elif self.parclass == param.Magnitude:
             return 0.01
-        elif self.dtype in [float, typing.List[float], typing.List[typing.Tuple[float]], typing.Tuple[float]]:
+        elif self.parclass in [param.NumericTuple]:
             return 0.01
         else:
             return None
@@ -269,50 +252,49 @@ class LarvaworldParam(param.Parameterized):
 
     def randomize(self):
         p = self.parclass
-        if p == param.Number:
+        if p in [param.Number] + param.Number.__subclasses__():
             vmin, vmax = self.param.v.bounds
             self.v = self.param.v.crop_to_bounds(np.round(random.uniform(vmin, vmax), self.Ndec))
-        elif p == param.Integer:
+        elif p in [param.Integer] + param.Integer.__subclasses__():
             vmin, vmax = self.param.v.bounds
             self.v = random.randint(vmin, vmax)
-        elif p == param.Magnitude:
+        elif p in [param.Magnitude] + param.Magnitude.__subclasses__():
             self.v = np.round(random.uniform(0.0, 1.0), self.Ndec)
-        elif p == param.Selector:
+        elif p in [param.Selector] + param.Selector.__subclasses__():
             self.v = random.choice(self.param.v.objects)
         elif p == param.Boolean:
             self.v = random.choice([True, False])
-        elif p == param.Range:
+        elif p in [param.Range] + param.Range.__subclasses__():
             vmin, vmax = self.param.v.bounds
             vv0 = np.round(random.uniform(vmin, vmax), self.Ndec)
             vv1 = np.round(random.uniform(vv0, vmax), self.Ndec)
-
             self.v = (vv0, vv1)
 
     def mutate(self, Pmut, Cmut):
         if random.random() < Pmut:
-            if self.parclass in [param.Magnitude] +param.Magnitude.__subclasses__():
+            if self.parclass in [param.Magnitude] + param.Magnitude.__subclasses__():
                 v0 = self.v if self.v is not None else 0.5
                 vv = random.gauss(v0, Cmut)
                 self.v = self.param.v.crop_to_bounds(np.round(vv, self.Ndec))
                 # self.v = np.round(self.v, self.Ndec)
-            elif self.parclass in [param.Integer] +param.Integer.__subclasses__():
+            elif self.parclass in [param.Integer] + param.Integer.__subclasses__():
                 vmin, vmax = self.param.v.bounds
                 vr = np.abs(vmax - vmin)
                 v0 = self.v if self.v is not None else int(vmin + vr / 2)
                 vv = random.gauss(v0, Cmut * vr)
                 self.v = self.param.v.crop_to_bounds(int(vv))
-            elif self.parclass in [param.Number] +param.Number.__subclasses__():
+            elif self.parclass in [param.Number] + param.Number.__subclasses__():
 
                 vmin, vmax = self.param.v.bounds
                 vr = np.abs(vmax - vmin)
                 v0 = self.v if self.v is not None else vmin + vr / 2
                 vv = random.gauss(v0, Cmut * vr)
                 self.v = self.param.v.crop_to_bounds(np.round(vv, self.Ndec))
-            elif self.parclass in [param.Selector] +param.Selector.__subclasses__():
+            elif self.parclass in [param.Selector] + param.Selector.__subclasses__():
                 self.v = random.choice(self.param.v.objects)
             elif self.parclass == param.Boolean:
                 self.v = random.choice([True, False])
-            elif self.parclass in [param.Range] +param.Range.__subclasses__():
+            elif self.parclass in [param.Range] + param.Range.__subclasses__():
                 vmin, vmax = self.param.v.bounds
                 vr = np.abs(vmax - vmin)
                 v0, v1 = self.v if self.v is not None else (vmin, vmax)
@@ -323,10 +305,10 @@ class LarvaworldParam(param.Parameterized):
                 self.v = (vv0, vv1)
 
 
-def get_LarvaworldParam(vparfunc, v0=None, dv=None, u_name=None, **kws):
+def get_LarvaworldParam(vparfunc, v0=None, dv=None, **kws):
     class _LarvaworldParam(LarvaworldParam):
         v = vparfunc
-        u = param.Parameter(default=reg.units.dimensionless, doc='Unit of the parameter values', label=u_name)
+        u = param.Parameter(default=reg.units.dimensionless, doc='Unit of the parameter values')
 
     par = _LarvaworldParam(**kws)
     return par
@@ -337,8 +319,9 @@ SAMPLING_PARS = aux.bidict(
         {
             'length': 'body.length',
             nam.freq(nam.scal(nam.vel(''))): 'brain.crawler.freq',
-            nam.mean(nam.scal(nam.chunk_track('stride', nam.dst('')))): 'brain.crawler.stride_dst_mean',
-            nam.std(nam.scal(nam.chunk_track('stride', nam.dst('')))): 'brain.crawler.stride_dst_std',
+            # nam.freq(nam.scal(nam.vel(''))): 'brain.intermitter.crawl_freq',
+            nam.mean(nam.chunk_track('stride', nam.scal(nam.dst('')))): 'brain.crawler.stride_dst_mean',
+            nam.std(nam.chunk_track('stride', nam.scal(nam.dst('')))): 'brain.crawler.stride_dst_std',
             nam.freq('feed'): 'brain.feeder.freq',
             nam.max(nam.chunk_track('stride', nam.scal(nam.vel('')))): 'brain.crawler.max_scaled_vel',
             nam.phi(nam.max(nam.scal(nam.vel('')))): 'brain.crawler.max_vel_phase',
@@ -349,6 +332,14 @@ SAMPLING_PARS = aux.bidict(
         }
     )
 )
+
+
+def sample_ps(ps, e=None):
+    Sinv = reg.SAMPLING_PARS.inverse
+    ps = aux.SuperList([Sinv[k] for k in aux.existing_cols(Sinv, ps)]).flatten
+    if e:
+        ps = ps.existing(e)
+    return ps
 
 
 def get_vfunc(dtype, lim, vs):
@@ -379,10 +370,10 @@ def get_vfunc(dtype, lim, vs):
         return param.Parameter
 
 
-def vpar(vfunc, v0, h, lab, lim, dv, vs):
+def vpar(vfunc, v0, doc, lab, lim, dv, vs):
     f_kws = {
         'default': v0,
-        'doc': h,
+        'doc': doc,
         'label': lab,
         'allow_None': True
     }
@@ -398,9 +389,8 @@ def vpar(vfunc, v0, h, lab, lim, dv, vs):
     return func
 
 
-def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None, symbol=None, codename=None, lab=None,
-                            h=None,
-                            u_name=None, mdict=None, flatname=None,
+def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None, codename=None, lab=None,
+                            doc=None,flatname=None,
                             required_ks=[], u=reg.units.dimensionless, v0=None, v=None, lim=None, dv=None, vs=None,
                             vfunc=None, vparfunc=None, func=None, **kwargs):
     '''
@@ -412,29 +402,22 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
     k = k if k is not None else d
     v0 = v if v is not None else v0
 
-    if flatname is None :
+    if flatname is None:
         if p in SAMPLING_PARS:
             flatname = SAMPLING_PARS[p]
         else:
             flatname = p
 
     if sym is None:
-        if symbol is not None:
-            sym = symbol
-        else:
-            sym = k
+        sym = k
 
-
-    if dv is None :
+    if dv is None:
         if dtype in [float, typing.List[float], typing.List[typing.Tuple[float]], typing.Tuple[float]]:
             dv = 0.01
-        elif dtype in [int] :
-            dv=1
-        else :
+        elif dtype in [int]:
+            dv = 1
+        else:
             pass
-
-
-
 
     if vparfunc is None:
         if vfunc is None:
@@ -445,8 +428,8 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
             else:
                 ulab = fr'${u}$'
                 lab = fr'{disp} ({ulab})'
-        h = lab if h is None else h
-        vparfunc = vpar(vfunc, v0, h, lab, lim, dv, vs)
+        doc = lab if doc is None else doc
+        vparfunc = vpar(vfunc, v0, doc, lab, lim, dv, vs)
     else:
         vparfunc = vparfunc()
 
@@ -462,10 +445,8 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
         'dtype': dtype,
         'func': func,
         'u': u,
-        'u_name': u_name,
         'required_ks': required_ks,
         'vparfunc': vparfunc,
-        'mdict': mdict,
         'dv': dv,
         'v0': v0,
 

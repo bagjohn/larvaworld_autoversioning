@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from .. import reg, aux, plot
-from ..model.envs.conditions import get_exp_condition
+from .conditions import get_exp_condition
 from ..sim.base_run import BaseRun
 from ..process.dataset import LarvaDatasetCollection
 
@@ -84,10 +84,7 @@ class ExpRun(BaseRun):
 
     def build_agents(self, larva_groups, parameter_dict={}):
         reg.vprint(f'--- Simulation {self.id} : Generating agent groups!--- ', 1)
-        confs = []
-        for gID, gConf in larva_groups.items():
-            lg = reg.generators.LarvaGroup(**gConf)
-            confs += lg(parameter_dict=parameter_dict)
+        confs = aux.SuperList([reg.generators.LarvaGroup(**v)(parameter_dict=parameter_dict) for v in larva_groups.values()]).flatten
         self.place_agents(confs)
 
     def eliminate_overlap(self):
@@ -148,12 +145,14 @@ class ExpRun(BaseRun):
         self.figs = reg.graphs.eval_graphgroups(graphgroups, datasets=ds, save_to=self.plot_dir, **kwargs)
 
     def store(self):
-        self.output.save(**self.p.agentpy_output_kws)
+        try:
+            self.output.save(**self.p.agentpy_output_kws)
+        except:
+            pass
         os.makedirs(self.data_dir, exist_ok=True)
         for d in self.datasets:
             d.save()
-            for type, vs in d.larva_dicts.items():
-                aux.storeSoloDics(vs, path=f'{d.dir}/data/individuals/{type}.txt')
+            d.store_larva_dicts()
 
     def load_agentpy_output(self):
         df = agentpy.DataDict.load(**self.p.agentpy_output_kws)

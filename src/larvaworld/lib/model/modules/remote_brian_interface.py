@@ -2,6 +2,7 @@ from ...ipc import BrianInterfaceMessage, Client
 from uuid import uuid4
 import datetime
 
+
 class RemoteBrianModelInterface(object):
 
     # generates random agent id prefixed with current date + time
@@ -21,7 +22,7 @@ class RemoteBrianModelInterface(object):
         now = datetime.datetime.now()
         date_str = now.strftime("%Y-%m-%d_%H-%M")
         urlsafe_66_alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-        short_id = ''.join(urlsafe_66_alphabet[x] for x in numberToBase(rand_id.int, 66))
+        short_id = ''.join(urlsafe_66_alphabet[x % len(urlsafe_66_alphabet)] for x in numberToBase(rand_id.int, 66))
         return '_'.join([date_str, short_id])
 
     # remote_dt: duration of remote simulation per step in ms
@@ -31,19 +32,18 @@ class RemoteBrianModelInterface(object):
         self.t_sim = int(remote_dt)
         self.step_cache = {}
 
-
-    def executeRemoteModelStep(self, model_instance_id, t_sim=self.t_sim, t_warmup=0, **kwargs):
+    def executeRemoteModelStep(self, sim_id, model_instance_id, t_sim, t_warmup=0, **kwargs):
         # t_sim: duration of remote model simulation in ms
         # warmup: duration of remote model warmup in ms
         if model_instance_id not in self.step_cache:
             self.step_cache[model_instance_id] = 0
 
-        msg = BrianInterfaceMessage(self.sim_id, model_instance_id, self.step_cache[model_instance_id],
-                           T=t_sim, warmup=t_warmup, **kwargs)
+        msg = BrianInterfaceMessage(sim_id, model_instance_id, self.step_cache[model_instance_id],
+                                    T=t_sim, warmup=t_warmup, **kwargs)
         # send model parameters to remote model server & wait for result response
         with Client((self.server_host, self.server_port)) as client:
             print("RemoteBrianModelInterface: BrianInterfaceMessage sent: {}".format(msg))
             [response] = client.send([msg])  # this is a LarvaMessage object again
-            self.step_cache[response.model_id] = response.step
+            self.step_cache[response.model_id] += 1
             print("RemoteBrianModelInterface: BrianInterfaceMessage received: {}".format(response))
             return response

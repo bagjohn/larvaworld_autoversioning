@@ -1,6 +1,7 @@
 import shutil
 
 from ... import reg, aux
+from ...plot.table import diff_df
 from ...reg.generators import LarvaGroup
 from ...param import Larva_Distro, Odor
 
@@ -10,7 +11,7 @@ __all__ = [
 
 
 class Essay:
-    def __init__(self, type, essay_id=None, N=5, enrichment=None, collections=['pose'], screen_kws={}, show=False,
+    def __init__(self, type, essay_id=None, N=5, enrichment=None, collections=['pose', 'brain'], screen_kws={}, show=False,
                  **kwargs):
         if enrichment is None:
             enrichment = reg.gen.EnrichConf().nestedConf
@@ -23,7 +24,6 @@ class Essay:
         if essay_id is None:
             essay_id = f'{type}_{reg.config.next_idx(id=type, conftype="Essay")}'
         self.essay_id = essay_id
-        # self.path = f'essays/{type}/{self.essay_id}/data'
         self.path = f'{reg.SIM_DIR}/essays/{type}/{self.essay_id}'
         self.data_dir = f'{self.path}/data'
         self.plot_dir = f'{self.path}/plots'
@@ -66,8 +66,8 @@ class Essay:
 
 class RvsS_Essay(Essay):
     def __init__(self, all_figs=False, N=1, **kwargs):
-        super().__init__(type='RvsS', N=N, enrichment=reg.gen.EnrichConf(proc_keys=['spatial']).nestedConf,
-                         collections=['pose', 'feeder', 'gut'], **kwargs)
+        super().__init__(type='RvsS', N=N, enrichment=reg.gen.EnrichConf.spatial_proc(),
+                         collections=['pose', 'brain', 'gut'], **kwargs)
 
         self.all_figs = all_figs
         self.qs = [1.0, 0.75, 0.5, 0.25, 0.15]
@@ -88,7 +88,7 @@ class RvsS_Essay(Essay):
 
         }
 
-        self.mdiff_df, row_colors = reg.model.diff_df(mIDs=['rover', 'sitter'])
+        self.mdiff_df, row_colors = diff_df(mIDs=['rover', 'sitter'])
 
     def RvsS_env(self, on_food=True):
         grid = reg.gen.FoodGrid() if on_food else None
@@ -326,9 +326,7 @@ class DoublePatch_Essay(Essay):
                  arena_dims=(0.24, 0.24), patch_x=0.06, patch_radius=0.025,
                  **kwargs):
         super().__init__(N=N, type='DoublePatch',
-                         enrichment=reg.gen.EnrichConf(anot_keys=['bout_detection', 'patch_residency'],
-                                                       proc_keys=['spatial', 'angular', 'source']).nestedConf,
-                         collections=['pose', 'toucher', 'feeder', 'olfactor'], **kwargs)
+                         enrichment=reg.gen.EnrichConf.patch_proc(),**kwargs)
         self.arena_dims = arena_dims
         self.patch_x = patch_x
         self.patch_radius = patch_radius
@@ -354,7 +352,7 @@ class DoublePatch_Essay(Essay):
         self.ms = reg.conf.Model.getID(self.mIDs)
         self.exp_dict = self.time_ratio_exp()
 
-        self.mdiff_df, row_colors = reg.model.diff_df(mIDs=self.mID0s, ms=self.ms)
+        self.mdiff_df, row_colors = diff_df(mIDs=self.mID0s, ms=self.ms)
 
     def get_larvagroups(self, age=120.0):
         def lg(id=None, **kwargs):
@@ -366,8 +364,7 @@ class DoublePatch_Essay(Essay):
         kws0 = {'N': self.N, 's': (0.005, 0.005), 'sample': reg.default_refID,
                 'age': age, 'epochs': {'0': reg.gen.Epoch(age_range=(0.0, age)).nestedConf}}
 
-        return aux.AttrDict(aux.merge_dicts(
-            [lg(id=id, c=c, mID=mID, **kws0) for mID, c, id in zip(self.mIDs, ['blue', 'red'], ['rover', 'sitter'])]))
+        return aux.AttrDict.merge_dicts([lg(id=id, c=c, mID=mID, **kws0) for mID, c, id in zip(self.mIDs, ['blue', 'red'], ['rover', 'sitter'])])
 
     def get_sources(self, type='standard', q=1.0, Cpeak=2.0, Cscale=0.0002):
 
@@ -439,10 +436,7 @@ class DoublePatch_Essay(Essay):
 
 class Chemotaxis_Essay(Essay):
     def __init__(self, dur=5.0, gain=300.0, mode=1, **kwargs):
-        super().__init__(type='Chemotaxis',
-                         enrichment=reg.gen.EnrichConf(anot_keys=['bout_detection', 'source_attraction'],
-                                                       proc_keys=['spatial', 'angular', 'source']).nestedConf,
-                         collections=['pose', 'olfactor'], **kwargs)
+        super().__init__(type='Chemotaxis',enrichment=reg.gen.EnrichConf.source_proc(),**kwargs)
         self.time_ks = ['c_odor1', 'dc_odor1']
         self.dur = dur
         self.gain = gain
@@ -454,7 +448,7 @@ class Chemotaxis_Essay(Essay):
             self.models = self.get_models3(gain)
         elif mode == 4:
             self.models = self.get_models4(gain)
-        self.mdiff_df, row_colors = reg.model.diff_df(mIDs=list(self.models.keys()),
+        self.mdiff_df, row_colors = diff_df(mIDs=list(self.models.keys()),
                                                       ms=[v.model for v in self.models.values()])
         self.exp_dict = self.chemo_exps(self.models)
 

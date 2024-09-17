@@ -14,8 +14,8 @@ from scipy.signal import find_peaks
 import param
 
 from .. import reg, aux, process
-from ..aux import nam
-from ..param import ClassAttr, StepDataFrame, EndpointDataFrame, ClassDict
+from ..aux import nam, AttrDict, SuperList
+from ..param import ClassAttr, StepDataFrame, EndpointDataFrame, ClassDict, SimMetricOps
 
 __all__ = [
     'ParamLarvaDataset',
@@ -31,11 +31,11 @@ class ParamLarvaDataset(param.Parameterized):
     config = ClassAttr(reg.generators.DatasetConfig, doc='The dataset metadata')
     step_data = StepDataFrame(doc='The timeseries data')
     endpoint_data = EndpointDataFrame(doc='The endpoint data')
-    config2 = ClassDict(default=aux.AttrDict(), item_type=None, doc='Additional dataset metadata')
+    config2 = ClassDict(default=AttrDict(), item_type=None, doc='Additional dataset metadata')
 
     def __init__(self, **kwargs):
         if 'config' not in kwargs:
-            kws = aux.AttrDict()
+            kws = AttrDict()
             for k in reg.generators.DatasetConfig().param_keys:
                 if k in kwargs:
                     kws[k] = kwargs[k]
@@ -44,15 +44,15 @@ class ParamLarvaDataset(param.Parameterized):
         assert 'config2' not in kwargs
 
         ks = list(kwargs.keys())
-        kws2 = aux.AttrDict()
+        kws2 = AttrDict()
         for k in ks:
             if k not in self.param.objects():
                 kws2[k] = kwargs[k]
                 kwargs.pop(k)
-        kwargs['config2'] = aux.AttrDict(kws2)
+        kwargs['config2'] = AttrDict(kws2)
         super().__init__(**kwargs)
         self.merge_configs()
-        self.epoch_dict = aux.AttrDict({'pause': None, 'run': None})
+        self.epoch_dict = AttrDict({'pause': None, 'run': None})
         self.larva_dicts = {}
         self.__dict__.update(self.config.nestedConf)
         self._epoch_dicts = None
@@ -103,19 +103,19 @@ class ParamLarvaDataset(param.Parameterized):
 
     @property
     def end_ps(self):
-        return aux.SuperList(self.e.columns).sorted
+        return SuperList(self.e.columns).sorted
 
     @property
     def step_ps(self):
-        return aux.SuperList(self.s.columns).sorted
+        return SuperList(self.s.columns).sorted
 
     @property
     def end_ks(self):
-        return aux.SuperList(reg.getPar(d=self.end_ps, to_return='k')).sorted
+        return SuperList(reg.getPar(d=self.end_ps, to_return='k')).sorted
 
     @property
     def step_ks(self):
-        return aux.SuperList(reg.getPar(d=self.step_ps, to_return='k')).sorted
+        return SuperList(reg.getPar(d=self.step_ps, to_return='k')).sorted
 
     @property
     def min_tick(self):
@@ -187,11 +187,11 @@ class ParamLarvaDataset(param.Parameterized):
         if not all([hasattr(self, attr) for attr in attrs]):
             return False
         s, e, c = self.data
-        spars = aux.SuperList(
+        spars = SuperList(
             ps + reg.getPar(ks) + [getattr(c, attr) for attr in config_attrs]).flatten.unique
         if not spars.exist_in(s):
             return False
-        epars = aux.SuperList(eps + reg.getPar(eks))
+        epars = SuperList(eps + reg.getPar(eks))
         return epars.exist_in(s)
 
     @property
@@ -199,7 +199,7 @@ class ParamLarvaDataset(param.Parameterized):
         try:
             assert self._chunk_dicts is not None
         except AssertionError:
-            self._chunk_dicts = aux.AttrDict(self.read('chunk_dicts'))
+            self._chunk_dicts = AttrDict(self.read('chunk_dicts'))
         except KeyError:
             self.detect_bouts()
         finally:
@@ -215,7 +215,7 @@ class ParamLarvaDataset(param.Parameterized):
         try:
             assert self._epoch_dicts is not None
         except AssertionError:
-            self._epoch_dicts = aux.AttrDict(self.read('epoch_dicts'))
+            self._epoch_dicts = AttrDict(self.read('epoch_dicts'))
         except KeyError:
             self.comp_pooled_epochs()
         finally:
@@ -231,7 +231,7 @@ class ParamLarvaDataset(param.Parameterized):
         try:
             assert self._fitted_epochs is not None
         except AssertionError:
-            self._fitted_epochs = aux.AttrDict(self.read('fitted_epochs'))
+            self._fitted_epochs = AttrDict(self.read('fitted_epochs'))
         except KeyError:
             self.fit_pooled_epochs()
         finally:
@@ -257,14 +257,15 @@ class ParamLarvaDataset(param.Parameterized):
     @pooled_epochs.setter
     def pooled_epochs(self, d):
         self._pooled_epochs = d
-        aux.save_dict(d, f'{self.c.data_dir}/pooled_epochs.txt')
+        self.save_dict(d, 'pooled_epochs.txt')
+
 
     @property
     def cycle_curves(self):
         try:
             assert self._cycle_curves is not None
         except AssertionError:
-            self._cycle_curves = aux.AttrDict(self.read('cycle_curves'))
+            self._cycle_curves = AttrDict(self.read('cycle_curves'))
         except KeyError:
             self.comp_interference()
         finally:
@@ -300,7 +301,7 @@ class ParamLarvaDataset(param.Parameterized):
                 A[t0s, i, 0] = b0s
                 A[t1s, i, 1] = b1s
                 A[t1s, i, 2] = b1s - b0s
-        self.s[aux.nam.atStartStopChunk(par, chunk)] = A.reshape([-1, 3])
+        self.s[nam.atStartStopChunk(par, chunk)] = A.reshape([-1, 3])
 
     def epochs_pose_by_ID(self, chunk, id):
         E = self.epoch_dicts[chunk][id]
@@ -328,7 +329,7 @@ class ParamLarvaDataset(param.Parameterized):
     def epoch_idx(self, epochs):
         slices = aux.epoch_slices(epochs)
         if len(slices) == 0:
-            return np.array([])
+            return []
         elif len(slices) == 1:
             return slices[0]
         else:
@@ -560,7 +561,7 @@ class ParamLarvaDataset(param.Parameterized):
         Svs = np.zeros([self.c.N, len(Sps)]) * np.nan
         DD = {}
         for jj, id in enumerate(self.ids):
-            D = aux.AttrDict()
+            D = AttrDict()
             S = self.s.xs(id, level="AgentID")
             a_v = S[v].values
             a_fov = S[fov].values
@@ -570,13 +571,13 @@ class ParamLarvaDataset(param.Parameterized):
                 D.exec, D.run_count = self.detect_strideschains(D.stride)
                 D.stride_Dor = np.array([np.trapz(a_fov[s0:s1 + 1]) for s0, s1 in D.stride])
                 D.stride_dur = self.epoch_durs(D.stride)
-                D.stride_dst = self.epoch_amps(D.stride, a)
+                D.stride_dst = self.epoch_amps(D.stride, a_v)
                 D.stride_idx = self.epoch_idx(D.stride)
             else:
                 D.vel_minima, D.vel_maxima, D.stride, D.run_count = np.array([]), np.array([]), np.array([]), np.array(
                     [])
                 D.stride_Dor, D.stride_dur, D.stride_dst, D.stride_idx = np.array([]), np.array([]), np.array(
-                    []), np.array([])
+                    []), []
                 a = a_v
                 D.exec = self.detect_epochs(np.where(a_v >= vel_thr)[0])
                 # D.exec = self.detect_runs(a_v, vel_thr=vel_thr)
@@ -584,10 +585,13 @@ class ParamLarvaDataset(param.Parameterized):
             D.run_dur = self.epoch_durs(D.exec)
             D.run_dst = self.epoch_amps(D.exec, a_v)
             D.run_idx = self.epoch_idx(D.exec)
+            # D.run_idx = np.array([])
             D.pause = self.detect_pauses(a, vel_thr=vel_thr, runs=D.exec)
             D.pause_dur = self.epoch_durs(D.pause)
             D.pause_idx = self.epoch_idx(D.pause)
-
+            # print(D.run_idx)
+            # print(type(D.run_idx))
+            # print(a_v[D.run_idx])
             Svs[jj, :] = [np.nanmean(D.stride_dst), np.nanstd(D.stride_dst),
                           np.nanmean(a[D.stride_idx]), np.nansum(D.run_count),
                           np.mean(a_v[D.run_idx]), np.mean(a_v[D.pause_idx]),
@@ -607,7 +611,7 @@ class ParamLarvaDataset(param.Parameterized):
         vs = np.zeros([self.c.N, len(ps)]) * np.nan
         DD = {}
         for j, id in enumerate(self.ids):
-            D = aux.AttrDict()
+            D = AttrDict()
             a = S.xs(id, level="AgentID")
             D.Lturn, D.Rturn = self.detect_turns(a, min_dur=min_dur)
             D.Lturn_dur = self.epoch_durs(D.Lturn)
@@ -652,7 +656,7 @@ class ParamLarvaDataset(param.Parameterized):
         DD = {}
         for jj, id in enumerate(self.ids):
             S = self.s.xs(id, level="AgentID")
-            D = aux.AttrDict()
+            D = AttrDict()
             D.on_food = np.array([])
             if on in self.s.columns:
                 D.on_food = self.detect_epochs(np.where(S[on].values == True)[0])
@@ -690,27 +694,27 @@ class ParamLarvaDataset(param.Parameterized):
         Dtur = self.turn_annotation()
         Dcr = self.crawl_annotation(strides_enabled=strides_enabled, vel_thr=vel_thr)
         Dpa = self.patch_residency_annotation()
-        self.chunk_dicts = aux.AttrDict({id: {**Dtur[id], **Dcr[id], **Dpa[id]} for id in self.ids})
+        self.chunk_dicts = AttrDict({id: {**Dtur[id], **Dcr[id], **Dpa[id]} for id in self.ids})
         if castsNweathervanes:
             self.turn_mode_annotation()
         reg.vprint(f'Completed bout detection.', 1)
 
     def comp_pooled_epochs(self):
         d0 = self.chunk_dicts
-        epoch_ks = aux.SuperList([list(dic.keys()) for dic in d0.values()]).flatten.unique
-        self.epoch_dicts = aux.AttrDict({k: {id: d0[id][k] for id in list(d0)} for k in epoch_ks})
+        epoch_ks = SuperList([list(dic.keys()) for dic in d0.values()]).flatten.unique
+        self.epoch_dicts = AttrDict({k: {id: d0[id][k] for id in list(d0)} for k in epoch_ks})
 
         def get_vs(dic):
-            l = aux.SuperList(dic.values())
+            l = SuperList(dic.values())
             try:
                 sh = [len(ll.shape) for ll in l]
                 if sh.count(2) > sh.count(1):
-                    l = aux.SuperList([ll for ll in l if len(ll.shape) == 2])
+                    l = SuperList([ll for ll in l if len(ll.shape) == 2])
             except:
                 pass
             return np.concatenate(l)
 
-        self.pooled_epochs = aux.AttrDict(
+        self.pooled_epochs = AttrDict(
             {k: get_vs(dic) for k, dic in self.epoch_dicts.items() if
              k not in ['turn_slice', 'pause_idx', 'run_idx', 'stride_idx']})
 
@@ -718,23 +722,42 @@ class ParamLarvaDataset(param.Parameterized):
 
     def fit_pooled_epochs(self):
         try:
-            dic = self.pooled_epochs
-            assert dic is not None
-            fitted = {}
-            for k, v in dic.items():
+            D = self.pooled_epochs
+            assert D is not None
+            d = {}
+            for k in D:
                 try:
-                    fitted[k] = reg.fit_bout_distros(np.abs(v), bout=k, combine=False,
+                    x0=np.abs(D[k])
+                    d[k] = reg.fit_bout_distros(x0, bout=k, combine=False,
                                                       discrete=True if k == 'run_count' else False)
                 except:
-                    fitted[k] = None
-            self.fitted_epochs = aux.AttrDict(fitted)
+                    d[k] = None
+            self.fitted_epochs = AttrDict(d)
             reg.vprint(f'Fitted pooled epoch durations.', 1)
         except:
             reg.vprint(f'Failed to fit pooled epoch durations.', 1)
 
+    def generate_pooled_epochs(self, mID):
+        m = reg.conf.Model.getID(mID)
+        Im = self.c.get_sample_bout_distros(m.get_copy()).brain.intermitter
+        try:
+            D = self.pooled_epochs
+            assert D is not None
+            d = {}
+            for n, k in zip(['pause', 'run', 'stridechain'], ['pause_dur', 'run_dur', 'run_count']):
+                try:
+                    x0=reg.BoutGenerator(**Im[f'{n}_dist'], dt=1 if k == 'run_count' else self.c.dt).sample(D[k].shape[0])
+                    d[k] = reg.fit_bout_distros(x0,bout=k,combine=False, discrete=True if k == 'run_count' else False)
+                except:
+                    d[k] = None
+            reg.vprint(f'Generated pooled epoch durations.', 1)
+            return AttrDict(d)
+        except:
+            reg.vprint(f'Failed to generate pooled epoch durations.', 1)
+
     def comp_bout_distros(self):
         c = self.config
-        c.bout_distros = aux.AttrDict()
+        c.bout_distros = AttrDict()
         for k, dic in self.fitted_epochs.items():
             try:
                 c.bout_distros[k] = dic['best']
@@ -763,10 +786,10 @@ class ParamLarvaDataset(param.Parameterized):
             pass
 
     def comp_cycle_curves(self, Nbins=64):
-        CC = aux.AttrDict()
+        CC = AttrDict()
         for sh in ['sv', 'fov', 'rov', 'foa', 'b']:
             ss=self.s[reg.getPar(sh)]
-            CC[sh] = aux.AttrDict({
+            CC[sh] = AttrDict({
                 'abs': np.zeros([self.c.N, Nbins]) * np.nan,
                 'plus': np.zeros([self.c.N, Nbins]) * np.nan,
                 'minus': np.zeros([self.c.N, Nbins]) * np.nan,
@@ -812,7 +835,7 @@ class ParamLarvaDataset(param.Parameterized):
 
     def comp_pooled_cycle_curves(self):
         try:
-            self.pooled_cycle_curves = aux.AttrDict({
+            self.pooled_cycle_curves = AttrDict({
                 k: {mode: np.nanquantile(vs, q=0.5, axis=0).tolist() for mode, vs in dic.items()} for k, dic in
                 self.cycle_curves.items()})
             reg.vprint(f'Computed average curves during stridecycle for diverse parameters.', 1)
@@ -978,25 +1001,38 @@ class ParamLarvaDataset(param.Parameterized):
     def data(self):
         return self.s, self.e, self.c
 
-    def path_to_file(self, file='data'):
-        return f'{self.c.data_dir}/{file}.h5'
+    def path_to_file(self, file='data.h5'):
+        f=self.c.data_dir
+        if f is not None:
+            return f'{f}/{file}'
+        else:
+            return None
 
     @property
     def path_to_config(self):
-        return f'{self.c.data_dir}/conf.txt'
+        return self.path_to_file('conf.txt')
 
-    def store(self, df, key, file='data'):
+    def store(self, df, key, file='data.h5'):
         path = self.path_to_file(file)
-        if not isinstance(df, pd.DataFrame):
-            pd.DataFrame(df).to_hdf(path, key)
+        if path is not None:
+            if not isinstance(df, pd.DataFrame):
+                pd.DataFrame(df).to_hdf(path, key)
+            else:
+                df.to_hdf(path, key)
+
+    def save_dict(self, d, file):
+        path = self.path_to_file(file)
+        if path is not None:
+            aux.save_dict(d,path)
+
+    def read(self, key, file='data.h5'):
+        path = self.path_to_file(file)
+        if path is not None:
+            try:
+                return pd.read_hdf(path, key)
+            except:
+                return None
         else:
-            df.to_hdf(path, key)
-
-    def read(self, key, file='data'):
-        path = self.path_to_file(file)
-        try:
-            return pd.read_hdf(path, key)
-        except:
             return None
 
     def load(self, step=True, h5_ks=None):
@@ -1042,7 +1078,8 @@ class ParamLarvaDataset(param.Parameterized):
         if c.refID is not None:
             reg.conf.Ref.setID(c.refID, c.dir)
             reg.vprint(f'Saved reference dataset under : {c.refID}', 1)
-        aux.save_dict(c.nestedConf, self.path_to_config)
+        self.save_dict(c.nestedConf, 'conf.txt')
+
 
     def load_traj(self, mode='default'):
         key = f'traj.{mode}'
@@ -1066,22 +1103,34 @@ class ParamLarvaDataset(param.Parameterized):
         if type in ds0 and all([id in ds0[type] for id in ids]):
             ds = [ds0[type][id] for id in ids]
         else:
-            ds = aux.loadSoloDics(agent_ids=ids, path=f'{self.config.data_dir}/individuals/{type}.txt')
+            path = f'{self.config.data_dir}/individuals/{type}'
+            ds = [aux.load_dict(f'{path}/{id}.txt') for id in ids]
         return ds
+
+    def store_dicts(self, type, dicts):
+        path = f'{self.config.data_dir}/individuals/{type}'
+        if path is not None:
+            os.makedirs(path, exist_ok=True)
+            for id, d in dicts.items():
+                aux.save_dict(d, f'{path}/{id}.txt')
+
+    def store_larva_dicts(self):
+        for type, dicts in self.larva_dicts.items():
+            self.store_dicts(type, dicts)
 
     @property
     def contour_xy_data_byID(self):
         xy = self.c.contour_xy
         assert xy.exist_in(self.s)
         grouped = self.s[xy].groupby('AgentID')
-        return aux.AttrDict({id: df.values.reshape([-1, self.c.Ncontour, 2]) for id, df in grouped})
+        return AttrDict({id: df.values.reshape([-1, self.c.Ncontour, 2]) for id, df in grouped})
 
     @property
     def midline_xy_data_byID(self):
         xy = self.c.midline_xy
         # assert xy.exist_in(self.step_data)
         grouped = self.s[xy].groupby('AgentID')
-        return aux.AttrDict({id: df.values.reshape([-1, self.c.Npoints, 2]) for id, df in grouped})
+        return AttrDict({id: df.values.reshape([-1, self.c.Npoints, 2]) for id, df in grouped})
 
     @property
     def traj_xy_data_byID(self):
@@ -1089,7 +1138,7 @@ class ParamLarvaDataset(param.Parameterized):
 
     def data_by_ID(self, data):
         grouped = data.groupby('AgentID')
-        return aux.AttrDict({id: df.values for id, df in grouped})
+        return AttrDict({id: df.values for id, df in grouped})
 
     @property
     def midline_xy_data(self):
@@ -1156,12 +1205,12 @@ class ParamLarvaDataset(param.Parameterized):
     @property
     def midline_seg_xy_data_byID(self):
         g = self.midline_xy_data_byID
-        return aux.AttrDict({id: self.midline_xy_1less(mid) for id, mid in g.items()})
+        return AttrDict({id: self.midline_xy_1less(mid) for id, mid in g.items()})
 
     @property
     def midline_seg_orients_data_byID(self):
         g = self.midline_xy_data_byID
-        return aux.AttrDict({id: self.midline_seg_orients_from_mid(mid) for id, mid in g.items()})
+        return AttrDict({id: self.midline_seg_orients_from_mid(mid) for id, mid in g.items()})
 
     def midline_seg_orients_from_mid(self, mid):
         Ax, Ay = mid[:, :, 0], mid[:, :, 1]
@@ -1189,7 +1238,7 @@ class ParamLarvaDataset(param.Parameterized):
         s, e, c = self.data
         all_vecs = list(c.vector_dict.keys())
         vecs = all_vecs[:2] if mode == 'minimal' else all_vecs
-        pars = aux.nam.orient(vecs)
+        pars = nam.orient(vecs)
         if pars.exist_in(s) and not recompute:
             reg.vprint(
                 'Vector orientations are already computed. If you want to recompute them, set recompute to True', 1)
@@ -1263,13 +1312,7 @@ class ParamLarvaDataset(param.Parameterized):
 
             self.comp_operators(pars=[p, vel, acc])
 
-            # if p in ['bend', ho, to, fo, ro]:
-            #     for pp in [p, vel, acc]:
-            #         temp = s[pp].dropna().groupby('AgentID')
-            #         e[aux.nam.mean(pp)] = temp.mean()
-            #         e[aux.nam.std(pp)] = temp.std()
-            #         e[aux.nam.initial(pp)] = temp.first()
-            # s[[aux.nam.min(pp), aux.nam.max(pp)]] = comp_extrema_solo(sss, dt=dt, **kwargs).reshape(-1, 2)
+
 
     def comp_xy_moments(self, point='', **kwargs):
         s, e, c = self.data
@@ -1531,7 +1574,7 @@ class ParamLarvaDataset(param.Parameterized):
             return reg.par.get(k=k, d=self, compute=True)
 
     def sample_larvagroup(self, N=1, ps=[]):
-        ps = self.end_ps.existing(ps)
+        ps=reg.sample_ps(ps,self.e)
         E = self.e[ps]
         if len(ps) == 0:
             return {}
@@ -1542,28 +1585,39 @@ class ParamLarvaDataset(param.Parameterized):
             cov = np.cov(base)
             ms = [E[p].mean() for p in ps]
             vs = np.random.multivariate_normal(ms, cov, N).T
-        return {p: v for p, v in zip(reg.getPar(d=ps, to_return='flatname'), vs)}
+        return AttrDict({p: v for p, v in zip(reg.getPar(d=ps, to_return='flatname'), vs)})
 
     def imitate_larvagroup(self, N=None, ps=None):
         if N is None:
             N = self.c.N
         e = self.e
         ids = random.sample(e.index.values.tolist(), N)
-        poss = [tuple(e[reg.getPar(['x0', 'y0'])].loc[id].values) for id in ids]
+        poss = aux.np2Dtotuples(e[reg.getPar(['x0', 'y0'])].loc[ids].values)
         try:
-            ors = [e[reg.getPar('fo0')].loc[id] for id in ids]
+            ors = e[reg.getPar('fo0')].loc[ids].values.tolist()
         except:
             ors = np.random.uniform(low=0, high=2 * np.pi, size=len(ids)).tolist()
 
         if ps is None:
             ps = list(reg.SAMPLING_PARS.keys())
         ps = self.end_ps.existing(ps)
-        flatnames = reg.getPar(p=ps, to_return='flatname')
-        dic = aux.AttrDict(
-            {codename: [e[p].loc[id] if not np.isnan(e[p].loc[id]) else e[p].mean() for id in ids] for p, codename in
-             zip(ps, flatnames)})
+        vs=[[e[p].loc[id] if not np.isnan(e[p].loc[id]) else e[p].mean() for id in ids] for p in ps]
+        dic = AttrDict({p: v for p, v in zip(reg.getPar(d=ps, to_return='flatname'), vs)})
         return ids, poss, ors, dic
 
+    @property
+    def existing_dispersion_ranges(self):
+        l = aux.ItemList(self.step_ps.pref('disp')).split('_')
+        return [(int(ll[1]), int(ll[2])) for ll in l]
+
+    def convert_to_pint(self):
+        from pint_pandas.pint_array import PintDataFrameAccessor
+        s=reg.par.df_to_pint(self.s)
+        ss=PintDataFrameAccessor(s)
+        self.step_data=ss.dequantify()
+        e = reg.par.df_to_pint(self.e)
+        ee = PintDataFrameAccessor(e)
+        self.endpoint_data=ee.dequantify()
 
 class BaseLarvaDataset(ParamLarvaDataset):
 
@@ -1641,7 +1695,7 @@ class BaseLarvaDataset(ParamLarvaDataset):
             self.set_data(step=step, end=end, agents=agents)
 
     def generate_config(self, **kwargs):
-        c0 = aux.AttrDict({'id': 'unnamed',
+        c0 = AttrDict({'id': 'unnamed',
                            'group_id': None,
                            'refID': None,
                            'dir': None,
@@ -1669,9 +1723,9 @@ class BaseLarvaDataset(ParamLarvaDataset):
         if c0.fr is not None:
             c0.dt = 1 / c0.fr
         if c0.metric_definition is None:
-            c0.metric_definition = reg.par.get_null('metric_definition')
+            c0.metric_definition = SimMetricOps().nestedConf
 
-        points = aux.nam.midline(c0.Npoints, type='point')
+        points = nam.midline(c0.Npoints, type='point')
 
         try:
             c0.point = points[c0.metric_definition.spatial.point_idx - 1]
@@ -1736,7 +1790,7 @@ class LarvaDataset(BaseLarvaDataset):
 
     @property
     def epoch_bound_dicts(self):
-        d = aux.AttrDict()
+        d = AttrDict()
         for k, dic in self.epoch_dicts.items():
             try:
                 if all([vs.shape.__len__() == 2 for id, vs in dic.items()]):
@@ -1750,7 +1804,7 @@ class LarvaDataset(BaseLarvaDataset):
         epochs = self.epoch_dicts[chunk]
         if min_dur != 0:
             epoch_durs = self.epoch_dicts[f'{chunk}_dur']
-            epochs = aux.AttrDict({id: epochs[id][epoch_durs[id] >= min_dur] for id in self.ids})
+            epochs = AttrDict({id: epochs[id][epoch_durs[id] >= min_dur] for id in self.ids})
         if par is None:
             par = reg.getPar(k)
         grouped = s[par].groupby('AgentID')
@@ -1778,7 +1832,7 @@ class LarvaDataset(BaseLarvaDataset):
 
 
 class LarvaDatasetCollection:
-    def __init__(self, labels=None, add_samples=False, config=None, **kwargs):
+    def __init__(self, labels=None,colors=None, add_samples=False, config=None, **kwargs):
         ds = self.get_datasets(**kwargs)
 
         for d in ds:
@@ -1787,17 +1841,19 @@ class LarvaDatasetCollection:
             labels = ds.id
 
         if add_samples:
-            targetIDs = aux.SuperList(ds.config.sample).unique.existing(reg.conf.Ref.confIDs)
+            targetIDs = SuperList(ds.config.sample).unique.existing(reg.conf.Ref.confIDs)
             ds += reg.conf.Ref.loadRefs(ids=targetIDs)
             labels += targetIDs
         self.config = config
         self.datasets = ds
         self.labels = labels
         self.Ndatasets = len(ds)
-        self.colors = self.get_colors()
+        if colors is None:
+            colors = self.get_colors()
+        self.colors = colors
         assert self.Ndatasets == len(self.labels)
-
-        self.group_ids = aux.SuperList(ds.config.group_id).unique
+        # print(self.labels, self.colors)
+        self.group_ids = SuperList(ds.config.group_id).unique
         self.Ngroups = len(self.group_ids)
         self.dir = self.set_dir()
 
@@ -1807,7 +1863,7 @@ class LarvaDatasetCollection:
         elif self.config and 'dir' in self.config:
             return self.config.dir
         elif self.Ndatasets > 1 and self.Ngroups == 1:
-            dir0 = aux.unique_list([os.path.dirname(os.path.abspath(d.dir)) for d in self.datasets])
+            dir0 = aux.unique_list([os.path.dirname(os.path.abspath(d.config.dir)) for d in self.datasets if d.config.dir is not None])
             if len(dir0) == 1:
                 return dir0[0]
             else:
@@ -1825,7 +1881,7 @@ class LarvaDatasetCollection:
             'subfolder': None
         }
         kws.update(**kwargs)
-        plots = aux.AttrDict()
+        plots = AttrDict()
         for id in ids:
             plots[id] = reg.graphs.run(id, **kws)
         for gID in gIDs:
@@ -1931,7 +1987,7 @@ class LarvaDatasetCollection:
 
     @classmethod
     def from_agentpy_output(cls, output=None, agents=None, to_Geo=False):
-        config0 = aux.AttrDict(output.parameters['constants'])
+        config0 = AttrDict(output.parameters['constants'])
         ds = []
         for gID, df in output.variables.items():
             assert 'sample_id' not in df.index.names
@@ -1976,6 +2032,9 @@ class LarvaDatasetCollection:
         return cls(datasets=ds, config=config0)
 
 
+
+
+
 def convert_group_output_to_dataset(df, collectors):
     df.index.set_names(['AgentID', 'Step'], inplace=True)
     df = df.reorder_levels(order=['Step', 'AgentID'], axis=0)
@@ -1990,39 +2049,39 @@ def convert_group_output_to_dataset(df, collectors):
 def h5_kdic(p, N, Nc):
     def epochs_ps():
         cs = ['turn', 'Lturn', 'Rturn', 'pause', 'exec', 'stride', 'stridechain', 'run']
-        pars = ['id', 'start', 'stop', 'dur', 'dst', aux.nam.scal('dst'), 'length', aux.nam.max('vel'), 'count']
-        return aux.SuperList([aux.nam.chunk_track(c, pars) for c in cs]).flatten
+        pars = ['id', 'start', 'stop', 'dur', 'dst', nam.scal('dst'), 'length', nam.max('vel'), 'count']
+        return SuperList([nam.chunk_track(c, pars) for c in cs]).flatten
 
     def dspNtor_ps():
         tor_ps = [f'tortuosity_{dur}' for dur in [1, 2, 5, 10, 20, 30, 60, 100, 120, 240, 300]]
         dsp_ps = [f'dispersion_{t0}_{t1}' for (t0, t1) in
                   itertools.product([0, 5, 10, 20, 30, 60], [30, 40, 60, 90, 120, 240, 300])]
-        pars = aux.SuperList(tor_ps + dsp_ps + aux.nam.scal(dsp_ps))
+        pars = SuperList(tor_ps + dsp_ps + nam.scal(dsp_ps))
         return pars
 
     def base_spatial_ps(p=''):
-        d, v, a = ps = [aux.nam.dst(p), aux.nam.vel(p), aux.nam.acc(p)]
-        ld, lv, la = lps = aux.nam.lin(ps)
-        ps0 = aux.nam.xy(p) + ps + lps + aux.nam.cum([d, ld])
-        return aux.SuperList(ps0 + aux.nam.scal(ps0))
+        d, v, a = ps = [nam.dst(p), nam.vel(p), nam.acc(p)]
+        ld, lv, la = lps = nam.lin(ps)
+        ps0 = nam.xy(p) + ps + lps + nam.cum([d, ld])
+        return SuperList(ps0 + nam.scal(ps0))
 
     def ang_pars(angs):
-        avels = aux.nam.vel(angs)
-        aaccs = aux.nam.acc(angs)
-        uangs = aux.nam.unwrap(angs)
-        avels_min, avels_max = aux.nam.min(avels), aux.nam.max(avels)
-        return aux.SuperList(avels + aaccs + uangs + avels_min + avels_max)
+        avels = nam.vel(angs)
+        aaccs = nam.acc(angs)
+        uangs = nam.unwrap(angs)
+        avels_min, avels_max = nam.min(avels), nam.max(avels)
+        return SuperList(avels + aaccs + uangs + avels_min + avels_max)
 
     def angular(N):
         Nangles = np.clip(N - 2, a_min=0, a_max=None)
         Nsegs = np.clip(N - 1, a_min=0, a_max=None)
-        ors = aux.nam.orient(['front', 'rear', 'head', 'tail'] + aux.nam.midline(Nsegs, type='seg'))
+        ors = nam.orient(['front', 'rear', 'head', 'tail'] + nam.midline(Nsegs, type='seg'))
         ang = ors + [f'angle{i}' for i in range(Nangles)] + ['bend']
-        return aux.SuperList(ang + ang_pars(ang)).unique
+        return SuperList(ang + ang_pars(ang)).unique
 
-    dic = aux.AttrDict({
-        'contour': aux.nam.contour_xy(Nc, flat=True),
-        'midline': aux.nam.midline_xy(N, flat=True),
+    dic = AttrDict({
+        'contour': nam.contour_xy(Nc, flat=True),
+        'midline': nam.midline_xy(N, flat=True),
         'epochs': epochs_ps(),
         'base_spatial': base_spatial_ps(p),
         'angular': angular(N),
@@ -2050,9 +2109,9 @@ def get_larva_dicts(ls, validIDs=None):
         if l.brain.locomotor.intermitter is not None:
             bout_dicts[id] = l.brain.locomotor.intermitter.build_dict()
 
-    dic0 = aux.AttrDict({'deb': deb_dicts,
+    dic0 = AttrDict({'deb': deb_dicts,
                          'nengo': nengo_dicts,
                          'bouts': bout_dicts,
                          })
 
-    return aux.AttrDict({k: v for k, v in dic0.items() if len(v) > 0})
+    return AttrDict({k: v for k, v in dic0.items() if len(v) > 0})

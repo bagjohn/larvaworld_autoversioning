@@ -33,16 +33,17 @@ class Larva(MobileAgent):
         self.trajectory = [self.initial_pos]
         self.orientation_trajectory = [self.initial_orientation]
         self.cum_dur = 0
+        # self.cum_t = 0
 
     def draw(self, v, **kwargs):
         p, c, r, l = self.get_position(), self.color, self.radius, self.length
         mid = self.midline_xy
         if np.isnan(p).all():
             return
-        if v.manager.draw_centroid:
+        if v.draw_centroid:
             v.draw_circle(p, r / 4, c, True, r / 10)
 
-        if v.manager.draw_midline:
+        if v.draw_midline:
             if not any(np.isnan(np.array(mid).flatten())):
                 Nmid = len(mid)
                 v.draw_polyline(mid, color=(0, 0, 255), closed=False, width=l / 20)
@@ -50,11 +51,11 @@ class Larva(MobileAgent):
                     c = 255 * i / (Nmid - 1)
                     v.draw_circle(xy, l / 30, color=(c, 255 - c, 0), width=l / 40)
 
-        if v.manager.draw_head:
+        if v.draw_head:
             v.draw_circle(mid[0], l / 4, color=(255, 0, 0), width=l / 12)
 
-        if v.manager.visible_trails:
-            Nfade = int(v.manager.trail_dt / self.model.dt)
+        if v.visible_trails:
+            Nfade = int(v.trail_dt / self.model.dt)
             traj = self.trajectory[-Nfade:]
             or_traj = self.orientation_trajectory[-Nfade:]
             if not np.isnan(traj).any():
@@ -75,11 +76,11 @@ class Larva(MobileAgent):
                 if len(t) < 2:
                     pass
                 else:
-                    if v.manager.trail_color == 'normal':
+                    if v.trail_color == 'normal':
                         color = self.color
-                    elif v.manager.trail_color == 'linear':
+                    elif v.trail_color == 'linear':
                         color = aux.scaled_velocity_to_col(aux.eudist(np.array(t)) / self.length / self.model.dt)
-                    elif v.manager.trail_color == 'angular':
+                    elif v.trail_color == 'angular':
                         color = aux.angular_velocity_to_col(np.diff(np.array(or_t)) / self.model.dt)
                     else:
                         raise
@@ -89,7 +90,7 @@ class Larva(MobileAgent):
                     except:
                         pass
 
-        if v.manager.draw_orientations:
+        if v.draw_orientations:
             p02 = [p[0] + math.cos(self.front_orientation) * l,
                    p[1] + math.sin(self.front_orientation) * l]
             v.draw_line(p, p02, color='green', width=l / 10)
@@ -108,12 +109,12 @@ class LarvaContoured(Larva, Contour):
         super().__init__(**kwargs)
 
     def draw(self, v, **kwargs):
-        if v.manager.draw_contour:
+        if v.draw_contour:
             Contour.draw(self, v, **kwargs)
         super().draw(v, **kwargs)
 
     def draw_selected(self, v, **kwargs):
-        v.draw_polygon(vertices=self.vertices, color=v.manager.selection_color,
+        v.draw_polygon(vertices=self.vertices, color=v.selection_color,
                        filled=False, width=0.0002)
 
 
@@ -127,9 +128,9 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
         self.set_default_color(self.default_color)
 
     def draw(self, v, **kwargs):
-        if v.manager.draw_sensors:
+        if v.draw_sensors:
             self.draw_sensors(v, **kwargs)
-        if v.manager.draw_contour:
+        if v.draw_contour:
             self.draw_segs(v, **kwargs)
         super().draw(v, **kwargs)
 
@@ -142,7 +143,7 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
         self.segs.set_default_color(self.default_color)
 
     def draw_selected(self, v, **kwargs):
-        v.draw_polygon(vertices=self.get_shape(), color=v.manager.selection_color,
+        v.draw_polygon(vertices=self.get_shape(), color=v.selection_color,
                        filled=False, width=0.0002)
 
 
@@ -221,7 +222,7 @@ class LarvaMotile(LarvaSegmented):
             self.deb = None
             self.V = self.length ** 3
             self.mass = None
-            self.length = None
+            # self.length = None
 
     def run_energetics(self, V_eaten):
         self.deb.run_check(dt=self.model.dt,X_V=V_eaten)

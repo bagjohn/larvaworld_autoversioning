@@ -7,6 +7,7 @@ import pandas as pd
 import param
 
 from .. import reg, aux
+from ..aux import nam, AttrDict
 from ..param import Area, BoundedArea, NestedConf, Larva_Distro, ClassAttr, SimTimeOps, \
     SimMetricOps, ClassDict, EnrichConf, OptionalPositiveRange, OptionalSelector, OptionalPositiveInteger, \
     generate_xyNor_distro, Odor, Life, class_generator, SimOps, RuntimeOps, Epoch, RuntimeDataOps, RandomizedColor, \
@@ -15,10 +16,6 @@ from ..model import Food, Source, Border, WindScape, ThermoScape, FoodGrid, Odor
     GaussianValueLayer
 
 __all__ = [
-    # 'ConfType',
-    # 'RefType',
-    # 'conf',
-    # 'resetConfs',
     'gen',
     'SimConfiguration',
     'SimConfigurationParams',
@@ -33,7 +30,7 @@ __all__ = [
     'update_larva_groups',
 ]
 
-gen = aux.AttrDict({
+gen = AttrDict({
     'FoodGroup': class_generator(Food, mode='Group'),
     'Food': class_generator(Food),
     'Source': class_generator(Source),
@@ -167,20 +164,23 @@ class FoodConf(NestedConf):
     source_units = ClassDict(item_type=gen.Food, doc='The individual sources  of odor or food in the arena')
     food_grid = ClassAttr(gen.FoodGrid, default=None, doc='The food grid in the arena')
 
+
+
     @classmethod
     def CS_UCS(cls, grid=None, sg={},N=1, x=0.04, colors=['red', 'blue'],o = 'G',  **kwargs):
+        F=gen.Food
         CS_kws = {'odor': Odor.oO(o=o, id='CS'), 'c': colors[0], **kwargs}
         UCS_kws = {'odor': Odor.oO(o=o, id='UCS'), 'c': colors[1], **kwargs}
 
         if N == 1:
-            su= {**gen.Food(pos=(-x, 0.0), **CS_kws).entry('CS'),
-                    **gen.Food(pos=(x, 0.0), **UCS_kws).entry('UCS')}
+            su= {**F(pos=(-x, 0.0), **CS_kws).entry('CS'),
+                    **F(pos=(x, 0.0), **UCS_kws).entry('UCS')}
         elif N == 2:
             su= {
-                **gen.Food(pos=(-x, 0.0), **CS_kws).entry('CS_l'),
-                **gen.Food(pos=(x, 0.0), **CS_kws).entry('CS_r'),
-                **gen.Food(pos=(-x, 0.0), **UCS_kws).entry('UCS_l'),
-                **gen.Food(pos=(x, 0.0), **UCS_kws).entry('UCS_r')
+                **F(pos=(-x, 0.0), **CS_kws).entry('CS_l'),
+                **F(pos=(x, 0.0), **CS_kws).entry('CS_r'),
+                **F(pos=(-x, 0.0), **UCS_kws).entry('UCS_l'),
+                **F(pos=(x, 0.0), **UCS_kws).entry('UCS_r')
             }
         else :
             raise
@@ -189,9 +189,10 @@ class FoodConf(NestedConf):
 
     @classmethod
     def double_patch(cls, grid=None, sg={},type='standard', q=1.0, c='green', x=0.06, r=0.025, a=0.1,o = 'G', **kwargs):
+        F = gen.Food
         kws = {'odor': Odor.oO(o=o), 'c': c, 'r': r, 'a': a, 'sub': [q, type], **kwargs}
-        su= {**gen.Food(pos=(-x, 0.0), **kws).entry('Left_patch'),
-                **gen.Food(pos=(x, 0.0), **kws).entry('Right_patch')}
+        su= {**F(pos=(-x, 0.0), **kws).entry('Left_patch'),
+                **F(pos=(x, 0.0), **kws).entry('Right_patch')}
         return cls(source_groups=sg, source_units=su, food_grid=grid)
 
     @classmethod
@@ -225,7 +226,8 @@ class FoodConf(NestedConf):
 
 
 gen.FoodConf = FoodConf
-gen.EnrichConf = class_generator(EnrichConf)
+gen.EnrichConf = EnrichConf
+# gen.EnrichConf = class_generator(EnrichConf)
 
 
 class EnvConf(NestedConf):
@@ -238,7 +240,7 @@ class EnvConf(NestedConf):
     thermoscape = ClassAttr(gen.ThermoScape, default=None, doc='The thermal landscape in the arena')
 
     def __init__(self, odorscape=None, **kwargs):
-        if odorscape is not None and isinstance(odorscape, aux.AttrDict):
+        if odorscape is not None and isinstance(odorscape, AttrDict):
             mode = odorscape.odorscape
             odorscape_classes = list(EnvConf.param.odorscape.class_)
             odorscape_modes = dict(zip(['Gaussian', 'Diffusion'], odorscape_classes))
@@ -253,6 +255,14 @@ class EnvConf(NestedConf):
 
         from ..sim.base_run import BaseRun
         BaseRun.visualize_Env(envConf=self.nestedConf, envID=self.name, **kwargs)
+
+    @classmethod
+    def food_params_class(cls):
+        return EnvConf.param.food_params.class_
+
+    @classmethod
+    def arena_class(cls):
+        return EnvConf.param.arena.class_
 
     @classmethod
     def maze(cls, n=15, h=0.1,o='G', **kwargs):
@@ -271,41 +281,41 @@ class EnvConf(NestedConf):
             else:
                 return lines
 
-        return cls.rect(h,f=gen.FoodConf.su(id='Target', odor=Odor.oO(o=o), c='blue'),
-                   bl=aux.AttrDict({'Maze': gen.Border(vertices=get_maze(nx=n, ny=n, h=h, return_points=True),
+        return cls.rect(h,f=cls.food_params_class().su(id='Target', odor=Odor.oO(o=o), c='blue'),
+                   bl=AttrDict({'Maze': EnvConf.param.border_list.item_type(vertices=get_maze(nx=n, ny=n, h=h, return_points=True),
                                                                 color='black', width=0.001)}),o=o, **kwargs)
 
     @classmethod
     def game(cls, dim=0.1, x=0.4, y=0.0,o='G', **kwargs):
         x = np.round(x * dim, 3)
         y = np.round(y * dim, 3)
+        F=gen.Food
+        sus = {**F(c='green', can_be_carried=True, a=0.01, odor=Odor.oO(o=o,c=2, id='Flag_odor')).entry('Flag'),
+               **F(pos=(-x, y), c='blue', odor=Odor.oO(o=o, id='Left_base_odor')).entry('Left_base'),
+               **F(pos=(+x, y), c='red', odor=Odor.oO(o=o, id='Right_base_odor')).entry('Right_base')}
 
-        sus = {**gen.Food(c='green', can_be_carried=True, a=0.01, odor=Odor.oO(o=o,c=2, id='Flag_odor')).entry('Flag'),
-               **gen.Food(pos=(-x, y), c='blue', odor=Odor.oO(o=o, id='Left_base_odor')).entry('Left_base'),
-               **gen.Food(pos=(+x, y), c='red', odor=Odor.oO(o=o, id='Right_base_odor')).entry('Right_base')}
-
-        return cls.rect(dim,f=gen.FoodConf(source_units=sus),o=o, **kwargs)
+        return cls.rect(dim,f=cls.food_params_class()(source_units=sus),o=o, **kwargs)
 
     @classmethod
     def foodNodor_4corners(cls, dim=0.2,o='D', **kwargs):
-        return cls.rect(dim,f=gen.FoodConf.foodNodor_4corners(d=dim/4,o=o, **kwargs),o=o)
+        return cls.rect(dim,f=cls.food_params_class().foodNodor_4corners(d=dim/4,o=o, **kwargs),o=o)
 
     @classmethod
     def CS_UCS(cls, dim=0.1, o='G', **kwargs):
-        return cls.dish(dim, f=gen.FoodConf.CS_UCS(x=0.4*dim,o=o, **kwargs), o=o)
+        return cls.dish(dim, f=cls.food_params_class().CS_UCS(x=0.4*dim,o=o, **kwargs), o=o)
 
     @classmethod
     def double_patch(cls, dim=0.24, o='G', **kwargs):
-        return cls.rect(dim, f=gen.FoodConf.double_patch(x=0.25 * dim, o=o, **kwargs), o=o)
+        return cls.rect(dim, f=cls.food_params_class().double_patch(x=0.25 * dim, o=o, **kwargs), o=o)
 
     @classmethod
     def odor_gradient(cls, dim=(0.1, 0.06), o='G', c=1,**kwargs):
-        return cls.rect(dim, f=gen.FoodConf.su(odor=Odor.oO(o=o, c=c), **kwargs), o=o)
+        return cls.rect(dim, f=cls.food_params_class().su(odor=Odor.oO(o=o, c=c), **kwargs), o=o)
 
     @classmethod
     def dish(cls, xy=0.1, **kwargs):
         assert isinstance(xy, float)
-        return cls.scapes(arena=gen.Arena(geometry='circular', dims=(xy, xy)),**kwargs)
+        return cls.scapes(arena=cls.arena_class()(geometry='circular', dims=(xy, xy)),**kwargs)
 
     @classmethod
     def rect(cls, xy=0.1, **kwargs):
@@ -315,10 +325,12 @@ class EnvConf(NestedConf):
             dims = xy
         else :
             raise
-        return cls.scapes(arena=gen.Arena(geometry='rectangular', dims=dims), **kwargs)
+        return cls.scapes(arena=cls.arena_class()(geometry='rectangular', dims=dims), **kwargs)
 
     @classmethod
-    def scapes(cls, o=None, w=None, th=None,f=gen.FoodConf(), bl={}, **kwargs):
+    def scapes(cls, o=None, w=None, th=None,f=None, bl={}, **kwargs):
+        if f is None:
+            f = cls.food_params_class()()
         if o == 'D':
             o = gen.DiffusionValueLayer()
         elif o == 'G':
@@ -326,12 +338,12 @@ class EnvConf(NestedConf):
         if w is not None:
             if 'puffs' in w:
                 for id, args in w['puffs'].items():
-                    w['puffs'][id] = reg.par.get_null('air_puff', **args)
+                    w['puffs'][id] = AirPuff(**args).nestedConf
             else:
                 w['puffs'] = {}
-            w = gen.WindScape(**w)
+            w = EnvConf.param.windscape.class_(**w)
         if th is not None:
-            th = gen.ThermoScape(**th)
+            th = EnvConf.param.thermoscape.class_(**th)
         return cls(odorscape=o, windscape=w, thermoscape=th,food_params=f, border_list=bl, **kwargs)
 
 
@@ -356,7 +368,7 @@ def update_larva_groups(lgs, **kwargs):
     Nold = len(lgs)
     gIDs = list(lgs)
     confs = prepare_larvagroup_args(default_Nlgs=Nold, **kwargs)
-    new_lgs = aux.AttrDict()
+    new_lgs = AttrDict()
     for i, conf in enumerate(confs):
         gID = gIDs[i % Nold]
         gConf = lgs[gID]
@@ -430,21 +442,22 @@ class LarvaGroup(NestedConf):
         super().__init__(model=model, group_id=group_id, **kwargs)
 
     def entry(self, expand=False, as_entry=True):
-        conf = self.nestedConf
-        if expand and conf.model is not None and isinstance(conf.model, str):
-            conf.model = reg.conf.Model.getID(conf.model)
+        C = self.nestedConf
+        if expand :
+            C.model = self.expanded_model
         if as_entry:
-            return aux.AttrDict({self.group_id: conf})
+            return AttrDict({self.group_id: C})
         else:
-            return conf
+            return C
 
     @property
     def expanded_model(self):
-        assert self.model is not None
-        if isinstance(self.model, dict):
-            return self.model
-        elif isinstance(self.model, str):
-            return reg.conf.Model.getID(self.model)
+        m=self.model
+        assert m is not None
+        if isinstance(m, dict):
+            return m
+        elif isinstance(m, str):
+            return reg.conf.Model.getID(m)
         else:
             raise
 
@@ -462,10 +475,7 @@ class LarvaGroup(NestedConf):
             ids = [f'{self.group_id}_{i}' for i in range(Nids)]
 
             if d is not None:
-                sample_ks = [k for k in m.flatten() if m.flatten()[k] == 'sample']
-                Sinv = reg.SAMPLING_PARS.inverse
-                sample_ps = aux.SuperList([Sinv[k] for k in aux.existing_cols(Sinv, sample_ks)]).flatten
-                sample_dict = d.sample_larvagroup(N=Nids, ps=sample_ps)
+                sample_dict = d.sample_larvagroup(N=Nids, ps=[k for k in m.flatten() if m.flatten()[k] == 'sample'])
             else:
                 sample_dict = {}
 
@@ -476,9 +486,9 @@ class LarvaGroup(NestedConf):
 
         all_pars = [m.get_copy() for i in range(Nids)]
         if len(sample_dict) > 0:
-            for i, mm in enumerate(all_pars):
-                dic = aux.AttrDict({p: vs[i] for p, vs in sample_dict.items()})
-                mm.update_nestdict(dic)
+            for i in range(Nids):
+                dic = AttrDict({p: vs[i] for p, vs in sample_dict.items()})
+                all_pars[i]=all_pars[i].update_nestdict(dic)
         return ids, ps, ors, all_pars
 
     def __call__(self, parameter_dict={}):
@@ -522,7 +532,7 @@ class LarvaGroup(NestedConf):
         if not as_dict:
             return lg_list
         else:
-            return aux.AttrDict({lg.group_id: lg.entry(as_entry=False, expand=False) for lg in lg_list})
+            return AttrDict({lg.group_id: lg.entry(as_entry=False, expand=False) for lg in lg_list})
 
 
 gen.LarvaGroup = class_generator(LarvaGroup)
@@ -561,13 +571,13 @@ class LabFormat(NestedConf):
         if mode == 'full':
             return self.filesystem.read_sequence[1:]
         elif mode == 'minimal':
-            return aux.nam.xy(self.tracker.point)
+            return nam.xy(self.tracker.point)
         elif mode == 'semifull':
-            return aux.nam.midline_xy(self.tracker.Npoints, flat=True) + aux.nam.contour_xy(self.tracker.Ncontour,
+            return nam.midline_xy(self.tracker.Npoints, flat=True) + nam.contour_xy(self.tracker.Ncontour,
                                                                                             flat=True) + [
                 'collision_flag']
         elif mode == 'points':
-            return aux.nam.xy(self.tracker.points, flat=True) + ['collision_flag']
+            return nam.xy(self.tracker.points, flat=True) + ['collision_flag']
         else:
             raise
 
@@ -684,7 +694,7 @@ class LabFormat(NestedConf):
             d = self.build_dataset(step, end, parent_dir, proc_folder=proc_folder, group_id=group_id,
                                    id=id, sample=sample, color=color, epochs=epochs, age=age, refID=refID)
             if enrich_conf is None:
-                enrich_conf = aux.AttrDict()
+                enrich_conf = AttrDict()
             enrich_conf.pre_kws = self.preprocess.nestedConf
             d.enrich(**enrich_conf, is_last=False)
             reg.vprint(f'****- Processed dataset {d.id} to derive secondary metrics -----', 1)
@@ -776,7 +786,7 @@ class LabFormat(NestedConf):
 class ExpConf(SimOps):
     env_params = ClassAttr(gen.Env, doc='The environment configuration')
     experiment = reg.conf.Exp.confID_selector()
-    trials = param.Dict(default=aux.AttrDict({'epochs': aux.ItemList()}), doc='Temporal epochs of the experiment')
+    trials = param.Dict(default=AttrDict({'epochs': aux.ItemList()}), doc='Temporal epochs of the experiment')
     collections = param.ListSelector(default=['pose'], objects=reg.parDB.output_keys,
                                      doc='The data to collect as output')
     larva_groups = ClassDict(item_type=gen.LarvaGroup, doc='The larva groups')
@@ -798,7 +808,7 @@ class ExpConf(SimOps):
 
         }
         return cls(dt=c.dt, duration=c.duration, env_params=gen.Env(**c.env_params),
-                   larva_groups=aux.AttrDict({f'Imitation {refID}': gen.LarvaGroup(**kws)}),
+                   larva_groups=AttrDict({f'Imitation {refID}': gen.LarvaGroup(**kws)}),
                    experiment='dish', **kwargs)
 
     @property
@@ -834,8 +844,7 @@ class ReplayConfUnit(NestedConf):
 class ReplayConf(ReplayConfGroup, ReplayConfUnit):
     refID = reg.conf.Ref.confID_selector()
     refDir = param.String(None)
-    time_range = OptionalPositiveRange(default=None,
-                                       doc='Whether to only replay a defined temporal slice of the dataset.')
+    time_range = OptionalPositiveRange(doc='Whether to only replay a defined temporal slice of the dataset.')
     overlap_mode = param.Boolean(False, doc='Whether to draw overlapped image of the track.')
     draw_Nsegs = OptionalPositiveInteger(softmin=1, softmax=12,
                                          doc='Whether to artificially simplify the experimentally tracked larva body to a segmented virtual body of the given number of segments.')
@@ -845,32 +854,12 @@ gen.LabFormat = LabFormat
 gen.Replay = class_generator(ReplayConf)
 
 
-def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, sample=None, substrate_type='standard', pref='', navigator=False,
-           expand=False):
+def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, substrate_type='standard', expand=False):
     kws0 = {
         'distribution': {'N': N, 'scale': (0.005, 0.005)},
         'life_history': Life.prestarved(age=age, h_starved=h_starved, rearing_quality=q, substrate_type=substrate_type),
-        'sample': sample,
     }
-
-    mcols = ['blue', 'red']
-    mID0s = ['rover', 'sitter']
-    lgs = {}
-    for mID0, mcol in zip(mID0s, mcols):
-        id = f'{pref}{mID0.capitalize()}'
-
-        if navigator:
-            mID0 = f'{mID0}_nav'
-
-        kws = {
-            'group_id': id,
-            'color': mcol,
-            'model': mID0,
-            **kws0
-        }
-
-        lgs.update(LarvaGroup(**kws).entry(expand=expand))
-    return aux.AttrDict(lgs)
+    return AttrDict({id:LarvaGroup(color=c, model=id, **kws0).entry(expand=expand, as_entry=False) for id, c in zip(['rover', 'sitter'], ['blue', 'red'])})
 
 
 class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
@@ -880,16 +869,17 @@ class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
     color = RandomizedColor(default='black', doc='The color of the dataset', instantiate=True)
     env_params = ClassAttr(gen.Env, doc='The environment configuration')
     larva_group = ClassAttr(LarvaGroup, doc='The larva group object')
-    agent_ids = param.List(item_type=None, doc='The unique IDs of the agents in the dataset')
-    N = OptionalPositiveInteger(default=None, softmax=500, doc='The number of agents in the group')
+    agent_ids = param.List(doc='The unique IDs of the agents in the dataset')
+    N = OptionalPositiveInteger(softmax=500, doc='The number of agents in the group')
     sample = reg.conf.Ref.confID_selector()
-    filtered_at = OptionalPositiveNumber(default=None)
-    rescaled_by = OptionalPositiveNumber(default=None)
-    pooled_cycle_curves = param.Dict(default=None,
-                                     doc='The average across-larvae curves of diverse parameters during the stridecycle')
-    bout_distros = param.Dict(default=None, doc='The temporal distributions of the diverse types of behavioral bouts')
-    intermitter = param.Dict(default=None, doc='The fitted parameters for the intermittency module')
-    EEB_poly1d = param.Parameter(default=None, doc='The polynomial describing the exploration-exploitation balance.')
+    filtered_at = OptionalPositiveNumber(doc='Whether data has been low-pass filtered at a certain cut-off frequency during preprocessing')
+    rescaled_by = OptionalPositiveNumber(doc='Whether data has been rescaled by a certain value during preprocessing')
+    pooled_cycle_curves = param.Dict(doc='The average across-larvae curves of diverse parameters during the stridecycle')
+    bout_distros = param.Dict(doc='The temporal distributions of the diverse types of behavioral bouts')
+    intermitter = param.Dict(doc='The fitted parameters for the intermittency module')
+    modelConfs = param.Dict(default=AttrDict({'average':  {}, 'variable': {}, 'individual': {}, '3modules':  {}}),
+                             doc='The fitted model configurations')
+    EEB_poly1d = param.Parameter(doc='The polynomial describing the exploration-exploitation balance.')
 
     @property
     def h5_kdic(self):
@@ -907,17 +897,17 @@ class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
         return np.array(vs)
 
     def get_sample_bout_distros(self, m):
-
-        if m.brain.intermitter_params:
-            Im = m.brain.intermitter_params
-            dic = {
-                'pause_dist': ['pause', 'pause_dur'],
-                'stridechain_dist': ['stride', 'run_count'],
-                'run_dist': ['exec', 'run_dur'],
-            }
-            for d in ['pause_dist', 'stridechain_dist', 'run_dist']:
-                if (d in Im) and (Im[d] is not None) and ('fit' in Im[d]) and (Im[d]['fit']):
-                    for sample_d in dic[d]:
-                        if sample_d in self.bout_distros and self.bout_distros[sample_d] is not None:
-                            m.brain.intermitter_params[d] = self.bout_distros[sample_d]
+        B=self.bout_distros
+        dic = {
+            'pause_dist': 'pause_dur',
+            'stridechain_dist': 'run_count',
+            'run_dist': 'run_dur',
+        }
+        I=m.brain.intermitter
+        if I:
+            for k,v in dic.items():
+                if k in I and v in B and B[v] is not None:
+                    I[k] = B[v]
         return m
+
+

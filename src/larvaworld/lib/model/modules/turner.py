@@ -13,7 +13,7 @@ __all__ = [
 
 
 class Turner(Effector):
-    input_range = param.Range((-1, 1), bounds=(-1, 1), precedence=-2, label='input range',
+    input_range = param.Range((-1, 1), bounds=(-1, 1), step=0.01,precedence=-2, label='input range',
                               doc='The input range of the oscillator.', readonly=True)
 
 
@@ -27,15 +27,15 @@ class SinTurner(Turner, SinOscillator):
 class NeuralOscillator(Turner):
     base_activation = PositiveNumber(20.0, bounds=(10.0, 40.0), step=1.0, precedence=1, label='baseline activation',
                                      doc='The baseline activation of the oscillator.')
-    activation_range = param.Range((10.0, 40.0), bounds=(0.0, 100.0), precedence=1, label='activation range',
+    activation_range = param.Range((10.0, 40.0), bounds=(0.0, 100.0), step=1.0, precedence=1, label='activation range',
                                    doc='The activation range of the oscillator.')
     # input_range = param.Range((-1, 1), bounds=(-1, 1), precedence=-2, label='input range',
     #                           doc='The input range of the oscillator.', readonly=True)
-    tau = param.Number(0.1, precedence=2, label='time constant', doc='The time constant of the oscillator.')
-    w_ee = param.Number(3.0, label='E->E weigths', doc='The E->E synapse connection weights.')
-    w_ce = param.Number(0.1, label='C->E weigths', doc='The C->E synapse connection weights.')
-    w_ec = param.Number(4.0, label='E->C weigths', doc='The E->C synapse connection weights.')
-    w_cc = param.Number(4.0, label='C->C weigths', doc='The C->C synapse connection weights.')
+    tau = PositiveNumber(0.1, step=0.01,precedence=2, label='time constant', doc='The time constant of the oscillator.')
+    w_ee = PositiveNumber(3.0, step=0.01,label='E->E weigths', doc='The E->E synapse connection weights.')
+    w_ce = PositiveNumber(0.1, step=0.01,label='C->E weigths', doc='The C->E synapse connection weights.')
+    w_ec = PositiveNumber(4.0, step=0.01, label='E->C weigths', doc='The E->C synapse connection weights.')
+    w_cc = PositiveNumber(4.0, step=0.01, label='C->C weigths', doc='The C->C synapse connection weights.')
     m = PositiveInteger(100, softmax=1000, label='maximum spike-rate', doc='The maximum allowed spike rate.')
     n = PositiveNumber(2.0, softmax=10.0, step=0.1, label='spike response steepness',
                        doc='The neuron spike-rate response steepness coefficient.')

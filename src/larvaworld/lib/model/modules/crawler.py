@@ -26,6 +26,7 @@ class StrideOscillator(Crawler, StepOscillator):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        # print(self.stride_dst_std,self.stride_dst_mean)
         self.step_to_length = self.new_stride
 
     @property
@@ -63,7 +64,7 @@ class GaussOscillator(StrideOscillator):
 
 class SquareOscillator(StrideOscillator):
     # mode = param.Selector(default='square', readonly=True)
-    duty = param.Magnitude(0.6, label='square signal duty',
+    duty = param.Magnitude(0.6, step=0.01,label='square signal duty',
                            doc='The duty parameter(%time at the upper end) of the square signal.')
 
     @property

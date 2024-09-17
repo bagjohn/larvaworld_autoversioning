@@ -1,7 +1,7 @@
 """
 Behaviorl-epoch-related plotting
 """
-
+import copy
 import warnings
 
 import numpy as np
@@ -56,6 +56,15 @@ def plot_single_bout(x0, bout, color, label, ax, fit_dic=None, plot_fits='best',
         else:
             plot.dataset_legend(distro_ls0, distro_cs0, ax=ax, loc='lower left', fontsize=15)
 
+@reg.funcs.graph('sample_epochs', required={'dicts':['pooled_epochs']})
+def plot_sample_bouts(mID, d, **kwargs) :
+    d2 = copy.deepcopy(d)
+    d2.config.dir = None
+    d2.fitted_epochs=d.generate_pooled_epochs(mID=mID)
+    kws = {'datasets': aux.ItemList([d,d2]), 'labels': ['experiment', 'model'], 'colors': ['red', 'blue']}
+    return plot_bouts(**kws,**kwargs)
+
+
 
 @reg.funcs.graph('epochs', required={'dicts':['fitted_epochs']})
 def plot_bouts(name=None, plot_fits='',print_fits=False, turns=False, stridechain_duration=False, legend_outside=False, **kwargs):
@@ -69,7 +78,7 @@ def plot_bouts(name=None, plot_fits='',print_fits=False, turns=False, stridechai
 
 
     valid_labs = {}
-    for d in P.datasets:
+    for l,d,c in P.data_palette:
         v = d.fitted_epochs
         if v is None:
             continue
@@ -78,8 +87,8 @@ def plot_bouts(name=None, plot_fits='',print_fits=False, turns=False, stridechai
             'marker': 'o',
             'plot_fits': plot_fits,
             'print_fits': print_fits,
-            'label': d.id,
-            'color': d.color,
+            'label': l,
+            'color': c,
             'legend_outside': legend_outside,
             'x0': None
         })
@@ -87,7 +96,7 @@ def plot_bouts(name=None, plot_fits='',print_fits=False, turns=False, stridechai
         def try_bout(k, ax_idx, bout, **kws2):
             if k in v and v[k] is not None:
                 plot_single_bout(fit_dic=v[k], bout=bout, ax=P.axs[ax_idx], **kws2, **kws)
-                valid_labs[d.id] = kws.color
+                valid_labs[l] = kws.color
 
 
         if not turns:

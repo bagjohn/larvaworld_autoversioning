@@ -12,9 +12,9 @@ __all__ = [
 
 
 class Coupling(param.Parameterized):
-    attenuation = param.Magnitude(0.0, label='crawl-induced angular attenuation',
+    attenuation = param.Magnitude(0.0, step=0.01,label='crawl-induced angular attenuation',
                                   doc='The attenuation coefficient for the crawl-interference to the angular motion.')
-    attenuation_max = param.Magnitude(1.0, label='crawl-induced maximum angular attenuation',
+    attenuation_max = param.Magnitude(1.0, step=0.01,label='crawl-induced maximum angular attenuation',
                                       doc='The suppression relief coefficient for the crawl-interference to the angular motion.')
     suppression_mode = param.Selector(objects=['amplitude', 'oscillation', 'both'],
                                       label='crawl-induced suppression mode',

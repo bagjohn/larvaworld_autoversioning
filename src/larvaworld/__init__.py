@@ -14,7 +14,9 @@ __displayname__ = 'larvaworld'
 __name__ = 'larvaworld'
 
 
-import importlib.metadata
+# TODO : the automatic version naming requires the package itself. Woraround by simply naming it 0.1
+# import importlib.metadata
+# __version__ = importlib.metadata.version("larvaworld")
+__version__ = 0.1
 
-__version__ = importlib.metadata.version("larvaworld")
 # print('now')

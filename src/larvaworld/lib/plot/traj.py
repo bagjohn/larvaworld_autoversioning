@@ -81,141 +81,45 @@ def ax_conf_kws(kws, trange, Ndatasets, Nrows, i=0, ylab=None, ylim=None, xlim=N
     return {**conf_kws, **leg_kws}
 
 
-def epoch_func(**kwargs):
-    from larvaworld.lib.process.annotation import detect_turns, detect_strides, detect_pauses, process_epochs
-
-    def stride_epochs(a, trange, show_extrema=True, a2plot=None, dt=0.1, **kwargs):
-
-        if show_extrema and a2plot is None:
-            i_min, i_max, strides, runs, run_counts = detect_strides(a=a, dt=dt, return_extrema=True)
-
-            def func(ax):
-                ax.plot(trange[i_max], a[i_max], linestyle='None', lw=10, color='green', marker='v')
-                ax.plot(trange[i_min], a[i_min], linestyle='None', lw=10, color='red', marker='^')
-        else:
-            strides, runs, run_counts = detect_strides(a=a, dt=dt, return_extrema=False)
-
-            def func(ax):
-                pass
-        pauses = detect_pauses(a, dt, runs=runs)
-        epochs = [runs, pauses]
-        epochs0 = strides
-        return epochs, epochs0, func
-
-    def turn_epochs(a, trange, min_amp=None, dt=0.1, **kwargs):
-        def func(ax):
-            ax.axhline(0, color='black', alpha=1, linestyle='dashed', linewidth=1)
-
-        Lturns, Rturns = detect_turns(a, dt)
-        if min_amp is not None:
-            Lturns1, Ldurs, Lturn_slices, Lamps, Lturn_idx, Lmaxs = process_epochs(a, Lturns, dt)
-            Rturns1, Rdurs, Rturn_slices, Ramps, Rturn_idx, Rmaxs = process_epochs(a, Rturns, dt)
-            Lturns = Lturns[np.abs(Lamps) > min_amp]
-            Rturns = Rturns[np.abs(Ramps) > min_amp]
-
-        epochs = [Lturns, Rturns]
-        epochs0 = Lturns.tolist() + Rturns.tolist()
-        return epochs, epochs0, func
-
-    epoch_dict = aux.AttrDict({
-        'stride': {
-            'ylab': "velocity (1/sec)",
-            'ylim': (0.0, 1.0),
-            'labels': ['runs', 'pauses'],
-            'chunk_cols': ["lightblue", "grey"],
-            'func': stride_epochs,
-            'k': 'sv'
-
-        },
-        'turn': {
-            'ylab': "angular velocity (deg/sec)",
-            'ylim': (-100.0, 100.0),
-            'labels': ['L turns', 'R turns'],
-            'chunk_cols': ["lightgreen", "orange"],
-            'func': turn_epochs,
-            'k': 'fov'
-        }
-    })
-
-    def epoch_f(epoch):
-        kws = epoch_dict[epoch]
-
-        def ss_f(ss, moving_average_interval=None, a2plot=None, dt=0.1, **kwargs):
-            a = ss[reg.getPar(kws.k)].values
-            trange = np.arange(0, a.shape[0] * dt, dt)
-            if a2plot is not None:
-                aa2plot = a2plot
-            else:
-                if moving_average_interval:
-                    a = aux.moving_average(a, n=int(moving_average_interval / dt))
-                aa2plot = a
-
-            epochs, epochs0, ax_func = kws.func(a, trange, a2plot=a2plot, dt=dt, **kwargs)
-
-            def ax0_f(ax, epoch_boundaries=True):
-                ax_func(ax)
-                ax.plot(trange, aa2plot)
-
-                if epoch_boundaries:
-                    for s0, s1 in epochs0:
-                        for s01 in [s0, s1]:
-                            ax.axvline(trange[s01], color=f'{0.4 * (0 + 1)}', alpha=0.3, linestyle='dashed',
-                                       linewidth=1)
-
-                for color, epoch in zip(kws.chunk_cols, epochs):
-                    for s0, s1 in epoch:
-                        ax.axvspan(trange[s0], trange[s1], color=color, alpha=1.0)
-
-            def ax_conf0(P, **kwargs):
-                ax_conf = ax_conf_kws(kws=kws, trange=trange, Ndatasets=P.Ndatasets, Nrows=P.Nrows, **kwargs)
-                return ax_conf
-
-            def P0_f(P, i=0, title=None, **kwargs):
-                ax0_f(ax=P.axs[i], **kwargs)
-                ax_conf = ax_conf0(P=P, i=i, **kwargs)
-                P.conf_ax(i, title=title, **ax_conf)
-
-            return P0_f
-
-        return ss_f
-
-    return epoch_f
 
 
 def track_annotated(epoch='stride', a=None, dt=0.1, a2plot=None, ylab=None, ylim=None, xlim=None,
                     slice=None, agent_idx=0, agent_id=None,
                     subfolder='tracks', moving_average_interval=None, epoch_boundaries=True, show_extrema=True,
                     min_amp=None, **kwargs):
-    from larvaworld.lib.process.annotation import detect_turns, detect_strides, detect_pauses, process_epochs
     temp = f'track_{slice[0]}-{slice[1]}' if slice is not None else f'track'
     name = f'{temp}_{agent_id}' if agent_id is not None else f'{temp}_{agent_idx}'
     P = plot.AutoPlot(name=name, subfolder=subfolder,
                       build_kws={'Nrows': 'Ndatasets', 'w': 20, 'h': 5, 'sharex': True, 'sharey': True}, **kwargs)
+    d=P.datasets[0]
     Nticks=a.shape[0]
     trange = np.arange(0, Nticks * dt, dt)
 
     ax = P.axs[0]
 
-    def stride_epochs(a, dt, ax):
+    def stride_epochs(a, ax):
+        i_min, i_max, strides = d.detect_strides(a=a)
+        runs, run_counts = d.detect_strideschains(strides)
         if show_extrema and a2plot is None:
-            i_min, i_max, strides, runs, run_counts = detect_strides(a=a, dt=dt, return_extrema=True)
             ax.plot(trange[i_max], a[i_max], linestyle='None', lw=10, color='green', marker='v')
             ax.plot(trange[i_min], a[i_min], linestyle='None', lw=10, color='red', marker='^')
-        else:
-            strides, runs, run_counts = detect_strides(a=a, dt=dt, return_extrema=False)
-        pauses = detect_pauses(a, dt, runs=runs)
+        pauses = d.detect_pauses(a, runs=runs)
         return [runs, pauses], strides
 
 
-    def turn_epochs(a, dt, ax):
+    def turn_epochs(a, ax):
         ax.axhline(0, color='black', alpha=1, linestyle='dashed', linewidth=1)
-        Lturns, Rturns = detect_turns(a, dt)
+        Lturns, Rturns = d.detect_turns(a)
         if min_amp is not None:
-            Ldurs, Lamps, Lmaxs = process_epochs(a, Lturns, dt, return_idx=False)
-            Rdurs, Ramps, Rmaxs = process_epochs(a, Rturns, dt, return_idx=False)
+            # Ldurs = d.epoch_durs(Lturns)
+            # Rdurs = d.epoch_durs(Rturns)
+            Lamps = d.epoch_amps(Lturns, a)
+            Ramps = d.epoch_amps(Rturns, a)
+            # Lmaxs = d.epoch_maxs(Lturns, a.values)
+            # Rmaxs = d.epoch_maxs(Rturns, a.values)
             Lturns = Lturns[np.abs(Lamps) > min_amp]
             Rturns = Rturns[np.abs(Ramps) > min_amp]
-        return [Lturns, Rturns], Lturns.tolist() + Rturns.tolist()
+        return [Lturns, Rturns], np.vstack([Lturns, Rturns])
 
 
 
@@ -255,7 +159,7 @@ def track_annotated(epoch='stride', a=None, dt=0.1, a2plot=None, ylab=None, ylim
 
     ax.plot(trange, aa2plot)
 
-    epochs, epochs0 = kws.func(a, dt, ax=ax)
+    epochs, epochs0 = kws.func(a, ax=ax)
     # plot.color_epochs(epochs=epochs0, epoch_area=False,epoch_boundaries=epoch_boundaries, edgecolor=f'{0.4 * (0 + 1)}',ax=ax,trange=trange)
     # for color, epoch in zip(kws.chunk_cols, epochs):
     #     plot.color_epochs(epochs=epoch, epoch_boundaries=False, facecolor=color,ax=ax,trange=trange)

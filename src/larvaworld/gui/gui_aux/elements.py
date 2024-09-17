@@ -311,9 +311,6 @@ class ProgressBarLayout:
         w[self.k_incomplete].update(visible=True)
         w[self.k].update(0, max=max)
 
-    # def start(self):
-    #     # To make compaible with terminal exec
-    #     return self
 
 
 class HeadedElement(GuiElement):
@@ -324,15 +321,13 @@ class HeadedElement(GuiElement):
 
 class SelectionList(GuiElement):
     def __init__(self, tab, conftype=None, disp=None, buttons=[], button_kws={}, sublists={}, idx=None, progress=False,
-                 width=24, with_dict=False, name=None, single_line=False, root_key=None, **kwargs):
+                 width=24, name=None, single_line=False, root_key=None, **kwargs):
         self.conftype = conftype if conftype is not None else tab.conftype
 
         if name is None:
             name = self.conftype
         super().__init__(name=name)
-        # print(name, with_dict)
         self.single_line = single_line
-        self.with_dict = with_dict
         self.width = width
         self.tab = tab
 
@@ -343,7 +338,6 @@ class SelectionList(GuiElement):
             elif len(disps) > 1:
                 raise ValueError('Each selectionList is associated with a single configuration type')
         self.disp = disp
-        # print(disp)
 
         self.progressbar = ProgressBarLayout(self, size=(self.width - 16, 20)) if progress else None
         self.k0 = f'{self.conftype}_CONF'
@@ -362,23 +356,12 @@ class SelectionList(GuiElement):
 
     def build(self, bs, **kwargs):
         n = self.disp
-        if self.with_dict:
-            # print(self.tab.gui.tab_dict[n][2])
-            self.collapsible = CollapsibleDict(name= self.tab.gui.tab_dict[n][2], default=True,
-                                               header_list_width=self.width, header_dict=reg.conf[self.conftype].dict,
-                                               # header_list_width=self.width, header_dict=reg.conf0.dict[self.conftype].loadDict(),
-                                               next_to_header=bs, header_key=self.k, disp_name=gui_aux.get_disp_name(n),
-                                               header_list_kws={'tooltip': f'The currently loaded {n}.'}, **kwargs)
-
-            l = self.collapsible.get_layout(as_col=False)
-
-        else:
-            self.collapsible = None
-            l = NamedList(self.name, key=self.k, choices=self.confs, default_value=None,
-                          drop_down=True, size=(self.width, None),
-                          list_kws={'tooltip': f'The currently loaded {n}.'},
-                          header_kws={'text': n.capitalize(), 'after_header': bs,
-                                      'single_line': self.single_line, **kwargs}).layout
+        self.collapsible = None
+        l = NamedList(self.name, key=self.k, choices=self.confs, default_value=None,
+                      drop_down=True, size=(self.width, None),
+                      list_kws={'tooltip': f'The currently loaded {n}.'},
+                      header_kws={'text': n.capitalize(), 'after_header': bs,
+                                  'single_line': self.single_line, **kwargs}).layout
         if self.progressbar is not None:
             l.append(self.progressbar.l)
         return l
@@ -479,10 +462,7 @@ class SelectionList(GuiElement):
         else:
             for kk, vv in self.sublists.items():
                 if isinstance(vv, SelectionList):
-                    if not vv.with_dict:
-                        conf[kk] = reg.conf[vv.conftype].expand(vv.id)
-                    else:
-                        conf[kk] = vv.collapsible.get_dict(v, w)
+                    conf[kk] = reg.conf[vv.conftype].expand(vv.id)
                 else:
                     conf[kk] = vv.get_dict()
                     if kk == 'larva_groups':
@@ -815,9 +795,9 @@ class CollapsibleTable(Collapsible):
         self.dict_name = dict_name
         self.key = f'TABLE {name}'
 
-        self.null_dict = reg.par.get_null(dict_name)
-        if heading_dict is None:
-            heading_dict = {k: k for k in self.null_dict.keys()}
+        # self.null_dict = reg.par.get_null(dict_name)
+        # if heading_dict is None:
+        #     heading_dict = {k: k for k in self.null_dict.keys()}
         self.heading_dict = heading_dict
         self.heading_dict_inv = {v: k for k, v in heading_dict.items()}
         self.headings = list(heading_dict.keys())
@@ -1258,9 +1238,9 @@ class PadTable(PadElement):
             index = self.name
         self.index = index
         self.key = f'TABLE {self.name}'
-        if heading_dict is None:
-
-            heading_dict = {k: k for k in reg.par.get_null(self.dict_name).keys()}
+        # if heading_dict is None:
+        #
+        #     heading_dict = {k: k for k in reg.par.get_null(self.dict_name).keys()}
         self.heading_dict = heading_dict
         self.headings = list(heading_dict.keys())
         self.dict = dict

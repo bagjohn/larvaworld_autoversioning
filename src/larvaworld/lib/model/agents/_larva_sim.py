@@ -119,7 +119,7 @@ class LarvaSim(LarvaMotile, BaseController):
 
     __displayname__ = 'Simulated larva'
 
-    def __init__(self, physics={}, Box2D={}, **kwargs):
+    def __init__(self, physics={}, Box2D={},sensorimotor=None, **kwargs):
         BaseController.__init__(self, **physics)
         LarvaMotile.__init__(self,**kwargs)
 

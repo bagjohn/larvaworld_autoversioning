@@ -14,6 +14,9 @@ __all__ = [
     'VERBOSE',
     'vprint',
     'default_refID',
+    'default_ref',
+    'default_modelID',
+    'default_model',
     'ROOT_DIR',
     'DATA_DIR',
     'SIM_DIR',
@@ -25,14 +28,13 @@ __all__ = [
     'funcs',
     'controls',
     'par',
-    'model',
     'graphs',
     'getPar',
     'loadRef',
 ]
 
 __displayname__ = 'Registry'
-VERBOSE = 2
+VERBOSE = 1
 
 
 def vprint(text='', verbose=0):
@@ -69,16 +71,10 @@ class FunctionDict:
         self.graphs = aux.AttrDict()
         self.graph_required_data = aux.AttrDict()
         self.stored_confs = aux.AttrDict()
-        self.preprocessing = aux.AttrDict()
-        self.processing = aux.AttrDict()
-        self.annotating = aux.AttrDict()
         self.param_computing = aux.AttrDict()
 
     def param(self, name):
         return self.register_func(name, "param_computing")
-
-    def annotation(self, name):
-        return self.register_func(name, "annotating")
 
     def graph(self, name, required={}):
         self.graph_required_data[name] = aux.AttrDict(required)
@@ -98,6 +94,7 @@ class FunctionDict:
 
         return wrapper
 
+
 funcs = FunctionDict()
 
 from . import keymap
@@ -106,16 +103,21 @@ controls = keymap.ControlRegistry()
 from .distro import *
 from .data_aux import *
 
+vprint(f"Function registry complete", 1)
+
 from . import parDB, parFunc
 par = parDB.ParamRegistry()
 
+vprint(f"Parameter registry complete", 1)
+
 from .config import conf
 from .generators import gen
-from . import config, generators, models, graph, stored_confs
+from . import config, generators, graph, stored_confs
 
-model = models.ModelRegistry()
+# model = models.ModelRegistry()
 graphs = graph.GraphRegistry()
 
+vprint(f"Configuration registry complete", 1)
 
 def getPar(k=None, p=None, d=None, to_return='d'):
     return par.getPar(k=k, d=d, p=p, to_return=to_return)
@@ -143,8 +145,9 @@ def define_default_refID_by_running_test():
 
 
 def define_default_refID():
-    conf.Ref.cleanRefIDs()
-    if len(conf.Ref.confIDs) == 0:
+    R=conf.Ref
+    R.cleanRefIDs()
+    if len(R.confIDs) == 0:
         vprint('No reference datasets available.Automatically importing one from the experimental data folder.', 2)
         if 'Schleyer' not in conf.LabFormat.confIDs:
             config.resetConfs(conftypes=['LabFormat'])
@@ -162,10 +165,21 @@ def define_default_refID():
         d = g.import_dataset(**kws)
         d.process(is_last=False)
         d.annotate(is_last=True)
-        assert len(conf.Ref.confIDs) == 1
-    return conf.Ref.confIDs[0]
+        assert len(R.confIDs) == 1
+    return R.confIDs[0]
 
 
 default_refID = define_default_refID()
 
 vprint(f"Registry configured!", 2)
+
+
+def default_ref():
+    return loadRef(default_refID, load=True)
+
+
+default_modelID = 'explorer'
+
+
+def default_model():
+    return conf.Model.getID(default_modelID)

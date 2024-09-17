@@ -81,32 +81,34 @@ class ConfType(param.Parameterized):
     def save(self):
         return aux.save_dict(self.dict, self.path_to_dict)
 
-    def reset(self, init=False):
-
-
-
-        if os.path.isfile(self.path_to_dict):
-            if init:
-                return
-            else:
-                d = self.dict
-        else:
-            d = {}
-
-        dd = reg.funcs.stored_confs[self.conftype]()
-        N0, N1 = len(d), len(dd)
-
-        d.update(dd)
-
-        Ncur = len(d)
-        Nnew = Ncur - N0
-        Nup = N1 - Nnew
-
+    def set_dict(self,d):
         self.param.params('dict').item_type = self.dict_entry_type
         self.dict = d
         self.save()
 
-        reg.vprint(f'{self.conftype}  configurations : {Nnew} added , {Nup} updated,{Ncur} now existing', 1)
+    def reset(self, init=False):
+        if os.path.isfile(self.path_to_dict):
+            if init:
+                reg.vprint(f'{self.conftype} configuration dict exists with {len(self.dict)} entries', 1)
+                return
+            else:
+                d = self.dict
+                Ncur = len(d)
+                d.update(self.stored_dict)
+                self.set_dict(d)
+                reg.vprint(f'{self.conftype} configuration dict of {Ncur} entries enriched to {len(self.dict)}', 1)
+        else:
+            self.set_dict(self.stored_dict)
+            reg.vprint(f'{self.conftype} configuration dict initialized with {len(self.dict)} entries', 1)
+
+    def selectIDs(self, dic={}):
+        valid=aux.SuperList()
+        for id in self.confIDs:
+            c=self.getID(id).flatten()
+            if all([(k in c and c[k]==v) for k,v in dic.items()]):
+                valid.append(id)
+        return valid
+
 
     def setID(self, id, conf, mode='overwrite'):
         if id in self.dict and mode == 'update':
@@ -116,6 +118,11 @@ class ConfType(param.Parameterized):
         self.save()
         # self.update_dict()
         # self.load()
+        if self.conftype=='Model':
+            from ..sim.genetic_algorithm import GAselector
+            GAselector.param.objects()['base_model'].objects = self.confIDs
+            reg.generators.LarvaGroupMutator.param.objects()['modelIDs'].objects = self.confIDs
+            reg.generators.LarvaGroup.param.objects()['model'].objects = self.confIDs
         reg.vprint(f'{self.conftype} Configuration saved under the id : {id}', 1)
 
     def delete(self, id=None):
@@ -145,7 +152,7 @@ class ConfType(param.Parameterized):
 
         return conf
 
-    @param.depends('confIDs','dict', watch=True)
+    # @param.depends('confIDs','dict', watch=True)
     def confID_selector(self, default=None, single=True):
         kws = {
             'default': default,
@@ -158,6 +165,14 @@ class ConfType(param.Parameterized):
             return OptionalSelector(**kws)
         else:
             return param.ListSelector(**kws)
+
+    @property
+    def reset_func(self):
+        return reg.funcs.stored_confs[self.conftype]
+
+    @property
+    def stored_dict(self):
+        return self.reset_func()
 
     @property
     def confIDs(self):

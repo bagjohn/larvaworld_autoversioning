@@ -17,11 +17,6 @@ __all__ = [
     'AttrDict',
     'load_dict',
     'save_dict',
-    'merge_dicts',
-    'load_dicts',
-    'loadSoloDics',
-    'storeSoloDics',
-    'group_epoch_dicts',
     'bidict',
     'SuperList',
     'ItemList',
@@ -32,8 +27,6 @@ __all__ = [
     'unique_list',
     'checkEqual',
     'np2Dtotuples',
-    'update_mdict',
-    'conf_mdict',
 ]
 
 
@@ -162,6 +155,35 @@ class AttrDict(dict):
     def keylist(self):
         return SuperList(self.keys())
 
+    @classmethod
+    def merge_dicts(cls, l):
+        D = {}
+        for d in l:
+            for k, v in d.items():
+                D[k] = v
+        return cls(D)
+
+    @classmethod
+    def merge_nestdicts(cls, l):
+        D = {}
+        for d in l:
+            for k, v in AttrDict(d).flatten().items():
+                D[k] = v
+        return cls(D).unflatten()
+
+    # def keys_on_condition(self, conditions={}):
+    #     D=[]
+    #     ids=self.keylist
+    #     d=AttrDict({id:self[id].flatten() for id in ids})
+    #     for id in ids :
+    #         for k,v in conditions.items():
+    #             try:
+    #                 if not self[id][k]==v:
+    #                     break
+    #             except
+    #                 pass
+
+
 def load_dict(file):
     try:
         with open(file, 'rb') as tfp:
@@ -189,45 +211,6 @@ def save_dict(d, file):
             # print('Failed to save dict')
 
 
-def merge_dicts(dict_list):
-    super_dict = {}
-    for d in dict_list:
-        for k, v in d.items():
-            super_dict[k] = v
-    return super_dict
-
-
-def load_dicts(files=None, pref=None, suf=None, folder=None, extension='txt'):
-    if files is None:
-        files = os.listdir(folder)
-        suf = extension if suf is None else f'{suf}.{extension}'
-        files = [f for f in files if str.endswith(f, suf)]
-        if pref is not None:
-            files = [f for f in files if str.startswith(f, pref)]
-    ds = []
-    for f in files:
-        n = f'{folder}/{f}' if folder is not None else f
-        d = load_dict(n)
-        ds.append(d)
-    return ds
-
-
-def loadSoloDics(agent_ids, path=None):
-    if os.path.isdir(path):
-        files = [f'{id}.txt' for id in agent_ids]
-        return load_dicts(files=files, folder=path)
-
-
-def storeSoloDics(agent_dics, path=None):
-    if path is not None:
-        os.makedirs(path, exist_ok=True)
-        for id, dic in agent_dics.items():
-            save_dict(dic, f'{path}/{id}.txt')
-
-
-def group_epoch_dicts(individual_epochs):
-    keys = ['turn_dur', 'turn_amp', 'turn_vel_max', 'run_dur', 'run_dst', 'pause_dur', 'run_count']
-    return {k: np.array(flatten_list([dic[k] for id, dic in individual_epochs.items()])) for k in keys}
 
 
 class bidict(dict):
@@ -394,28 +377,3 @@ def np2Dtotuples(a):
         return a
     else:
         return list(zip(a[:, 0], a[:, 1]))
-
-def update_mdict(mdict, mmdic):
-    if mmdic is None:
-        return None
-    else:
-        for d, p in mdict.items():
-            new_v = mmdic[d] if d in mmdic.keys() else None
-            if isinstance(p, param.Parameterized):
-                if type(new_v) == list:
-                    if p.parclass in [param.Range, param.NumericTuple, param.Tuple]:
-                        new_v = tuple(new_v)
-                p.v = new_v
-            else:
-                mdict[d] = update_mdict(mdict=p, mmdic=new_v)
-        return mdict
-
-def conf_mdict(mdict, **kwargs):
-    C = AttrDict()
-    for d, p in mdict.items():
-        if isinstance(p, param.Parameterized):
-            C[d] = p.v
-        else:
-            C[d] = conf_mdict(mdict=p)
-    C.update_existingdict(kwargs)
-    return AttrDict(C)

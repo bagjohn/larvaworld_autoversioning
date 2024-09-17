@@ -236,6 +236,7 @@ def boxplot_double_patch(ks=None, xlabel='substrate', show_ns=False, stripplot=F
         for j, patch in enumerate(ax.artists):
             patch.set_facecolor(cols[j])
 
+    reg.par.update_kdict(ks=ks)
     for ii, k in enumerate(ks):
         ax = P.axs[ii]
         p = reg.par.kdict[k]
