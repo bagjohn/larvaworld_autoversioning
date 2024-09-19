@@ -53,6 +53,7 @@ def Env_dict():
         'arena_500mm': E.rect(0.5),
         'arena_1000mm': E.rect(1.0),
         'odor_gradient': E.odor_gradient((0.1, 0.06), pos=(0.04, 0.0),o='G', c=2),
+        # 'mid_odor_gaussian': E.odor_gradient((0.3, 0.3), o='G'),
         'mid_odor_gaussian': E.odor_gradient((0.1, 0.06), o='G'),
         'odor_gaussian_square': E.odor_gradient(0.2, o='G'),
         'mid_odor_diffusion': E.odor_gradient(0.3, r=0.03, o='D'),
@@ -197,11 +198,11 @@ def Exp_dict():
 
         d1 = {
             'chemotaxis': {'env': 'odor_gradient',
-                           'l': lgID('NEU_Levy_continuous_nav', N=8, loc=(-0.04, 0.0), s=(0.005, 0.02),
+                           'l': lgID('navigator', N=8, loc=(-0.04, 0.0), s=(0.005, 0.02),
                                    ors=(-30.0, 30.0))},
             'chemorbit': {'env': 'mid_odor_gaussian','l': lgID('navigator', N=3)},
             'chemorbit_OSN': {'env': 'mid_odor_gaussian','l': lgID('OSNnavigator', N=3)},
-            'chemorbit_x2': {'env': 'mid_odor_gaussian',
+            'chemorbit_x2': {'env': 'odor_gaussian_square',
                              'l': lgs(mIDs=['navigator', 'RLnavigator'],
                                       ids=['CoupledOsc', 'RL'], N=10)},
             'chemorbit_x4': {'env': 'odor_gaussian_square', 'l': lgs_x4()},

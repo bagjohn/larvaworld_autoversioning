@@ -110,22 +110,34 @@ class GraphRegistry:
         ID = source_ID
         gID = f"locomotion relative to source {ID}"
         d0 = [
-            self.entry('bearing/turn', name=f'bearing to {ID}', min_angle=5.0, ref_angle=None, source_ID=ID, **kwargs),
-            self.entry('bearing/turn', name='bearing to 270deg', min_angle=5.0, ref_angle=270, source_ID=ID, **kwargs),
+            # FIXME Currently the bearing related plots are buggy
+            # self.entry('bearing/turn', name=f'bearing to {ID}', min_angle=5.0, ref_angle=None, source_ID=ID, **kwargs),
+            # self.entry('bearing/turn', name='bearing to 270deg', min_angle=5.0, ref_angle=270, source_ID=ID, **kwargs),
             *[self.entry('timeplot', name=p, pars=[p], **kwargs) for p in
               [aux.nam.bearing_to(ID), aux.nam.dst_to(ID), aux.nam.scal(aux.nam.dst_to(ID))]],
 
         ]
-
-        for chunk in ['stride', 'pause', 'Lturn', 'Rturn']:
-            for dur in [0.0, 0.5, 1.0]:
-                d0.append(self.entry('bearing to source/epoch', name=f'{chunk}_bearing2_{ID}_min_{dur}_sec',
-                                     min_dur=dur, chunk=chunk, source_ID=ID, **kwargs))
+        # FIXME Currently the bearing related plots are buggy
+        # for chunk in ['stride', 'pause', 'Lturn', 'Rturn']:
+        #     for dur in [0.0, 0.5, 1.0]:
+        #         d0.append(self.entry('bearing to source/epoch', name=f'{chunk}_bearing2_{ID}_min_{dur}_sec',
+        #                              min_dur=dur, chunk=chunk, source_ID=ID, **kwargs))
         return aux.AttrDict({gID: d0})
 
     def get_analysis_graphgroups(self, exp, sources, **kwargs):
+        """
+        Determines the plots to be created during the analysis of a given experiment/simulation.
+        Args:
+        - exp (str): The experiment that has been completed for which the analysis is requested.
+            The string that defines the type of experiment is associated with one or more graphgroups by their keys.
+        - sources (dict): A dictionary of the IDs and positions of any food/odor sources in the arena.
+            For certain experiments these are needed to create source related plots.
+
+        Returns:
+        - list: All graphgroups (by their keys) and optionally any single graphs to be created (evaluated) during analysis
+        """
         groups = ["traj", "general"]
-        groups += [self.source_graphgroup(id, pos=pos, **kwargs) for id, pos in sources.items()]
+
 
         if exp in ['random_food']:
             groups.append("survival")
@@ -148,10 +160,23 @@ class GraphRegistry:
                 if k in exp:
                     groups += v
 
+        groups += [self.source_graphgroup(id, pos=pos, **kwargs) for id, pos in sources.items()]
         return groups
 
     def build_graphgroups(self):
+        """
+        Creates a dictionary of lists/groups of plots/graphs.
+        Each such group of plots (graphgroup) can be accessed by a key so that all the plots included in the group can be created.
+        The analysis of a given experiment/simulation can be associated with several such graphgroups in the get_analysis_graphgroups method.
+        """
         d = aux.AttrDict({
+            'general': [
+                # self.entry('ethogram', add_samples=False),
+                self.entry('pathlength', scaled=False),
+                # self.entry('navigation index'),
+                self.entry('epochs', stridechain_duration=True),
+
+            ],
             'tactile': [
                 self.entry('endpoint hist', 'time ratio on food (final)', ks=['on_food_tr']),
                 self.entry('timeplot', 'time ratio on food', ks=['on_food_tr'], unit='min'),
@@ -269,13 +294,7 @@ class GraphRegistry:
                 self.entry('dispersal summary', range=(0, 40)),
                 # self.entry('dispersal summary', range=(0, 60)),
             ],
-            'general': [
-                self.entry('ethogram', add_samples=False),
-                self.entry('pathlength', scaled=False),
-                # self.entry('navigation index'),
-                self.entry('epochs', stridechain_duration=True),
 
-            ],
             'stride': [
                 self.entry('stride cycle'),
                 self.entry('stride cycle', individuals=True),
