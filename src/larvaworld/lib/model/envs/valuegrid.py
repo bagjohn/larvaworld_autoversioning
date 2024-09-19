@@ -278,25 +278,32 @@ class OdorScape(ValueGrid):
                 subclasses = {
                     'Gaussian': GaussianValueLayer,
                     'Diffusion': DiffusionValueLayer,
+                    'Analytical': AnalyticalValueLayer,
                 }
                 odorscape = kwargs['odorscape']
                 kwargs.pop('odorscape')
                 subclasses[odorscape](**kwargs)
 
+class AnalyticalValueLayer(OdorScape):
+    odorscape = param.Selector(default='Analytical')
 
-class GaussianValueLayer(OdorScape):
-    odorscape = param.Selector(default='Gaussian')
+    # function reference used to compute a grid value
+    # arguments: source object, current value, grid position (pos), relative grid position (rel_pos)
+    # the function should add the computed value to the current value to support layering
+    # the source parameter refers to a specific layer configuration of a defined food/odor source
+    # ie: return value + newly_computed_value
+    # default implementation equals the GaussianValueLayer implementation
+    value_function = lambda source, value, pos, rel_pos: value + source.odor.gaussian_value(rel_pos)
 
     def __init__(self, **kwargs):
         super().__init__(subclass_initialized=True, **kwargs)
 
     def get_value(self, pos):
-
         value = 0
         for s in self.sources:
             p = s.get_position()
             rel_pos = [pos[0] - p[0], pos[1] - p[1]]
-            value += s.odor.gaussian_value(rel_pos)
+            value = AnalyticalValueLayer.value_function(s, value, pos, rel_pos)
         return value
 
     def get_grid(self):
@@ -327,6 +334,21 @@ class GaussianValueLayer(OdorScape):
                 text_box = ScreenTextBox(text=str(np.round(vv, 2)), color=self.color, visible=True,
                                          text_centre=tuple(v.space2screen_pos((p[0] + r0 * rsign + 5 * w, p[1]))))
                 text_box.draw(v)
+
+class GaussianValueLayer(AnalyticalValueLayer):
+    odorscape = param.Selector(default='Gaussian')
+
+    def __init__(self, **kwargs):
+        super().__init__(subclass_initialized=True, **kwargs)
+
+    def get_value(self, pos):
+
+        value = 0
+        for s in self.sources:
+            p = s.get_position()
+            rel_pos = [pos[0] - p[0], pos[1] - p[1]]
+            value += s.odor.gaussian_value(rel_pos)
+        return value
 
 
 class DiffusionValueLayer(OdorScape):
