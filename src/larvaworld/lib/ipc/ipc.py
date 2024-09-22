@@ -17,6 +17,13 @@ import socket
 import struct
 import json
 
+try:
+    from socketserver import ThreadingUnixStreamServer as StreamServer
+except ImportError:
+    from socketserver import ThreadingTCPServer as StreamServer
+from socketserver import ThreadingTCPServer
+
+
 __all__ = [
     'Message',
     'Client',
@@ -129,7 +136,8 @@ class Client(object):
         return _read_objects(self.sock)
 
 
-class Server(socketserver.ThreadingUnixStreamServer):
+
+class Server(StreamServer):
     def __init__(self, server_address, callback, bind_and_activate=True):
         if not callable(callback):
             callback = lambda x: []
@@ -143,7 +151,9 @@ class Server(socketserver.ThreadingUnixStreamServer):
                         return
                     _write_objects(self.request, callback(results))
 
-        if isinstance(server_address, (str, bytes)):
+        if ThreadingTCPServer in type(self).mro():  # specifically an AF_INET server in this case
+            self.address_family = socket.AF_INET
+        elif isinstance(server_address, (str, bytes)):
             self.address_family = socket.AF_UNIX
         else:
             self.address_family = socket.AF_INET
