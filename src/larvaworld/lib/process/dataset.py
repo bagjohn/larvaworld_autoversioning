@@ -1354,6 +1354,8 @@ class ParamLarvaDataset(param.Parameterized):
                                     rolling_ticks=aux.rolling_window(ticks, w), **kwargs).flatten()
         e[nam.mean(p)] = s[p].groupby('AgentID').mean()
         e[nam.std(p)] = s[p].groupby('AgentID').std()
+        reg.vprint('Tortuosity analysis complete.', 1)
+
 
     @valid(required={'config_attrs': ['traj_xy']})
     def comp_dispersal(self, t0=0, t1=60, **kwargs):
@@ -1364,6 +1366,8 @@ class ParamLarvaDataset(param.Parameterized):
         self.scale_to_length(pars=[p])
         sp = nam.scal(p)
         self.comp_operators(pars=[p, sp])
+        reg.vprint('Dispersal analysis complete.', 1)
+
 
     def comp_operators(self, pars):
         s, e, c = self.data
