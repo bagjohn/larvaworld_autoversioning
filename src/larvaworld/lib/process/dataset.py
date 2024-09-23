@@ -209,6 +209,7 @@ class ParamLarvaDataset(param.Parameterized):
     def chunk_dicts(self, d):
         self._chunk_dicts = d
         self.store(d, 'chunk_dicts')
+        reg.vprint('Chunk dictionaries stored.', 1)
 
     @property
     def epoch_dicts(self):
