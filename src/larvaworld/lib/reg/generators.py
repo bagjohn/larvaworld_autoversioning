@@ -12,7 +12,7 @@ from ..param import Area, BoundedArea, NestedConf, Larva_Distro, ClassAttr, SimT
     SimMetricOps, ClassDict, EnrichConf, OptionalPositiveRange, OptionalSelector, OptionalPositiveInteger, \
     generate_xyNor_distro, Odor, Life, class_generator, SimOps, RuntimeOps, Epoch, RuntimeDataOps, RandomizedColor, \
     OptionalPositiveNumber, Filesystem, TrackerOps, PreprocessConf, Substrate, AirPuff, PositiveInteger
-from ..model import Food, Source, Border, WindScape, ThermoScape, FoodGrid, OdorScape, DiffusionValueLayer, \
+from ..model import Food, Source, Border, WindScape, ThermoScape, FoodGrid, OdorScape, DiffusionValueLayer, AnalyticalValueLayer, \
     GaussianValueLayer
 
 __all__ = [
@@ -44,6 +44,7 @@ gen = AttrDict({
     'WindScape': class_generator(WindScape),
     'ThermoScape': class_generator(ThermoScape),
     'OdorScape': class_generator(OdorScape),
+    'AnalyticalValueLayer' : class_generator(AnalyticalValueLayer),
     'DiffusionValueLayer': class_generator(DiffusionValueLayer),
     'GaussianValueLayer': class_generator(GaussianValueLayer),
     'AirPuff': class_generator(AirPuff),
@@ -234,7 +235,7 @@ class EnvConf(NestedConf):
     arena = ClassAttr(gen.Arena, doc='The arena configuration')
     food_params = ClassAttr(gen.FoodConf, doc='The food sources in the arena')
     border_list = ClassDict(item_type=gen.Border, doc='The obstacles in the arena')
-    odorscape = ClassAttr(class_=(gen.GaussianValueLayer, gen.DiffusionValueLayer), default=None,
+    odorscape = ClassAttr(class_=(gen.GaussianValueLayer,gen.AnalyticalValueLayer, gen.DiffusionValueLayer), default=None,
                           doc='The sensory odor landscape in the arena')
     windscape = ClassAttr(gen.WindScape, default=None, doc='The wind landscape in the arena')
     thermoscape = ClassAttr(gen.ThermoScape, default=None, doc='The thermal landscape in the arena')
