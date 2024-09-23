@@ -19,6 +19,7 @@ __all__ = [
     'FoodGrid',
     'OdorScape',
     'GaussianValueLayer',
+    'AnalyticalValueLayer',
     'DiffusionValueLayer',
     'WindScape',
     'ThermoScape',
