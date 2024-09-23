@@ -692,8 +692,11 @@ class ParamLarvaDataset(param.Parameterized):
         # s, e, c = self.data
         self.comp_freqs()
         Dtur = self.turn_annotation()
+        reg.vprint('Turn annotation complete.', 1)
         Dcr = self.crawl_annotation(strides_enabled=strides_enabled, vel_thr=vel_thr)
+        reg.vprint('Crawl annotation complete.', 1)
         Dpa = self.patch_residency_annotation()
+        reg.vprint('Patch residency annotation complete.', 1)
         self.chunk_dicts = AttrDict({id: {**Dtur[id], **Dcr[id], **Dpa[id]} for id in self.ids})
         if castsNweathervanes:
             self.turn_mode_annotation()
