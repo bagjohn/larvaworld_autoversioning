@@ -2,7 +2,7 @@
 name='larvaworld'
 
 
-version = "0.0.535"
+version = "0.0.536"
 
 description='Drosophila larva behavioral analysis and simulation platform'
 authors=['Panagiotis Sakagiannis']
