@@ -340,7 +340,7 @@ class GaussianValueLayer(AnalyticalValueLayer):
     odorscape = param.Selector(default='Gaussian')
 
     def __init__(self, **kwargs):
-        super().__init__(subclass_initialized=True, **kwargs)
+        super().__init__(**kwargs)
 
     def get_value(self, pos):
 

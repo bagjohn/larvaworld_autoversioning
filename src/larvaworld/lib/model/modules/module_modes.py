@@ -353,6 +353,7 @@ class SpaceDict(NestedConf):
         for k in self.space_mkeys:
             xx = self.mConf0.brain[k]
             if xx is not None:
+                ## FIXME This generates error during testing : TypeError: 'BrainModule' object is not subscriptable
                 A = moduleDB.brainDB[k][xx.mode]
                 Aobjs = class_objs(A, excluded=[basic.Effector, 'phi', 'name'])
                 for p, obj in Aobjs.items():
