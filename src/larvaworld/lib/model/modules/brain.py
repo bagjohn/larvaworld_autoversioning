@@ -36,7 +36,8 @@ class Brain(NestedConf):
             M = self.modalities[m.modality]
             if M.sensor:
                 m.gain = M.sensor.gain
-                M.mem = MD.build_memory_module(conf=m)
+                kws = {'dt': dt, 'brain': self}
+                M.mem = MD.build_memory_module(conf=m, **kws)
 
     def sense_odors(self, pos=None):
         try:
