@@ -70,7 +70,7 @@ nengo = [
 [tool.poetry.urls]
 # homepage = "https://example.com"
 documentation = "https://larvaworld.readthedocs.io/en/main/"
-repository = "https://github.com/nawrotlab/larvaworld"
+repository = "https://github.com/bagjohn/larvaworld_autoversioning"
 
 [tool.poetry.scripts]
 larvaworld-cli = "larvaworld.cli.main:main"
