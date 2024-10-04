@@ -244,7 +244,7 @@ class EnvConf(NestedConf):
         if odorscape is not None and isinstance(odorscape, AttrDict):
             mode = odorscape.odorscape
             odorscape_classes = list(EnvConf.param.odorscape.class_)
-            odorscape_modes = dict(zip(['Gaussian', 'Diffusion'], odorscape_classes))
+            odorscape_modes = dict(zip(['Gaussian','Analytical', 'Diffusion'], odorscape_classes))
             odorscape = odorscape_modes[mode](**odorscape)
 
         super().__init__(odorscape=odorscape, **kwargs)
