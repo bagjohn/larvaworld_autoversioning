@@ -5,7 +5,8 @@ import numpy as np
 import param
 
 
-from ...ipc.ipc import Client, Message
+from ...ipc.ipc import Client
+from ...ipc import BrianInterfaceMessage
 from .oscillator import Timer
 from ...param import PositiveNumber, PositiveInteger
 
@@ -179,7 +180,7 @@ class RemoteBrianModelMemory(Memory):
     def runRemoteModel(self, model_instance_id, odor_id, t_sim=100, t_warmup=0, concentration=1, **kwargs):
         # T: duration of remote model simulation in ms
         # warmup: duration of remote model warmup in ms
-        msg = Message(self.sim_id, model_instance_id, odor_id=odor_id, odor_concentration=concentration,
+        msg = BrianInterfaceMessage(self.sim_id, model_instance_id, self.step_id, odor_id=odor_id, odor_concentration=concentration,
                            T=t_sim, warmup=t_warmup, step_id=self.step_id, **kwargs)
         # send model parameters to remote model server & wait for result response
         with Client((self.server_host, self.server_port)) as client:
