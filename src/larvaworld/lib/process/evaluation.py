@@ -138,7 +138,7 @@ def eval_RSS(rss, rss_target, rss_sym, mode='1:pooled'):
 
 
 def col_df(shorts, groups):
-    from matplotlib import cm
+    import matplotlib as plt
     group_col_dic = {
         'angular kinematics': 'Blues',
         'spatial displacement': 'Greens',
