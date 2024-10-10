@@ -6,6 +6,8 @@ import random
 from shapely import geometry, ops
 import numpy as np
 import pandas as pd
+# Avoid SettingWithCopyWarning: A value is trying to be set on a copy of a slice from a DataFrame. Try using .loc[row_indexer,col_indexer] = value instead
+pd.options.mode.chained_assignment = None  # default='warn'
 import scipy as sp
 from typing import Optional
 from scipy.signal import find_peaks

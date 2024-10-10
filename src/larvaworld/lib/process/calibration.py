@@ -264,7 +264,7 @@ def comp_stride_variation(s, e, c):
 
     markers = ['o' for i in range(len(vels))] + ['s'] + ['v' for i in range(len(lvels))]
     cnum = 1 + N
-    cmap0 = plt.get_cmap('hsv')
+    cmap0 = plt.colormaps['hsv']
     cmap0 = [cmap0(1. * i / cnum) for i in range(cnum)]
     cmap0 = cmap0[1:] + [cmap0[0]] + cmap0[2:]
 

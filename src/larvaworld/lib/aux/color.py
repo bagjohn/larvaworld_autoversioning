@@ -60,7 +60,7 @@ def N_colors(N, as_rgb=False):
         cs = ['lightgreen', 'green', 'red', 'darkred', 'lightblue', 'blue', 'darkblue', 'magenta', 'cyan', 'orange',
               'purple']
     else:
-        colormap = matplotlib.cm.get_cmap('brg')
+        colormap = matplotlib.colormaps['brg']
         cs = [colormap(i) for i in np.linspace(0, 1, N)]
     if as_rgb:
         cs = [colorname2tuple(c) for c in cs]
