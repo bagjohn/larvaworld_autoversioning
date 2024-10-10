@@ -25,7 +25,7 @@ def test_exp_run():
             for d in r.datasets:
                 assert isinstance(d, LarvaDataset)
         except :
-            pass
+            print(f'Experiment {id} FAILED')
 
 
 
