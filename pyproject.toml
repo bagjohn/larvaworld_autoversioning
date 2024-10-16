@@ -1,6 +1,6 @@
 [tool.poetry]
 name='larvaworld'
-version = "0.0.540"
+version = "0.0.541"
 description='A virtual lab for Drosophila larva behavioral modeling and analysis'
 authors=['Panagiotis Sakagiannis <bagjohn0@gmail.com>']
 license = "GNU General Public License v3"
@@ -26,8 +26,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-rich = ">=10"
-typer = { extras = [ "all" ], version = "^0.9.0" }
+#rich = ">=10"
+#typer = { extras = [ "all" ], version = "^0.9.0" }
 
 agentpy = "0.1.*"
 argparse = "1.4.*"
