@@ -58,6 +58,11 @@ class PrefTrainCondition(ExpCondition):
         self.CS_sources = [f for f in self.sources if f.odor.id=='CS']
         self.UCS_sources = [f for f in self.sources if f.odor.id=='UCS']
 
+    def move_larvae_to_center(self):
+        for a in self.env.agents:
+            a.update_all(a.trajectory[0],a.orientation_trajectory[0], 0, 0)
+            env.space.move_to(a, np.array(a.trajectory[0]))
+
 
     def toggle_odors(self, CS_intensity=2.0, UCS_intensity=0.0):
         for f in self.CS_sources :
@@ -84,12 +89,12 @@ class PrefTrainCondition(ExpCondition):
             if self.CS_counter <= 3:
                 self.flash_text(f'Training trial {self.CS_counter}')
                 self.toggle_odors(c,0.0)
-                self.env.move_larvae_to_center()
+                self.move_larvae_to_center()
             elif self.CS_counter == 4:
                 self.flash_text(f'Test trial on food')
                 self.init_test()
                 self.toggle_odors(c,c)
-                self.env.move_larvae_to_center()
+                self.move_larvae_to_center()
 
 
         else:
@@ -97,7 +102,7 @@ class PrefTrainCondition(ExpCondition):
             if self.UCS_counter <= 3:
                 self.flash_text(f'Starvation trial {self.UCS_counter}')
                 self.toggle_odors(0.0, c)
-                self.env.move_larvae_to_center()
+                self.move_larvae_to_center()
             elif self.UCS_counter == 4:
                 PI = aux.comp_PI(xs=[l.pos[0] for l in self.agents], arena_xdim=self.env.space.dims[0])
                 sec=int(self.env.Nticks*self.env.dt)
@@ -106,7 +111,7 @@ class PrefTrainCondition(ExpCondition):
                 print(f'Test trial on food ended at {m}:{s} with PI={PI}')
                 self.flash_text(f'Test trial off food')
                 self.toggle_odors(c, c)
-                self.env.move_larvae_to_center()
+                self.move_larvae_to_center()
 
     def check(self):
         for i, ep in enumerate(self.env.sim_epochs):

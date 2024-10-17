@@ -2,21 +2,6 @@ from larvaworld.lib import reg, sim, aux
 from larvaworld.lib.process.dataset import LarvaDataset
 reg.VERBOSE=1
 
-# Currently added try because of this  :
-'''
-self = RemoteBrianModelMemory(dt=0.1, modality='olfaction', mode='MB', name='RemoteBrianModelMemory04260')
-model_instance_id = 'max_forager0_MB_0', odor_id = 0, t_sim = 100, t_warmup = 0
-concentration = 0.0, kwargs = {'reward': 0}
-
-    def runRemoteModel(self, model_instance_id, odor_id, t_sim=100, t_warmup=0, concentration=1, **kwargs):
-        # T: duration of remote model simulation in ms
-        # warmup: duration of remote model warmup in ms
->       msg = Message(self.sim_id, model_instance_id, odor_id=odor_id, odor_concentration=concentration,
-                           T=t_sim, warmup=t_warmup, step_id=self.step_id, **kwargs)
-E       TypeError: Message() takes no arguments
-
-src/larvaworld/lib/model/modules/memory.py:182: TypeError
-'''
 def test_exp_run():
     ids = reg.conf.Exp.confIDs
     for id in ids:
