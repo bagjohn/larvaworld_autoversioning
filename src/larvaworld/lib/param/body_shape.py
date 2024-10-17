@@ -98,7 +98,6 @@ class BodyMobile(ShapeMobile, BodyContour):
 
     def compute_mass_from_length(self):
         self.mass = self.density * self.length ** 2 * self.width_to_length_ratio
-        # self.sim_mass = self.density * self.sim_length**2*self.width_to_length_ratio
 
     def adjust_shape_to_mass(self):
         self.length = np.sqrt(self.mass / (self.density * self.width_to_length_ratio))

@@ -5,44 +5,16 @@ from shapely import geometry
 
 from ... import aux, reg
 from . import LarvaSim
+from ...param import ShapeMobile
 
 __all__ = [
-    'BaseSegment',
     'Box2DSegment',
     'LarvaBox2D',
 ]
 
-__displayname__ = 'Box2D larva'
 
 
-class BaseSegment:
-    """
-    Base segment of a larva.
-
-    Args:
-        pos (tuple): The position of the segment.
-        orientation (float): The orientation of the segment.
-        color (tuple): The color of the segment.
-        base_vertices (numpy.ndarray): The base segment vertices.
-        length (float): The length of the larva's body segment.
-
-    """
-
-    __displayname__ = 'Body segment'
-
-    def __init__(self, pos, orientation, color, base_vertices, length):
-        self.color = color
-        self.pos = pos
-        self.orientation = orientation % (np.pi * 2)
-        self.base_vertices = base_vertices
-        self.base_local_rear_end = np.array([np.min(self.base_vertices[:, 0]), 0])
-        self.base_local_front_end = np.array([np.max(self.base_vertices[:, 0]), 0])
-        self.length = length
-
-    
-
-
-class Box2DSegment(BaseSegment):
+class Box2DSegment(ShapeMobile):
     """
     Box2D-based segment of a larva.
 
@@ -53,8 +25,6 @@ class Box2DSegment(BaseSegment):
 
 
     Methods:
-        vertices():
-            Get the world coordinates of the segment's vertices.
 
         get_position():
             Get the world position of the segment.
@@ -106,7 +76,7 @@ class Box2DSegment(BaseSegment):
             linearDamping=physics_pars['lin_damping'],
             angularDamping=physics_pars['ang_damping'])
 
-        for v in self.seg_vertices:
+        for v in self.vertices:
             self._body.CreatePolygonFixture(
                 shape=Box2D.b2PolygonShape(vertices=v.tolist()),
                 density=physics_pars['density'],
@@ -116,27 +86,7 @@ class Box2DSegment(BaseSegment):
 
         self._fixtures = self._body.fixtures
 
-    @property
-    def seg_vertices(self):
-        """Get the vertices of the segment.
 
-        Returns:
-            numpy.ndarray:
-                The vertices of the segment.
-        """
-        return self.length * self.base_vertices
-
-    @property
-    def vertices(self):
-        """
-        Get the world coordinates of the segment's vertices.
-
-        Returns
-        -------
-        numpy.ndarray
-            The world coordinates of the segment's vertices.
-        """
-        return np.array([[self.get_world_point(v) for v in vertices] for vertices in self.seg_vertices])
 
     def get_position(self):
         """
@@ -286,8 +236,6 @@ class LarvaBox2D(LarvaSim):
     """
     Box2D-based larva simulation.
     """
-
-    __displayname__ = 'Box2D larva'
 
     segs = param.List(item_type=Box2DSegment, doc='The body segments.')
 
@@ -443,7 +391,7 @@ class LarvaBox2D(LarvaSim):
                                                      'args': {'frequencyHz': {'v': 5.0, 'lim': (0.0, 100000)},
                                                               'dampingRatio': {'v': 1.0, 'lim': (0.0, 100000)}}}})
         space = self.model.space
-        l0 = self.sim_length / self.Nsegs
+        l0 = self.length / self.Nsegs
 
         # TODO Find compatible parameters.
         # Until now for the 12-seg body : density 30000 and maxForce 100000000  and torque_coef 3.5 seem to work for natural bend

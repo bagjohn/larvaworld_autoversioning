@@ -92,7 +92,7 @@ class ExpRun(BaseRun):
         while self.collisions_exist(scale=scale):
             self.larva_bodies = self.get_larva_bodies(scale=scale)
             for l in self.agents:
-                dx, dy = np.random.randn(2) * l.sim_length / 10
+                dx, dy = np.random.randn(2) * l.length / 10
                 overlap = True
                 while overlap:
                     ids = self.detect_collisions(l.unique_id)
