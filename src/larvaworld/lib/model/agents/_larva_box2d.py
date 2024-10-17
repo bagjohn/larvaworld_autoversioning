@@ -12,7 +12,7 @@ __all__ = [
     'LarvaBox2D',
 ]
 
-
+__displayname__ = 'Virtual Box2D body'
 
 class Box2DSegment(ShapeMobile):
     """

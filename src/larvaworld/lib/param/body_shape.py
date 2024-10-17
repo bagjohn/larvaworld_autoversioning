@@ -10,6 +10,7 @@ from .drawable import Viewable
 __all__ = [
     'body_plans',
     'BodyContour',
+    'ShapeMobile',
     'ShapeViewable',
     'SegmentedBody',
     'SegmentedBodySensored',

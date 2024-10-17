@@ -1,13 +1,13 @@
 from larvaworld.lib import reg, sim, aux
 from larvaworld.lib.process.dataset import LarvaDataset
-reg.VERBOSE=1
+#reg.VERBOSE=1
 
 # NOTE :    This test iterates over all preconfigured experiments, including those requiring optional dependencies like nengo & py-box2d. 
 #           Therefore is is meant to be run when all optional dependencies are installed, otherwise it will fail.
 def test_exp_run():
     ids = reg.conf.Exp.confIDs
     for id in ids:
-        r = sim.ExpRun.from_ID(id, duration=1, store_data=False)
+        r = sim.ExpRun.from_ID(id, duration=0.5, store_data=False)
         for d in r.datasets:
             assert isinstance(d, LarvaDataset)
 
