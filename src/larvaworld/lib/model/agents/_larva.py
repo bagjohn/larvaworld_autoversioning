@@ -210,7 +210,7 @@ class LarvaMotile(LarvaSegmented):
                 life_history = aux.AttrDict({'epochs': {}, 'age': None})
 
 
-            self.deb = DEB(model=self.model, id=self.unique_id,intermitter=im,
+            self.deb = DEB(id=self.unique_id,intermitter=im,
                                   gut_params=energetic_pars.gut,
                                   **energetic_pars.DEB)
             self.grow_larva(life_history.epochs)
