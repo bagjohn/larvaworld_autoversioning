@@ -119,10 +119,7 @@ class Client(object):
         self.sock = socket.socket(address_family, socket.SOCK_STREAM)
 
     def connect(self):
-        try:
-            self.sock.connect(self.addr)
-        except ConnectionRefusedError:
-            print("WARNING: Unable to connect to server at: {} - is the remote server running ?".format(self.addr))
+        self.sock.connect(self.addr)
 
     def close(self):
         self.sock.close()

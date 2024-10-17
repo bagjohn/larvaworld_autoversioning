@@ -224,6 +224,12 @@ class OSNOlfactor(Olfactor):
             'concentration_change_mmol': self.first_odor_concentration_change, # 1st ODOR concentration change
         }
 
-        response = self.brianInterface.executeRemoteModelStep(sim_id, agent_id, self.remote_dt, t_warmup=self.brian_warmup, **msg_kws)
-        self.output = self.normalized_sigmoid(15, 8, response.param(self.response_key))
+        try:
+            response = self.brianInterface.executeRemoteModelStep(sim_id, agent_id, self.remote_dt,
+                                                                  t_warmup=self.brian_warmup, **msg_kws)
+            self.output = self.normalized_sigmoid(15, 8, response.param(self.response_key))
+        except ConnectionRefusedError:
+            print("WARNING: Unable to reach remote brian server at {} - is the server running ?".format(self.brianInterface.server_host))
+            pass
+
         super().update()
