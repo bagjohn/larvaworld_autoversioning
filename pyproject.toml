@@ -80,13 +80,13 @@ python-semantic-release = "*"
 optional = true
 
 [tool.poetry.group.nengo.dependencies]
-nengo = 4.0
+nengo = "4.0"
 
 [tool.poetry.group.box2d]
 optional = true
 
 [tool.poetry.group.box2d.dependencies]
-box2d-py = 2.3.8
+box2d-py = "2.3.8"
 
 [tool.poetry.group.docs]
 optional = true
