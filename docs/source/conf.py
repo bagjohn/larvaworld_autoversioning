@@ -19,10 +19,12 @@ project = 'larvaworld'
 author = 'Panagiotis Sakagiannis'
 copyright = '2023, Panagiotis Sakagiannis'
 
-# The short X.Y version
-# TODO : the automatic version naming requires the package itself. Woraround by simply naming it 0.1
-# version = importlib.metadata.version("larvaworld")
-version = '0.1'
+# TODO : the automatic version naming requires the package itself to be installed. Woraround by simply naming it 0.0.0
+try : 
+    import importlib.metadata
+    __version__ = importlib.metadata.version("larvaworld")
+except :
+    __version__ = '0.0.0'
 # The full version, including alpha/beta/rc tags
 # release = ''
 

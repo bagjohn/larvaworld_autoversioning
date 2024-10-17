@@ -31,7 +31,7 @@ class BodyContour(LineClosed):
     symmetry = param.Selector(objects=['bilateral', 'radial'], doc='The body symmetry.')
     guide_points = XYLine(doc='A list of 2d points outside the midline in order to generate the vertices')
     base_vertices = XYLine(doc='The list of 2d points')
-    body_plan = param.Selector(objects=['drosophila_larva', 'zebrafish'], doc='The body plan.')
+    body_plan = param.Selector(objects=['drosophila_larva', 'zebrafish_larva'], doc='The body plan.')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

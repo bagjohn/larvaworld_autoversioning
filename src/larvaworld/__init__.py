@@ -9,11 +9,13 @@ __author__ = 'Panagiotis Sakagiannis'
 __license__ = 'GNU GENERAL PUBLIC LICENSE'
 __copyright__ = '2024, Panagiotis Sakagiannis'
 
-# TODO : the automatic version naming requires the package itself. Woraround by simply naming it 0.1
-# import importlib.metadata
-# __version__ = importlib.metadata.version("larvaworld")
+# TODO : the automatic version naming requires the package itself to be installed. Woraround by simply naming it 0.0.0
+try : 
+    import importlib.metadata
+    __version__ = importlib.metadata.version("larvaworld")
+except :
+    __version__ = '0.0.0'
 
-__version__ = '0.1'
 __displayname__ = 'larvaworld'
 __name__ = 'larvaworld'
 

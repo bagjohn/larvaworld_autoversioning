@@ -49,7 +49,6 @@ progressbar = "2.5"
 pygame = "2.6.*"
 pypdf = "5.0.*"
 PySimpleGUI = "4.70.*"
-# pytables = "*"
 seaborn = "0.13.*"
 scikit-learn = "1.3.*"
 scipy = "1.9.*"
@@ -142,13 +141,13 @@ lint.per-file-ignores."tests/**/*" = [
   "D104",
   "S101",
 ]
-lint.isort.known-first-party = [ "larvaworld_lab", "tests" ]
+lint.isort.known-first-party = [ "larvaworld", "tests" ]
 
 [tool.pytest.ini_options]
 addopts = """\
     -v
     -Wdefault
-    --cov=larvaworld_lab
+    --cov=larvaworld
     --cov-report=term
     --cov-report=xml
     """
@@ -193,7 +192,7 @@ ignore_errors = true
 version_toml = [ "pyproject.toml:tool.poetry.version" ]
 version_variables = [
   "src/larvaworld/__init__.py:__version__",
-  "docs/conf.py:release",
+  "docs/source/conf.py:release",
 ]
 build_command = "pip install poetry && poetry build"
 
