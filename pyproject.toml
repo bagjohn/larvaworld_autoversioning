@@ -58,6 +58,8 @@ tables = "3.8.*"
 typing-extensions = "4.12.*"
 
 
+
+
 [tool.poetry.dev-dependencies]
 build = "*"
 pytest = "^8.0.0"
@@ -70,10 +72,10 @@ dev = [
     "pytest"
 ]
 box2d = [
-    "box2d-py"
+    "box2d-py = 2.3.8"
 ]
 nengo = [
-    "nengo"
+    "nengo = 4.0"
 ]
 
 [tool.poetry.urls]
