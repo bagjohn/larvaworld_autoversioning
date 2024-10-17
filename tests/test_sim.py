@@ -7,7 +7,7 @@ from larvaworld.lib.process.dataset import LarvaDataset
 def test_exp_run():
     ids = reg.conf.Exp.confIDs
     for id in ids:
-        r = sim.ExpRun.from_ID(id, duration=0.5, store_data=False)
+        r = sim.ExpRun.from_ID(id, duration=1, store_data=False)
         for d in r.datasets:
             assert isinstance(d, LarvaDataset)
 

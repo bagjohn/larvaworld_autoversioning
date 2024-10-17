@@ -5,6 +5,7 @@ import numpy as np
 import param
 
 
+from ... import reg
 from ...ipc.ipc import Client
 from ...ipc import BrianInterfaceMessage
 from .oscillator import Timer
@@ -193,8 +194,8 @@ class RemoteBrianModelMemory(Memory):
                 return mbon_dif
                 # return response.param('preference_index')
         except ConnectionRefusedError:
-            print("**** WARNING ****: Unable to connect to RemoteBrianInterface (host={} port={})".format(self.server_host, self.server_port))
-            print("Verify server instance is up and running at host={} port={}".format(self.server_host, self.server_port))
+            reg.vprint("**** WARNING ****: Unable to connect to RemoteBrianInterface (host={} port={})".format(self.server_host, self.server_port))
+            reg.vprint("Verify server instance is up and running at host={} port={}".format(self.server_host, self.server_port))
             return 0
 
     def step(self, dx=None, reward=False, t_warmup=0):
