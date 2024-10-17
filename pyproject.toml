@@ -18,10 +18,23 @@ packages = [
   { include = "larvaworld", from = "src" },
 ]
 
-
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.urls]
+# homepage = "https://example.com"
+#documentation = "https://larvaworld.readthedocs.io/en/main/"
+#repository = "https://github.com/bagjohn/larvaworld_autoversioning"
+"Bug Tracker" = "https://github.com/bagjohn/larvaworld_autoversioning/issues"
+"Changelog" = "https://github.com/bagjohn/larvaworld_autoversioning/blob/main/CHANGELOG.md"
+
+[tool.poetry.scripts]
+larvaworld-cli = "larvaworld.cli.main:main"
+larvaworld-gui = "larvaworld.gui.main:main"
+
+[tool.setuptools.package-data]
+"*" = ["*.sh", "*.png", "*.pdf", "*.txt", "*.csv"]
 
 
 [tool.poetry.dependencies]
@@ -57,48 +70,23 @@ statannot = "0.2.*"
 tables = "3.8.*"
 typing-extensions = "4.12.*"
 
-
-
-
 [tool.poetry.dev-dependencies]
 build = "*"
 pytest = "^8.0.0"
 pytest-cov = "^5.0.0"
 python-semantic-release = "*"
 
+[tool.poetry.group.nengo]
+optional = true
 
-[project.optional-dependencies]
-dev = [
-    "pytest"
-]
-box2d = [
-    "box2d-py = 2.3.8"
-]
-nengo = [
-    "nengo = 4.0"
-]
+[tool.poetry.group.nengo.dependencies]
+nengo = 4.0
 
-[tool.poetry.urls]
-# homepage = "https://example.com"
-#documentation = "https://larvaworld.readthedocs.io/en/main/"
-#repository = "https://github.com/bagjohn/larvaworld_autoversioning"
-"Bug Tracker" = "https://github.com/bagjohn/larvaworld_autoversioning/issues"
-"Changelog" = "https://github.com/bagjohn/larvaworld_autoversioning/blob/main/CHANGELOG.md"
+[tool.poetry.group.box2d]
+optional = true
 
-[tool.poetry.scripts]
-larvaworld-cli = "larvaworld.cli.main:main"
-larvaworld-gui = "larvaworld.gui.main:main"
-
-[tool.setuptools.package-data]
-"*" = ["*.sh", "*.png", "*.pdf", "*.txt", "*.csv"]
-
-#[tool.semantic_release]
-#version_variable = "pyproject.toml:version"
-
-#[tool.poetry_bumpversion.file."larvaworld/__init__.py"]
-
-# Additional lines from pypackage_template
-
+[tool.poetry.group.box2d.dependencies]
+box2d-py = 2.3.8
 
 [tool.poetry.group.docs]
 optional = true
@@ -197,6 +185,8 @@ version_variables = [
   "docs/source/conf.py:release",
 ]
 build_command = "pip install poetry && poetry build"
+
+#[tool.poetry_bumpversion.file."larvaworld/__init__.py"]
 
 [tool.semantic_release.changelog]
 exclude_commit_patterns = [
