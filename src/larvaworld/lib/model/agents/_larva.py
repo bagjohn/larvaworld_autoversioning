@@ -213,7 +213,7 @@ class LarvaMotile(LarvaSegmented):
             self.deb = DEB(id=self.unique_id,intermitter=im,
                                   gut_params=energetic_pars.gut,
                                   **energetic_pars.DEB)
-            self.grow_larva(life_history.epochs)
+            self.deb.grow_larva(epochs=life_history.epochs)
             self.length = self.deb.Lw * 10 / 1000
             self.mass = self.deb.Ww
             self.V = self.deb.V
