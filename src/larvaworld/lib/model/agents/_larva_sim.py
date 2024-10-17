@@ -325,7 +325,7 @@ class LarvaSim(LarvaMotile, BaseController):
         hp1 = hr0 + k * (d * self.model.scaling_factor + l0 / 2)
         self.head.update_all(hp1, ho1, lin_vel, ang_vel)
         self.dst = d
-
+        self.cum_dst += self.dst
 
 
         if self.Nsegs > 1:
@@ -334,10 +334,42 @@ class LarvaSim(LarvaMotile, BaseController):
                 seg.drag_to_front(fp=self.segs[i].rear_end, d_or=d_or)
 
         pos=tuple(self.global_midspine_of_body)
-        self.update_all(pos,ho1, lin_vel, ang_vel)
-        self.trajectory.append(pos)
-        self.orientation_trajectory.append(ho1)
-        self.model.space.move_to(self, np.array(pos))
-        self.cum_dst += self.dst
+        self.update_larva_pose(pos, ho1, lin_vel, ang_vel)
+        
+
+    def update_larva_pose(self, position, orientation, lin_vel=0, ang_vel=0):
+        """
+        Update the larva's pose and trajectories' log.
+
+        Parameters:
+        ----------
+        position : float
+            2D position.
+        orientation : float
+            Head orientation.
+        lin_vel : float
+            Linear velocity.
+        ang_vel : float
+            Angular velocity.
+        """
+
+        self.update_all(position,orientation, lin_vel=lin_vel, ang_vel=ang_vel)
+        self.trajectory.append(position)
+        self.orientation_trajectory.append(orientation)
+        self.model.space.move_to(self, np.array(position))
         self.compute_body_bend()
 
+    def reset_larva_pose(self, reset_trajectories=False):
+        """
+        Reset the larva's pose to the initial position and orientation.
+
+        Parameters:
+        ----------
+        reset_trajectories : bool
+            Reset the trajectories's log
+        """
+
+        if reset_trajectories :
+            self.trajectory = []
+            self.orientation_trajectory = []
+        self.update_larva_pose(self.initial_pos, self.initial_orientation)

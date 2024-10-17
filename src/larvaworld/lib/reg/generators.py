@@ -856,6 +856,11 @@ gen.Replay = class_generator(ReplayConf)
 
 
 def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, substrate_type='standard', expand=False):
+    """
+    Create two larva-groups, 'rover' and 'sitter', based on the respective larva-models, with defined life-history to be used in simulations involving energetics.
+     
+    """
+
     kws0 = {
         'distribution': {'N': N, 'scale': (0.005, 0.005)},
         'life_history': Life.prestarved(age=age, h_starved=h_starved, rearing_quality=q, substrate_type=substrate_type),

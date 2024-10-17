@@ -575,8 +575,9 @@ def Model_dict():
     for id in ['explorer', 'navigator', 'feeder', 'forager']:
         new(f'{id}_sample', id, {k: 'sample' for k in MD.module_pars(mID='crawler', mode='RE')})
 
+    # Build larva-models having a DEB energetics component
     for sp, k_abs, eeb in zip(['rover', 'sitter'], [0.8, 0.4], [0.67, 0.37]):
-        en_ws = MD.energetics_kws(gut_kws={'k_abs': k_abs}, DEB_kws={'species': sp})
+        en_ws = AttrDict({'energetics' : MD.energetics_kws(gut_kws={'k_abs': k_abs}, DEB_kws={'species': sp})})
         en_ws2 = {**en_ws, 'brain.intermitter.EEB': eeb}
         new(f'{sp}_explorer', 'explorer', en_ws)
         new(f'{sp}_navigator', 'navigator', en_ws)

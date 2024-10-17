@@ -60,8 +60,7 @@ class PrefTrainCondition(ExpCondition):
 
     def move_larvae_to_center(self):
         for a in self.env.agents:
-            a.update_all(a.trajectory[0],a.orientation_trajectory[0], 0, 0)
-            self.env.space.move_to(a, np.array(a.trajectory[0]))
+            a.reset_larva_pose()
 
 
     def toggle_odors(self, CS_intensity=2.0, UCS_intensity=0.0):
