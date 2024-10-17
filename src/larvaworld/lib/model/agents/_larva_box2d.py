@@ -23,33 +23,23 @@ class BaseSegment:
         pos (tuple): The position of the segment.
         orientation (float): The orientation of the segment.
         color (tuple): The color of the segment.
-        base_seg_vertices (numpy.ndarray): The base segment vertices.
-        base_seg_ratio (float): The base segment ratio.
-        body_length (float): The length of the larva's body.
+        base_vertices (numpy.ndarray): The base segment vertices.
+        length (float): The length of the larva's body segment.
 
     """
 
     __displayname__ = 'Body segment'
 
-    def __init__(self, pos, orientation, color, base_seg_vertices, base_seg_ratio, body_length):
+    def __init__(self, pos, orientation, color, base_vertices, length):
         self.color = color
         self.pos = pos
         self.orientation = orientation % (np.pi * 2)
-        self.base_seg_vertices = base_seg_vertices
-        self.base_local_rear_end = np.array([np.min(self.base_seg_vertices[:, 0]), 0])
-        self.base_local_front_end = np.array([np.max(self.base_seg_vertices[:, 0]), 0])
-        self.base_seg_ratio = base_seg_ratio
-        self.body_length = body_length
+        self.base_vertices = base_vertices
+        self.base_local_rear_end = np.array([np.min(self.base_vertices[:, 0]), 0])
+        self.base_local_front_end = np.array([np.max(self.base_vertices[:, 0]), 0])
+        self.length = length
 
-    @property
-    def seg_vertices(self):
-        """Get the vertices of the segment.
-
-        Returns:
-            numpy.ndarray:
-                The vertices of the segment.
-        """
-        return self.body_length * self.base_seg_vertices
+    
 
 
 class Box2DSegment(BaseSegment):
@@ -125,6 +115,16 @@ class Box2DSegment(BaseSegment):
             )
 
         self._fixtures = self._body.fixtures
+
+    @property
+    def seg_vertices(self):
+        """Get the vertices of the segment.
+
+        Returns:
+            numpy.ndarray:
+                The vertices of the segment.
+        """
+        return self.length * self.base_vertices
 
     @property
     def vertices(self):
