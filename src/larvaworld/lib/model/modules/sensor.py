@@ -136,15 +136,7 @@ class Toucher(Sensor):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.init_sensors()
-
-    def init_sensors(self):
-        if self.brain is not None:
-            if self.brain.agent is not None:
-                self.brain.agent.add_touch_sensors(self.touch_sensors)
-                for s in self.brain.agent.touch_sensorIDs:
-                    if s not in self.gain:
-                        self.add_novel_gain(id=s, gain=self.initial_gain)
+        
 
     def affect_locomotion(self, L):
         for id in self.gain_ids:

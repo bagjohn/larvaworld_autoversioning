@@ -30,6 +30,7 @@ class Brain(NestedConf):
             'thermosensation': {'sensor': self.thermosensor, 'func': self.sense_thermo, 'A': 0.0, 'mem': None},
             'windsensation': {'sensor': self.windsensor, 'func': self.sense_wind, 'A': 0.0, 'mem': None}
         })
+        self.init_sensors()
 
         m = conf['memory']
         if m is not None:
@@ -38,6 +39,13 @@ class Brain(NestedConf):
                 m.gain = M.sensor.gain
                 kws = {'dt': dt, 'brain': self}
                 M.mem = MD.build_memory_module(conf=m, **kws)
+
+    def init_sensors(self):
+        if self.toucher is not None and self.agent is not None:
+            self.agent.add_touch_sensors(self.toucher.touch_sensors)
+            for s in self.agent.touch_sensorIDs:
+                if s not in self.toucher.gain:
+                    self.toucher.add_novel_gain(id=s, gain=self.toucher.initial_gain)
 
     def sense_odors(self, pos=None):
         try:
