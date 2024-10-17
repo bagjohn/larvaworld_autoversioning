@@ -41,7 +41,7 @@ class ExpRun(BaseRun):
         if not self.larva_collisions:
             self.eliminate_overlap()
         k = get_exp_condition(self.experiment)
-        self.exp_condition = k(self) if k is not None else None
+        self.exp_condition = k(env=self) if k is not None else None
 
     def step(self):
         """ Defines the models' events per simulation step. """
