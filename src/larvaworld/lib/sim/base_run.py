@@ -177,7 +177,7 @@ class BaseRun(sim.ABModel):
             else:
                 return agents.LarvaReplaySegmented
         elif self.Box2D:
-            from agents._larva_box2d import LarvaBox2D
+            from ..model.agents._larva_box2d import LarvaBox2D
             return LarvaBox2D
         elif self.offline:
             return agents.LarvaOffline
