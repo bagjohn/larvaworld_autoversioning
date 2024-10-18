@@ -157,17 +157,17 @@ class Windsensor(Sensor):
         self.weights = weights
 
 
-# @todo add class Thermosensor(Sensor) here with a double gain dict
 class Thermosensor(Sensor):
-    cool_gain = PositiveNumber(0.0, label='cool sensitivity coef', doc='The gain of the cool sensor.')
-    warm_gain = PositiveNumber(0.0, label='warm sensitivity coef', doc='The gain of the warm sensor.')
+    gain_dict = param.Dict(default=aux.AttrDict({'warm': 1.0, 'cool': 1.0}))
+    #cool_gain = PositiveNumber(0.0, label='cool sensitivity coef', doc='The gain of the cool sensor.')
+    #warm_gain = PositiveNumber(0.0, label='warm sensitivity coef', doc='The gain of the warm sensor.')
 
-    def __init__(self, cool_gain=0.0, warm_gain=0.0, **kwargs):  # thermodict={"cool", "warm"}
-        super().__init__(gain_dict=aux.AttrDict({'warm': warm_gain, 'cool': cool_gain}), **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @property
     def warm_sensor_input(self):
-        return self.X['warm']  # @todo do I need to make self.thermoX.values? same for dX.
+        return self.X['warm'] 
 
     @property
     def warm_sensor_perception(self):
@@ -175,11 +175,19 @@ class Thermosensor(Sensor):
 
     @property
     def cool_sensor_input(self):
-        return self.X['cool']  # @todo do I need to make self.thermoX.values? same for dX.
+        return self.X['cool']
 
     @property
     def cool_sensor_perception(self):
         return self.dX['cool']
+
+    @property
+    def cool_gain(self):
+        return self.gain['cool']
+
+    @property
+    def warm_gain(self):
+        return self.gain['warm']
 
 
 class OSNOlfactor(Olfactor):

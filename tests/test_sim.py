@@ -3,30 +3,44 @@ from larvaworld.lib.process.dataset import LarvaDataset
 #reg.VERBOSE=1
 
 
-def test_exp_run():
-    #ids = reg.conf.Exp.confIDs
+
+def test_exploration_experiments():
     ids=['tethered',
         'dish',
-        'dispersion_x2',
-        
-        'chemorbit_x4',
+        'dispersion_x2']
+
+    for id in ids:
+        r = sim.ExpRun.from_ID(id, duration=1, store_data=False)
+        for d in r.datasets:
+            assert isinstance(d, LarvaDataset)
+
+def test_chemosensory_experiments():
+    ids=['chemorbit',
         'chemotaxis_diffusion',
         'single_odor_patch_x4',
-        
-        'tactile_detection',
+
+        'PItest_off',
+        'PItrain']
+
+    for id in ids:
+        r = sim.ExpRun.from_ID(id, duration=1, store_data=False)
+        for d in r.datasets:
+            assert isinstance(d, LarvaDataset)
+
+def test_other_sensory_experiments():
+    ids=['tactile_detection',
         'anemotaxis',
         'single_puff',
         'thermotaxis',
-        'PItest_off',
-        'PItrain',
-
         'prey_detection'
         ]
 
     for id in ids:
-        r = sim.ExpRun.from_ID(id, duration=1,store_data=False)
+        r = sim.ExpRun.from_ID(id, duration=1, store_data=False)
         for d in r.datasets:
             assert isinstance(d, LarvaDataset)
+
+
 
 def test_games():
     ids=['capture_the_flag',
