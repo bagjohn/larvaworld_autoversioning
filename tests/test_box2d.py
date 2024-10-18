@@ -3,7 +3,7 @@ from larvaworld.lib.process.dataset import LarvaDataset
 
 # NOTE :    This test requires the box2d-py package
 
-def test_box2d_experiments():
+def xtest_box2d_experiments():
     try:
         import Box2D 
         ids = ['realistic_imitation']

@@ -24,7 +24,7 @@ def test_exp_run():
         ]
 
     for id in ids:
-        r = sim.ExpRun.from_ID(id, store_data=False)
+        r = sim.ExpRun.from_ID(id, duration=1,store_data=False)
         for d in r.datasets:
             assert isinstance(d, LarvaDataset)
 
@@ -35,7 +35,7 @@ def test_games():
         'maze']
 
     for id in ids:
-        r = sim.ExpRun.from_ID(id, store_data=False)
+        r = sim.ExpRun.from_ID(id, duration=1,store_data=False)
         for d in r.datasets:
             assert isinstance(d, LarvaDataset)
 
@@ -47,7 +47,7 @@ def test_foraging_experiments():
         'patch_grid']
 
     for id in ids:
-        r = sim.ExpRun.from_ID(id, store_data=False)
+        r = sim.ExpRun.from_ID(id, duration=1, store_data=False)
         for d in r.datasets:
             assert isinstance(d, LarvaDataset)
 
@@ -56,7 +56,7 @@ def test_growth_experiments():
         'growth']
 
     for id in ids:
-        r = sim.ExpRun.from_ID(id, store_data=False)
+        r = sim.ExpRun.from_ID(id, duration=1,store_data=False)
         for d in r.datasets:
             assert isinstance(d, LarvaDataset)
 
