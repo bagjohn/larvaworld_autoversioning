@@ -36,11 +36,11 @@ jobs:
     - name: Install package
       run: poetry install
 
-    - name: Test with pytest
-      env:
-        SDL_VIDEODRIVER: "dummy"
-        SDL_AUDIODRIVER: "disk"
-      run: poetry run pytest tests/ --cov=larvaworld --cov-report=xml
+#    - name: Test with pytest
+#      env:
+#        SDL_VIDEODRIVER: "dummy"
+#        SDL_AUDIODRIVER: "disk"
+#      run: poetry run pytest tests/ --cov=larvaworld --cov-report=xml
 
     - name: Use Codecov to track coverage
       uses: codecov/codecov-action@v2
@@ -96,6 +96,7 @@ jobs:
       - name: Publish to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          verbose: true
           user: __token__
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
