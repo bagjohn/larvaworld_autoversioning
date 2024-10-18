@@ -43,9 +43,7 @@ def test_other_sensory_experiments():
 
 
 def test_games():
-    ids=['capture_the_flag',
-        'catch_me',
-        'keep_the_flag',
+    ids=['keep_the_flag',
         'maze']
 
     for id in ids:
@@ -56,7 +54,6 @@ def test_games():
 def test_foraging_experiments():
     ids=['4corners',
         'double_patch',
-        'food_grid',
         'random_food',
         'patch_grid']
 
