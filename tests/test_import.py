@@ -2,7 +2,7 @@ import larvaworld
 import pandas as pd
 import larvaworld.lib.reg as reg
 import larvaworld.lib.process.dataset
-reg.VERBOSE=1
+#reg.VERBOSE=1
 
 def test_import_Schleyer():
     g = reg.conf.LabFormat.get('Schleyer')

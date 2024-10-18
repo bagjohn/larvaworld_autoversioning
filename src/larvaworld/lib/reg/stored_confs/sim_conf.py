@@ -375,8 +375,6 @@ def Batch_dict():
         bb('food_grid', ss={'EEB': [[0.0, 1.0], 6], 'EEB_decay': [[0.1, 2.0], 6]}, o='ingested_food_volume'),
         bb('growth', ss={'EEB': [[0.5, 0.8], 8], 'hunger_gain': [[0.0, 0.0], 1]}, o='deb_f_deviation', N=20,
            abs=True),
-        bb('imitation', ss={'activation_noise': [[0.0, 0.8], 3], 'base_activation': [[15.0, 25.0], 3]},
-           o='sample_fit', N=20, thr=1.0),
         bb('tactile_detection', ss={'initial_gain': [[25.0, 75.0], 10], 'decay_coef': [[0.01, 0.5], 4]},
            o='cum_food_detected', N=600, thr=100000.0, min=False),
         bb('anemotaxis',

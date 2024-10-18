@@ -1,3 +1,4 @@
+from ... import reg
 from ...ipc import BrianInterfaceMessage, Client
 from uuid import uuid4
 import datetime
@@ -42,8 +43,8 @@ class RemoteBrianModelInterface(object):
                                     T=t_sim, warmup=t_warmup, **kwargs)
         # send model parameters to remote model server & wait for result response
         with Client((self.server_host, self.server_port)) as client:
-            print("RemoteBrianModelInterface: BrianInterfaceMessage sent: {}".format(msg))
+            reg.vprint("RemoteBrianModelInterface: BrianInterfaceMessage sent: {}".format(msg))
             [response] = client.send([msg])  # this is a LarvaMessage object again
             self.step_cache[response.model_id] += 1
-            print("RemoteBrianModelInterface: BrianInterfaceMessage received: {}".format(response))
+            reg.vprint("RemoteBrianModelInterface: BrianInterfaceMessage received: {}".format(response))
             return response

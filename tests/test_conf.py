@@ -2,7 +2,7 @@ from larvaworld.lib import reg, aux
 
 
 def test_conf():
-    reg.VERBOSE = 1
+    #reg.VERBOSE = 1
     conftype = 'Exp'
     id = 'dish'
     id_new = 'dish_test'

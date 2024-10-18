@@ -36,7 +36,7 @@ class Pos2D(NestedConf):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.initial_pos = self.pos
-        self.last_pos = self.get_position()
+        self.last_pos = self.pos
 
     def get_position(self):
         return tuple(self.pos)
@@ -89,7 +89,7 @@ class OrientedPoint(Pos2D):
 
         super().__init__(**kwargs)
         self.initial_orientation = self.orientation
-        self.last_orientation = self.get_orientation()
+        self.last_orientation = self.orientation
 
     @property
     def rotationMatrix(self):

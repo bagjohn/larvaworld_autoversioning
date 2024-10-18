@@ -1,5 +1,5 @@
 from larvaworld.lib import reg, sim, aux
-reg.VERBOSE=1
+#reg.VERBOSE=1
 
 ## FIXME this currently fails
 '''

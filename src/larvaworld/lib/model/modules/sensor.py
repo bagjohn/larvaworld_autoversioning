@@ -1,7 +1,7 @@
 import numpy as np
 import param
 
-from ... import aux
+from ... import aux, reg
 from .basic import Effector
 from ...param import PositiveNumber, RangeRobust
 from .remote_brian_interface import RemoteBrianModelInterface
@@ -221,7 +221,7 @@ class OSNOlfactor(Olfactor):
                                                                   t_warmup=self.brian_warmup, **msg_kws)
             self.output = self.normalized_sigmoid(15, 8, response.param(self.response_key))
         except ConnectionRefusedError:
-            print("WARNING: Unable to reach remote brian server at {} - is the server running ?".format(self.brianInterface.server_host))
+            reg.vprint("WARNING: Unable to reach remote brian server at {} - is the server running ?".format(self.brianInterface.server_host))
             pass
 
         super().update()

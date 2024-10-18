@@ -160,10 +160,6 @@ class ParamLarvaDataset(param.Parameterized):
                         reg.vprint(f'   Required columns not found. Aborting...', _verbose)
                         return wrapped_f
                 if returned is not None:
-                    #     reg.vprint(f'   Columns to be returned not provided. Executing ...', _verbose)
-                    #     f(self, *args, **kwargs)
-                    # else:
-                    #     returned_exists = self.data_exists(**returned)
                     if not self.data_exists(**returned):
                         reg.vprint(f'   Columns to be returned do not exist. Executing ...', _verbose)
 
@@ -581,18 +577,13 @@ class ParamLarvaDataset(param.Parameterized):
                     []), []
                 a = a_v
                 D.exec = self.detect_epochs(np.where(a_v >= vel_thr)[0])
-                # D.exec = self.detect_runs(a_v, vel_thr=vel_thr)
 
             D.run_dur = self.epoch_durs(D.exec)
             D.run_dst = self.epoch_amps(D.exec, a_v)
             D.run_idx = self.epoch_idx(D.exec)
-            # D.run_idx = np.array([])
             D.pause = self.detect_pauses(a, vel_thr=vel_thr, runs=D.exec)
             D.pause_dur = self.epoch_durs(D.pause)
             D.pause_idx = self.epoch_idx(D.pause)
-            # print(D.run_idx)
-            # print(type(D.run_idx))
-            # print(a_v[D.run_idx])
             Svs[jj, :] = [np.nanmean(D.stride_dst), np.nanstd(D.stride_dst),
                           np.nanmean(a[D.stride_idx]), np.nansum(D.run_count),
                           np.mean(a_v[D.run_idx]), np.mean(a_v[D.pause_idx]),
