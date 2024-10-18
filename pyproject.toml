@@ -1,6 +1,7 @@
 [tool.poetry]
 name='larvaworld'
 version = "0.0.544"
+dynamic = ["version"]
 description='A virtual lab for Drosophila larva behavioral modeling and analysis'
 authors=['Panagiotis Sakagiannis <bagjohn0@gmail.com>']
 license = "GNU General Public License v3"
@@ -9,7 +10,7 @@ repository = "https://github.com/bagjohn/larvaworld_autoversioning"
 documentation = "https://larvaworld.readthedocs.io"
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
-  "Intended Audience :: Behavior Modelers, Experimentalists",
+  "Intended Audience :: Science/Research",
   "Natural Language :: English",
   "Operating System :: OS Independent",
   "Topic :: Software Development :: Libraries",
