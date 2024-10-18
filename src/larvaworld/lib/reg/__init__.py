@@ -1,6 +1,6 @@
 """
-This module sets up the larvaworld registry where most functions, classes and configurations are registered.
-It is initialized automatically when importing the package and serves as an accessible database for all functionalities
+This module sets up the larvaworld registry where most functions, classes, and configurations are registered.
+It is initialized automatically when importing the package and serves as an accessible database for all functionalities.
 """
 
 import os
@@ -36,8 +36,14 @@ __all__ = [
 __displayname__ = 'Registry'
 VERBOSE = 2
 
-
 def vprint(text='', verbose=0):
+    """
+    Print text if the verbosity level is greater than or equal to the global VERBOSE level.
+
+    Parameters:
+    text (str): The text to print.
+    verbose (int): The verbosity level of the message.
+    """
     if verbose >= VERBOSE:
         print(text)
 
@@ -67,6 +73,50 @@ units.setup_matplotlib(True)
 
 
 class FunctionDict:
+    """
+    Class that manages different groups of functions.
+    Each group is registered as a dictionary under a certain class attribute.
+    The attribute can then be used as a decorator to register a function under the specified group.
+
+    Attributes:
+        graphs (aux.AttrDict): A dictionary to store graph-related functions.
+        graph_required_data (aux.AttrDict): A dictionary to store required data for graphs.
+        stored_confs (aux.AttrDict): A dictionary to store the default configuration-generating functions.
+        param_computing (aux.AttrDict): A dictionary to store parameter computing functions.
+
+    Methods:
+        param(name):
+            Registers a function under the 'param_computing' group.
+            Args:
+                name (str): The name of the function to register.
+            Returns:
+                function: A wrapper function that registers the given function.
+        
+        graph(name, required={}):
+            Registers a function under the 'graphs' group and stores its required data.
+            Args:
+                name (str): The name of the function to register.
+                required (dict, optional): A dictionary of required data for the graph. Defaults to an empty dictionary.
+            Returns:
+                function: A wrapper function that registers the given function.
+        
+        stored_conf(name):
+            Registers a function under the 'stored_confs' group.
+            Args:
+                name (str): The name of the function to register.
+            Returns:
+                function: A wrapper function that registers the given function.
+        
+        register_func(name, group):
+            Registers a function under the specified group.
+            Args:
+                name (str): The name of the function to register.
+                group (str): The group under which to register the function.
+            Returns:
+                function: A wrapper function that registers the given function.
+            Raises:
+                AttributeError: If the specified group does not exist.
+    """
     def __init__(self):
         self.graphs = aux.AttrDict()
         self.graph_required_data = aux.AttrDict()
@@ -114,24 +164,48 @@ from .config import conf
 from .generators import gen
 from . import config, generators, graph, stored_confs
 
-# model = models.ModelRegistry()
 graphs = graph.GraphRegistry()
 
 vprint(f"Configuration registry complete", 1)
 
 def getPar(k=None, p=None, d=None, to_return='d'):
+    """
+    Shortcut function for easy use directly via the registry.
+    See 'par.getPar' for more information.
+    """
     return par.getPar(k=k, d=d, p=p, to_return=to_return)
 
 
 def loadRef(id, **kwargs):
+    """
+    Shortcut function for easy use directly via the registry.
+    See 'conf.Ref.loadRef' for more information.
+    """
     return conf.Ref.loadRef(id=id, **kwargs)
 
 
 def loadRefs(ids, **kwargs):
+    """
+    Shortcut function for easy use directly via the registry.
+    See 'conf.Ref.loadRefs' for more information.
+    """
     return conf.Ref.loadRefs(ids=ids, **kwargs)
 
 
 def define_default_refID_by_running_test():
+    """
+    Defines the default reference dataset ID by running a test if no reference datasets are available.
+
+    This function checks if there are any reference datasets available in `conf.Ref.confIDs`.
+    If none are available, it automatically imports a reference dataset by running a specified test method
+    from a test file. The test method is executed using the `runpy.run_path` function.
+
+    Returns:
+        str: The first reference dataset ID from `conf.Ref.confIDs`.
+
+    Raises:
+        AssertionError: If no reference dataset IDs are available after running the test method.
+    """
     if len(conf.Ref.confIDs) == 0:
         filename = 'test_import.py'
         filepath = f'{TEST_DIR}/{filename}'
@@ -145,6 +219,21 @@ def define_default_refID_by_running_test():
 
 
 def define_default_refID():
+    """
+    Defines the default reference dataset ID for the package.
+
+    This function performs the following steps:
+    1. Purges the existing reference dataset IDs, deleting the ones where the corresponding datasets are missing.
+    2. Checks if there are no reference dataset IDs available.
+    3. If no reference datasets are available, it imports one from the experimental data folder.
+    4. If the respective configuration is not present in LabFormat, it resets the configurations.
+    5. Imports the default dataset with specified parameters.
+    6. Processes and annotates the dataset.
+    7. Ensures that exactly one reference dataset ID is available after import.
+
+    Returns:
+        str: The first reference dataset ID from the list of reference dataset IDs.
+    """
     R=conf.Ref
     R.cleanRefIDs()
     if len(R.confIDs) == 0:

@@ -675,7 +675,20 @@ class ParamRegistry(ParamClass):
             p.compute(d)
 
     def getPar(self, k=None, p=None, d=None, to_return='d'):
-        # print(k,'--',d,'--',p,'--')
+        """
+        Retrieve the values of specific keys from a given parameter entry.
+        Takes as argument the key by which to look up the parameter entry in the parameter database.
+
+        Args:
+            k (optional): Look up by short-key.
+            p (optional): Look up by natural-language name.
+            d (optional): Look up by code-based name.
+            to_return (str, optional): Specifies the keys for which to return the values. Defaults to 'd'.
+
+        Returns:
+            The values associated with the selected keys from the parameter entry.
+        """
+
         if k is None:
             if d is not None:
                 if isinstance(d, str):
