@@ -92,7 +92,11 @@ class BaseRun(sim.ABModel):
     def build_env(self, p):
         # reg.vprint(f'--- Simulation {self.id} : Building environment!--- ', 1)
         # Define environment
-        self.space = envs.Arena(model=self, **p.arena)
+        if self.Box2D :
+            from ..model.box2d import ArenaBox2D
+            self.space = ArenaBox2D(model=self, **p.arena)
+        else :
+            self.space = envs.Arena(model=self, **p.arena)
 
         self.place_obstacles(p.border_list)
         self.place_food(p=p.food_params)
@@ -177,7 +181,7 @@ class BaseRun(sim.ABModel):
             else:
                 return agents.LarvaReplaySegmented
         elif self.Box2D:
-            from ..model.agents._larva_box2d import LarvaBox2D
+            from ..model.box2d import LarvaBox2D
             return LarvaBox2D
         elif self.offline:
             return agents.LarvaOffline

@@ -2,15 +2,63 @@ from larvaworld.lib import reg, sim, aux
 from larvaworld.lib.process.dataset import LarvaDataset
 #reg.VERBOSE=1
 
-# NOTE :    This test iterates over all preconfigured experiments, including those requiring optional dependencies like nengo & py-box2d. 
-#           Therefore is is meant to be run when all optional dependencies are installed, otherwise it will fail.
+
 def test_exp_run():
-    ids = reg.conf.Exp.confIDs
+    #ids = reg.conf.Exp.confIDs
+    ids=['tethered',
+        'dish',
+        'dispersion_x2',
+        
+        'chemorbit_x4',
+        'chemotaxis_diffusion',
+        'single_odor_patch_x4',
+        
+        'tactile_detection',
+        'anemotaxis',
+        'single_puff',
+        'thermotaxis',
+        'PItest_off',
+        'PItrain',
+
+        'prey_detection'
+        ]
+
     for id in ids:
-        r = sim.ExpRun.from_ID(id, duration=1, store_data=False)
+        r = sim.ExpRun.from_ID(id, store_data=False)
         for d in r.datasets:
             assert isinstance(d, LarvaDataset)
 
+def test_games():
+    ids=['capture_the_flag',
+        'catch_me',
+        'keep_the_flag',
+        'maze']
+
+    for id in ids:
+        r = sim.ExpRun.from_ID(id, store_data=False)
+        for d in r.datasets:
+            assert isinstance(d, LarvaDataset)
+
+def test_foraging_experiments():
+    ids=['4corners',
+        'double_patch',
+        'food_grid',
+        'random_food',
+        'patch_grid']
+
+    for id in ids:
+        r = sim.ExpRun.from_ID(id, store_data=False)
+        for d in r.datasets:
+            assert isinstance(d, LarvaDataset)
+
+def test_growth_experiments():
+    ids=['RvsS_on',
+        'growth']
+
+    for id in ids:
+        r = sim.ExpRun.from_ID(id, store_data=False)
+        for d in r.datasets:
+            assert isinstance(d, LarvaDataset)
 
 
 '''

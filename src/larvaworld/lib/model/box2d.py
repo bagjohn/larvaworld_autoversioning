@@ -1,20 +1,29 @@
-import Box2D
+'''
+A Box2D extension for larvaworld. This requires the box2d-py package, specified as an optional dependency during larvaworld installation.
+If not already installed, run : "pip install box2d-py"
+'''
+
+
+#import Box2D
+from Box2D.b2 import world, polygonShape, circleShape, staticBody, dynamicBody
 import numpy as np
 import param
 from shapely import geometry
 
-from ... import aux, reg
-from . import LarvaSim
-from ...param import ShapeMobile
+from .. import aux, reg
+from .agents import LarvaSim
+from ..param import ShapeMobile
+from .envs import Arena
 
 __all__ = [
-    'Box2DSegment',
+    'SegmentBox2D',
     'LarvaBox2D',
+    'ArenaBox2D'
 ]
 
-__displayname__ = 'Virtual Box2D body'
+__displayname__ = 'Box2D extension'
 
-class Box2DSegment(ShapeMobile):
+class SegmentBox2D(ShapeMobile):
     """
     Box2D-based segment of a larva.
 
@@ -67,18 +76,18 @@ class Box2DSegment(ShapeMobile):
 
     def __init__(self, space, physics_pars, **kwargs):
         super().__init__(**kwargs)
-        self._body: Box2D.b2Body = space.CreateDynamicBody(
-            position=Box2D.b2Vec2(*self.pos),
+        self._body: dynamicBody = space.CreateDynamicBody(
+            position=self.pos,
             angle=self.orientation,
-            linearVelocity=Box2D.b2Vec2(*[.0, .0]),
-            angularVelocity=.0,
+            #linearVelocity=Box2D.b2Vec2(*[.0, .0]),
+            #angularVelocity=.0,
             bullet=True,
             linearDamping=physics_pars['lin_damping'],
             angularDamping=physics_pars['ang_damping'])
 
         for v in self.vertices:
             self._body.CreatePolygonFixture(
-                shape=Box2D.b2PolygonShape(vertices=v.tolist()),
+                shape=polygonShape(vertices=v.tolist()),
                 density=physics_pars['density'],
                 friction=10,
                 restitution=0,
@@ -237,7 +246,7 @@ class LarvaBox2D(LarvaSim):
     Box2D-based larva simulation.
     """
 
-    segs = param.List(item_type=Box2DSegment, doc='The body segments.')
+    segs = param.List(item_type=SegmentBox2D, doc='The body segments.')
 
     def __init__(self, Box2D, **kwargs):
         self.Box2D_params = Box2D
@@ -505,3 +514,19 @@ class LarvaBox2D(LarvaSim):
                                                   localAnchorA=tuple(l0 * x for x in (-0.5, 0)),
                                                   localAnchorB=tuple(l0 * x for x in (0.5, 0)))
                     self.joints.append(j)
+
+
+class ArenaBox2D(Arena, world):
+
+    def __init__(self, **kwargs):
+        Arena.__init__(self, **kwargs)
+        # --- pybox2d world setup ---
+        # Create the world
+        world.__init__(self, gravity=(0, -10), doSleep=True)
+
+        # And a static body to hold the ground shape
+        self.ground_body = self.CreateStaticBody(
+        position=(0, 0),
+        shapes=polygonShape(self.edges),
+        )
+        
