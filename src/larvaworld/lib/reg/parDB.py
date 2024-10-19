@@ -1,3 +1,8 @@
+"""
+Larvaworld parameter database
+"""
+
+
 import numpy as np
 import param
 
@@ -61,6 +66,9 @@ output_keys = list(output_dict.keys())
 
 
 class ParamClass:
+    """
+    Class to store Larvaworld parameters in a database
+    """
     def __init__(self):
         self.func_dict = reg.funcs.param_computing
         self.k_ops = AttrDict({
@@ -633,6 +641,9 @@ class ParamClass:
 
 
 class ParamRegistry(ParamClass):
+    """ 
+    Class to manage the parameter database.
+    """
     def __init__(self):
         super().__init__()
         self.PI = AttrDict()
