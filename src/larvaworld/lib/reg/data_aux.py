@@ -1,5 +1,5 @@
 """
-Methods for fitting and sampling between simulated and experimental datasets
+Larvaworld parameter class and associated methods
 """
 
 import random
@@ -20,12 +20,30 @@ from ..aux import nam
 __all__ = [
     'SAMPLING_PARS',
     'sample_ps',
-    'init2mdict',
+    #'init2mdict',
     # 'LarvaworldParam',
     'get_LarvaworldParam',
     'prepare_LarvaworldParam',
     'build_LarvaworldParam',
 ]
+
+"""
+def gConf(mdict, **kwargs):
+    if mdict is None:
+        return None
+    elif isinstance(mdict, param.Parameterized):
+        return mdict.v
+    elif isinstance(mdict, dict):
+        conf = aux.AttrDict()
+        for d, p in mdict.items():
+            if isinstance(p, param.Parameterized):
+                conf[d] = p.v
+            else:
+                conf[d] = gConf(mdict=p)
+            conf.update_existingdict(kwargs)
+        return conf
+    else:
+        return aux.AttrDict(mdict)
 
 
 def param_to_arg(k, p):
@@ -58,22 +76,7 @@ def param_to_arg(k, p):
     return d
 
 
-def gConf(mdict, **kwargs):
-    if mdict is None:
-        return None
-    elif isinstance(mdict, param.Parameterized):
-        return mdict.v
-    elif isinstance(mdict, dict):
-        conf = aux.AttrDict()
-        for d, p in mdict.items():
-            if isinstance(p, param.Parameterized):
-                conf[d] = p.v
-            else:
-                conf[d] = gConf(mdict=p)
-            conf.update_existingdict(kwargs)
-        return conf
-    else:
-        return aux.AttrDict(mdict)
+
 
 
 def init2mdict(d0):
@@ -96,7 +99,7 @@ def init2mdict(d0):
         return D
 
     return aux.AttrDict(check(d0))
-
+"""
 
 class LarvaworldParam(param.Parameterized):
     p = param.String(default='', doc='Name of the parameter')
