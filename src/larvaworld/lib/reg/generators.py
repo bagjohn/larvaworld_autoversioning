@@ -1,3 +1,8 @@
+'''
+Configuration and Generator classes for higher-order objects in the larvaworld package.
+'''
+
+
 import copy
 import os
 import shutil
@@ -54,6 +59,9 @@ gen = AttrDict({
 # How to load existing
 
 class SimConfiguration(RuntimeOps, SimMetricOps, SimOps):
+    """ 
+    The configuration of a simulation run.
+    """
     runtype = param.Selector(objects=reg.SIMTYPES, doc='The simulation mode')
 
     def __init__(self, runtype, **kwargs):
@@ -96,6 +104,9 @@ class SimConfiguration(RuntimeOps, SimMetricOps, SimOps):
 
 
 class SimConfigurationParams(SimConfiguration):
+    """
+    The configuration of a simulation run with parameters.
+    """
     parameters = param.Parameter(default=None)
 
     def __init__(self, runtype='Exp', experiment=None, parameters=None,
@@ -135,6 +146,24 @@ class SimConfigurationParams(SimConfiguration):
 
 
 def source_generator(genmode, Ngs=2, ids=None, cs=None, rs=None, ams=None, o=None, qs=None, type='standard', **kwargs):
+    """
+    Generate a list of source units or groups.
+    
+    Args:
+    - genmode (str): The generation mode, either 'Group' or 'Unit'.
+    - Ngs (int): The number of sources to generate.
+    - ids (list, optional): The IDs of the sources.
+    - cs (list, optional): The colors of the sources.
+    - rs (list, optional): The radii of the sources.
+    - ams (list, optional): The amount of food of the sources.
+    - o (str, optional): The odor of the sources.
+    - qs (list, optional): The substrate qualities of the sources.
+    - type (str, optional): The substrate type of the sources.
+    - **kwargs: Additional keyword arguments to pass to the source generation function.
+    
+    Returns:
+    - dict: A dictionary of generated source units or groups.
+    """
     if genmode == 'Group':
         id0 = 'SourceGroup'
         _class = gen.FoodGroup
@@ -161,6 +190,9 @@ def source_generator(genmode, Ngs=2, ids=None, cs=None, rs=None, ams=None, o=Non
 
 
 class FoodConf(NestedConf):
+    """
+    The configuration of food sources in the arena.
+    """
     source_groups = ClassDict(item_type=gen.FoodGroup, doc='The groups of odor or food sources available in the arena')
     source_units = ClassDict(item_type=gen.Food, doc='The individual sources  of odor or food in the arena')
     food_grid = ClassAttr(gen.FoodGrid, default=None, doc='The food grid in the arena')
@@ -232,6 +264,9 @@ gen.EnrichConf = EnrichConf
 
 
 class EnvConf(NestedConf):
+    """
+    The configuration of the simulation's virtual environment.
+    """
     arena = ClassAttr(gen.Arena, doc='The arena configuration')
     food_params = ClassAttr(gen.FoodConf, doc='The food sources in the arena')
     border_list = ClassDict(item_type=gen.Border, doc='The obstacles in the arena')
@@ -382,6 +417,9 @@ def update_larva_groups(lgs, **kwargs):
 
 
 class LarvaGroupMutator(NestedConf):
+    """
+    The larva group mutator.
+    """
     modelIDs = reg.conf.Model.confID_selector(single=False)
     groupIDs = param.List(default=None, allow_None=True, item_type=str, doc='The ids for the generated datasets')
     N = PositiveInteger(5, label='# agents/group', doc='Number of agents per model ID')
@@ -391,6 +429,19 @@ class LarvaGroupMutator(NestedConf):
 
 
 def prepare_larvagroup_args(Ns=None, modelIDs=None, groupIDs=None, colors=None, default_Nlgs=1, **kwargs):
+    """
+    Prepare the arguments for the larva group configuration.
+    
+    Args:
+    - Ns (int or list): The number of agents per larva group.
+    - modelIDs (str or list): The model IDs of the larva groups.
+    - groupIDs (str or list): The group IDs of the larva groups.
+    - colors (str or list): The colors of the larva groups.
+    - default_Nlgs (int): The default number of larva groups.
+    
+    Returns:
+    - list: A list of dictionaries containing the arguments for the larva group configuration.
+    """
     temp = [len(a) for a in [Ns, modelIDs, groupIDs, colors] if isinstance(a, list)]
     if len(temp) > 0:
         Nlgs = int(np.max(temp))
@@ -428,6 +479,9 @@ def prepare_larvagroup_args(Ns=None, modelIDs=None, groupIDs=None, colors=None, 
 
 
 class LarvaGroup(NestedConf):
+    """
+    The configuration of a larva group.
+    """
     group_id = param.String('LarvaGroup', doc='The distinct ID of the group')
     model = reg.conf.Model.confID_selector()
     color = param.Color('black', doc='The default color of the group')
@@ -542,6 +596,9 @@ gen.Env = EnvConf
 
 
 class LabFormat(NestedConf):
+    """
+    The configuration of the lab format.
+    """
     labID = param.String(doc='The identifier ID of the lab')
     tracker = ClassAttr(TrackerOps, doc='The dataset metadata')
     filesystem = ClassAttr(Filesystem, doc='The import-relevant lab-format filesystem')
@@ -785,6 +842,9 @@ class LabFormat(NestedConf):
 
 
 class ExpConf(SimOps):
+    """
+    The configuration of the experiment.
+    """
     env_params = ClassAttr(gen.Env, doc='The environment configuration')
     experiment = reg.conf.Exp.confID_selector()
     trials = param.Dict(default=AttrDict({'epochs': aux.ItemList()}), doc='Temporal epochs of the experiment')
@@ -825,6 +885,9 @@ gen.Exp = ExpConf
 
 
 class ReplayConfGroup(NestedConf):
+    """
+    The population-related configuration of the dataset replay.
+    """
     agent_ids = param.List(item_type=int,
                            doc='Whether to only display some larvae of the dataset, defined by their indexes.')
     transposition = OptionalSelector(objects=['origin', 'arena', 'center'],
@@ -835,6 +898,9 @@ class ReplayConfGroup(NestedConf):
 
 
 class ReplayConfUnit(NestedConf):
+    """
+    The individual-related configuration of the dataset replay.
+    """
     close_view = param.Boolean(False, doc='Whether to visualize a small arena on close range.')
     fix_segment = OptionalSelector(objects=['rear', 'front'],
                                    doc='Whether to additionally fixate the above or below body segment.')
@@ -843,6 +909,9 @@ class ReplayConfUnit(NestedConf):
 
 
 class ReplayConf(ReplayConfGroup, ReplayConfUnit):
+    """
+    The configuration of the dataset replay.
+    """
     refID = reg.conf.Ref.confID_selector()
     refDir = param.String(None)
     time_range = OptionalPositiveRange(doc='Whether to only replay a defined temporal slice of the dataset.')
@@ -858,7 +927,17 @@ gen.Replay = class_generator(ReplayConf)
 def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, substrate_type='standard', expand=False):
     """
     Create two larva-groups, 'rover' and 'sitter', based on the respective larva-models, with defined life-history to be used in simulations involving energetics.
-     
+    
+    Args:
+    - N (int): The number of agents in each group.
+    - age (float): The age of the larvae in hours.
+    - q (float): The rearing quality of the larvae.
+    - h_starved (float): The hours the larvae have been starved just before their current age.
+    - substrate_type (str): The type of the rearing substrate.
+    - expand (bool): Whether to expand the model configuration.
+
+    Returns:
+    - dict: A dictionary of the larva-groups.
     """
 
     kws0 = {
@@ -869,6 +948,9 @@ def GTRvsS(N=1, age=72.0, q=1.0, h_starved=0.0, substrate_type='standard', expan
 
 
 class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
+    """
+    The configuration of a LarvaDataset.
+    """
     Nticks = OptionalPositiveInteger(default=None)
     refID = param.String(None, doc='The unique ID of the reference dataset')
     group_id = param.String(None, doc='The unique ID of the group')

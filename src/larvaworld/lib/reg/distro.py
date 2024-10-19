@@ -1,3 +1,9 @@
+"""
+Distribution database, registry and associated methods.
+This modules provides classes and methods for managing and generating distributions.
+"""
+
+
 import copy
 
 import numpy as np
@@ -135,8 +141,17 @@ def get_logNpow2(x, xmax, xmid, overlap=0, discrete=False):
 
 def generate_distro_database():
     """
-    Database of the most common distributions
+    Generates a dictionary of distribution configurations.
+    Each key in the dictionary corresponds to a distribution name, and the value is another dictionary containing:
+    - 'cdf': The cumulative probability density function for the distribution.
+    - 'pdf': The probability density function for the distribution.
+    - 'args': A list of argument names required by the distribution.
+    - 'lab_func': A lambda function that generates a label for the distribution given its parameters.
+    - 'func': A lambda function that fits the distribution to data or computes distribution parameters.
+    Returns:
+        dict: A dictionary where each key is a distribution name and the value is a dictionary of distribution properties.
     """
+    
 
     d = aux.AttrDict({
         'powerlaw': {'cdf': powerlaw_cdf, 'pdf': powerlaw_pdf, 'args': ['xmin', 'alpha'],
@@ -170,7 +185,19 @@ distroDB = generate_distro_database()
 
 def get_dist(k, k0='intermitter', v=None, return_tabrows=False, return_all=False):
     """
-    Retrieve a distribution from the database
+    Retrieve a distribution from the database.
+
+    Parameters:
+    k (str): Key to identify the distribution.
+    k0 (str, optional): Module key for the distribution. Defaults to 'intermitter'.
+    v (object, optional): An object containing distribution details. Defaults to None.
+    return_tabrows (bool, optional): If True, returns table rows. Defaults to False.
+    return_all (bool, optional): If True, returns all distribution details. Defaults to False.
+
+    Returns:
+    dict: A dictionary containing distribution details if return_tabrows and return_all are False.
+    tuple: Two lists of table rows if return_tabrows is True.
+    tuple: Three dictionaries containing distribution details if return_all is True.
     """
 
     dict0 = {
@@ -204,7 +231,55 @@ def get_dist(k, k0='intermitter', v=None, return_tabrows=False, return_all=False
 
 def fit_bout_distros(x0, xmin=None, xmax=None, discrete=False, xmid=np.nan, overlap=0.0, Nbins=64, print_fits=False,
                      bout='pause', combine=True, fit_by='pdf', eval_func_id='KS2'):
+    """
+    Fits various distributions to the given data and evaluates their goodness of fit.
 
+    Parameters:
+    -----------
+    x0 : array-like
+        The data to fit the distributions to.
+    xmin : float, optional
+        Minimum value to consider for fitting. If None, it is set to the minimum of x0.
+    xmax : float, optional
+        Maximum value to consider for fitting. If None, it is set to the maximum of x0.
+    discrete : bool, optional
+        Whether the data is discrete.
+    xmid : float, optional
+        Midpoint for lognormal-powerlaw distribution. If NaN, it is determined automatically.
+    overlap : float, optional
+        Overlap parameter for lognormal-powerlaw distribution.
+    Nbins : int, optional
+        Number of bins to use for density computation.
+    print_fits : bool, optional
+        Whether to print the fit results.
+    bout : str, optional
+        Label for the bout type.
+    combine : bool, optional
+        Whether to combine distributions.
+    fit_by : str, optional
+        Criterion to fit by ('pdf' or 'cdf').
+    eval_func_id : str, optional
+        Evaluation function identifier ('MSE', 'KS', 'KS2').
+
+    Returns:
+    --------
+    dic : AttrDict
+        Dictionary containing fit results, including:
+        - values: Computed density values.
+        - pdfs: Probability density functions of the fitted distributions.
+        - cdfs: Cumulative density functions of the fitted distributions.
+        - Ks: Goodness of fit values.
+        - idx_Kmax: Index of the best fitting distribution.
+        - res: Rounded fit parameters.
+        - best: Dictionary of the best fitting distribution parameters.
+        - fits: Dictionary of all fit parameters.
+
+    Notes:
+    ------
+    This function fits several distributions (powerlaw, exponential, lognormal, lognormal-powerlaw, levy, normal, uniform)
+    to the given data and evaluates their goodness of fit using the specified evaluation function.
+    """
+                     
     def compute_density(x, xmin, xmax, Nbins=64):
         log_range = np.linspace(np.log2(xmin), np.log2(xmax), Nbins)
         bins = np.unique((2 * 2 ** (log_range)) / 2)

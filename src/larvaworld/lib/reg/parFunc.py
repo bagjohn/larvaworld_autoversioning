@@ -1,3 +1,8 @@
+"""
+Parameter-computing functions.
+Contains functions that compute/derive higher-order parameters from the existing ones in the dataset.
+"""
+
 import copy
 
 import numpy as np

@@ -1,3 +1,7 @@
+"""
+Keymap/shortcuts for interactive pygame visualization of simulations.
+"""
+
 import json
 
 from .. import reg, aux

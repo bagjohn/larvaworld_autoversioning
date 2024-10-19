@@ -682,7 +682,7 @@ class ParamRegistry(ParamClass):
         Args:
             k (optional): Look up by short-key.
             p (optional): Look up by natural-language name.
-            d (optional): Look up by code-based name.
+            d (optional): Look up by dataset-based name.
             to_return (str, optional): Specifies the keys for which to return the values. Defaults to 'd'.
 
         Returns:

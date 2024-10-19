@@ -20,88 +20,18 @@ from ..aux import nam
 __all__ = [
     'SAMPLING_PARS',
     'sample_ps',
-    #'init2mdict',
-    # 'LarvaworldParam',
     'get_LarvaworldParam',
     'prepare_LarvaworldParam',
     'build_LarvaworldParam',
 ]
 
-"""
-def gConf(mdict, **kwargs):
-    if mdict is None:
-        return None
-    elif isinstance(mdict, param.Parameterized):
-        return mdict.v
-    elif isinstance(mdict, dict):
-        conf = aux.AttrDict()
-        for d, p in mdict.items():
-            if isinstance(p, param.Parameterized):
-                conf[d] = p.v
-            else:
-                conf[d] = gConf(mdict=p)
-            conf.update_existingdict(kwargs)
-        return conf
-    else:
-        return aux.AttrDict(mdict)
-
-
-def param_to_arg(k, p):
-    c = p.__class__
-    v = p.default
-    d = aux.AttrDict({
-        'key': k,
-        'short': k,
-        'help': p.doc,
-    })
-    if v is not None:
-        d.default = v
-    if c == param.Boolean:
-        d.action = 'store_true' if not v else 'store_false'
-    elif c == param.String:
-        d.type = str
-    elif c in param.Integer.__subclasses__():
-        d.type = int
-    elif c in param.Number.__subclasses__():
-        d.type = float
-    elif c in param.Tuple.__subclasses__():
-        d.type = tuple
-
-    if hasattr(p, 'objects'):
-        d.choices = p.objects
-        if c in param.List.__subclasses__():
-            d.nargs = '+'
-        if hasattr(p, 'item_type'):
-            d.type = p.item_type
-    return d
-
-
-
-
-
-def init2mdict(d0):
-    def check(D0):
-        D = {}
-        for kk, vv in D0.items():
-            if not isinstance(vv, dict):
-                pass
-            elif 'dtype' in vv and vv['dtype'] == dict:
-                mdict = check(vv)
-                vv0 = {kkk: vvv for kkk, vvv in vv.items() if kkk not in mdict}
-                if 'v0' not in vv0:
-                    vv0['v0'] = gConf(mdict)
-                D[kk] = build_LarvaworldParam(p=kk, mdict=mdict, **vv0)
-
-            elif any([a in vv for a in ['symbol', 'h', 'label', 'disp', 'k']]):
-                D[kk] = build_LarvaworldParam(p=kk, **vv)
-            else:
-                D[kk] = check(vv)
-        return D
-
-    return aux.AttrDict(check(d0))
-"""
 
 class LarvaworldParam(param.Parameterized):
+    """
+    LarvaworldParam is a class that extends param.Parameterized and provides a structured way to define and manage parameters 
+    for the Larvaworld package. Each parameter has several attributes and methods to facilitate its use and manipulation.
+    
+    """
     p = param.String(default='', doc='Name of the parameter')
     d = param.String(default='', doc='Dataset name of the parameter')
     disp = param.String(default='', doc='Displayed name of the parameter')
@@ -170,10 +100,6 @@ class LarvaworldParam(param.Parameterized):
     def parameter(self):
         return self.disp
 
-    # @property
-    # def lab(self):
-    #     return self.l
-
     @property
     def tooltip(self):
         return self.param.v.doc
@@ -233,9 +159,39 @@ class LarvaworldParam(param.Parameterized):
             return None
 
     def exists(self, dataset):
+        """
+        Check if the parameter exists in the given LarvaDataset.
+
+        Args:
+            dataset (LarvaDataset): The dataset to check for the parameter.
+
+        Returns:
+            AttrDict: A dictionary-like object with two keys:
+                - 'step': A boolean indicating if the parameter exists in the dataset's step_data.
+                - 'end': A boolean indicating if the parameter exists in the dataset's endpoint_data.
+        """
         return aux.AttrDict({'step': self.d in dataset.step_ps, 'end': self.d in dataset.end_ps})
 
     def get(self, dataset, compute=True):
+        """
+        Retrieve the parameter's value from the dataset if it exists, otherwise compute it.
+
+        Args:
+            dataset (LarvaDataset): The dataset object from which to retrieve the parameter.
+            compute (bool): Flag indicating whether to compute the parameter if it does not exist. Default is True.
+
+        Returns:
+            The parameter value if it exists or is successfully computed, otherwise None.
+
+        Raises:
+            None
+
+        Notes:
+            - The method first checks if the parameter exists in the dataset.
+            - If the parameter exists, it retrieves and returns it.
+            - If the parameter does not exist and `compute` is True, it computes the parameter and retries retrieval.
+            - If the parameter does not exist and `compute` is False, it prints a message indicating the parameter was not found.
+        """
         res = self.exists(dataset)
         for key, exists in res.items():
             if exists:
@@ -248,12 +204,43 @@ class LarvaworldParam(param.Parameterized):
             print(f'Parameter {self.disp} not found')
 
     def compute(self, dataset):
+        """
+        Compute the parameter using the provided dataset.
+
+        This method applies the parameter's computing function to the dataset if the function is defined.
+        If the function is not defined, it prints a message indicating that the
+        function is not defined.
+
+        Args:
+            dataset (LarvaDataset) : The dataset to be processed by the function.
+        """
         if self.func is not None:
             self.func(dataset)
         else:
             print(f'Function to compute parameter {self.disp} is not defined')
 
     def randomize(self):
+        """
+        Randomizes the value of the parameter based on its type.
+
+        This method assigns a random value to `self.v` depending on the type of 
+        the parameter class (`self.parclass`). The behavior varies as follows:
+
+        - If the parameter is a `Number` or its subclass, a random float within 
+          the parameter's bounds is assigned.
+        - If the parameter is an `Integer` or its subclass, a random integer 
+          within the parameter's bounds is assigned.
+        - If the parameter is a `Magnitude` or its subclass, a random float 
+          between 0.0 and 1.0 is assigned.
+        - If the parameter is a `Selector` or its subclass, a random choice 
+          from the parameter's objects is assigned.
+        - If the parameter is a `Boolean`, a random boolean value (True or False) 
+          is assigned.
+        - If the parameter is a `Range` or its subclass, a tuple of two random 
+          floats within the parameter's bounds is assigned, where the second 
+          float is greater than or equal to the first.
+
+        """
         p = self.parclass
         if p in [param.Number] + param.Number.__subclasses__():
             vmin, vmax = self.param.v.bounds
@@ -274,6 +261,25 @@ class LarvaworldParam(param.Parameterized):
             self.v = (vv0, vv1)
 
     def mutate(self, Pmut, Cmut):
+        """
+        Mutates the value of the parameter based on its class type.
+
+        Parameters:
+        -----------
+        Pmut : float
+            Probability of mutation.
+        Cmut : float
+            Coefficient of mutation.
+
+        Notes:
+        ------
+        - For `param.Magnitude` and its subclasses, the value is mutated using a Gaussian distribution and cropped to bounds.
+        - For `param.Integer` and its subclasses, the value is mutated using a Gaussian distribution, converted to an integer, and cropped to bounds.
+        - For `param.Number` and its subclasses, the value is mutated using a Gaussian distribution and cropped to bounds.
+        - For `param.Selector` and its subclasses, the value is randomly chosen from the available objects.
+        - For `param.Boolean`, the value is randomly chosen between True and False.
+        - For `param.Range` and its subclasses, the range values are mutated using a Gaussian distribution, clipped to bounds, and rounded.
+        """
         if random.random() < Pmut:
             if self.parclass in [param.Magnitude] + param.Magnitude.__subclasses__():
                 v0 = self.v if self.v is not None else 0.5
@@ -338,6 +344,16 @@ SAMPLING_PARS = aux.bidict(
 
 
 def sample_ps(ps, e=None):
+    """
+    Get the parameters from the given list `ps` that exist on the inverse `SAMPLING_PARS` dictionary.
+
+    Args:
+        ps (list): A list of parameters.
+        e (optional): The endpoint dataframe of a dataset. If provided parameters are further filtered to exist in `e`.
+
+    Returns:
+        list: A list of parameters, filtered to exist in the default `SAMPLING_PARS` dictionary and potentially filtered to exist in `e`.
+    """
     Sinv = reg.SAMPLING_PARS.inverse
     ps = aux.SuperList([Sinv[k] for k in aux.existing_cols(Sinv, ps)]).flatten
     if e:
@@ -346,6 +362,17 @@ def sample_ps(ps, e=None):
 
 
 def get_vfunc(dtype, lim, vs):
+    """
+    Returns the appropriate Param class based on the provided data type, value limit, and value options.
+
+    Parameters:
+    dtype (type): The data type of the parameter.
+    lim (tuple): A tuple representing the limit or range for the parameter.
+    vs (any): The value options of the parameter.
+
+    Returns:
+    param.Parameter: The corresponding Param class for the given data type, limit, and value set.
+    """
     func_dic = {
         float: param.Number,
         int: param.Integer,
@@ -374,6 +401,21 @@ def get_vfunc(dtype, lim, vs):
 
 
 def vpar(vfunc, v0, doc, lab, lim, dv, vs):
+    """
+    Create a parameter object with specified attributes.
+
+    Parameters:
+    vfunc (type): The parameter type (e.g., param.List, param.Number, param.Range, param.Selector).
+    v0 (any): The default value for the parameter.
+    doc (str): Documentation string for the parameter.
+    lab (str): Label for the parameter.
+    lim (tuple or None): Bounds for the parameter if applicable (e.g., for param.Number or param.Range).
+    dv (any or None): Step value for the parameter if applicable (e.g., for param.Number or param.Range).
+    vs (list or None): List of objects for the parameter if applicable (e.g., for param.Selector).
+
+    Returns:
+    param.Parameter: An instantiated parameter object with the specified attributes.
+    """
     f_kws = {
         'default': v0,
         'doc': doc,
@@ -392,13 +434,39 @@ def vpar(vfunc, v0, doc, lab, lim, dv, vs):
     return func
 
 
-def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None, codename=None, lab=None,
-                            doc=None,flatname=None,
-                            required_ks=[], u=reg.units.dimensionless, v0=None, v=None, lim=None, dv=None, vs=None,
-                            vfunc=None, vparfunc=None, func=None, **kwargs):
-    '''
-    Method that formats the dictionary of attributes for a parameter in order to create a LarvaworldParam instance
-    '''
+def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None, codename=None, lab=None, doc=None,
+                            flatname=None, required_ks=[], u=reg.units.dimensionless, v0=None, v=None, lim=None, 
+                            dv=None, vs=None, vfunc=None, vparfunc=None, func=None, **kwargs):
+    """
+    Method that formats the dictionary of attributes for a parameter in order to create a LarvaworldParam instance.
+
+    Parameters:
+    - p (str): The primary parameter name.
+    - k (str, optional): The key for the parameter. Defaults to None.
+    - dtype (type, optional): The data type of the parameter. Defaults to float.
+    - d (str, optional): The code-related name for the parameter. Defaults to None.
+    - disp (str, optional): The display name for the parameter. Defaults to None.
+    - sym (str, optional): The symbol for the parameter. Defaults to None.
+    - codename (str, optional): The code name for the parameter. Defaults to None.
+    - lab (str, optional): The label for the parameter. Defaults to None.
+    - doc (str, optional): The documentation string for the parameter. Defaults to None.
+    - flatname (str, optional): The flat name for the parameter. Defaults to None.
+    - required_ks (list, optional): List of required keys. Defaults to [].
+    - u (unit, optional): The unit of the parameter. Defaults to reg.units.dimensionless.
+    - v0 (any, optional): The initial value of the parameter. Defaults to None.
+    - v (any, optional): The value of the parameter. Defaults to None.
+    - lim (tuple, optional): The limits for the parameter. Defaults to None.
+    - dv (any, optional): The delta value for the parameter. Defaults to None.
+    - vs (any, optional): The value set for the parameter. Defaults to None.
+    - vfunc (callable, optional): The value function for the parameter. Defaults to None.
+    - vparfunc (callable, optional): The value parameter function for the parameter. Defaults to None.
+    - func (callable, optional): The computing function for the parameter. Defaults to None.
+    - **kwargs: Additional keyword arguments.
+
+    Returns:
+    - aux.AttrDict: A dictionary of formatted attributes for creating a LarvaworldParam instance.
+    """
+
     codename = p if codename is None else codename
     d = p if d is None else d
     disp = d if disp is None else disp
@@ -457,5 +525,18 @@ def prepare_LarvaworldParam(p, k=None, dtype=float, d=None, disp=None, sym=None,
 
 
 def build_LarvaworldParam(p, **kwargs):
+    """
+    Constructs a Larvaworld parameter object.
+
+    This function prepares the input attributes using the `prepare_LarvaworldParam` function
+    and then generates the Larvaworld parameter object using the `get_LarvaworldParam` function.
+
+    Args:
+        p: The primary parameter required for building the Larvaworld parameter object.
+        **kwargs: Additional keyword arguments that are passed to the `prepare_LarvaworldParam` function.
+
+    Returns:
+        The constructed Larvaworld parameter object.
+    """
     pre_p = prepare_LarvaworldParam(p=p, **kwargs)
     return get_LarvaworldParam(**pre_p)

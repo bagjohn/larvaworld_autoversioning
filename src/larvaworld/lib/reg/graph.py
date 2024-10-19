@@ -1,3 +1,8 @@
+"""
+Graph/plotting registry for the larvaworld package.
+This module provides a class for managing and creating plots and graphs.
+"""
+
 import os
 from .. import reg, aux, plot
 
@@ -7,6 +12,16 @@ __all__ = [
 
 
 class GraphRegistry:
+    """
+    GraphRegistry is a class that manages and creates plots and graphs for the larvaworld package.
+    It provides methods for creating plots and graphs, evaluating graphgroups, and storing model graphs.
+    
+    Attributes:
+    - dict (dict): A dictionary of graph functions.
+    - required_data_dict (dict): A dictionary of required data for each graph function.
+    - graphgroups (dict): A dictionary of graphgroups, each containing a list of plots/graphs to be created.
+    
+    """
     def __init__(self):
         self.dict = reg.funcs.graphs
         self.required_data_dict = reg.funcs.graph_required_data
@@ -14,21 +29,40 @@ class GraphRegistry:
 
     @property
     def ks(self):
+        """
+        Returns a sorted list of the keys of the graph functions.
+        """
         return aux.SuperList(self.dict.keys()).sorted
 
     def exists(self, ID):
+        """
+        Checks if a graph function with the given ID exists.
+        """
         if isinstance(ID, str) and ID in self.ks:
             return True
         else:
             return False
 
     def group_exists(self, gID):
+        """
+        Checks if a graphgroup with the given ID exists.
+        """
         if isinstance(gID, str) and gID in self.graphgroups:
             return True
         else:
             return False
 
     def eval_graphgroups(self, graphgroups, save_to=None, **kws):
+        """
+        Evaluates a list of graphgroups.
+        Args:
+        - graphgroups (list): A list of graphgroups to evaluate.
+        - save_to (str, optional): The directory to save the plots to. Defaults to None.
+        - **kws: Additional keyword arguments to pass to the graph functions.
+
+        Returns:
+        - dict: A dictionary of evaluated graphgroups.
+        """
         kws.update({'subfolder': None})
         d = self.grouplist_to_dict(graphgroups)
         return aux.AttrDict(
@@ -36,6 +70,14 @@ class GraphRegistry:
              gID, entries in d.items()})
 
     def grouplist_to_dict(self, groups):
+        """
+        Converts a list of graphgroups to a dictionary.
+        Args:
+        - groups (list): A list of graphgroups to convert.
+
+        Returns:
+        - dict: A dictionary of graphgroups.
+        """
         if isinstance(groups, list):
             ds = aux.AttrDict()
             for gg in groups:
@@ -50,17 +92,53 @@ class GraphRegistry:
             return groups
 
     def eval_entries(self, entries, **kwargs):
+        """
+        Evaluates a list of graph entries.
+        Args:
+        - entries (list): A list of graph entries to evaluate.
+        
+        Returns:
+        - dict: A dictionary of evaluated graph entries.
+        """
         return aux.AttrDict({e['key']: self.run(ID=e['plotID'], **e['args'], **kwargs) for e in entries})
 
     def run(self, ID, **kwargs):
+        """
+        Runs a graph function with the given ID.
+        
+        Args:
+        - ID (str): The ID of the graph function to run.
+        
+        Returns:
+        - plot.Plot: The plot created by the graph function.
+        """
         assert self.exists(ID)
         return self.dict[ID](**kwargs)
 
     def run_group(self, gID, **kwargs):
+        """
+        Runs a graphgroup with the given ID.
+        
+        Args:
+        - gID (str): The ID of the graphgroup to run.
+        
+        Returns:
+        - dict: A dictionary of plots created by the graphgroup.
+        """
         assert self.group_exists(gID)
         return self.eval_entries(self.graphgroups[gID], **kwargs)
 
     def entry(self, ID, name=None, **kwargs):
+        """
+        Creates a graph entry with the given ID and optional name.
+        
+        Args:
+        - ID (str): The ID of the graph function to create an entry for.
+        - name (str, optional): The name of the graph entry. Defaults to None.
+        
+        Returns:
+        - dict: A dictionary containing the key, plotID, and arguments for the graph entry.
+        """
         assert self.exists(ID)
         args = kwargs
         if name is not None:
@@ -71,6 +149,17 @@ class GraphRegistry:
         return {'key': key, 'plotID': ID, 'args': args}
 
     def model_tables(self, mIDs, dIDs=None, save_to=None, **kwargs):
+        """
+        Creates tables for the given model IDs.
+        
+        Args:
+        - mIDs (list): A list of model IDs to create tables for.
+        - dIDs (list, optional): A list of display IDs to use for the model IDs. Defaults to None.
+        - save_to (str, optional): The directory to save the tables to. Defaults to None.
+        
+        Returns:
+        - dict: A dictionary of tables created for the given model IDs.
+        """
         ds = {}
         ds['mdiff_table'] = self.dict['model diff'](mIDs, dIDs=dIDs, save_to=save_to, **kwargs)
         gfunc = self.dict['model table']
@@ -84,6 +173,16 @@ class GraphRegistry:
         return aux.AttrDict(ds)
 
     def model_summaries(self, mIDs, save_to=None, **kwargs):
+        """
+        Creates summary plots for the given model IDs.
+        
+        Args:
+        - mIDs (list): A list of model IDs to create summaries for.
+        - save_to (str, optional): The directory to save the summaries to. Defaults to None.
+        
+        Returns:
+        - dict: A dictionary of summary plots created for the given model IDs.
+        """
         ds = {}
         for mID in mIDs:
             try:
@@ -95,6 +194,16 @@ class GraphRegistry:
         return ds
 
     def store_model_graphs(self, mIDs, dir):
+        """
+        Stores model graphs for the given model IDs.
+        
+        Args:
+        - mIDs (list): A list of model IDs to store graphs for.
+        - dir (str): The directory to store the graphs in.
+        
+        Returns:
+        - dict: A dictionary of stored model graphs.
+        """
         f1 = f'{dir}/plots/model_tables'
         f2 = f'{dir}/plots/model_summaries'
         os.makedirs(f1, exist_ok=True)
@@ -107,6 +216,16 @@ class GraphRegistry:
         return graphs
 
     def source_graphgroup(self, source_ID, pos=None, **kwargs):
+        """
+        Creates a graphgroup consisting of plots related to a given food/odor source.
+        
+        Args:
+        - source_ID (str): The ID of the source to create a graphgroup for.
+        - pos (tuple, optional): The position of the source. Defaults to None.
+        
+        Returns:
+        - dict: A dictionary of plot entries for source-related plotting.
+        """
         ID = source_ID
         gID = f"locomotion relative to source {ID}"
         d0 = [
