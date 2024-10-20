@@ -354,7 +354,7 @@ def sample_ps(ps, e=None):
     Returns:
         list: A list of parameters, filtered to exist in the default `SAMPLING_PARS` dictionary and potentially filtered to exist in `e`.
     """
-    Sinv = reg.SAMPLING_PARS.inverse
+    Sinv = SAMPLING_PARS.inverse
     ps = aux.SuperList([Sinv[k] for k in aux.existing_cols(Sinv, ps)]).flatten
     if e:
         ps = ps.existing(e)

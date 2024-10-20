@@ -5,7 +5,7 @@ If not already installed, run : "pip install box2d-py"
 
 
 #import Box2D
-from Box2D.b2 import world, polygonShape, circleShape, staticBody, dynamicBody
+from Box2D.b2 import world, polygonShape, circleShape, staticBody, dynamicBody, vec2
 import numpy as np
 import param
 from shapely import geometry
@@ -167,7 +167,7 @@ class SegmentBox2D(ShapeMobile):
         """
         if local:
             lin_vel = self._body.GetWorldVector(np.asarray(lin_vel))
-        self._body.linearVelocity = Box2D.b2Vec2(lin_vel)
+        self._body.linearVelocity = vec2(lin_vel)
 
     def get_angularvelocity(self):
         """
@@ -238,7 +238,7 @@ class SegmentBox2D(ShapeMobile):
         numpy.ndarray
             The world-facing axis of the segment.
         """
-        return np.asarray(self._body.GetWorldVector(Box2D.b2Vec2(1.0, 0.0)))
+        return np.asarray(self._body.GetWorldVector(vec2(1.0, 0.0)))
 
 
 class LarvaBox2D(LarvaSim):
@@ -525,7 +525,7 @@ class ArenaBox2D(Arena, world):
         world.__init__(self, gravity=(0, -10), doSleep=True)
 
         # And a static body to hold the ground shape
-        self.ground_body = self.CreateStaticBody(
+        self.ground_body : staticBody = self.CreateStaticBody(
         position=(0, 0),
         shapes=polygonShape(self.edges),
         )

@@ -243,8 +243,6 @@ def vel_definition(d) :
     return dic
 
 def comp_stride_variation(s, e, c):
-
-
     N = c.Npoints
     points = c.midline_points
     vels = aux.nam.vel(points)

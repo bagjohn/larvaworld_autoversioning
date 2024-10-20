@@ -94,11 +94,17 @@ class ParamClass:
 
 
     def update_kdict(self, ks):
+        """
+        Update the kdict with the parameters in the ks list
+        """
         for k in ks:
             if k in self.ks and k not in self.kdict:
                 self.kdict[k] = reg.get_LarvaworldParam(**self.dict[k])
 
     def finalize(self):
+        """
+        Finalize the parameter database
+        """
         for k,prepar in self.dict.items():
             self.kdict[k] = reg.get_LarvaworldParam(**prepar)
 

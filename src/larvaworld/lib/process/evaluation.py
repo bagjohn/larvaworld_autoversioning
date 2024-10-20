@@ -28,6 +28,7 @@ __all__ = [
 
 
 def eval_end_fast(ee, e_data, e_sym, mode='pooled'):
+    """ Fast evaluation of endpoint data """
     E = {}
     for p, sym in e_sym.items():
         e_vs = e_data[p]
@@ -41,6 +42,7 @@ def eval_end_fast(ee, e_data, e_sym, mode='pooled'):
 
 
 def eval_distro_fast(ss, s_data, s_sym, mode='pooled', min_size=10):
+    """ Fast evaluation of step data """
     if mode == '1:1':
         E = {}
         for p, sym in s_sym.items():
@@ -76,6 +78,7 @@ def eval_distro_fast(ss, s_data, s_sym, mode='pooled', min_size=10):
 
 
 def eval_fast(datasets, data, symbols, mode='pooled', min_size=20):
+    """ Fast evaluation of datasets """
     GEend = {d.id: eval_end_fast(d.endpoint_data, data.end, symbols.end, mode=mode) for d in datasets}
     GEdistro = {d.id: eval_distro_fast(d.step_data, data.step, symbols.step, mode=mode, min_size=min_size) for d
                 in datasets}
@@ -85,24 +88,23 @@ def eval_fast(datasets, data, symbols, mode='pooled', min_size=20):
     #     labels = ['pooled endpoint KS$_{D}$', 'pooled distribution KS$_{D}$']
     # elif mode == '1:pooled':
     #     labels = ['individual endpoint KS$_{D}$', 'individual distribution KS$_{D}$']
-    E = aux.AttrDict({'end': pd.DataFrame.from_records(GEend).T, 'step': pd.DataFrame.from_records(GEdistro).T})
+    E = AttrDict({'end': pd.DataFrame.from_records(GEend).T, 'step': pd.DataFrame.from_records(GEdistro).T})
     E.end.index.name = 'metric'
     E.step.index.name = 'metric'
     return E
 
 
 def RSS(vs0, vs):
+    """ Root sum of squares """
     er = (vs - vs0)
-
     r = np.abs(np.max(vs0) - np.min(vs0))
-
     ee = (er / r) ** 2
-
     MSE = np.mean(np.sum(ee))
     return np.round(np.sqrt(MSE), 2)
 
 
 def RSS_dic(dd, d):
+    """ Calculate RSS for a dictionary of curves """
     f = d.pooled_cycle_curves
     ff = dd.pooled_cycle_curves
 
@@ -122,11 +124,12 @@ def RSS_dic(dd, d):
         dic[sh] = RSS1(ff, f, sh)
 
     stat = np.round(np.mean([dic[sh]['norm'] for sh in f if sh != 'sv']), 2)
-    dd.pooled_cycle_curves_errors = aux.AttrDict({'dict': dic, 'stat': stat})
+    dd.pooled_cycle_curves_errors = AttrDict({'dict': dic, 'stat': stat})
     return stat
 
 
 def eval_RSS(rss, rss_target, rss_sym, mode='1:pooled'):
+    """ Evaluate RSS for a dictionary"""
     assert mode == '1:pooled'
     RSS_dic = {}
     for id, rrss in rss.items():
@@ -138,6 +141,7 @@ def eval_RSS(rss, rss_target, rss_sym, mode='1:pooled'):
 
 
 def col_df(shorts, groups):
+    """ Create a dataframe for coloring evaluation metrics """
     import matplotlib as plt
     group_col_dic = {
         'angular kinematics': 'Blues',
@@ -181,25 +185,29 @@ def col_df(shorts, groups):
 
 
 def cycle_curve_dict(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
+    """ Create a dictionary of cycle curves """
     strides = aux.detect_strides(s[reg.getPar('sv')], dt)
     da = np.array([np.trapz(s[reg.getPar('fov')][s0:s1].dropna()) for ii, (s0, s1) in enumerate(strides)])
     dic = {sh: aux.mean_stride_curve(s[reg.getPar(sh)], strides, da) for sh in shs}
-    return aux.AttrDict(dic)
+    return AttrDict(dic)
 
 
 def cycle_curve_dict_multi(s, dt, shs=['sv', 'fov', 'rov', 'foa', 'b']):
-    return aux.AttrDict({id : cycle_curve_dict(s.xs(id, level="AgentID"), dt=dt, shs=shs) for id in s.index.unique('AgentID').values})
+    """ Create a dictionary of cycle curves for multiple agents """
+    return AttrDict({id : cycle_curve_dict(s.xs(id, level="AgentID"), dt=dt, shs=shs) for id in s.index.unique('AgentID').values})
 
 def get_target_data(d, eval_metrics):
+    """ Get target data for evaluation """
     s, e, c = d.data
-    all_ks = aux.SuperList(eval_metrics.values()).flatten.unique
-    all_ps = aux.SuperList(reg.getPar(all_ks[:]))
+    all_ks = SuperList(eval_metrics.values()).flatten.unique
+    all_ps = SuperList(reg.getPar(all_ks[:]))
     Eps = all_ps.existing(e)
     Dps = all_ps.existing(s)
     Dps = Dps.nonexisting(Eps)
     return AttrDict({'step': {p: s[p].dropna() for p in Dps}, 'end': {p: e[p] for p in Eps}})
 
 def arrange_evaluation(data, eval_metrics):
+    """ Arrange evaluation data """
     Eks = reg.getPar(p=list(data.end.keys()), to_return='k')
     Dks = reg.getPar(p=list(data.step.keys()), to_return='k')
     dic = AttrDict({'end': {'shorts': [], 'groups': []}, 'step': {'shorts': [], 'groups': []}})
@@ -215,8 +223,9 @@ def arrange_evaluation(data, eval_metrics):
     return AttrDict({k: col_df(**v) for k, v in dic.items()})
 
 class Evaluation(NestedConf):
+    """ Evaluation class """
     refID = reg.conf.Ref.confID_selector()
-    eval_metrics = param.Dict(default=aux.AttrDict({
+    eval_metrics = param.Dict(default=AttrDict({
         'angular kinematics': ['run_fov_mu', 'pau_fov_mu', 'b', 'fov', 'foa', 'rov', 'roa', 'tur_fou'],
         'spatial displacement': ['cum_d', 'run_d', 'str_c_l', 'v_mu', 'pau_v_mu', 'run_v_mu', 'v', 'a',
                                  'dsp_0_40_max'],
@@ -332,6 +341,7 @@ class Evaluation(NestedConf):
 
 
 class DataEvaluation(Evaluation):
+    """ Data evaluation class """
     norm_modes = param.ListSelector(default=['raw', 'minmax'], objects=['raw', 'minmax', 'std'],
                                     doc='Normalization modes to use')
     eval_modes = param.ListSelector(default=['pooled'], objects=['pooled', '1:1', '1:pooled'],
@@ -340,16 +350,16 @@ class DataEvaluation(Evaluation):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.error_dicts = aux.AttrDict()
+        self.error_dicts = AttrDict()
 
     def norm_error_dict(self, error_dict, mode='raw'):
         if mode == 'raw':
             return error_dict
         elif mode == 'minmax':
-            return aux.AttrDict(
+            return AttrDict(
                 {k: pd.DataFrame(MinMaxScaler().fit(df).transform(df), index=df.index, columns=df.columns) for k, df in
                  error_dict.items()})
         elif mode == 'std':
-            return aux.AttrDict(
+            return AttrDict(
                 {k: pd.DataFrame(StandardScaler().fit(df).transform(df), index=df.index, columns=df.columns) for k, df
                  in error_dict.items()})
