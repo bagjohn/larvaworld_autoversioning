@@ -7,10 +7,12 @@ import pandas as pd
 import param
 from scipy.stats import ks_2samp
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from typing import List
 
 from .. import reg, aux
 from ..aux import nam, AttrDict, SuperList
-from ..param import NestedConf
+from ..param import NestedConf, EndpointDataFrame, StepDataFrame
+from .dataset import LarvaDataset
 
 __all__ = [
     'eval_end_fast',
@@ -27,7 +29,7 @@ __all__ = [
 ]
 
 
-def eval_end_fast(ee, e_data, e_sym, mode='pooled'):
+def eval_end_fast(ee : EndpointDataFrame, e_data, e_sym, mode='pooled') -> dict:
     """ Fast evaluation of endpoint data """
     E = {}
     for p, sym in e_sym.items():
@@ -41,7 +43,7 @@ def eval_end_fast(ee, e_data, e_sym, mode='pooled'):
     return E
 
 
-def eval_distro_fast(ss, s_data, s_sym, mode='pooled', min_size=10):
+def eval_distro_fast(ss : StepDataFrame, s_data, s_sym, mode='pooled', min_size=10) -> dict:
     """ Fast evaluation of step data """
     if mode == '1:1':
         E = {}
@@ -77,7 +79,9 @@ def eval_distro_fast(ss, s_data, s_sym, mode='pooled', min_size=10):
     return E
 
 
-def eval_fast(datasets, data, symbols, mode='pooled', min_size=20):
+
+
+def eval_fast(datasets: List[LarvaDataset], data, symbols, mode='pooled', min_size=20) -> AttrDict:
     """ Fast evaluation of datasets """
     GEend = {d.id: eval_end_fast(d.endpoint_data, data.end, symbols.end, mode=mode) for d in datasets}
     GEdistro = {d.id: eval_distro_fast(d.step_data, data.step, symbols.step, mode=mode, min_size=min_size) for d
@@ -94,7 +98,7 @@ def eval_fast(datasets, data, symbols, mode='pooled', min_size=20):
     return E
 
 
-def RSS(vs0, vs):
+def RSS(vs0 : np.array, vs : np.array) -> float:
     """ Root sum of squares """
     er = (vs - vs0)
     r = np.abs(np.max(vs0) - np.min(vs0))
@@ -103,7 +107,7 @@ def RSS(vs0, vs):
     return np.round(np.sqrt(MSE), 2)
 
 
-def RSS_dic(dd, d):
+def RSS_dic(dd : LarvaDataset, d : LarvaDataset) -> float:
     """ Calculate RSS for a dictionary of curves """
     f = d.pooled_cycle_curves
     ff = dd.pooled_cycle_curves
@@ -128,7 +132,7 @@ def RSS_dic(dd, d):
     return stat
 
 
-def eval_RSS(rss, rss_target, rss_sym, mode='1:pooled'):
+def eval_RSS(rss, rss_target, rss_sym, mode='1:pooled') -> dict:
     """ Evaluate RSS for a dictionary"""
     assert mode == '1:pooled'
     RSS_dic = {}
