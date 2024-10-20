@@ -2035,6 +2035,7 @@ class LarvaDatasetCollection:
 
 
 def convert_group_output_to_dataset(df, collectors):
+    """ Convert agentpy output to a LarvaDataset """
     df.index.set_names(['AgentID', 'Step'], inplace=True)
     df = df.reorder_levels(order=['Step', 'AgentID'], axis=0)
     df.sort_index(level=['Step', 'AgentID'], inplace=True)
@@ -2046,6 +2047,7 @@ def convert_group_output_to_dataset(df, collectors):
 
 
 def h5_kdic(p, N, Nc):
+    """ Returns the keys of the h5 file that store the parameters of the dataset """
     def epochs_ps():
         cs = ['turn', 'Lturn', 'Rturn', 'pause', 'exec', 'stride', 'stridechain', 'run']
         pars = ['id', 'start', 'stop', 'dur', 'dst', nam.scal('dst'), 'length', nam.max('vel'), 'count']
@@ -2090,6 +2092,7 @@ def h5_kdic(p, N, Nc):
 
 
 def get_larva_dicts(ls, validIDs=None):
+    """ Returns the individual-specific dictionaries of the larva datasets """
     deb_dicts = {}
     nengo_dicts = {}
     bout_dicts = {}
