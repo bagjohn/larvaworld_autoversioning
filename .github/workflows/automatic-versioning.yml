@@ -36,11 +36,11 @@ jobs:
     - name: Install package
       run: poetry install
 
-#    - name: Test with pytest
-#      env:
-#        SDL_VIDEODRIVER: "dummy"
-#        SDL_AUDIODRIVER: "disk"
-#      run: poetry run pytest tests/ --cov=larvaworld --cov-report=xml
+    - name: Test with pytest
+      env:
+        SDL_VIDEODRIVER: "dummy"
+        SDL_AUDIODRIVER: "disk"
+      run: poetry run pytest tests/ --cov=larvaworld --cov-report=xml
 
     - name: Use Codecov to track coverage
       uses: codecov/codecov-action@v2
